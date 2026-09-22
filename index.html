@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Workforce HSE Register</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1f6f78">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Burhan HSE">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root{
@@ -300,7 +307,8 @@ const firebaseConfig = {
   storageBucket: "workforce-hse.firebasestorage.app",
   messagingSenderId: "123036825493",
   appId: "1:123036825493:web:41cc96578f1d55807ba89c"
-};firebase.initializeApp(firebaseConfig);
+};
+firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
@@ -1125,6 +1133,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }catch(err){ console.error(err); toast('Upload failed'); }
   });
 });
+
+// Register the service worker so this page can be installed as an app
+// (Add to Home Screen) and opens instantly on repeat visits.
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>
