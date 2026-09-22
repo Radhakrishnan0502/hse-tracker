@@ -1,880 +1,1130 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-<title>Scaffolding HSE — Daily Pre-Task Checklist</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workforce HSE Register</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-  :root{
-    --navy:#0B2E4F;
-    --navy-dark:#071D34;
-    --amber:#F5A623;
-    --amber-dark:#C97D0A;
-    --green:#1E8E5A;
-    --red:#D64545;
-    --bg:#F3F5F8;
-    --card:#FFFFFF;
-    --text:#1B2733;
-    --muted:#647186;
-    --border:#E2E7EE;
-    --stripe: repeating-linear-gradient(135deg, var(--amber) 0 14px, var(--navy-dark) 14px 28px);
+:root{
+  --bg:#f5f6f2;
+  --surface:#ffffff;
+  --surface-2:#edefe9;
+  --ink:#1a1f1c;
+  --ink-muted:#5b655e;
+  --line:#dde1d8;
+  --accent:#1f6f78;
+  --accent-ink:#ffffff;
+  --ok:#2f8f4e;      --ok-bg:#e4f4e8;
+  --warn:#a06a12;    --warn-bg:#faf0d8;
+  --danger:#b93a28;  --danger-bg:#fbe6e2;
+  --muted:#6b7568;   --muted-bg:#eceeea;
+  --shadow:0 1px 2px rgba(20,30,25,.06), 0 10px 28px -14px rgba(20,30,25,.22);
+  --font-display:'Archivo',system-ui,sans-serif;
+  --font-body:'IBM Plex Sans',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#131712; --surface:#1b201a; --surface-2:#232922;
+    --ink:#edf1ea; --ink-muted:#98a394; --line:#333c32;
+    --accent:#57bcb5; --accent-ink:#08211f;
+    --ok:#63c586; --ok-bg:#193322;
+    --warn:#e3b158; --warn-bg:#3a2e14;
+    --danger:#ea8072; --danger-bg:#3a201c;
+    --muted:#9aa39a; --muted-bg:#262e25;
+    --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 28px -14px rgba(0,0,0,.65);
   }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:var(--bg);
-    color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    min-height:100vh;
-    -webkit-font-smoothing:antialiased;
-  }
-  .stripe-bar{height:6px;background:var(--stripe);}
-  .app{max-width:760px;margin:0 auto;padding-bottom:120px;}
+}
+:root[data-theme="dark"]{
+    --bg:#131712; --surface:#1b201a; --surface-2:#232922;
+    --ink:#edf1ea; --ink-muted:#98a394; --line:#333c32;
+    --accent:#57bcb5; --accent-ink:#08211f;
+    --ok:#63c586; --ok-bg:#193322;
+    --warn:#e3b158; --warn-bg:#3a2e14;
+    --danger:#ea8072; --danger-bg:#3a201c;
+    --muted:#9aa39a; --muted-bg:#262e25;
+    --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 28px -14px rgba(0,0,0,.65);
+}
+*{box-sizing:border-box;}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--font-body);
+  padding-inline:16px; padding-block:20px 60px; max-width:1220px; margin:0 auto;
+  font-size:14px; line-height:1.45;
+}
+h1,h2,h3{font-family:var(--font-display); letter-spacing:-.01em; text-wrap:balance; margin:0;}
+.mono{font-family:var(--font-mono);}
+button{font:inherit; cursor:pointer;}
+input,select,textarea{font:inherit; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:8px 10px; width:100%;}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
+textarea{min-height:64px; resize:vertical;}
+label{display:flex; flex-direction:column; gap:4px; font-size:12.5px; color:var(--ink-muted); font-weight:500;}
 
-  /* Top bar */
-  .topbar{
-    background:var(--navy);
-    color:#fff;
-    padding:16px 18px 14px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-  }
-  .brand{display:flex;flex-direction:column;gap:2px;}
-  .brand .co{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--amber);font-weight:700;}
-  .brand h1{margin:0;font-size:18px;font-weight:800;line-height:1.25;}
-  .brand .sub{font-size:12px;color:#B9C6D6;}
-  .nav-toggle{
-    display:flex;background:rgba(255,255,255,0.08);border-radius:10px;padding:3px;gap:2px;
-  }
-  .nav-toggle button{
-    border:none;background:transparent;color:#B9C6D6;font-size:12.5px;font-weight:700;
-    padding:8px 12px;border-radius:8px;cursor:pointer;letter-spacing:.3px;
-  }
-  .nav-toggle button.active{background:var(--amber);color:var(--navy-dark);}
+/* ---- header ---- */
+.topbar{display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:20px;}
+.topbar h1{font-size:22px; font-weight:800;}
+.topbar p{margin:4px 0 0; color:var(--ink-muted); font-size:13px; max-width:52ch;}
+.topbar-actions{display:flex; gap:8px; flex-wrap:wrap;}
+.btn{border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:9px; padding:9px 14px; font-weight:600; font-size:13px; white-space:nowrap;}
+.btn:hover{border-color:var(--accent);}
+.btn-primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
+.btn-primary:hover{filter:brightness(1.06);}
+.btn-danger{background:var(--danger-bg); color:var(--danger); border-color:transparent;}
+.btn-ghost{background:transparent; border-color:transparent; color:var(--ink-muted);}
+.btn-ghost:hover{color:var(--ink);}
+.btn-sm{padding:6px 10px; font-size:12px; border-radius:7px;}
 
-  /* Progress */
-  .progress-wrap{padding:14px 18px 0;}
-  .progress-track{height:8px;background:var(--border);border-radius:6px;overflow:hidden;}
-  .progress-fill{height:100%;background:linear-gradient(90deg,var(--amber),var(--green));width:0%;transition:width .3s ease;}
-  .progress-label{font-size:12px;color:var(--muted);margin-top:6px;font-weight:600;}
+/* ---- tiles ---- */
+.tiles{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:18px;}
+@media (max-width:900px){.tiles{grid-template-columns:repeat(2,1fr);}}
+.tile{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; box-shadow:var(--shadow);}
+.tile-label{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-muted); font-weight:600;}
+.tile-num{font-family:var(--font-display); font-size:26px; font-weight:800; font-variant-numeric:tabular-nums; margin-top:2px;}
+.tile-num.ok{color:var(--ok);} .tile-num.warn{color:var(--warn);} .tile-num.danger{color:var(--danger);}
+.tile-sub{font-size:11.5px; color:var(--ink-muted); margin-top:2px;}
 
-  /* Cards */
-  .card{
-    background:var(--card);
-    margin:16px 18px 0;
-    border-radius:14px;
-    border:1px solid var(--border);
-    overflow:hidden;
-    box-shadow:0 1px 2px rgba(11,46,79,0.04);
-  }
-  .card-head{
-    display:flex;align-items:center;justify-content:space-between;
-    padding:14px 16px;border-bottom:1px solid var(--border);
-    background:#FAFBFD;
-  }
-  .card-head .title-group{display:flex;align-items:center;gap:10px;}
-  .card-head .num{
-    width:24px;height:24px;border-radius:50%;background:var(--navy);color:#fff;
-    font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  }
-  .card-head h2{margin:0;font-size:15px;font-weight:800;color:var(--navy);}
-  .card-head .status-pill{font-size:11px;font-weight:700;padding:4px 9px;border-radius:20px;background:var(--border);color:var(--muted);}
-  .card-head .status-pill.done{background:#E5F5EC;color:var(--green);}
-  .card-body{padding:16px;}
+/* ---- toolbar ---- */
+.toolbar{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px;}
+.toolbar input[type=search]{max-width:240px;}
+.toolbar select{max-width:170px;}
+.sample-banner{background:var(--warn-bg); color:var(--warn); border:1px solid var(--warn); border-radius:9px; padding:8px 12px; font-size:12.5px; display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap;}
 
-  /* Fields */
-  .field{margin-bottom:14px;}
-  .field:last-child{margin-bottom:0;}
-  .field label{display:block;font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:6px;}
-  .field input[type=text],.field input[type=time],.field input[type=number],.field textarea{
-    width:100%;padding:11px 12px;border:1.5px solid var(--border);border-radius:9px;
-    font-size:15px;font-family:inherit;color:var(--text);background:#fff;
-  }
-  .field input:focus,.field textarea:focus{outline:none;border-color:var(--amber);}
-  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-  @media(max-width:480px){.row2{grid-template-columns:1fr;}}
+/* ---- add worker panel ---- */
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:14px; box-shadow:var(--shadow);}
+.panel h3{font-size:15px; margin-bottom:12px;}
+.form-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px 12px;}
+@media (max-width:700px){.form-grid{grid-template-columns:1fr 1fr;}}
+@media (max-width:480px){.form-grid{grid-template-columns:1fr;}}
+.form-actions{display:flex; gap:8px; margin-top:14px; justify-content:flex-end;}
 
-  .segmented{display:flex;gap:8px;}
-  .segmented button{
-    flex:1;padding:12px;border-radius:9px;border:1.5px solid var(--border);background:#fff;
-    font-weight:700;font-size:14px;color:var(--muted);cursor:pointer;
-  }
-  .segmented button.sel-up.active{background:#E5F5EC;border-color:var(--green);color:var(--green);}
-  .segmented button.sel-down.active{background:#FDECEC;border-color:var(--red);color:var(--red);}
+/* ---- table ---- */
+.table-wrap{background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow-x:auto; box-shadow:var(--shadow);}
+table{width:100%; border-collapse:collapse; min-width:760px;}
+thead th{text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-muted); font-weight:600; padding:10px 12px; border-bottom:1px solid var(--line); white-space:nowrap;}
+tbody td{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr{cursor:pointer;}
+tbody tr:hover{background:var(--surface-2);}
+.wname{font-weight:600;}
+.wsub{color:var(--ink-muted); font-size:12px; margin-top:1px;}
+.sample-tag{font-size:9.5px; background:var(--warn-bg); color:var(--warn); border-radius:5px; padding:1px 5px; margin-left:6px; font-weight:700; letter-spacing:.03em; vertical-align:middle;}
+.empty-state{padding:28px 12px; text-align:center; color:var(--ink-muted);}
 
-  /* Checklist rows */
-  .check-row{
-    display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);
-  }
-  .check-row:last-child{border-bottom:none;}
-  .checkbox{
-    width:26px;height:26px;border-radius:7px;border:2px solid var(--border);flex-shrink:0;
-    display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fff;
-    transition:all .15s ease;
-  }
-  .checkbox.checked{background:var(--green);border-color:var(--green);}
-  .checkbox svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:3;opacity:0;transition:opacity .1s;}
-  .checkbox.checked svg{opacity:1;}
-  .check-row span{font-size:14.5px;font-weight:500;}
-  .check-row.clickable{cursor:pointer;}
+/* ---- badges / pills ---- */
+.badge{display:inline-block; padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:600; white-space:nowrap;}
+.badge.ok{background:var(--ok-bg); color:var(--ok);}
+.badge.warn{background:var(--warn-bg); color:var(--warn);}
+.badge.danger{background:var(--danger-bg); color:var(--danger);}
+.badge.muted{background:var(--muted-bg); color:var(--muted);}
+.pill-count{display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:22px; padding:0 7px; border-radius:999px; font-size:12px; font-weight:700; background:var(--muted-bg); color:var(--muted);}
+.pill-count.warn{background:var(--warn-bg); color:var(--warn);}
+.pill-count.danger{background:var(--danger-bg); color:var(--danger);}
 
-  .select-all{
-    display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;margin-bottom:6px;border-bottom:1px dashed var(--border);
-  }
-  .select-all button{
-    background:none;border:none;color:var(--amber-dark);font-weight:700;font-size:12.5px;cursor:pointer;
-  }
+/* ---- drawer ---- */
+.drawer-overlay{position:fixed; inset:0; background:rgba(10,14,10,.4); z-index:40;}
+.drawer{position:fixed; top:0; right:0; bottom:0; width:min(520px,100%); background:var(--surface); z-index:41; box-shadow:-14px 0 40px -12px rgba(0,0,0,.35); display:flex; flex-direction:column;}
+.drawer-head{display:flex; justify-content:space-between; align-items:flex-start; padding:16px 18px; border-bottom:1px solid var(--line); gap:10px;}
+.drawer-head h2{font-size:18px;}
+.icon-btn{background:transparent; border:1px solid var(--line); border-radius:8px; width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; color:var(--ink-muted); flex:none;}
+.icon-btn:hover{color:var(--ink); border-color:var(--accent);}
+.icon-btn.danger:hover{color:var(--danger); border-color:var(--danger);}
+.tabs{display:flex; gap:2px; padding:8px 12px 0; border-bottom:1px solid var(--line); overflow-x:auto;}
+.tab-btn{background:transparent; border:none; padding:9px 10px; font-size:12.5px; font-weight:600; color:var(--ink-muted); border-bottom:2px solid transparent; white-space:nowrap;}
+.tab-btn.active{color:var(--accent); border-bottom-color:var(--accent);}
+.drawer-body{padding:16px 18px; overflow-y:auto; flex:1;}
+.field-row{display:flex; gap:6px; align-items:center; padding:6px 0; border-bottom:1px dashed var(--line); font-size:13px;}
+.field-row:last-child{border-bottom:none;}
+.field-row .k{color:var(--ink-muted); min-width:120px; flex:none;}
+.field-row .v{font-weight:500;}
+.att-block{margin-top:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.att-thumb{width:56px; height:56px; object-fit:cover; border-radius:8px; border:1px solid var(--line);}
+.att-link{font-size:12.5px; color:var(--accent); font-weight:600; text-decoration:none;}
+.upload-btn{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--accent); border:1px dashed var(--accent); border-radius:8px; padding:6px 10px; cursor:pointer;}
+.att-none{font-size:12px; color:var(--ink-muted);}
+.sig-pad-wrap{margin-top:8px;}
+.sig-canvas{width:100%; max-width:420px; height:140px; display:block; background:#ffffff; border:1px dashed var(--line); border-radius:8px; touch-action:none; cursor:crosshair;}
 
-  /* Photo upload */
-  .photo-grid{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;}
-  .photo-thumb{
-    width:76px;height:76px;border-radius:10px;overflow:hidden;position:relative;border:1.5px solid var(--border);
-    flex-shrink:0;
-  }
-  .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-  .photo-thumb .rm{
-    position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:rgba(9,20,33,0.75);
-    color:#fff;border:none;font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  }
-  .add-photo-btn{
-    width:76px;height:76px;border-radius:10px;border:1.5px dashed #B9C6D6;background:#FAFBFD;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;
-    color:var(--muted);font-size:10.5px;font-weight:700;flex-shrink:0;
-  }
-  .add-photo-btn svg{width:20px;height:20px;stroke:var(--muted);}
-  input[type=file]{display:none;}
-  .photo-hint{font-size:11.5px;color:var(--muted);margin-top:8px;}
+/* ---- record cards ---- */
+.record-card{border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:10px; background:var(--surface-2);}
+.record-card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
+.record-card-title{font-weight:700; font-size:13.5px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.record-card-actions{display:flex; gap:6px; flex:none;}
+.record-fields{margin-top:6px;}
+.rf{display:flex; gap:6px; font-size:12.5px; padding:2px 0;}
+.rf-k{color:var(--ink-muted); min-width:110px; flex:none;}
+.rf-v{white-space:pre-wrap;}
 
-  /* Sticky submit */
-  .sticky-submit{
-    position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);
-    padding:12px 18px calc(12px + env(safe-area-inset-bottom));
-    box-shadow:0 -4px 14px rgba(11,46,79,0.06);
-  }
-  .sticky-inner{max-width:760px;margin:0 auto;}
-  .submit-btn{
-    width:100%;padding:15px;border:none;border-radius:11px;background:var(--navy);color:#fff;
-    font-size:15.5px;font-weight:800;letter-spacing:.2px;cursor:pointer;transition:background .15s;
-  }
-  .submit-btn:disabled{background:#B9C6D6;cursor:not-allowed;}
-  .submit-btn:not(:disabled):active{background:var(--navy-dark);}
-  .submit-note{text-align:center;font-size:11.5px;color:var(--muted);margin-top:7px;}
+.section-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+.section-head h3{font-size:14px;}
+.subhead{font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--accent); font-weight:700; margin:18px 0 8px;}
+.subhead:first-child{margin-top:0;}
+.exp-total{font-size:12px; color:var(--ink-muted); margin-top:-4px; margin-bottom:8px;}
+.danger-zone{margin-top:24px; padding-top:16px; border-top:1px solid var(--line);}
+.danger-zone p{color:var(--ink-muted); font-size:12px; margin:0 0 8px;}
 
-  /* Success screen */
-  .success-screen{
-    max-width:760px;margin:60px auto;padding:0 20px;text-align:center;
-  }
-  .success-icon{
-    width:74px;height:74px;border-radius:50%;background:#E5F5EC;color:var(--green);
-    display:flex;align-items:center;justify-content:center;margin:0 auto 18px;
-  }
-  .success-icon svg{width:38px;height:38px;stroke:var(--green);stroke-width:3;fill:none;}
-  .success-screen h2{color:var(--navy);margin:0 0 8px;}
-  .success-screen p{color:var(--muted);font-size:14.5px;margin:0 0 26px;}
-  .success-screen button{
-    padding:13px 26px;border:none;border-radius:10px;background:var(--navy);color:#fff;font-weight:700;font-size:14.5px;cursor:pointer;
-  }
+.toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:10px 16px; border-radius:9px; font-size:13px; box-shadow:var(--shadow); z-index:60; opacity:0; pointer-events:none; transition:opacity .2s;}
+.toast.show{opacity:1;}
+[hidden]{display:none !important;}
 
-  /* Dashboard */
-  .dash-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:16px 18px 0;}
-  @media(max-width:560px){.dash-stats{grid-template-columns:repeat(2,1fr);}}
-  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 12px;text-align:center;}
-  .stat-card .n{font-size:22px;font-weight:800;color:var(--navy);}
-  .stat-card .l{font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:3px;}
-
-  .dash-controls{display:flex;gap:10px;padding:16px 18px 0;}
-  .dash-controls input{
-    flex:1;padding:11px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;background:#fff;
-  }
-  .dash-controls button.refresh{
-    padding:11px 14px;border-radius:9px;border:1.5px solid var(--border);background:#fff;font-weight:700;color:var(--navy);cursor:pointer;
-  }
-
-  .empty-state{padding:50px 24px;text-align:center;color:var(--muted);}
-  .empty-state svg{width:44px;height:44px;stroke:#C3CDD9;margin-bottom:12px;}
-
-  .record-card{
-    background:var(--card);margin:12px 18px 0;border-radius:13px;border:1px solid var(--border);overflow:hidden;
-  }
-  .record-summary{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:10px;}
-  .record-summary .left{display:flex;flex-direction:column;gap:3px;min-width:0;}
-  .record-summary .name{font-weight:800;font-size:14.5px;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .record-summary .meta{font-size:12px;color:var(--muted);}
-  .record-summary .right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
-  .rig-badge{font-size:10.5px;font-weight:800;padding:4px 8px;border-radius:20px;}
-  .rig-badge.up{background:#E5F5EC;color:var(--green);}
-  .rig-badge.down{background:#FDECEC;color:var(--red);}
-  .chev{width:16px;height:16px;stroke:var(--muted);transition:transform .2s;flex-shrink:0;}
-  .record-card.open .chev{transform:rotate(180deg);}
-  .record-detail{display:none;border-top:1px solid var(--border);padding:16px;background:#FAFBFD;}
-  .record-card.open .record-detail{display:block;}
-  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-bottom:16px;font-size:13.5px;}
-  .detail-grid div span{display:block;font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px;}
-  .detail-sec{margin-bottom:14px;}
-  .detail-sec h4{margin:0 0 8px;font-size:12.5px;color:var(--navy);text-transform:uppercase;letter-spacing:.3px;}
-  .mini-check{display:flex;align-items:center;gap:7px;font-size:13px;padding:4px 0;}
-  .mini-check .dot{width:16px;height:16px;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-  .mini-check .dot.y{background:var(--green);}
-  .mini-check .dot.n{background:var(--red);}
-  .mini-check .dot svg{width:10px;height:10px;stroke:#fff;stroke-width:4;fill:none;}
-  .detail-photos{display:flex;gap:8px;flex-wrap:wrap;}
-  .detail-photos img{width:84px;height:84px;object-fit:cover;border-radius:9px;border:1px solid var(--border);cursor:pointer;}
-  .del-btn{
-    margin-top:10px;background:none;border:1.5px solid var(--red);color:var(--red);font-size:12px;font-weight:700;
-    padding:8px 12px;border-radius:8px;cursor:pointer;
-  }
-
-  /* lightbox */
-  .lightbox{
-    position:fixed;inset:0;background:rgba(7,29,52,0.92);display:none;align-items:center;justify-content:center;z-index:999;padding:20px;
-  }
-  .lightbox.show{display:flex;}
-  .lightbox img{max-width:100%;max-height:100%;border-radius:8px;}
-  .lightbox-close{position:absolute;top:20px;right:20px;background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;}
-
-  .disclaimer{
-    margin:18px 18px 0;font-size:11.5px;color:var(--muted);background:#FFF7E8;border:1px solid #F3DDA8;padding:10px 12px;border-radius:9px;
-  }
-  .loading-row{padding:30px;text-align:center;color:var(--muted);font-size:13px;}
+.auth-overlay{position:fixed; inset:0; z-index:100; background:var(--bg); display:flex; align-items:center; justify-content:center; padding:16px;}
+.auth-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:30px 26px; box-shadow:var(--shadow); width:100%; max-width:340px;}
+.auth-card h2{font-size:17px; margin-bottom:4px; text-align:center;}
+.auth-card p.wsub{text-align:center; margin-bottom:18px;}
+.auth-card .form-grid{grid-template-columns:1fr; gap:10px;}
+.auth-error{color:var(--danger); font-size:12.5px; margin-top:10px; text-align:center;}
 </style>
 </head>
 <body>
 
-<div class="stripe-bar"></div>
-<div class="app">
-
-  <div class="topbar">
-    <div class="brand">
-      <div class="co">Scaffolding &nbsp;•&nbsp; PDO Premises</div>
-      <h1>HSE Pre-Task Checklist</h1>
-      <div class="sub" id="todayLabel"></div>
-    </div>
-    <div class="nav-toggle">
-      <button id="tabSubmitBtn" class="active">Submit</button>
-      <button id="tabDashBtn">Dashboard</button>
-    </div>
-  </div>
-
-  <div id="setupBanner" style="display:none;margin:16px 18px 0;background:#FDECEC;border:1px solid #F3B4B4;color:#8A2A2A;padding:12px 14px;border-radius:10px;font-size:13px;">
-    <strong>Setup needed:</strong> this website isn't connected to a Google Sheet yet. Open the HTML file, find <code>APPS_SCRIPT_URL</code> near the top of the script, and paste in your deployed Apps Script Web App URL. Nothing will save until that's done.
-  </div>
-
-  <!-- ===================== SUBMIT VIEW ===================== -->
-  <div id="submitView">
-
-    <div class="progress-wrap">
-      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-      <div class="progress-label" id="progressLabel">0% complete</div>
-    </div>
-
-    <div id="formCards"></div>
-
-    <div class="sticky-submit">
-      <div class="sticky-inner">
-        <button class="submit-btn" id="submitBtn" disabled>Complete all sections to submit</button>
-        <div class="submit-note">Your details are saved to the team dashboard once submitted</div>
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-card">
+    <h2>Workforce HSE Register</h2>
+    <p class="wsub">Sign in with the email and password given to you.</p>
+    <form id="loginForm">
+      <div class="form-grid">
+        <label>Email<input type="email" id="loginEmail" required autocomplete="username"></label>
+        <label>Password<input type="password" id="loginPassword" required autocomplete="current-password"></label>
       </div>
-    </div>
+      <div id="authError" class="auth-error" hidden></div>
+      <button type="submit" class="btn btn-primary" style="width:100%; margin-top:14px;">Sign in</button>
+    </form>
   </div>
-
-  <!-- ===================== SUCCESS VIEW ===================== -->
-  <div id="successView" class="success-screen" style="display:none;">
-    <div class="success-icon"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div>
-    <h2>Checklist submitted</h2>
-    <p id="successSub">Thanks — your pre-task checklist has been logged.</p>
-    <button id="newChecklistBtn">Start a new checklist</button>
-  </div>
-
-  <!-- ===================== DASHBOARD VIEW ===================== -->
-  <div id="dashView" style="display:none;">
-    <div class="disclaimer">This dashboard shows submissions from everyone using this link — there's no login, so treat the link itself as the access control.</div>
-    <div class="dash-stats" id="dashStats"></div>
-    <div class="dash-controls">
-      <input type="text" id="searchInput" placeholder="Search driver, scaffolder or vehicle no.">
-      <button class="refresh" id="refreshBtn">↻ Refresh</button>
-    </div>
-    <div id="recordsList"></div>
-  </div>
-
 </div>
 
-<div class="lightbox" id="lightbox">
-  <button class="lightbox-close" id="lightboxClose">✕</button>
-  <img id="lightboxImg" src="" referrerpolicy="no-referrer">
+<div class="topbar">
+  <div>
+    <h1>Workforce HSE Register</h1>
+    <p>One live record per worker — induction, training, competency, medical fitness, licenses, warning letters and violations, tracked in one place and always up to date for everyone who signs in.</p>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-ghost btn-sm" id="clearSampleBtn" hidden>Remove sample data</button>
+    <button class="btn btn-sm" id="trashBtn" type="button">🗑 Deleted workers (0)</button>
+    <button class="btn btn-primary" id="addWorkerBtn">+ Add worker</button>
+    <button class="btn btn-sm" id="signOutBtn" type="button" hidden>Sign out</button>
+  </div>
 </div>
 
+<div class="tiles" id="tiles"></div>
+
+<div class="panel" id="addWorkerPanel" hidden>
+  <h3>Add a worker</h3>
+  <form id="addWorkerForm">
+    <div class="form-grid">
+      <label>Full name *<input data-field="fullName" required placeholder="e.g. Ramesh Kumar"></label>
+      <label>Civil ID *<input class="mono" data-field="civilId" required placeholder="e.g. 784-1990-1234567-1"></label>
+      <label>Nationality<input data-field="nationality" placeholder="e.g. Indian"></label>
+      <label>Trade / occupation *<input data-field="trade" required placeholder="e.g. Steel Fixer"></label>
+      <label>Subcontractor / company<input data-field="contractor" placeholder="e.g. Al Futtaim Contracting"></label>
+      <label>Date of joining<input type="date" data-field="dateOfJoining"></label>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn" id="cancelAddWorker">Cancel</button>
+      <button type="submit" class="btn btn-primary">Save worker</button>
+    </div>
+  </form>
+</div>
+
+<div class="sample-banner" id="dbUnavailableBanner" hidden>
+  Could not reach the database. Check the Firebase config at the top of the script and your internet connection.
+</div>
+
+<div class="toolbar">
+  <input type="search" id="searchInput" placeholder="Search name or Civil ID…">
+  <select id="tradeFilter"><option value="all">All trades</option></select>
+  <select id="statusFilter">
+    <option value="all">All workers</option>
+    <option value="active">Active only</option>
+    <option value="inactive">Inactive only</option>
+  </select>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Worker</th><th>Civil ID</th><th>Trade</th><th>Status</th>
+        <th>Induction</th><th>Training</th><th>Competency</th><th>Medical</th><th>Licenses</th><th>Warnings</th><th>Violations</th>
+      </tr>
+    </thead>
+    <tbody id="workerRows">
+      <tr><td colspan="11" class="empty-state">Sign in to load workforce data…</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="drawer-overlay" id="drawerOverlay" hidden></div>
+<aside class="drawer" id="drawer" hidden>
+  <div class="drawer-head">
+    <div>
+      <h2 id="drawerName"></h2>
+      <div class="wsub mono" id="drawerSub"></div>
+    </div>
+    <div style="display:flex; gap:8px; align-items:flex-start; flex:none;">
+      <button type="button" class="btn btn-sm" id="downloadPdfBtn">⬇ PDF profile</button>
+      <button class="icon-btn" id="drawerClose" aria-label="Close panel">✕</button>
+    </div>
+  </div>
+  <nav class="tabs" id="drawerTabs"></nav>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
+
+<div class="drawer-overlay" id="trashOverlay" hidden></div>
+<aside class="drawer" id="trashDrawer" hidden>
+  <div class="drawer-head">
+    <div>
+      <h2>Deleted workers</h2>
+      <div class="wsub">Restore a profile, or remove it for good. Permanent removal cannot be undone.</div>
+    </div>
+    <button class="icon-btn" id="trashClose" aria-label="Close">✕</button>
+  </div>
+  <div class="drawer-body" id="trashBody"></div>
+</aside>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase (compat SDK — keeps the same collection().doc() style as the rest of this file) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-(function(){
+/* =========================================================================
+   1. PASTE YOUR FIREBASE PROJECT CONFIG HERE
+   Firebase console → Project settings → General → Your apps → SDK setup
+   ========================================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDhQDmL7V0IyMnFZmrLNCo1hJqW5rPZt5Q",
+  authDomain: "workforce-hse.firebaseapp.com",
+  projectId: "workforce-hse",
+  storageBucket: "workforce-hse.firebasestorage.app",
+  messagingSenderId: "123036825493",
+  appId: "1:123036825493:web:41cc96578f1d55807ba89c"
+};firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
 
-  /* ================================================================
-     SETUP: paste your Google Apps Script Web App URL below.
-     See Code.gs setup instructions for how to get this URL.
-     It will look like: https://script.google.com/macros/s/XXXX/exec
-     ================================================================ */
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw2PxlBoFDPZI6G8VQkxi-xM0IgaNzr-AFHGX5a3d4CG6kZT5Bd3LZt0HMz2NLZQUd1xQ/exec";
+const TABS = [
+  {key:'profile', label:'Profile'},
+  {key:'inductions', label:'Induction'},
+  {key:'trainings', label:'Training'},
+  {key:'competency', label:'Competency'},
+  {key:'medical', label:'Medical'},
+  {key:'licenses', label:'Licenses'},
+  {key:'warnings', label:'Warnings'},
+  {key:'violations', label:'Violations'},
+];
 
-  /* ---------------- Config: checklist items ---------------- */
-  const VEHICLE_ITEMS = [
-    "Tyres — condition & pressure OK",
-    "Mirrors intact & correctly adjusted",
-    "Seatbelts functional",
-    "Head, tail & indicator lights working",
-    "Horn & reverse alarm working",
-    "Brakes functioning properly",
-    "Windscreen & wipers clear/working",
-    "Fire extinguisher in place & valid",
-    "First aid box available",
-    "No visible fuel/oil leakage",
-    "Vehicle documents (registration/insurance) valid",
-    "Warning triangle / wheel chocks on board"
+const RECORD_TYPES = {
+  inductions:{
+    title:'Induction records', addLabel:'+ Add induction record', hasExpiry:true, hasAttachment:true, attachLabel:'induction certificate',
+    fields:[
+      {key:'site', label:'Site / project', type:'text', required:true, placeholder:'e.g. Marina Tower Phase 2'},
+      {key:'date', label:'Induction date', type:'date', required:true},
+      {key:'expiry', label:'Valid until', type:'date'},
+      {key:'conductedBy', label:'Conducted by', type:'text', placeholder:'e.g. HSE Officer name'},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+  },
+  trainings:{
+    title:'Training records', addLabel:'+ Add training record', hasExpiry:true, hasAttachment:true, attachLabel:'certificate',
+    fields:[
+      {key:'name', label:'Course / training name', type:'text', required:true, placeholder:'e.g. Working at Height'},
+      {key:'provider', label:'Provider', type:'text'},
+      {key:'date', label:'Completion date', type:'date', required:true},
+      {key:'expiry', label:'Valid until', type:'date'},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+  },
+  competency:{
+    title:'Competency assessments', addLabel:'+ Add assessment', hasExpiry:true, hasAttachment:true, attachLabel:'assessment record',
+    fields:[
+      {key:'skill', label:'Skill / competency assessed', type:'text', required:true, placeholder:'e.g. Scaffolding erection'},
+      {key:'result', label:'Result', type:'select', options:['Competent','Not yet competent','Conditional'], required:true},
+      {key:'assessor', label:'Assessed by', type:'text'},
+      {key:'date', label:'Assessment date', type:'date', required:true},
+      {key:'expiry', label:'Valid until', type:'date'},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+  },
+  medical:{
+    title:'Medical fitness & screening', addLabel:'+ Add medical record', hasExpiry:true, hasAttachment:true, attachLabel:'medical certificate',
+    fields:[
+      {key:'type', label:'Type', type:'select', options:['PDO Medical Fitness','OQ Medical Fitness','OXY Medical Fitness','General Medical Screening','Pre-employment Medical','Other'], required:true},
+      {key:'result', label:'Result', type:'select', options:['Fit','Fit with restrictions','Unfit','Pending'], required:true},
+      {key:'date', label:'Screening date', type:'date', required:true},
+      {key:'expiry', label:'Valid until', type:'date'},
+      {key:'clinic', label:'Clinic / hospital', type:'text'},
+      {key:'doctor', label:'Doctor / physician', type:'text'},
+      {key:'notes', label:'Notes / restrictions', type:'textarea'},
+    ],
+  },
+  licenses:{
+    title:'Licenses & permits', addLabel:'+ Add license / document', hasExpiry:true, hasAttachment:true, attachLabel:'document scan',
+    fields:[
+      {key:'type', label:'License / document type', type:'text', required:true, placeholder:'e.g. Driving License, Labor Card, Passport, Residency Visa, Insurance'},
+      {key:'number', label:'Number', type:'text'},
+      {key:'issuingAuthority', label:'Issuing authority', type:'text'},
+      {key:'date', label:'Issue date', type:'date'},
+      {key:'expiry', label:'Expiry date', type:'date', required:true},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+  },
+  warnings:{
+    title:'Warning letters', addLabel:'+ Add warning', hasExpiry:false, hasAttachment:true, attachLabel:'warning letter scan',
+    fields:[
+      {key:'level', label:'Warning level', type:'select', options:['Verbal','Written – 1st','Written – 2nd','Final warning'], required:true},
+      {key:'date', label:'Date issued', type:'date', required:true},
+      {key:'reason', label:'Reason', type:'textarea', required:true},
+      {key:'issuedBy', label:'Issued by', type:'text'},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+  },
+  violations:{
+    title:'Violations', addLabel:'+ Add violation', hasExpiry:false, hasAttachment:true, attachLabel:'evidence / report',
+    fields:[
+      {key:'category', label:'Violation type', type:'text', required:true, placeholder:'e.g. No PPE, unsafe act, permit breach'},
+      {key:'severity', label:'Severity', type:'select', options:['Minor','Major','Critical'], required:true},
+      {key:'date', label:'Date', type:'date', required:true},
+      {key:'description', label:'Description', type:'textarea', required:true},
+      {key:'actionTaken', label:'Corrective action taken', type:'textarea'},
+      {key:'reportedBy', label:'Reported by', type:'text'},
+    ],
+  },
+};
+
+let workers=[];
+let activeWorkerId=null, activeTab='profile', editingRecordId=null, addFormOpen=false;
+let filters={q:'', trade:'all', status:'all'};
+let unsubscribeWorkers=null;
+
+function activeWorkers(){ return workers.filter(w=>!w.deleted); }
+function deletedWorkers(){ return workers.filter(w=>w.deleted); }
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function genId(){ return (crypto.randomUUID? crypto.randomUUID() : 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2)); }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),2600); }
+
+function daysUntil(dateStr){
+  if(!dateStr) return null;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const d=new Date(dateStr+'T00:00:00');
+  if(isNaN(d)) return null;
+  return Math.round((d-today)/86400000);
+}
+function statusFor(dateStr){
+  const d=daysUntil(dateStr);
+  if(d===null) return 'valid';
+  if(d<0) return 'expired';
+  if(d<=30) return 'expiring';
+  return 'valid';
+}
+const RANK={valid:0, expiring:1, expired:2};
+function badgeHtml(status, labelMap){
+  const map = labelMap || {valid:'Valid',expiring:'Expiring soon',expired:'Expired',none:'None logged',missing:'Not inducted',unfit:'Unfit'};
+  const cls = status==='valid'?'ok': status==='expiring'?'warn': (status==='expired'||status==='unfit')?'danger':'muted';
+  return `<span class="badge ${cls}">${map[status]||status}</span>`;
+}
+
+function aggFor(worker,key){
+  const recs = worker[key]||[];
+  if(recs.length===0) return key==='inductions' ? {status:'missing'} : {status:'none'};
+  let worst='valid';
+  for(const r of recs){ const s=statusFor(r.expiry); if(RANK[s]>RANK[worst]) worst=s; }
+  return {status:worst};
+}
+function civilIdStatus(w){
+  if(!w.civilIdExpiry) return {status:'none'};
+  return {status:statusFor(w.civilIdExpiry)};
+}
+function medicalStatus(w){
+  const recs=w.medical||[];
+  if(recs.length===0) return {status:'none'};
+  if(recs.some(r=>r.result==='Unfit')) return {status:'unfit'};
+  let worst='valid';
+  for(const r of recs){ const s=statusFor(r.expiry); if(RANK[s]>RANK[worst]) worst=s; }
+  return {status:worst};
+}
+function computeFlags(w){
+  const induction=aggFor(w,'inductions');
+  const training=aggFor(w,'trainings');
+  const competency=aggFor(w,'competency');
+  const licenses=aggFor(w,'licenses');
+  const medical=medicalStatus(w);
+  const civilId=civilIdStatus(w);
+  const warnings=(w.warnings||[]);
+  const violations=(w.violations||[]);
+  const warnColor = warnings.some(x=>x.level==='Final warning') ? 'danger' : warnings.length? 'warn':'';
+  const vioColor = violations.some(x=>x.severity==='Critical') ? 'danger' : violations.some(x=>x.severity==='Major') ? 'warn' : violations.length? 'warn':'';
+  return {induction,training,competency,licenses,medical,civilId,warningsCount:warnings.length,warnColor,violationsCount:violations.length,vioColor};
+}
+
+/* ---------------- auth ---------------- */
+auth.onAuthStateChanged(user=>{
+  if(user){
+    document.getElementById('authOverlay').hidden=true;
+    document.getElementById('signOutBtn').hidden=false;
+    startData();
+  } else {
+    if(unsubscribeWorkers){ unsubscribeWorkers(); unsubscribeWorkers=null; }
+    workers=[];
+    document.getElementById('authOverlay').hidden=false;
+    document.getElementById('signOutBtn').hidden=true;
+    document.getElementById('workerRows').innerHTML='<tr><td colspan="11" class="empty-state">Sign in to load workforce data…</td></tr>';
+  }
+});
+
+async function startData(){
+  try{
+    await maybeSeed();
+    unsubscribeWorkers = db.collection('workers').orderBy('fullName','asc').onSnapshot(snap=>{
+      workers = snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
+      renderAll();
+    }, err=>{ console.error(err); toast('Sync error — some data may be stale.'); document.getElementById('dbUnavailableBanner').hidden=false; });
+  }catch(e){ console.error(e); document.getElementById('dbUnavailableBanner').hidden=false; }
+}
+
+async function maybeSeed(){
+  try{
+    const snap = await db.collection('workers').limit(1).get();
+    if(!snap.empty) return;
+    const samples = [
+      {isSample:true, fullName:'Arjun Mehta', civilId:'784-1988-5512340-9', civilIdExpiry:'2027-03-14', nationality:'Indian', dateOfBirth:'1988-04-12', bloodGroup:'O+', mobileNumber:'+971 50 111 2233',
+        designation:'Leading Hand', trade:'Scaffolder', contractor:'Falcon MEP Contracting', dateOfJoining:'2024-02-10', status:'active',
+        experienceGCCYears:'6', experienceOtherYears:'3', priorExperienceNotes:'Qatar 2019–2023, scaffolder, Al Bidda Contracting; India 2016–2019, apprentice fitter.',
+        emergencyContactName:'Sunita Mehta', emergencyContactRelation:'Spouse', emergencyContactPhone:'+91 98765 43210',
+        inductions:[{id:genId(), site:'Marina Tower Phase 2', date:'2025-11-01', expiry:'2026-11-01', conductedBy:'S. Khalid, HSE Officer', notes:'Site + working-at-height induction'}],
+        trainings:[{id:genId(), name:'Working at Height', provider:'SafetyFirst Training Centre', date:'2025-10-15', expiry:'2027-10-15', notes:''}],
+        competency:[{id:genId(), skill:'Scaffolding erection', result:'Competent', assessor:'M. Rao', date:'2025-10-20', expiry:'2026-10-20', notes:''}],
+        licenses:[{id:genId(), type:'Labor Card / Work Permit', number:'LC-44210', issuingAuthority:'MOHRE', date:'2024-02-05', expiry:'2026-10-05', notes:''}],
+        medical:[{id:genId(), type:'PDO Medical Fitness', result:'Fit', date:'2025-09-01', expiry:'2026-09-01', clinic:'Gulf Medical Centre', doctor:'Dr. Al Farsi', notes:''}],
+        warnings:[], violations:[]},
+      {isSample:true, fullName:'Salman Iqbal', civilId:'784-1992-7788110-2', civilIdExpiry:'2026-10-01', nationality:'Pakistani', dateOfBirth:'1992-08-02', bloodGroup:'B+', mobileNumber:'+971 55 222 4455',
+        designation:'Rigger', trade:'Rigger', contractor:'Falcon MEP Contracting', dateOfJoining:'2023-06-01', status:'active',
+        experienceGCCYears:'4', experienceOtherYears:'2', priorExperienceNotes:'Pakistan 2018–2020, general labour.',
+        emergencyContactName:'Imran Iqbal', emergencyContactRelation:'Brother', emergencyContactPhone:'+92 300 1234567',
+        inductions:[{id:genId(), site:'Marina Tower Phase 2', date:'2024-01-05', expiry:'2025-01-05', conductedBy:'S. Khalid, HSE Officer', notes:''}],
+        trainings:[], competency:[],
+        licenses:[{id:genId(), type:'Driving License', number:'DL-902341', issuingAuthority:'RTA', date:'2022-05-01', expiry:'2026-10-15', notes:'Light vehicle'}],
+        medical:[{id:genId(), type:'OQ Medical Fitness', result:'Fit', date:'2025-10-05', expiry:'2026-10-05', clinic:'Al Shifa Clinic', doctor:'Dr. Hassan', notes:'Previous screening: General Medical Screening, 2024-09-01, Fit.'}],
+        warnings:[{id:genId(), level:'Written – 1st', date:'2026-06-12', reason:'Not wearing safety harness while working at height', issuedBy:'HSE Manager', notes:'Toolbox talk repeated for the crew'}],
+        violations:[{id:genId(), category:'No PPE', severity:'Major', date:'2026-06-12', description:'Found working at height without a safety harness on level 14.', actionTaken:'Stopped work, re-issued PPE, written warning issued.', reportedBy:'HSE Inspector'}]},
+    ];
+    for(const s of samples){ await db.collection('workers').add(s); }
+  }catch(e){ console.error('seed failed', e); }
+}
+
+/* ---------------- render ---------------- */
+function renderAll(){
+  renderTiles();
+  renderTradeFilter();
+  renderTable();
+  document.getElementById('clearSampleBtn').hidden = !activeWorkers().some(w=>w.isSample);
+  const trashCount=deletedWorkers().length;
+  document.getElementById('trashBtn').textContent = `🗑 Deleted workers (${trashCount})`;
+  if(activeWorkerId) renderDrawer();
+  if(!document.getElementById('trashDrawer').hidden) renderTrashBody();
+}
+
+function renderTiles(){
+  const list=activeWorkers();
+  const total=list.length;
+  const active=list.filter(w=>(w.status||'active')!=='inactive').length;
+  function agg(key){
+    let expired=0, expiring=0, missing=0;
+    for(const w of list){
+      const recs=w[key]||[];
+      if(recs.length===0){ if(key==='inductions') missing++; continue; }
+      let worst='valid';
+      for(const r of recs){ const s=statusFor(r.expiry); if(RANK[s]>RANK[worst]) worst=s; }
+      if(worst==='expired') expired++; else if(worst==='expiring') expiring++;
+    }
+    return {expired,expiring,missing};
+  }
+  const ind=agg('inductions'), tr=agg('trainings'), comp=agg('competency'), lic=agg('licenses');
+  let civExpired=0, civExpiring=0;
+  for(const w of list){ if(!w.civilIdExpiry) continue; const s=statusFor(w.civilIdExpiry); if(s==='expired') civExpired++; else if(s==='expiring') civExpiring++; }
+  let medUnfit=0, medExpired=0, medExpiring=0;
+  for(const w of list){
+    const recs=w.medical||[]; if(recs.length===0) continue;
+    if(recs.some(r=>r.result==='Unfit')){ medUnfit++; continue; }
+    let worst='valid';
+    for(const r of recs){ const s=statusFor(r.expiry); if(RANK[s]>RANK[worst]) worst=s; }
+    if(worst==='expired') medExpired++; else if(worst==='expiring') medExpiring++;
+  }
+  const totalWarnings=list.reduce((n,w)=>n+((w.warnings||[]).length),0);
+  const finalWarn=list.filter(w=>(w.warnings||[]).some(x=>x.level==='Final warning')).length;
+  let vio90=0, vioCrit=0;
+  for(const w of list){ for(const v of (w.violations||[])){ const d=daysUntil(v.date); if(d!==null && -d<=90){ vio90++; if(v.severity==='Critical') vioCrit++; } } }
+
+  const tiles=[
+    {label:'Workforce', num:total, cls:'', sub:`${active} active`},
+    {label:'Civil ID', num:civExpired, cls:civExpired?'danger':(civExpiring?'warn':'ok'), sub:`${civExpiring} expiring soon`},
+    {label:'Induction', num:ind.expired+ind.missing, cls:(ind.expired+ind.missing)?'danger':'ok', sub:`${ind.expiring} expiring soon · ${ind.missing} not inducted`},
+    {label:'Training', num:tr.expired, cls:tr.expired?'danger':'ok', sub:`${tr.expiring} expiring soon`},
+    {label:'Competency', num:comp.expired, cls:comp.expired?'danger':'ok', sub:`${comp.expiring} expiring soon`},
+    {label:'Medical fitness', num:medUnfit+medExpired, cls:(medUnfit+medExpired)?'danger':'ok', sub:`${medUnfit} unfit · ${medExpiring} expiring soon`},
+    {label:'Licenses', num:lic.expired, cls:lic.expired?'danger':'ok', sub:`${lic.expiring} expiring soon`},
+    {label:'Warning letters', num:totalWarnings, cls:finalWarn?'danger':(totalWarnings?'warn':''), sub:`${finalWarn} at final warning`},
+    {label:'Violations (90d)', num:vio90, cls:vioCrit?'danger':(vio90?'warn':''), sub:`${vioCrit} critical`},
   ];
+  document.getElementById('tiles').innerHTML = tiles.map(t=>`
+    <div class="tile"><div class="tile-label">${t.label}</div><div class="tile-num ${t.cls}">${t.num}</div><div class="tile-sub">${t.sub}</div></div>
+  `).join('');
+}
 
-  const PPE_ITEMS = [
-    "Safety helmet",
-    "Safety shoes",
-    "Coverall / hi-vis uniform",
-    "Safety glasses / goggles",
-    "Hand gloves",
-    "Hi-vis vest",
-    "Full body harness & double lanyard (if working at height)"
-  ];
+function renderTradeFilter(){
+  const sel=document.getElementById('tradeFilter');
+  const trades=[...new Set(activeWorkers().map(w=>w.trade).filter(Boolean))].sort();
+  const cur=sel.value;
+  sel.innerHTML = '<option value="all">All trades</option>' + trades.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  if(trades.includes(cur)) sel.value=cur;
+}
 
-  /* ---------------- State ---------------- */
-  const state = {
-    driver:"", scaffolder:"", vehicleNo:"", rig:"", reachTime:"",
-    vehicleChecks: VEHICLE_ITEMS.map(()=>false),
-    tbtDone:false, tbtTopic:"", tbtBy:"", tbtAttendees:"",
-    ppeChecks: PPE_ITEMS.map(()=>false),
-    vehiclePhotos: [],
-    tbtPhotos: [],
-    ppePhotos: []
-  };
+function matches(w){
+  if(w.deleted) return false;
+  const q=filters.q.trim().toLowerCase();
+  if(q && !((w.fullName||'')+' '+(w.civilId||'')).toLowerCase().includes(q)) return false;
+  if(filters.trade!=='all' && w.trade!==filters.trade) return false;
+  if(filters.status!=='all' && (w.status||'active')!==filters.status) return false;
+  return true;
+}
 
-  const todayLabel = document.getElementById('todayLabel');
-  const now = new Date();
-  todayLabel.textContent = now.toLocaleDateString(undefined,{weekday:'long', year:'numeric', month:'long', day:'numeric'});
+function renderTable(){
+  const tbody=document.getElementById('workerRows');
+  if(!auth.currentUser) return;
+  if(activeWorkers().length===0){ tbody.innerHTML='<tr><td colspan="11" class="empty-state">No workers yet — click “Add worker” to get started.</td></tr>'; return; }
+  const list=workers.filter(matches);
+  if(list.length===0){ tbody.innerHTML='<tr><td colspan="11" class="empty-state">No workers match your filters.</td></tr>'; return; }
+  tbody.innerHTML=list.map(w=>{
+    const f=computeFlags(w);
+    return `<tr data-id="${w.id}">
+      <td><div class="wname">${esc(w.fullName)}${w.isSample?'<span class="sample-tag">SAMPLE</span>':''}</div><div class="wsub">${esc(w.designation||w.contractor||'')}</div></td>
+      <td class="mono">${esc(w.civilId||'—')}${f.civilId.status!=='none'?`<div style="margin-top:3px;">${badgeHtml(f.civilId.status,{valid:'Valid',expiring:'Expiring soon',expired:'Expired'})}</div>`:''}</td>
+      <td>${esc(w.trade||'—')}</td>
+      <td>${(w.status||'active')==='inactive'?'<span class="badge muted">Inactive</span>':'<span class="badge ok">Active</span>'}</td>
+      <td>${badgeHtml(f.induction.status)}</td>
+      <td>${badgeHtml(f.training.status)}</td>
+      <td>${badgeHtml(f.competency.status)}</td>
+      <td>${badgeHtml(f.medical.status)}</td>
+      <td>${badgeHtml(f.licenses.status)}</td>
+      <td><span class="pill-count ${f.warnColor}">${f.warningsCount}</span></td>
+      <td><span class="pill-count ${f.vioColor}">${f.violationsCount}</span></td>
+    </tr>`;
+  }).join('');
+}
 
-  /* ---------------- Image compression ---------------- */
-  function compressImage(file, maxW, quality){
-    return new Promise((resolve,reject)=>{
-      const reader = new FileReader();
-      reader.onerror = ()=>reject(new Error('read failed'));
-      reader.onload = ()=>{
-        const img = new Image();
-        img.onerror = ()=>reject(new Error('image decode failed'));
-        img.onload = ()=>{
-          let w = img.width, h = img.height;
-          if(w > maxW){ h = Math.round(h * (maxW/w)); w = maxW; }
-          const canvas = document.createElement('canvas');
-          canvas.width = w; canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img,0,0,w,h);
-          resolve(canvas.toDataURL('image/jpeg', quality));
-        };
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
-    });
+/* ---------------- drawer ---------------- */
+function openDrawer(id){
+  activeWorkerId=id; activeTab='profile'; editingRecordId=null; addFormOpen=false;
+  document.getElementById('drawerOverlay').hidden=false;
+  document.getElementById('drawer').hidden=false;
+  renderDrawer();
+}
+function closeDrawer(){
+  activeWorkerId=null;
+  document.getElementById('drawerOverlay').hidden=true;
+  document.getElementById('drawer').hidden=true;
+}
+function currentWorker(){ return workers.find(w=>w.id===activeWorkerId); }
+
+/* ---------------- trash ---------------- */
+function openTrash(){
+  document.getElementById('trashOverlay').hidden=false;
+  document.getElementById('trashDrawer').hidden=false;
+  renderTrashBody();
+}
+function closeTrash(){
+  document.getElementById('trashOverlay').hidden=true;
+  document.getElementById('trashDrawer').hidden=true;
+}
+function renderTrashBody(){
+  const body=document.getElementById('trashBody');
+  const list=deletedWorkers();
+  body.innerHTML = list.length ? list.map(w=>`
+    <div class="record-card">
+      <div class="record-card-top">
+        <div class="record-card-title">${esc(w.fullName)}</div>
+        <div class="record-card-actions">
+          <button type="button" class="btn btn-sm" data-restore="${w.id}">Restore</button>
+          <button type="button" class="btn btn-danger btn-sm" data-purge="${w.id}" data-armed="0">Delete forever</button>
+        </div>
+      </div>
+      <div class="record-fields">
+        <div class="rf"><span class="rf-k">Civil ID</span><span class="rf-v">${esc(w.civilId||'—')}</span></div>
+        <div class="rf"><span class="rf-k">Trade</span><span class="rf-v">${esc(w.trade||'—')}</span></div>
+        <div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc((w.deletedAt||'').slice(0,10)||'—')}</span></div>
+      </div>
+    </div>`).join('') : `<p class="wsub">Nothing in the trash.</p>`;
+}
+
+function renderDrawer(){
+  const w=currentWorker();
+  if(!w){ closeDrawer(); return; }
+  document.getElementById('drawerName').textContent=w.fullName;
+  document.getElementById('drawerSub').textContent=(w.civilId||'')+(w.trade?' · '+w.trade:'');
+  document.getElementById('drawerTabs').innerHTML=TABS.map(t=>`<button type="button" class="tab-btn ${t.key===activeTab?'active':''}" data-tab="${t.key}">${t.label}</button>`).join('');
+  renderDrawerBody();
+}
+
+function renderDrawerBody(){
+  const w=currentWorker(); if(!w) return;
+  const body=document.getElementById('drawerBody');
+  if(activeTab==='profile'){ body.innerHTML=profileTabHtml(w); wireSignaturePad(); return; }
+  const cfg=RECORD_TYPES[activeTab];
+  body.innerHTML=recordTabHtml(w, activeTab, cfg);
+}
+
+/* ---------------- attachments (Firebase Storage) ---------------- */
+function attachmentPreviewHtml(att, label){
+  if(att && att.url){
+    const isImg = (att.contentType||'').startsWith('image/');
+    return isImg
+      ? `<a href="${att.url}" target="_blank" rel="noopener"><img class="att-thumb" src="${att.url}" alt="${esc(label)}"></a>`
+      : `<a class="att-link" href="${att.url}" target="_blank" rel="noopener">📄 View ${esc(label)}</a>`;
   }
+  return `<span class="att-none">No file attached</span>`;
+}
+function attachmentBlock(worker, key, record, label, targetKey){
+  const att = record ? record.attachment : worker[targetKey];
+  const inner = attachmentPreviewHtml(att, label);
+  const uploadFor = record ? `${key}:${record.id}` : targetKey;
+  const uploadCtl = `<label class="upload-btn">Upload ${esc(label)}<input type="file" hidden data-attach-for="${uploadFor}"></label>`;
+  return `<div class="att-block">${inner}${uploadCtl}</div>`;
+}
+async function uploadToStorage(file){
+  const safeName = (file.name||'file').replace(/[^a-zA-Z0-9._-]/g,'_');
+  const path = 'attachments/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '_' + safeName;
+  const ref = storage.ref().child(path);
+  const snap = await ref.put(file);
+  const url = await snap.ref.getDownloadURL();
+  return {url, path, contentType: file.type || 'application/octet-stream'};
+}
 
-  /* ---------------- Build checklist row markup ---------------- */
-  function checkSVG(){
-    return '<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>';
+function wireSignaturePad(){
+  const canvas=document.getElementById('sigPad'); if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle='#1a1f1c'; ctx.lineWidth=2.2; ctx.lineJoin='round'; ctx.lineCap='round';
+  let drawing=false, hasDrawn=false;
+  function pos(e){
+    const r=canvas.getBoundingClientRect();
+    const scaleX=canvas.width/r.width, scaleY=canvas.height/r.height;
+    return {x:(e.clientX-r.left)*scaleX, y:(e.clientY-r.top)*scaleY};
   }
-
-  function renderChecklist(items, stateArr, groupId){
-    return items.map((label,i)=>`
-      <div class="check-row clickable" data-group="${groupId}" data-idx="${i}">
-        <div class="checkbox ${stateArr[i] ? 'checked':''}">${checkSVG()}</div>
-        <span>${label}</span>
-      </div>
-    `).join('');
-  }
-
-  function photoThumbs(arr, groupId){
-    return arr.map((src,i)=>`
-      <div class="photo-thumb">
-        <img src="${src}" referrerpolicy="no-referrer" loading="lazy">
-        <button class="rm" data-pgroup="${groupId}" data-pidx="${i}">✕</button>
-      </div>
-    `).join('');
-  }
-
-  /* ---------------- Render the form ---------------- */
-  function renderForm(){
-    const el = document.getElementById('formCards');
-    el.innerHTML = `
-      <div class="card">
-        <div class="card-head">
-          <div class="title-group"><div class="num">1</div><h2>Trip &amp; Team Details</h2></div>
-          <div class="status-pill" id="pill-basic">Incomplete</div>
-        </div>
-        <div class="card-body">
-          <div class="row2">
-            <div class="field"><label>Driver name</label><input type="text" id="driverInput" placeholder="Full name"></div>
-            <div class="field"><label>Scaffolder name</label><input type="text" id="scaffolderInput" placeholder="Full name"></div>
-          </div>
-          <div class="row2">
-            <div class="field"><label>Vehicle number</label><input type="text" id="vehicleNoInput" placeholder="e.g. OM-12345"></div>
-            <div class="field"><label>Reaching time to destination</label><input type="time" id="reachTimeInput"></div>
-          </div>
-          <div class="field">
-            <label>Activity</label>
-            <div class="segmented">
-              <button type="button" class="sel-up" id="rigUpBtn">Rig Up</button>
-              <button type="button" class="sel-down" id="rigDownBtn">Rig Down</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-head">
-          <div class="title-group"><div class="num">2</div><h2>Vehicle Checklist</h2></div>
-          <div class="status-pill" id="pill-vehicle">0/${VEHICLE_ITEMS.length}</div>
-        </div>
-        <div class="card-body">
-          <div class="select-all"><span style="font-size:12.5px;color:var(--muted);font-weight:600;">All items must be checked</span>
-            <button type="button" id="vehicleSelectAll">Check all</button>
-          </div>
-          <div id="vehicleChecklist">${renderChecklist(VEHICLE_ITEMS, state.vehicleChecks, 'vehicle')}</div>
-          <div class="photo-grid" id="vehiclePhotoGrid"></div>
-          <label class="add-photo-btn" style="margin-top:10px;">
-            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
-            Add photo
-            <input type="file" accept="image/*" capture="environment" id="vehiclePhotoInput">
-          </label>
-          <div class="photo-hint">Photo of the vehicle before departure (optional but recommended)</div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-head">
-          <div class="title-group"><div class="num">3</div><h2>Tool Box Talk (TBT)</h2></div>
-          <div class="status-pill" id="pill-tbt">Incomplete</div>
-        </div>
-        <div class="card-body">
-          <div class="check-row clickable" data-group="tbtDone" data-idx="0">
-            <div class="checkbox ${state.tbtDone?'checked':''}" id="tbtCheckbox">${checkSVG()}</div>
-            <span>Tool Box Talk conducted before starting work</span>
-          </div>
-          <div class="field" style="margin-top:12px;"><label>Topic discussed</label><input type="text" id="tbtTopicInput" placeholder="e.g. Working at height, scaffold access"></div>
-          <div class="row2">
-            <div class="field"><label>Conducted by</label><input type="text" id="tbtByInput" placeholder="Name / role"></div>
-            <div class="field"><label>No. of attendees</label><input type="number" min="0" id="tbtAttendeesInput" placeholder="0"></div>
-          </div>
-          <div class="photo-grid" id="tbtPhotoGrid"></div>
-          <label class="add-photo-btn" style="margin-top:10px;">
-            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
-            Add photo
-            <input type="file" accept="image/*" capture="environment" id="tbtPhotoInput">
-          </label>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-head">
-          <div class="title-group"><div class="num">4</div><h2>PPE Check</h2></div>
-          <div class="status-pill" id="pill-ppe">0/${PPE_ITEMS.length}</div>
-        </div>
-        <div class="card-body">
-          <div class="select-all"><span style="font-size:12.5px;color:var(--muted);font-weight:600;">All items must be checked</span>
-            <button type="button" id="ppeSelectAll">Check all</button>
-          </div>
-          <div id="ppeChecklist">${renderChecklist(PPE_ITEMS, state.ppeChecks, 'ppe')}</div>
-          <div class="photo-grid" id="ppePhotoGrid"></div>
-          <label class="add-photo-btn" style="margin-top:10px;">
-            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
-            Add photo
-            <input type="file" accept="image/*" capture="environment" id="ppePhotoInput">
-          </label>
-          <div class="photo-hint">Photos of the crew wearing PPE — add one per person if needed</div>
-        </div>
-      </div>
-    `;
-
-    // wire basic fields
-    document.getElementById('driverInput').value = state.driver;
-    document.getElementById('scaffolderInput').value = state.scaffolder;
-    document.getElementById('vehicleNoInput').value = state.vehicleNo;
-    document.getElementById('reachTimeInput').value = state.reachTime;
-
-    document.getElementById('driverInput').addEventListener('input', e=>{state.driver=e.target.value; refresh();});
-    document.getElementById('scaffolderInput').addEventListener('input', e=>{state.scaffolder=e.target.value; refresh();});
-    document.getElementById('vehicleNoInput').addEventListener('input', e=>{state.vehicleNo=e.target.value; refresh();});
-    document.getElementById('reachTimeInput').addEventListener('input', e=>{state.reachTime=e.target.value; refresh();});
-
-    document.getElementById('rigUpBtn').classList.toggle('active', state.rig==='up');
-    document.getElementById('rigDownBtn').classList.toggle('active', state.rig==='down');
-    document.getElementById('rigUpBtn').addEventListener('click', ()=>{state.rig='up'; refresh();});
-    document.getElementById('rigDownBtn').addEventListener('click', ()=>{state.rig='down'; refresh();});
-
-    // checklist clicks
-    el.querySelectorAll('.check-row.clickable').forEach(row=>{
-      row.addEventListener('click', ()=>{
-        const g = row.dataset.group, i = parseInt(row.dataset.idx);
-        if(g==='vehicle') state.vehicleChecks[i] = !state.vehicleChecks[i];
-        if(g==='ppe') state.ppeChecks[i] = !state.ppeChecks[i];
-        if(g==='tbtDone') state.tbtDone = !state.tbtDone;
-        refresh();
-      });
-    });
-
-    document.getElementById('vehicleSelectAll').addEventListener('click', ()=>{
-      state.vehicleChecks = state.vehicleChecks.map(()=>true); refresh();
-    });
-    document.getElementById('ppeSelectAll').addEventListener('click', ()=>{
-      state.ppeChecks = state.ppeChecks.map(()=>true); refresh();
-    });
-
-    document.getElementById('tbtTopicInput').value = state.tbtTopic;
-    document.getElementById('tbtByInput').value = state.tbtBy;
-    document.getElementById('tbtAttendeesInput').value = state.tbtAttendees;
-    document.getElementById('tbtTopicInput').addEventListener('input', e=>{state.tbtTopic=e.target.value; refresh();});
-    document.getElementById('tbtByInput').addEventListener('input', e=>{state.tbtBy=e.target.value; refresh();});
-    document.getElementById('tbtAttendeesInput').addEventListener('input', e=>{state.tbtAttendees=e.target.value; refresh();});
-
-    // photo inputs
-    wirePhotoInput('vehiclePhotoInput','vehiclePhotos', 800, 0.6);
-    wirePhotoInput('tbtPhotoInput','tbtPhotos', 800, 0.6);
-    wirePhotoInput('ppePhotoInput','ppePhotos', 800, 0.6);
-
-    renderPhotoGrids();
-    updateStatusPills();
-  }
-
-  function wirePhotoInput(inputId, stateKey, maxW, quality){
-    document.getElementById(inputId).addEventListener('change', async (e)=>{
-      const file = e.target.files[0];
-      if(!file) return;
+  function start(e){ drawing=true; hasDrawn=true; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); try{ canvas.setPointerCapture(e.pointerId); }catch(err){} }
+  function move(e){ if(!drawing) return; const p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); }
+  function end(){ drawing=false; }
+  canvas.addEventListener('pointerdown', start);
+  canvas.addEventListener('pointermove', move);
+  canvas.addEventListener('pointerup', end);
+  canvas.addEventListener('pointerleave', end);
+  const clearBtn=document.getElementById('sigClearBtn');
+  const saveBtn=document.getElementById('sigSaveBtn');
+  clearBtn.addEventListener('click', ()=>{ ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height); hasDrawn=false; });
+  saveBtn.addEventListener('click', ()=>{
+    if(!hasDrawn){ toast('Draw a signature first'); return; }
+    canvas.toBlob(async blob=>{
+      if(!blob) return;
       try{
-        const dataUrl = await compressImage(file, maxW, quality);
-        state[stateKey].push(dataUrl);
-        renderPhotoGrids();
-        updateStatusPills();
-      }catch(err){
-        alert('Could not process that photo — please try another.');
-        console.error(err);
-      }
-      e.target.value = '';
+        const file=new File([blob], 'signature.png', {type:'image/png'});
+        const att=await uploadToStorage(file);
+        const w=currentWorker(); if(!w) return;
+        await updateWorker(w.id, {signature:att});
+        toast('Signature saved');
+      }catch(e){ console.error(e); toast('Could not save signature'); }
+    }, 'image/png');
+  });
+}
+
+const BLOOD_GROUPS=['A+','A-','B+','B-','AB+','AB-','O+','O-','Unknown'];
+function profileTabHtml(w){
+  const photo = attachmentBlock(w,null,null,'photo','photo');
+  const civilScan = attachmentBlock(w,null,null,'Civil ID scan','civilIdScan');
+  const signaturePreview = attachmentPreviewHtml(w.signature, 'signature');
+  const gcc=parseFloat(w.experienceGCCYears)||0, other=parseFloat(w.experienceOtherYears)||0;
+  const total=(gcc+other);
+  return `
+  <form id="profileForm">
+    <div class="subhead">Personal details</div>
+    <div class="form-grid">
+      <label>Full name *<input data-field="fullName" required value="${esc(w.fullName||'')}"></label>
+      <label>Civil ID *<input class="mono" data-field="civilId" required value="${esc(w.civilId||'')}"></label>
+      <label>Civil ID expiry<input type="date" data-field="civilIdExpiry" value="${esc(w.civilIdExpiry||'')}"></label>
+      <label>Nationality<input data-field="nationality" value="${esc(w.nationality||'')}"></label>
+      <label>Date of birth<input type="date" data-field="dateOfBirth" value="${esc(w.dateOfBirth||'')}"></label>
+      <label>Blood group<select data-field="bloodGroup"><option value="">Select…</option>${BLOOD_GROUPS.map(b=>`<option value="${b}" ${w.bloodGroup===b?'selected':''}>${b}</option>`).join('')}</select></label>
+      <label>Mobile number<input type="tel" data-field="mobileNumber" value="${esc(w.mobileNumber||'')}" placeholder="e.g. +971 50 123 4567"></label>
+    </div>
+
+    <div class="subhead">Employment</div>
+    <div class="form-grid">
+      <label>Designation<input data-field="designation" value="${esc(w.designation||'')}" placeholder="e.g. Foreman, Supervisor"></label>
+      <label>Trade / occupation *<input data-field="trade" required value="${esc(w.trade||'')}"></label>
+      <label>Subcontractor / company<input data-field="contractor" value="${esc(w.contractor||'')}"></label>
+      <label>Date of joining<input type="date" data-field="dateOfJoining" value="${esc(w.dateOfJoining||'')}"></label>
+      <label>Employment status<select data-field="status"><option value="active" ${(w.status||'active')==='active'?'selected':''}>Active</option><option value="inactive" ${w.status==='inactive'?'selected':''}>Inactive</option></select></label>
+    </div>
+
+    <div class="subhead">Work experience</div>
+    <div class="form-grid">
+      <label>Experience in GCC (years)<input type="number" min="0" step="0.5" data-field="experienceGCCYears" value="${esc(w.experienceGCCYears||'')}"></label>
+      <label>Experience outside GCC (years)<input type="number" min="0" step="0.5" data-field="experienceOtherYears" value="${esc(w.experienceOtherYears||'')}"></label>
+    </div>
+    <div class="exp-total">Total experience: ${total? total+' years' : '—'}</div>
+    <label>Work history / prior experience notes<textarea data-field="priorExperienceNotes" placeholder="e.g. Qatar 2019–2023, steel fixer, ABC Contracting; India 2015–2019, apprentice">${esc(w.priorExperienceNotes||'')}</textarea></label>
+
+    <div class="subhead">Emergency contact</div>
+    <div class="form-grid">
+      <label>Contact name<input data-field="emergencyContactName" value="${esc(w.emergencyContactName||'')}"></label>
+      <label>Relationship<input data-field="emergencyContactRelation" value="${esc(w.emergencyContactRelation||'')}" placeholder="e.g. Spouse, Brother"></label>
+      <label>Contact phone<input type="tel" data-field="emergencyContactPhone" value="${esc(w.emergencyContactPhone||'')}"></label>
+    </div>
+
+    <div class="form-actions" style="margin-top:16px;"><button type="submit" class="btn btn-primary">Save changes</button></div>
+  </form>
+  <div class="section-head" style="margin-top:20px;"><h3>Photo</h3></div>
+  ${photo}
+  <div class="section-head" style="margin-top:16px;"><h3>Civil ID scan</h3></div>
+  ${civilScan}
+  <div class="section-head" style="margin-top:16px;"><h3>Signature on file</h3></div>
+  <div class="att-block">${signaturePreview}</div>
+  <div class="sig-pad-wrap">
+    <canvas id="sigPad" class="sig-canvas" width="420" height="140"></canvas>
+    <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+      <button type="button" class="btn btn-sm" id="sigClearBtn">Clear pad</button>
+      <button type="button" class="btn btn-primary btn-sm" id="sigSaveBtn">Save drawn signature</button>
+      <label class="upload-btn">Upload signature image<input type="file" hidden data-attach-for="signature"></label>
+    </div>
+  </div>
+  <div class="danger-zone">
+    <p>Removing a worker moves them to Deleted workers, where their full record can be restored at any time — or permanently removed for good.</p>
+    <button type="button" class="btn btn-danger btn-sm" id="deleteWorkerBtn" data-armed="0">Delete worker</button>
+  </div>`;
+}
+
+function recordTabHtml(w,key,cfg){
+  const recs=(w[key]||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const cards = recs.length ? recs.map(r=>{
+    const titleField=cfg.fields[0].key;
+    const resultBadge = r.result==='Unfit' ? `<span class="badge danger">Unfit</span>` : (r.result==='Fit with restrictions' ? `<span class="badge warn">Fit with restrictions</span>` : (r.result==='Fit' ? `<span class="badge ok">Fit</span>` : ''));
+    const expiryBadge = cfg.hasExpiry ? (r.expiry? badgeHtml(statusFor(r.expiry)) : `<span class="badge muted">No expiry set</span>`) : (r.level==='Final warning' ? `<span class="badge danger">Final warning</span>` : (r.severity? `<span class="badge ${r.severity==='Critical'?'danger':r.severity==='Major'?'warn':'muted'}">${esc(r.severity)}</span>` : ''));
+    const fieldsHtml = cfg.fields.slice(1).map(f=> r[f.key] ? `<div class="rf"><span class="rf-k">${esc(f.label)}</span><span class="rf-v">${esc(r[f.key])}</span></div>` : '').join('');
+    const attach = cfg.hasAttachment ? attachmentBlock(w,key,r,cfg.attachLabel) : '';
+    return `<div class="record-card">
+      <div class="record-card-top">
+        <div class="record-card-title">${esc(r[titleField]||'')} ${key==='medical'?resultBadge:''} ${expiryBadge}</div>
+        <div class="record-card-actions">
+          <button type="button" class="icon-btn" data-edit="${key}:${r.id}" aria-label="Edit">✎</button>
+          <button type="button" class="icon-btn danger" data-del="${key}:${r.id}" data-armed="0" aria-label="Delete">🗑</button>
+        </div>
+      </div>
+      <div class="record-fields">${fieldsHtml}</div>
+      ${attach}
+    </div>`;
+  }).join('') : `<p class="wsub">No ${cfg.title.toLowerCase()} logged yet.</p>`;
+
+  const editing = editingRecordId ? recs.find(r=>r.id===editingRecordId) : null;
+  const formFields = cfg.fields.map(f=>{
+    const val = editing ? (editing[f.key]||'') : '';
+    if(f.type==='textarea') return `<label>${esc(f.label)}${f.required?' *':''}<textarea data-field="${f.key}" ${f.required?'required':''}>${esc(val)}</textarea></label>`;
+    if(f.type==='select') return `<label>${esc(f.label)}${f.required?' *':''}<select data-field="${f.key}" ${f.required?'required':''}><option value="">Select…</option>${f.options.map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
+    return `<label>${esc(f.label)}${f.required?' *':''}<input type="${f.type}" data-field="${f.key}" value="${esc(val)}" ${f.required?'required':''} ${f.placeholder?`placeholder="${esc(f.placeholder)}"`:''}></label>`;
+  }).join('');
+
+  return `
+  <div class="section-head"><h3>${esc(cfg.title)}</h3><button type="button" class="btn btn-sm" id="toggleRecordForm">${addFormOpen? 'Cancel' : esc(cfg.addLabel)}</button></div>
+  <form id="recordForm" data-editing="${editingRecordId||''}" ${addFormOpen ? '' : 'hidden'} style="margin-bottom:16px;">
+    <div class="form-grid">${formFields}</div>
+    <div class="form-actions"><button type="submit" class="btn btn-primary btn-sm">${editingRecordId? 'Save changes':'Save record'}</button></div>
+  </form>
+  <div id="recordList">${cards}</div>`;
+}
+
+/* ---------------- writes ---------------- */
+async function updateWorker(id, data){
+  try{ await db.collection('workers').doc(id).update(data); toast('Saved'); }
+  catch(e){ console.error(e); toast('Could not save — '+(e.code||'error')); }
+}
+async function updateWorkerArray(worker,key,arr){
+  await updateWorker(worker.id, {[key]:arr});
+}
+
+/* ---------------- PDF profile export ---------------- */
+async function fetchImageDataUrl(url){
+  if(!url) return null;
+  try{
+    const res=await fetch(url);
+    if(!res.ok) return null;
+    const blob=await res.blob();
+    return await new Promise((resolve,reject)=>{
+      const r=new FileReader();
+      r.onload=()=>resolve(r.result);
+      r.onerror=reject;
+      r.readAsDataURL(blob);
     });
-  }
-
-  function renderPhotoGrids(){
-    document.getElementById('vehiclePhotoGrid').innerHTML = photoThumbs(state.vehiclePhotos,'vehiclePhotos');
-    document.getElementById('tbtPhotoGrid').innerHTML = photoThumbs(state.tbtPhotos,'tbtPhotos');
-    document.getElementById('ppePhotoGrid').innerHTML = photoThumbs(state.ppePhotos,'ppePhotos');
-    document.querySelectorAll('.rm').forEach(btn=>{
-      btn.addEventListener('click',(e)=>{
-        e.stopPropagation();
-        const g = btn.dataset.pgroup, i = parseInt(btn.dataset.pidx);
-        state[g].splice(i,1);
-        renderPhotoGrids();
-        updateStatusPills();
-      });
-    });
-  }
-
-  /* ---------------- Validation / progress ---------------- */
-  function sectionsComplete(){
-    const basicOk = state.driver.trim() && state.scaffolder.trim() && state.vehicleNo.trim() && state.rig && state.reachTime;
-    const vehicleOk = state.vehicleChecks.every(Boolean);
-    const tbtOk = state.tbtDone && state.tbtTopic.trim() && state.tbtBy.trim() && state.tbtAttendees !== "";
-    const ppeOk = state.ppeChecks.every(Boolean);
-    return {basicOk, vehicleOk, tbtOk, ppeOk, allOk: basicOk && vehicleOk && tbtOk && ppeOk};
-  }
-
-  function updateStatusPills(){
-    const {basicOk, vehicleOk, tbtOk, ppeOk, allOk} = sectionsComplete();
-    setPill('pill-basic', basicOk, basicOk?'Complete':'Incomplete');
-    setPill('pill-vehicle', vehicleOk, `${state.vehicleChecks.filter(Boolean).length}/${VEHICLE_ITEMS.length}`);
-    setPill('pill-tbt', tbtOk, tbtOk?'Complete':'Incomplete');
-    setPill('pill-ppe', ppeOk, `${state.ppeChecks.filter(Boolean).length}/${PPE_ITEMS.length}`);
-
-    // re-render checkbox visuals without full re-render (cheap full render is fine here too)
-    document.querySelectorAll('#vehicleChecklist .checkbox').forEach((cb,i)=>cb.classList.toggle('checked', state.vehicleChecks[i]));
-    document.querySelectorAll('#ppeChecklist .checkbox').forEach((cb,i)=>cb.classList.toggle('checked', state.ppeChecks[i]));
-    const tbtBox = document.getElementById('tbtCheckbox');
-    if(tbtBox) tbtBox.classList.toggle('checked', state.tbtDone);
-
-    const doneCount = [basicOk, vehicleOk, tbtOk, ppeOk].filter(Boolean).length;
-    const pct = Math.round(doneCount/4*100);
-    document.getElementById('progressFill').style.width = pct+'%';
-    document.getElementById('progressLabel').textContent = pct + '% complete';
-
-    const submitBtn = document.getElementById('submitBtn');
-    submitBtn.disabled = !allOk;
-    submitBtn.textContent = allOk ? 'Submit checklist' : 'Complete all sections to submit';
-  }
-
-  function setPill(id, ok, text){
-    const p = document.getElementById(id);
-    if(!p) return;
-    p.textContent = text;
-    p.classList.toggle('done', !!ok);
-  }
-
-  function refresh(){ updateStatusPills(); }
-
-  /* ---------------- Submit ---------------- */
-  document.getElementById('submitBtn').addEventListener('click', async ()=>{
-    const {allOk} = sectionsComplete();
-    if(!allOk) return;
-    const btn = document.getElementById('submitBtn');
-    btn.disabled = true; btn.textContent = 'Submitting…';
-
-    const record = {
-      id: Date.now() + '-' + Math.random().toString(36).slice(2,8),
-      submittedAt: new Date().toISOString(),
-      driver: state.driver.trim(),
-      scaffolder: state.scaffolder.trim(),
-      vehicleNo: state.vehicleNo.trim(),
-      rig: state.rig,
-      reachTime: state.reachTime,
-      vehicleChecklist: VEHICLE_ITEMS.map((label,i)=>({label, checked: state.vehicleChecks[i]})),
-      tbt: {done: state.tbtDone, topic: state.tbtTopic.trim(), by: state.tbtBy.trim(), attendees: state.tbtAttendees},
-      ppeChecklist: PPE_ITEMS.map((label,i)=>({label, checked: state.ppeChecks[i]})),
-      photos: {vehicle: state.vehiclePhotos, tbt: state.tbtPhotos, ppe: state.ppePhotos}
-    };
-
-    try{
-      const res = await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: {'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify(record)
-      });
-      const json = await res.json();
-      if(!json || !json.ok) throw new Error((json && json.error) || 'save failed');
-      document.getElementById('successSub').textContent =
-        `Logged for ${record.driver} — vehicle ${record.vehicleNo}, ${record.rig==='up'?'Rig Up':'Rig Down'}.`;
-      document.getElementById('submitView').style.display = 'none';
-      document.getElementById('successView').style.display = 'block';
-    }catch(err){
-      console.error(err);
-      alert('Could not save your checklist — check your connection and try again.');
-      btn.disabled = false; btn.textContent = 'Submit checklist';
+  }catch(e){ return null; }
+}
+function imgFormat(dataUrl){
+  if(dataUrl.startsWith('data:image/png')) return 'PNG';
+  if(dataUrl.startsWith('data:image/jpeg')||dataUrl.startsWith('data:image/jpg')) return 'JPEG';
+  return 'PNG';
+}
+async function buildProfilePdf(w){
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const marginX=40, pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
+  let y=54;
+  function ensure(h){ if(y+h>pageH-36){ doc.addPage(); y=48; } }
+  function h2(text){ ensure(26); doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(31,111,120); doc.text(text.toUpperCase(), marginX, y); doc.setTextColor(20,20,20); y+=6; doc.setDrawColor(210); doc.line(marginX,y,pageW-marginX,y); y+=14; }
+  function kv(label,value){ if(value===undefined||value===null||value==='') value='—'; ensure(15); doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(100,105,98); doc.text(String(label), marginX, y); doc.setTextColor(20,20,20); doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.text(String(value), marginX+150, y); y+=14; }
+  function para(text){ if(!text) return; ensure(14); doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(20,20,20); const lines=doc.splitTextToSize(text, pageW-2*marginX); lines.forEach(l=>{ ensure(11); doc.text(l, marginX, y); y+=11; }); y+=4; }
+  function section(title,key,cfg){
+    h2(title);
+    const recs=(w[key]||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    if(!recs.length){ ensure(13); doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(130,130,130); doc.text('None logged', marginX, y); doc.setTextColor(20,20,20); y+=16; return; }
+    for(const r of recs){
+      ensure(14);
+      const titleVal=r[cfg.fields[0].key]||'';
+      let tag='';
+      if(cfg.hasExpiry){ tag = r.expiry? `  ·  valid until ${r.expiry} (${statusFor(r.expiry)})` : '  ·  no expiry set'; }
+      else if(r.level) tag=`  ·  ${r.level}`;
+      else if(r.severity) tag=`  ·  ${r.severity}`;
+      doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(20,20,20);
+      doc.text(`•  ${titleVal}${tag}`, marginX, y); y+=12;
+      const bits=cfg.fields.slice(1).filter(f=>f.key!=='expiry' && r[f.key]).map(f=>`${f.label}: ${r[f.key]}`).join('    ');
+      if(bits){ doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(100,105,98); const lines=doc.splitTextToSize(bits, pageW-2*marginX-12); lines.forEach(l=>{ ensure(10); doc.text(l, marginX+12, y); y+=10; }); doc.setTextColor(20,20,20); }
+      y+=4;
     }
-  });
+    y+=2;
+  }
 
-  document.getElementById('newChecklistBtn').addEventListener('click', ()=>{
-    Object.assign(state, {
-      driver:"", scaffolder:"", vehicleNo:"", rig:"", reachTime:"",
-      vehicleChecks: VEHICLE_ITEMS.map(()=>false),
-      tbtDone:false, tbtTopic:"", tbtBy:"", tbtAttendees:"",
-      ppeChecks: PPE_ITEMS.map(()=>false),
-      vehiclePhotos: [], tbtPhotos: [], ppePhotos: []
+  if(w.photo && w.photo.url){
+    const photoUrl=await fetchImageDataUrl(w.photo.url);
+    if(photoUrl){ try{ doc.addImage(photoUrl, imgFormat(photoUrl), pageW-marginX-64, 40, 64, 64); }catch(e){} }
+  }
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(20,20,20);
+  doc.text(w.fullName||'Worker profile', marginX, y); y+=18;
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(100,105,98);
+  doc.text(`Civil ID ${w.civilId||'—'}   ·   ${w.designation? w.designation+' — ':''}${w.trade||'—'}   ·   ${(w.status||'active')==='inactive'?'Inactive':'Active'}`, marginX, y);
+  doc.setTextColor(20,20,20); y+=22;
+
+  h2('Personal details');
+  kv('Full name', w.fullName); kv('Civil ID', w.civilId); kv('Civil ID expiry', w.civilIdExpiry);
+  kv('Nationality', w.nationality); kv('Date of birth', w.dateOfBirth); kv('Blood group', w.bloodGroup);
+  kv('Mobile number', w.mobileNumber);
+
+  h2('Employment');
+  kv('Designation', w.designation); kv('Trade / occupation', w.trade); kv('Subcontractor / company', w.contractor);
+  kv('Date of joining', w.dateOfJoining); kv('Employment status', (w.status||'active')==='inactive'?'Inactive':'Active');
+
+  h2('Work experience');
+  const gcc=parseFloat(w.experienceGCCYears)||0, other=parseFloat(w.experienceOtherYears)||0;
+  kv('Experience in GCC', w.experienceGCCYears? w.experienceGCCYears+' years':'—');
+  kv('Experience outside GCC', w.experienceOtherYears? w.experienceOtherYears+' years':'—');
+  kv('Total experience', (gcc+other)? (gcc+other)+' years':'—');
+  para(w.priorExperienceNotes);
+
+  h2('Emergency contact');
+  kv('Contact name', w.emergencyContactName); kv('Relationship', w.emergencyContactRelation); kv('Contact phone', w.emergencyContactPhone);
+
+  section('Induction records','inductions',RECORD_TYPES.inductions);
+  section('Training records','trainings',RECORD_TYPES.trainings);
+  section('Competency assessments','competency',RECORD_TYPES.competency);
+  section('Medical fitness & screening','medical',RECORD_TYPES.medical);
+  section('Licenses & permits','licenses',RECORD_TYPES.licenses);
+  section('Warning letters','warnings',RECORD_TYPES.warnings);
+  section('Violations','violations',RECORD_TYPES.violations);
+
+  if(w.signature && w.signature.url){
+    h2('Signature on file');
+    const sigUrl=await fetchImageDataUrl(w.signature.url);
+    if(sigUrl){ ensure(66); try{ doc.addImage(sigUrl, imgFormat(sigUrl), marginX, y, 150, 55); y+=62; }catch(e){ para('Signature on file (view it in the register).'); } }
+    else para('Signature on file (view it in the register).');
+  }
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(150,150,150);
+  doc.text(`Generated ${new Date().toISOString().slice(0,10)} from Workforce HSE Register`, marginX, pageH-20);
+  return doc;
+}
+
+async function downloadProfile(){
+  const w=currentWorker(); if(!w) return;
+  if(!(window.jspdf && window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
+  try{
+    const doc=await buildProfilePdf(w);
+    const filename=(w.fullName||'worker').trim().replace(/[^a-z0-9]+/gi,'_').replace(/^_+|_+$/g,'')+'_profile.pdf';
+    doc.save(filename);
+    toast('Profile downloaded');
+  }catch(e){ console.error(e); toast('Could not generate the PDF'); }
+}
+
+/* ---------------- events ---------------- */
+document.addEventListener('DOMContentLoaded', ()=>{
+
+  document.getElementById('loginForm').addEventListener('submit', e=>{
+    e.preventDefault();
+    const email=document.getElementById('loginEmail').value.trim();
+    const pass=document.getElementById('loginPassword').value;
+    const err=document.getElementById('authError');
+    err.hidden=true;
+    auth.signInWithEmailAndPassword(email, pass).catch(e=>{
+      err.textContent = 'Sign-in failed — check your email and password.';
+      err.hidden=false;
     });
-    document.getElementById('successView').style.display = 'none';
-    document.getElementById('submitView').style.display = 'block';
-    renderForm();
   });
+  document.getElementById('signOutBtn').addEventListener('click', ()=>auth.signOut());
 
-  /* ---------------- Tabs ---------------- */
-  const tabSubmitBtn = document.getElementById('tabSubmitBtn');
-  const tabDashBtn = document.getElementById('tabDashBtn');
-  const submitView = document.getElementById('submitView');
-  const dashView = document.getElementById('dashView');
-  const successView = document.getElementById('successView');
-
-  tabSubmitBtn.addEventListener('click', ()=>{
-    tabSubmitBtn.classList.add('active'); tabDashBtn.classList.remove('active');
-    dashView.style.display='none'; successView.style.display='none'; submitView.style.display='block';
+  document.getElementById('addWorkerBtn').addEventListener('click', ()=>{
+    document.getElementById('addWorkerPanel').hidden=false;
   });
-  tabDashBtn.addEventListener('click', ()=>{
-    tabDashBtn.classList.add('active'); tabSubmitBtn.classList.remove('active');
-    submitView.style.display='none'; successView.style.display='none'; dashView.style.display='block';
-    loadDashboard();
+  document.getElementById('cancelAddWorker').addEventListener('click', ()=>{
+    document.getElementById('addWorkerPanel').hidden=true;
+    document.getElementById('addWorkerForm').reset();
   });
-
-  /* ---------------- Dashboard ---------------- */
-  let allRecords = [];
-
-  async function loadDashboard(){
-    const listEl = document.getElementById('recordsList');
-    listEl.innerHTML = '<div class="loading-row">Loading submissions…</div>';
+  document.getElementById('addWorkerForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const data={status:'active', inductions:[],trainings:[],competency:[],medical:[],licenses:[],warnings:[],violations:[], createdAt:new Date().toISOString()};
+    e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
     try{
-      const res = await fetch(APPS_SCRIPT_URL, {method:'GET'});
-      const json = await res.json();
-      if(!json || !json.ok) throw new Error((json && json.error) || 'load failed');
-      const records = (json.rows || []).map(rowToRecord);
-      records.sort((a,b)=> new Date(b.submittedAt) - new Date(a.submittedAt));
-      allRecords = records;
-      renderDashboard();
-    }catch(err){
-      console.error(err);
-      listEl.innerHTML = '<div class="loading-row">Could not load submissions. Tap Refresh to try again.</div>';
-    }
-  }
+      await db.collection('workers').add(data);
+      toast('Worker added');
+      e.target.reset();
+      document.getElementById('addWorkerPanel').hidden=true;
+    }catch(err){ console.error(err); toast('Could not add worker'); }
+  });
 
-  function splitUrls(s){
-    return String(s||'').split(',').map(x=>x.trim()).filter(Boolean);
-  }
-
-  function safeParse(s, fallback){
-    try{ return JSON.parse(s); }catch(e){ return fallback; }
-  }
-
-  function rowToRecord(row){
-    return {
-      id: row['ID'],
-      submittedAt: row['Submitted At'],
-      driver: row['Driver'],
-      scaffolder: row['Scaffolder'],
-      vehicleNo: row['Vehicle No'],
-      rig: row['Rig'],
-      reachTime: row['Reaching Time'],
-      vehicleChecklist: safeParse(row['Vehicle Checklist'], []),
-      tbt: { done: row['TBT Done'], topic: row['TBT Topic'], by: row['TBT By'], attendees: row['TBT Attendees'] },
-      ppeChecklist: safeParse(row['PPE Checklist'], []),
-      photos: {
-        vehicle: splitUrls(row['Vehicle Photos']),
-        tbt: splitUrls(row['TBT Photos']),
-        ppe: splitUrls(row['PPE Photos'])
-      }
-    };
-  }
-
-  function renderDashboard(){
-    const search = document.getElementById('searchInput').value.trim().toLowerCase();
-    const filtered = allRecords.filter(r=>{
-      if(!search) return true;
-      return (r.driver||'').toLowerCase().includes(search) ||
-             (r.scaffolder||'').toLowerCase().includes(search) ||
-             (r.vehicleNo||'').toLowerCase().includes(search);
-    });
-
-    // stats
-    const today = new Date().toDateString();
-    const todayCount = allRecords.filter(r=> new Date(r.submittedAt).toDateString()===today).length;
-    const upCount = allRecords.filter(r=>r.rig==='up').length;
-    const downCount = allRecords.filter(r=>r.rig==='down').length;
-    document.getElementById('dashStats').innerHTML = `
-      <div class="stat-card"><div class="n">${allRecords.length}</div><div class="l">Total</div></div>
-      <div class="stat-card"><div class="n">${todayCount}</div><div class="l">Today</div></div>
-      <div class="stat-card"><div class="n">${upCount}</div><div class="l">Rig Up</div></div>
-      <div class="stat-card"><div class="n">${downCount}</div><div class="l">Rig Down</div></div>
-    `;
-
-    const listEl = document.getElementById('recordsList');
-    if(filtered.length===0){
-      listEl.innerHTML = `<div class="empty-state">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-        <div>No submissions yet — checklists submitted from the field will show up here.</div>
-      </div>`;
+  document.getElementById('clearSampleBtn').addEventListener('click', async function(){
+    if(this.dataset.armed!=='1'){
+      this.dataset.armed='1'; const orig=this.textContent; this.textContent='Confirm — delete sample data?';
+      setTimeout(()=>{ this.dataset.armed='0'; this.textContent=orig; }, 4000);
       return;
     }
+    this.dataset.armed='0';
+    const samples=activeWorkers().filter(w=>w.isSample);
+    for(const s of samples){ try{ await db.collection('workers').doc(s.id).delete(); }catch(e){} }
+    toast('Sample data removed');
+  });
 
-    listEl.innerHTML = filtered.map(r=>{
-      const dt = new Date(r.submittedAt);
-      const dateStr = dt.toLocaleDateString(undefined,{month:'short', day:'numeric'}) + ' · ' + dt.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-      const vehOk = r.vehicleChecklist.every(x=>x.checked);
-      const ppeOk = r.ppeChecklist.every(x=>x.checked);
-      const allGood = vehOk && ppeOk && r.tbt.done;
-      return `
-      <div class="record-card" data-id="${r.id}">
-        <div class="record-summary">
-          <div class="left">
-            <div class="name">${escapeHtml(r.driver)} · ${escapeHtml(r.vehicleNo)}</div>
-            <div class="meta">${dateStr} — Scaffolder: ${escapeHtml(r.scaffolder)}${allGood ? '' : ' · ⚠ incomplete item(s)'}</div>
-          </div>
-          <div class="right">
-            <div class="rig-badge ${r.rig==='up'?'up':'down'}">${r.rig==='up'?'Rig Up':'Rig Down'}</div>
-            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-          </div>
-        </div>
-        <div class="record-detail">
-          <div class="detail-grid">
-            <div><span>Reaching time</span>${r.reachTime || '—'}</div>
-            <div><span>Vehicle no.</span>${escapeHtml(r.vehicleNo)}</div>
-            <div><span>TBT topic</span>${escapeHtml(r.tbt.topic || '—')}</div>
-            <div><span>TBT by / attendees</span>${escapeHtml(r.tbt.by || '—')} · ${escapeHtml(String(r.tbt.attendees ?? '—'))}</div>
-          </div>
+  document.getElementById('searchInput').addEventListener('input', e=>{ filters.q=e.target.value; renderTable(); });
+  document.getElementById('tradeFilter').addEventListener('change', e=>{ filters.trade=e.target.value; renderTable(); });
+  document.getElementById('statusFilter').addEventListener('change', e=>{ filters.status=e.target.value; renderTable(); });
 
-          <div class="detail-sec">
-            <h4>Vehicle checklist</h4>
-            ${r.vehicleChecklist.map(x=>miniCheck(x)).join('')}
-          </div>
-          <div class="detail-sec">
-            <h4>PPE checklist</h4>
-            ${r.ppeChecklist.map(x=>miniCheck(x)).join('')}
-          </div>
-          ${photosSection('Vehicle photos', r.photos.vehicle)}
-          ${photosSection('Toolbox talk photos', r.photos.tbt)}
-          ${photosSection('PPE photos', r.photos.ppe)}
+  document.getElementById('workerRows').addEventListener('click', e=>{
+    const tr=e.target.closest('tr[data-id]'); if(tr) openDrawer(tr.dataset.id);
+  });
+  document.getElementById('drawerClose').addEventListener('click', closeDrawer);
+  document.getElementById('downloadPdfBtn').addEventListener('click', downloadProfile);
+  document.getElementById('drawerOverlay').addEventListener('click', closeDrawer);
 
-          <button class="del-btn" data-del="${r.id}">Delete this submission</button>
-        </div>
-      </div>`;
-    }).join('');
+  document.getElementById('trashBtn').addEventListener('click', openTrash);
+  document.getElementById('trashClose').addEventListener('click', closeTrash);
+  document.getElementById('trashOverlay').addEventListener('click', closeTrash);
+  document.getElementById('trashBody').addEventListener('click', async e=>{
+    const restoreBtn=e.target.closest('[data-restore]');
+    if(restoreBtn){
+      await updateWorker(restoreBtn.dataset.restore, {deleted:false, deletedAt:null});
+      toast('Worker restored');
+      return;
+    }
+    const purgeBtn=e.target.closest('[data-purge]');
+    if(purgeBtn){
+      if(purgeBtn.dataset.armed!=='1'){
+        purgeBtn.dataset.armed='1'; purgeBtn.textContent='Confirm — cannot be undone';
+        setTimeout(()=>{ if(purgeBtn.dataset.armed==='1'){ purgeBtn.dataset.armed='0'; purgeBtn.textContent='Delete forever'; } },4000);
+        return;
+      }
+      try{ await db.collection('workers').doc(purgeBtn.dataset.purge).delete(); toast('Worker permanently removed'); }
+      catch(err){ console.error(err); toast('Could not remove worker'); }
+      return;
+    }
+  });
 
-    listEl.querySelectorAll('.record-summary').forEach(s=>{
-      s.addEventListener('click', ()=> s.closest('.record-card').classList.toggle('open'));
-    });
-    listEl.querySelectorAll('.detail-photos img').forEach(img=>{
-      img.addEventListener('click',(e)=>{
-        e.stopPropagation();
-        document.getElementById('lightboxImg').src = img.src;
-        document.getElementById('lightbox').classList.add('show');
-      });
-    });
-    listEl.querySelectorAll('.del-btn').forEach(btn=>{
-      btn.addEventListener('click', async (e)=>{
-        e.stopPropagation();
-        if(!confirm('Delete this submission? This cannot be undone.')) return;
-        const id = btn.dataset.del;
-        try{
-          const res = await fetch(APPS_SCRIPT_URL, {
-            method:'POST',
-            headers:{'Content-Type':'text/plain;charset=utf-8'},
-            body: JSON.stringify({action:'delete', id:id})
-          });
-          const json = await res.json();
-          if(!json || !json.ok) throw new Error((json && json.error) || 'delete failed');
-          allRecords = allRecords.filter(r=>r.id!==id);
-          renderDashboard();
-        }catch(err){
-          alert('Could not delete — please try again.');
-        }
-      });
-    });
-  }
+  document.getElementById('drawerTabs').addEventListener('click', e=>{
+    const b=e.target.closest('[data-tab]'); if(!b) return;
+    activeTab=b.dataset.tab; editingRecordId=null; addFormOpen=false; renderDrawer();
+  });
 
-  function miniCheck(item){
-    return `<div class="mini-check">
-      <div class="dot ${item.checked?'y':'n'}">${item.checked ? '<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>' : ''}</div>
-      <span>${escapeHtml(item.label)}</span>
-    </div>`;
-  }
+  document.getElementById('drawerBody').addEventListener('submit', async e=>{
+    if(e.target.id==='profileForm'){
+      e.preventDefault();
+      const w=currentWorker(); if(!w) return;
+      const data={}; e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
+      await updateWorker(w.id,data);
+    }
+    if(e.target.id==='recordForm'){
+      e.preventDefault();
+      const w=currentWorker(); if(!w) return;
+      const cfg=RECORD_TYPES[activeTab];
+      const data={}; e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
+      const arr=(w[activeTab]||[]).slice();
+      if(editingRecordId){
+        const idx=arr.findIndex(r=>r.id===editingRecordId);
+        if(idx>-1) arr[idx]={...arr[idx], ...data};
+      } else {
+        arr.push({id:genId(), ...data});
+      }
+      editingRecordId=null; addFormOpen=false;
+      await updateWorkerArray(w,activeTab,arr);
+    }
+  });
 
-  function photosSection(title, arr){
-    if(!arr || arr.length===0) return '';
-    return `<div class="detail-sec"><h4>${title}</h4><div class="detail-photos">
-      ${arr.map(src=>`<img src="${src}" referrerpolicy="no-referrer" loading="lazy">`).join('')}
-    </div></div>`;
-  }
+  document.getElementById('drawerBody').addEventListener('click', async e=>{
+    if(e.target.id==='toggleRecordForm'){
+      addFormOpen = !addFormOpen;
+      editingRecordId = null;
+      renderDrawerBody();
+      return;
+    }
+    const editBtn=e.target.closest('[data-edit]');
+    if(editBtn){ const [key,rid]=editBtn.dataset.edit.split(':'); editingRecordId=rid; addFormOpen=true; renderDrawerBody(); return; }
+    const delBtn=e.target.closest('[data-del]');
+    if(delBtn){
+      if(delBtn.dataset.armed!=='1'){
+        delBtn.dataset.armed='1'; delBtn.textContent='✔'; setTimeout(()=>{ if(delBtn.dataset.armed==='1'){ delBtn.dataset.armed='0'; delBtn.textContent='🗑'; } },4000);
+        return;
+      }
+      const [key,rid]=delBtn.dataset.del.split(':');
+      const w=currentWorker(); if(!w) return;
+      const arr=(w[key]||[]).filter(r=>r.id!==rid);
+      await updateWorkerArray(w,key,arr);
+      return;
+    }
+    const delWorkerBtn=e.target.closest('#deleteWorkerBtn');
+    if(delWorkerBtn){
+      if(delWorkerBtn.dataset.armed!=='1'){
+        delWorkerBtn.dataset.armed='1'; delWorkerBtn.textContent='Confirm delete — cannot be undone';
+        setTimeout(()=>{ if(delWorkerBtn.dataset.armed==='1'){ delWorkerBtn.dataset.armed='0'; delWorkerBtn.textContent='Delete worker'; } },4000);
+        return;
+      }
+      const w=currentWorker(); if(!w) return;
+      try{ await updateWorker(w.id, {deleted:true, deletedAt:new Date().toISOString()}); toast('Worker moved to Deleted workers'); closeDrawer(); }
+      catch(err){ toast('Could not delete'); }
+      return;
+    }
+  });
 
-  function escapeHtml(s){
-    return String(s ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
-
-  document.getElementById('searchInput').addEventListener('input', renderDashboard);
-  document.getElementById('refreshBtn').addEventListener('click', loadDashboard);
-  document.getElementById('lightboxClose').addEventListener('click', ()=> document.getElementById('lightbox').classList.remove('show'));
-  document.getElementById('lightbox').addEventListener('click', (e)=>{ if(e.target.id==='lightbox') e.currentTarget.classList.remove('show'); });
-
-  /* ---------------- Setup check ---------------- */
-  function isConfigured(){
-    return APPS_SCRIPT_URL && APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === -1 && APPS_SCRIPT_URL.indexOf('http') === 0;
-  }
-  if(!isConfigured()){
-    document.getElementById('setupBanner').style.display = 'block';
-  }
-
-  /* ---------------- Init ---------------- */
-  renderForm();
-
-})();
+  document.getElementById('drawerBody').addEventListener('change', async e=>{
+    if(!e.target.matches('[data-attach-for]')) return;
+    const file=e.target.files[0]; if(!file) return;
+    const target=e.target.dataset.attachFor;
+    try{
+      const att=await uploadToStorage(file);
+      const w=currentWorker(); if(!w) return;
+      if(target==='photo' || target==='civilIdScan' || target==='signature'){
+        await updateWorker(w.id, {[target]:att});
+      } else {
+        const [key,rid]=target.split(':');
+        const arr=(w[key]||[]).slice();
+        const idx=arr.findIndex(r=>r.id===rid);
+        if(idx>-1){ arr[idx]={...arr[idx], attachment:att}; await updateWorkerArray(w,key,arr); }
+      }
+      toast('File attached');
+    }catch(err){ console.error(err); toast('Upload failed'); }
+  });
+});
 </script>
 </body>
 </html>
