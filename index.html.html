@@ -1,0 +1,2288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Burhan HSE — Workforce HSE Register</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b0b0d">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Burhan HSE">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#0b0b0d;
+  --surface:#17171b;
+  --surface-2:#1f1f24;
+  --ink:#f5f5f7;
+  --ink-muted:#9a9aa3;
+  --line:#2a2a30;
+  --accent:#d81e2c;
+  --accent-ink:#ffffff;
+  --ok:#4fd48a;      --ok-bg:#122b1f;
+  --warn:#f0a93c;    --warn-bg:#332512;
+  --danger:#ff6b5e;  --danger-bg:#331714;
+  --muted:#9a9aa3;   --muted-bg:#1f1f24;
+  --shadow:0 1px 2px rgba(0,0,0,.6), 0 10px 28px -14px rgba(0,0,0,.85);
+  /* categorical KPI-tile accents — fixed order, validated for CVD + contrast on --bg */
+  --cat-1:#0891b2;  /* Workforce — cyan */
+  --cat-2:#ad7c00;  /* Civil ID — banana gold */
+  --cat-3:#8b5cf6;  /* Induction — violet */
+  --cat-4:#059669;  /* Training — green */
+  --cat-5:#3b82f6;  /* Competency — blue */
+  --cat-6:#ec4899;  /* Medical fitness — pink */
+  --cat-7:#ea580c;  /* Licenses — orange */
+  --cat-8:#0d9488;  /* Warning letters — teal */
+  --cat-9:#ef4444;  /* Violations — red */
+  --font-display:'Archivo',system-ui,sans-serif;
+  --font-body:'IBM Plex Sans',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b0b0d; --surface:#17171b; --surface-2:#1f1f24;
+    --ink:#f5f5f7; --ink-muted:#9a9aa3; --line:#2a2a30;
+    --accent:#d81e2c; --accent-ink:#ffffff;
+    --ok:#4fd48a; --ok-bg:#122b1f;
+    --warn:#f0a93c; --warn-bg:#332512;
+    --danger:#ff6b5e; --danger-bg:#331714;
+    --muted:#9a9aa3; --muted-bg:#1f1f24;
+    --shadow:0 1px 2px rgba(0,0,0,.6), 0 10px 28px -14px rgba(0,0,0,.85);
+  }
+}
+:root[data-theme="dark"]{
+    --bg:#0b0b0d; --surface:#17171b; --surface-2:#1f1f24;
+    --ink:#f5f5f7; --ink-muted:#9a9aa3; --line:#2a2a30;
+    --accent:#d81e2c; --accent-ink:#ffffff;
+    --ok:#4fd48a; --ok-bg:#122b1f;
+    --warn:#f0a93c; --warn-bg:#332512;
+    --danger:#ff6b5e; --danger-bg:#331714;
+    --muted:#9a9aa3; --muted-bg:#1f1f24;
+    --shadow:0 1px 2px rgba(0,0,0,.6), 0 10px 28px -14px rgba(0,0,0,.85);
+}
+*{box-sizing:border-box;}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--font-body);
+  padding-inline:16px; padding-block:20px 60px; max-width:1360px; margin:0 auto;
+  font-size:14px; line-height:1.45;
+}
+h1,h2,h3{font-family:var(--font-display); letter-spacing:-.01em; text-wrap:balance; margin:0;}
+.mono{font-family:var(--font-mono);}
+button{font:inherit; cursor:pointer;}
+input,select,textarea{font:inherit; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:8px 10px; width:100%;}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
+textarea{min-height:64px; resize:vertical;}
+label{display:flex; flex-direction:column; gap:4px; font-size:12.5px; color:var(--ink-muted); font-weight:500;}
+
+/* ---- header ---- */
+.topbar{display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:20px;}
+.topbar h1{font-size:22px; font-weight:800;}
+.topbar p{margin:4px 0 0; color:var(--ink-muted); font-size:13px; max-width:52ch;}
+.topbar-actions{display:flex; gap:8px; flex-wrap:wrap;}
+.brand-row{display:flex; align-items:center; gap:14px;}
+.brand-logo{height:52px; width:auto; flex:none; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.5);}
+.brand-logo-sm{height:44px; width:auto; margin:0 auto 12px; display:block; border-radius:9px; box-shadow:0 2px 10px rgba(0,0,0,.45);}
+
+/* ---- app shell / side nav ---- */
+.app-shell{display:flex; gap:22px; align-items:flex-start;}
+.sidenav{width:184px; flex:none; display:flex; flex-direction:column; gap:5px; position:sticky; top:20px;}
+.sidenav-logo{width:100%; max-width:120px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.5); margin:0 auto 14px; display:block;}
+.sidenav-btn{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:9px; border:1px solid transparent; background:transparent; color:var(--ink-muted); font-weight:600; font-size:13px; text-align:left; width:100%;}
+.sidenav-btn:hover:not(:disabled){color:var(--ink); border-color:var(--line);}
+.sidenav-btn.active{background:var(--surface); border-color:var(--line); color:var(--ink); box-shadow:var(--shadow);}
+.sidenav-btn:disabled{opacity:.4; cursor:default;}
+.sidenav-icon{width:20px; text-align:center; font-size:15px; flex:none;}
+.sidenav-soon{margin-left:auto; font-size:9px; text-transform:uppercase; letter-spacing:.04em; background:var(--muted-bg); color:var(--ink-muted); border-radius:5px; padding:2px 5px;}
+.app-content{flex:1; min-width:0;}
+.app-main{display:block;}
+@media (max-width:760px){
+  .app-shell{flex-direction:column;}
+  .sidenav{width:100%; flex-direction:row; flex-wrap:wrap; position:static; align-items:center;}
+  .sidenav-logo{width:40px; height:40px; max-width:40px; margin:0 8px 0 0; object-fit:cover;}
+  .sidenav-btn{width:auto;}
+}
+.btn{border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:9px; padding:9px 14px; font-weight:600; font-size:13px; white-space:nowrap;}
+.btn:hover{border-color:var(--accent);}
+.btn-primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
+.btn-primary:hover{filter:brightness(1.06);}
+.btn-danger{background:var(--danger-bg); color:var(--danger); border-color:transparent;}
+.btn-ghost{background:transparent; border-color:transparent; color:var(--ink-muted);}
+.btn-ghost:hover{color:var(--ink);}
+.btn-sm{padding:6px 10px; font-size:12px; border-radius:7px;}
+
+/* ---- tiles ---- */
+.tiles{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:18px;}
+@media (max-width:900px){.tiles{grid-template-columns:repeat(2,1fr);}}
+.tile{background:var(--surface); border:1px solid var(--line); border-top:3px solid var(--tile-accent, var(--line)); border-radius:12px; padding:12px 14px; box-shadow:var(--shadow);}
+.tile-head{display:flex; align-items:center; gap:10px; margin-bottom:6px;}
+.tile-icon{width:30px; height:30px; border-radius:9px; background:var(--tile-accent, var(--muted)); display:flex; align-items:center; justify-content:center; font-size:15px; flex:none; box-shadow:0 2px 6px rgba(0,0,0,.35);}
+.tile-label{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-muted); font-weight:600;}
+.tile-num{font-family:var(--font-display); font-size:26px; font-weight:800; font-variant-numeric:tabular-nums; margin-top:2px;}
+.tile-num.ok{color:var(--ok);} .tile-num.warn{color:var(--warn);} .tile-num.danger{color:var(--danger);}
+.tile-sub{font-size:11.5px; color:var(--ink-muted); margin-top:2px;}
+
+/* ---- toolbar ---- */
+.toolbar{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px;}
+.toolbar input[type=search]{max-width:240px;}
+.toolbar select{max-width:170px;}
+.sample-banner{background:var(--warn-bg); color:var(--warn); border:1px solid var(--warn); border-radius:9px; padding:8px 12px; font-size:12.5px; display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap;}
+
+/* ---- add worker panel ---- */
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:14px; box-shadow:var(--shadow);}
+.panel h3{font-size:15px; margin-bottom:12px;}
+.form-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px 12px;}
+@media (max-width:700px){.form-grid{grid-template-columns:1fr 1fr;}}
+@media (max-width:480px){.form-grid{grid-template-columns:1fr;}}
+.form-actions{display:flex; gap:8px; margin-top:14px; justify-content:flex-end;}
+
+/* ---- table ---- */
+.table-wrap{background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow-x:auto; box-shadow:var(--shadow);}
+table{width:100%; border-collapse:collapse; min-width:760px;}
+thead th{text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-muted); font-weight:600; padding:10px 12px; border-bottom:1px solid var(--line); white-space:nowrap;}
+tbody td{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr{cursor:pointer;}
+tbody tr:hover{background:var(--surface-2);}
+.wname{font-weight:600;}
+.wsub{color:var(--ink-muted); font-size:12px; margin-top:1px;}
+.sample-tag{font-size:9.5px; background:var(--warn-bg); color:var(--warn); border-radius:5px; padding:1px 5px; margin-left:6px; font-weight:700; letter-spacing:.03em; vertical-align:middle;}
+.empty-state{padding:28px 12px; text-align:center; color:var(--ink-muted);}
+
+/* ---- badges / pills ---- */
+.badge{display:inline-block; padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:600; white-space:nowrap;}
+.badge.ok{background:var(--ok-bg); color:var(--ok);}
+.badge.warn{background:var(--warn-bg); color:var(--warn);}
+.badge.danger{background:var(--danger-bg); color:var(--danger);}
+.badge.muted{background:var(--muted-bg); color:var(--muted);}
+.pill-count{display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:22px; padding:0 7px; border-radius:999px; font-size:12px; font-weight:700; background:var(--muted-bg); color:var(--muted);}
+.pill-count.warn{background:var(--warn-bg); color:var(--warn);}
+.pill-count.danger{background:var(--danger-bg); color:var(--danger);}
+
+/* ---- drawer ---- */
+.drawer-overlay{position:fixed; inset:0; background:rgba(10,14,10,.4); z-index:40;}
+.drawer{position:fixed; top:0; right:0; bottom:0; width:min(520px,100%); background:var(--surface); z-index:41; box-shadow:-14px 0 40px -12px rgba(0,0,0,.35); display:flex; flex-direction:column;}
+.drawer-head{display:flex; justify-content:space-between; align-items:flex-start; padding:16px 18px; border-bottom:1px solid var(--line); gap:10px;}
+.drawer-head h2{font-size:18px;}
+.icon-btn{background:transparent; border:1px solid var(--line); border-radius:8px; width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; color:var(--ink-muted); flex:none;}
+.icon-btn:hover{color:var(--ink); border-color:var(--accent);}
+.icon-btn.danger:hover{color:var(--danger); border-color:var(--danger);}
+.tabs{display:flex; gap:2px; padding:8px 12px 0; border-bottom:1px solid var(--line); overflow-x:auto;}
+.tab-btn{background:transparent; border:none; padding:9px 10px; font-size:12.5px; font-weight:600; color:var(--ink-muted); border-bottom:2px solid transparent; white-space:nowrap;}
+.tab-btn.active{color:var(--accent); border-bottom-color:var(--accent);}
+.drawer-body{padding:16px 18px; overflow-y:auto; flex:1;}
+.field-row{display:flex; gap:6px; align-items:center; padding:6px 0; border-bottom:1px dashed var(--line); font-size:13px;}
+.field-row:last-child{border-bottom:none;}
+.field-row .k{color:var(--ink-muted); min-width:120px; flex:none;}
+.field-row .v{font-weight:500;}
+.att-block{margin-top:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.att-thumb{width:56px; height:56px; object-fit:cover; border-radius:8px; border:1px solid var(--line);}
+.att-link{font-size:12.5px; color:var(--accent); font-weight:600; text-decoration:none;}
+.upload-btn{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--accent); border:1px dashed var(--accent); border-radius:8px; padding:6px 10px; cursor:pointer;}
+.att-none{font-size:12px; color:var(--ink-muted);}
+.sig-pad-wrap{margin-top:8px;}
+.sig-canvas{width:100%; max-width:420px; height:140px; display:block; background:#ffffff; border:1px dashed var(--line); border-radius:8px; touch-action:none; cursor:crosshair;}
+
+/* ---- record cards ---- */
+.record-card{border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:10px; background:var(--surface-2);}
+.record-card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
+.record-card-title{font-weight:700; font-size:13.5px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.record-card-actions{display:flex; gap:6px; flex:none;}
+.record-fields{margin-top:6px;}
+.rf{display:flex; gap:6px; font-size:12.5px; padding:2px 0;}
+.rf-k{color:var(--ink-muted); min-width:110px; flex:none;}
+.rf-v{white-space:pre-wrap;}
+
+.section-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+.section-head h3{font-size:14px;}
+.subhead{font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--accent); font-weight:700; margin:18px 0 8px;}
+.subhead:first-child{margin-top:0;}
+.exp-total{font-size:12px; color:var(--ink-muted); margin-top:-4px; margin-bottom:8px;}
+.danger-zone{margin-top:24px; padding-top:16px; border-top:1px solid var(--line);}
+.danger-zone p{color:var(--ink-muted); font-size:12px; margin:0 0 8px;}
+
+.toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:10px 16px; border-radius:9px; font-size:13px; box-shadow:var(--shadow); z-index:60; opacity:0; pointer-events:none; transition:opacity .2s;}
+.toast.show{opacity:1;}
+[hidden]{display:none !important;}
+
+.auth-overlay{position:fixed; inset:0; z-index:100; background:var(--bg); display:flex; align-items:center; justify-content:center; padding:16px;}
+.auth-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:30px 26px; box-shadow:var(--shadow); width:100%; max-width:340px;}
+.auth-card h2{font-size:17px; margin-bottom:4px; text-align:center;}
+.auth-card p.wsub{text-align:center; margin-bottom:18px;}
+.auth-card .form-grid{grid-template-columns:1fr; gap:10px;}
+.auth-error{color:var(--danger); font-size:12.5px; margin-top:10px; text-align:center;}
+</style>
+</head>
+<body>
+
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-card">
+    <img src="logo.png" alt="Burhan Oil & Trade Services" class="brand-logo-sm">
+    <h2>Workforce HSE Register</h2>
+    <p class="wsub">Sign in with the email and password given to you.</p>
+    <form id="loginForm">
+      <div class="form-grid">
+        <label>Email<input type="email" id="loginEmail" required autocomplete="username"></label>
+        <label>Password<input type="password" id="loginPassword" required autocomplete="current-password"></label>
+      </div>
+      <div id="authError" class="auth-error" hidden></div>
+      <button type="submit" class="btn btn-primary" style="width:100%; margin-top:14px;">Sign in</button>
+    </form>
+  </div>
+</div>
+
+<div class="app-shell">
+  <aside class="sidenav">
+    <img src="logo.png" alt="Burhan Oil & Trade Services" class="sidenav-logo">
+    <button type="button" class="sidenav-btn active" data-section="workforce"><span class="sidenav-icon">👥</span> Workforce</button>
+    <button type="button" class="sidenav-btn" data-section="vehicles"><span class="sidenav-icon">🚚</span> Vehicles</button>
+    <button type="button" class="sidenav-btn" data-section="site"><span class="sidenav-icon">🛠️</span> Site Equipment</button>
+    <button type="button" class="sidenav-btn" disabled><span class="sidenav-icon">📊</span> Monthly Report <span class="sidenav-soon">Soon</span></button>
+  </aside>
+  <div class="app-content">
+
+    <div class="sample-banner" id="dbUnavailableBanner" hidden>
+      Could not reach the database. Check the Firebase config at the top of the script and your internet connection.
+    </div>
+
+    <main class="app-main" id="workforceSection">
+      <div class="topbar">
+        <div>
+          <h1>Workforce HSE Register</h1>
+          <p>One live record per worker — induction, training, competency, medical fitness, licenses, warning letters and violations, tracked in one place and always up to date for everyone who signs in.</p>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-ghost btn-sm" id="clearSampleBtn" hidden>Remove sample data</button>
+          <button class="btn btn-sm" id="trashBtn" type="button">🗑 Deleted workers (0)</button>
+          <button class="btn btn-primary" id="addWorkerBtn">+ Add worker</button>
+          <button class="btn btn-sm" id="signOutBtn" type="button" hidden>Sign out</button>
+        </div>
+      </div>
+
+      <div class="tiles" id="tiles"></div>
+
+      <div class="panel" id="addWorkerPanel" hidden>
+        <h3>Add a worker</h3>
+        <form id="addWorkerForm">
+          <div class="form-grid">
+            <label>Full name *<input data-field="fullName" required placeholder="e.g. Ramesh Kumar"></label>
+            <label>Civil ID *<input class="mono" data-field="civilId" required placeholder="e.g. 784-1990-1234567-1"></label>
+            <label>Nationality<input data-field="nationality" placeholder="e.g. Indian"></label>
+            <label>Trade / occupation *<input data-field="trade" required placeholder="e.g. Steel Fixer"></label>
+            <label>Subcontractor / company<input data-field="contractor" placeholder="e.g. Al Futtaim Contracting"></label>
+            <label>Date of joining<input type="date" data-field="dateOfJoining"></label>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn" id="cancelAddWorker">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save worker</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="toolbar">
+        <input type="search" id="searchInput" placeholder="Search name or Civil ID…">
+        <select id="tradeFilter"><option value="all">All trades</option></select>
+        <select id="statusFilter">
+          <option value="all">All workers</option>
+          <option value="active">Active only</option>
+          <option value="inactive">Inactive only</option>
+        </select>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Worker</th><th>Civil ID</th><th>Trade</th><th>Status</th>
+              <th>Induction</th><th>Training</th><th>Competency</th><th>Medical</th><th>Licenses</th><th>Warnings</th><th>Violations</th>
+            </tr>
+          </thead>
+          <tbody id="workerRows">
+            <tr><td colspan="11" class="empty-state">Sign in to load workforce data…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <main class="app-main" id="vehiclesSection" hidden>
+      <div class="topbar">
+        <div>
+          <h1>Vehicle Register</h1>
+          <p>One live record per vehicle — documents (MOT, insurance, IVMS, DFMS, RAS sticker), onboard PPE with serial numbers and expiry, and simple counts for jacks, wheel stoppers, brass hammers and warning triangles.</p>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-sm" id="vehicleTrashBtn" type="button">🗑 Deleted vehicles (0)</button>
+          <button class="btn btn-primary" id="addVehicleBtn">+ Add vehicle</button>
+        </div>
+      </div>
+
+      <div class="tiles" id="vehicleTiles"></div>
+
+      <div class="panel" id="addVehiclePanel" hidden>
+        <h3>Add a vehicle</h3>
+        <form id="addVehicleForm">
+          <div class="form-grid">
+            <label>Vehicle number *<input class="mono" data-field="vehicleNumber" required placeholder="e.g. RSA 12345"></label>
+            <label>Model<input data-field="model" placeholder="e.g. Toyota Hilux 2022"></label>
+            <label>Ownership<select data-field="ownership"><option value="Own">Own</option><option value="Rental">Rental</option></select></label>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn" id="cancelAddVehicle">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save vehicle</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="toolbar">
+        <input type="search" id="vehicleSearchInput" placeholder="Search vehicle number or model…">
+        <select id="vehicleOwnershipFilter">
+          <option value="all">All ownership</option>
+          <option value="Own">Own</option>
+          <option value="Rental">Rental</option>
+        </select>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Vehicle number</th><th>Model</th><th>Ownership</th><th>Documents</th><th>PPE</th>
+            </tr>
+          </thead>
+          <tbody id="vehicleRows">
+            <tr><td colspan="5" class="empty-state">Sign in to load vehicle data…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <main class="app-main" id="siteSection" hidden>
+      <div class="topbar">
+        <div>
+          <h1>Site Equipment Register</h1>
+          <p>One live record per site — power tools with TPI certificates, safety harnesses, ladders and other PPE, each tracked with its own expiry and certificate.</p>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-sm" id="siteTrashBtn" type="button">🗑 Deleted sites (0)</button>
+          <button class="btn btn-primary" id="addSiteBtn">+ Add site</button>
+        </div>
+      </div>
+
+      <div class="tiles" id="siteTiles"></div>
+
+      <div class="panel" id="addSitePanel" hidden>
+        <h3>Add a site</h3>
+        <form id="addSiteForm">
+          <div class="form-grid">
+            <label>Site name *<input data-field="siteName" required placeholder="e.g. Marina Tower Phase 2"></label>
+            <label>Division<select data-field="division"><option value="Civil">Civil</option><option value="Scaffolding">Scaffolding</option><option value="Rental">Rental</option><option value="Office staff">Office staff</option></select></label>
+            <label>Location<input data-field="location" placeholder="e.g. Muscat, Oman"></label>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn" id="cancelAddSite">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save site</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="toolbar">
+        <input type="search" id="siteSearchInput" placeholder="Search site name…">
+        <select id="siteDivisionFilter">
+          <option value="all">All divisions</option>
+          <option value="Civil">Civil</option>
+          <option value="Scaffolding">Scaffolding</option>
+          <option value="Rental">Rental</option>
+          <option value="Office staff">Office staff</option>
+        </select>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Site name</th><th>Division</th><th>Power tools</th><th>Safety harness</th><th>Ladders</th><th>Other PPE</th>
+            </tr>
+          </thead>
+          <tbody id="siteRows">
+            <tr><td colspan="6" class="empty-state">Sign in to load site equipment data…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<div class="drawer-overlay" id="drawerOverlay" hidden></div>
+<aside class="drawer" id="drawer" hidden>
+  <div class="drawer-head">
+    <div>
+      <h2 id="drawerName"></h2>
+      <div class="wsub mono" id="drawerSub"></div>
+    </div>
+    <div style="display:flex; gap:8px; align-items:flex-start; flex:none;">
+      <button type="button" class="btn btn-sm" id="downloadPdfBtn">⬇ PDF profile</button>
+      <button class="icon-btn" id="drawerClose" aria-label="Close panel">✕</button>
+    </div>
+  </div>
+  <nav class="tabs" id="drawerTabs"></nav>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
+
+<div class="drawer-overlay" id="trashOverlay" hidden></div>
+<aside class="drawer" id="trashDrawer" hidden>
+  <div class="drawer-head">
+    <div>
+      <h2>Deleted workers</h2>
+      <div class="wsub">Restore a profile, or remove it for good. Permanent removal cannot be undone.</div>
+    </div>
+    <button class="icon-btn" id="trashClose" aria-label="Close">✕</button>
+  </div>
+  <div class="drawer-body" id="trashBody"></div>
+</aside>
+
+<div class="drawer-overlay" id="vehicleDrawerOverlay" hidden></div>
+<aside class="drawer" id="vehicleDrawer" hidden>
+  <div class="drawer-head">
+    <div>
+      <h2 id="vehicleDrawerName"></h2>
+      <div class="wsub mono" id="vehicleDrawerSub"></div>
+    </div>
+    <div style="display:flex; gap:8px; align-items:flex-start; flex:none;">
+      <button type="button" class="btn btn-sm" id="downloadVehiclePdfBtn">⬇ PDF profile</button>
+      <button class="icon-btn" id="vehicleDrawerClose" aria-label="Close panel">✕</button>
+    </div>
+  </div>
+  <nav class="tabs" id="vehicleDrawerTabs"></nav>
+  <div class="drawer-body" id="vehicleDrawerBody"></div>
+</aside>
+
+<div class="drawer-overlay" id="vehicleTrashOverlay" hidden></div>
+<aside class="drawer" id="vehicleTrashDrawer" hidden>
+  <div class="drawer-head">
+    <div>
+      <h2>Deleted vehicles</h2>
+      <div class="wsub">Restore a vehicle, or remove it for good. Permanent removal cannot be undone.</div>
+    </div>
+    <button class="icon-btn" id="vehicleTrashClose" aria-label="Close">✕</button>
+  </div>
+  <div class="drawer-body" id="vehicleTrashBody"></div>
+</aside>
+
+<div class="drawer-overlay" id="siteDrawerOverlay" hidden></div>
+<aside class="drawer" id="siteDrawer" hidden>
+  <div class="drawer-head">
+    <div>
+      <h2 id="siteDrawerName"></h2>
+      <div class="wsub mono" id="siteDrawerSub"></div>
+    </div>
+    <div style="display:flex; gap:8px; align-items:flex-start; flex:none;">
+      <button type="button" class="btn btn-sm" id="downloadSitePdfBtn">⬇ PDF profile</button>
+      <button class="icon-btn" id="siteDrawerClose" aria-label="Close panel">✕</button>
+    </div>
+  </div>
+  <nav class="tabs" id="siteDrawerTabs"></nav>
+  <div class="drawer-body" id="siteDrawerBody"></div>
+</aside>
+
+<div class="drawer-overlay" id="siteTrashOverlay" hidden></div>
+<aside class="drawer" id="siteTrashDrawer" hidden>
+  <div class="drawer-head">
+    <div>
+      <h2>Deleted sites</h2>
+      <div class="wsub">Restore a site, or remove it for good. Permanent removal cannot be undone.</div>
+    </div>
+    <button class="icon-btn" id="siteTrashClose" aria-label="Close">✕</button>
+  </div>
+  <div class="drawer-body" id="siteTrashBody"></div>
+</aside>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase (compat SDK — keeps the same collection().doc() style as the rest of this file) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+/* =========================================================================
+   1. PASTE YOUR FIREBASE PROJECT CONFIG HERE
+   Firebase console → Project settings → General → Your apps → SDK setup
+   ========================================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDhQDmL7V0IyMnFZmrLNCo1hJqW5rPZt5Q",
+  authDomain: "workforce-hse.firebaseapp.com",
+  projectId: "workforce-hse",
+  storageBucket: "workforce-hse.firebasestorage.app",
+  messagingSenderId: "123036825493",
+  appId: "1:123036825493:web:41cc96578f1d55807ba89c"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+const TABS = [
+  {key:'profile', label:'Profile'},
+  {key:'inductions', label:'Induction'},
+  {key:'trainings', label:'Training'},
+  {key:'competency', label:'Competency'},
+  {key:'medical', label:'Medical'},
+  {key:'licenses', label:'Licenses'},
+  {key:'warnings', label:'Warnings'},
+  {key:'violations', label:'Violations'},
+];
+
+const RECORD_TYPES = {
+  inductions:{
+    title:'Induction records', addLabel:'+ Add induction record', hasExpiry:true, hasAttachment:true, attachLabel:'induction certificate',
+    fields:[
+      {key:'site', label:'Site / project', type:'text', required:true, placeholder:'e.g. Marina Tower Phase 2'},
+      {key:'date', label:'Induction date', type:'date', required:true},
+      {key:'expiry', label:'Valid until', type:'date'},
+      {key:'conductedBy', label:'Conducted by', type:'text', placeholder:'e.g. HSE Officer name'},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+  },
+  trainings:{
+    title:'Training records', addLabel:'+ Add training record', hasExpiry:true, hasAttachment:true, attachLabel:'certificate',
+    fields:[
+      {key:'name', label:'Course / training name', type:'text', required:true, placeholder:'e.g. Working at Height'},
+      {key:'provider', label:'Provider', type:'text'},
+      {key:'date', label:'Completion date', type:'date', required:true},
+      {key:'expiry', label:'Valid until', type:'date'},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+  },
+  competency:{
+    title:'Competency assessments', addLabel:'+ Add assessment', hasExpiry:true, hasAttachment:true, attachLabel:'assessment record',
+    fields:[
+      {key:'skill', label:'Skill / competency assessed', type:'text', required:true, placeholder:'e.g. Scaffolding erection'},
+      {key:'result', label:'Result', type:'select', options:['Competent','Not yet competent','Conditional'], required:true},
+      {key:'assessor', label:'Assessed by', type:'text'},
+      {key:'date', label:'Assessment date', type:'date', required:true},
+      {key:'expiry', label:'Valid until', type:'date'},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+  },
+  medical:{
+    title:'Medical fitness & screening', addLabel:'+ Add medical record', hasExpiry:true, hasAttachment:true, attachLabel:'medical certificate',
+    fields:[
+      {key:'type', label:'Type', type:'select', options:['PDO Medical Fitness','OQ Medical Fitness','OXY Medical Fitness','General Medical Screening','Pre-employment Medical','Other'], required:true},
+      {key:'result', label:'Result', type:'select', options:['Fit','Fit with restrictions','Unfit','Pending'], required:true},
+      {key:'date', label:'Screening date', type:'date', required:true},
+      {key:'expiry', label:'Valid until', type:'date'},
+      {key:'clinic', label:'Clinic / hospital', type:'text'},
+      {key:'doctor', label:'Doctor / physician', type:'text'},
+      {key:'notes', label:'Notes / restrictions', type:'textarea'},
+    ],
+  },
+  licenses:{
+    title:'Licenses & permits', addLabel:'+ Add license / document', hasExpiry:true, hasAttachment:true, attachLabel:'document scan',
+    fields:[
+      {key:'type', label:'License / document type', type:'text', required:true, placeholder:'e.g. Driving License, Labor Card, Passport, Residency Visa, Insurance'},
+      {key:'number', label:'Number', type:'text'},
+      {key:'issuingAuthority', label:'Issuing authority', type:'text'},
+      {key:'date', label:'Issue date', type:'date'},
+      {key:'expiry', label:'Expiry date', type:'date', required:true},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+  },
+  warnings:{
+    title:'Warning letters', addLabel:'+ Add warning', hasExpiry:false, hasAttachment:true, attachLabel:'warning letter scan',
+    fields:[
+      {key:'level', label:'Warning level', type:'select', options:['Verbal','Written – 1st','Written – 2nd','Final warning'], required:true},
+      {key:'date', label:'Date issued', type:'date', required:true},
+      {key:'reason', label:'Reason', type:'textarea', required:true},
+      {key:'issuedBy', label:'Issued by', type:'text'},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+  },
+  violations:{
+    title:'Violations', addLabel:'+ Add violation', hasExpiry:false, hasAttachment:true, attachLabel:'evidence / report',
+    fields:[
+      {key:'category', label:'Violation type', type:'text', required:true, placeholder:'e.g. No PPE, unsafe act, permit breach'},
+      {key:'severity', label:'Severity', type:'select', options:['Minor','Major','Critical'], required:true},
+      {key:'date', label:'Date', type:'date', required:true},
+      {key:'description', label:'Description', type:'textarea', required:true},
+      {key:'actionTaken', label:'Corrective action taken', type:'textarea'},
+      {key:'reportedBy', label:'Reported by', type:'text'},
+    ],
+  },
+};
+
+let workers=[];
+let activeWorkerId=null, activeTab='profile', editingRecordId=null, addFormOpen=false;
+let filters={q:'', trade:'all', status:'all'};
+let unsubscribeWorkers=null;
+
+/* ---------------- vehicle tracker ---------------- */
+const VEHICLE_TABS = [
+  {key:'profile', label:'Profile'},
+  {key:'documents', label:'Documents'},
+  {key:'ppe', label:'PPE'},
+];
+const VEHICLE_RECORD_TYPES = {
+  documents:{
+    title:'Vehicle documents', addLabel:'+ Add document', hasExpiry:true, hasAttachment:true, attachLabel:'document scan',
+    fields:[
+      {key:'type', label:'Document type', type:'select', options:['MOT','Insurance','IVMS','DFMS','RAS Sticker','Other'], required:true},
+      {key:'date', label:'Done date', type:'date'},
+      {key:'expiry', label:'Expiry date', type:'date', required:true},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+  },
+  ppe:{
+    title:'PPE & safety equipment', addLabel:'+ Add PPE item', hasExpiry:true, hasAttachment:true, attachLabel:'certificate / photo',
+    fields:[
+      {key:'item', label:'Item', type:'select', options:['NH-15 mask','Safety harness','H2S detector','Fire extinguisher','Other'], required:true},
+      {key:'serial', label:'Serial number', type:'text'},
+      {key:'expiry', label:'Expiry date', type:'date', required:true},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+  },
+};
+const VEHICLE_COUNT_FIELDS = [
+  {key:'jackCount', label:'Jack'},
+  {key:'wheelStopperCount', label:'Wheel stopper'},
+  {key:'brassHammerCount', label:'Brass hammer'},
+  {key:'warningTriangleCount', label:'Warning triangle'},
+];
+
+let vehicles=[];
+let activeVehicleId=null, activeVehicleTab='profile', editingVehicleRecordId=null, vehicleAddFormOpen=false;
+let vehicleFilters={q:'', ownership:'all'};
+let unsubscribeVehicles=null;
+
+function activeVehicles(){ return vehicles.filter(v=>!v.deleted); }
+function deletedVehicles(){ return vehicles.filter(v=>v.deleted); }
+function currentVehicle(){ return vehicles.find(v=>v.id===activeVehicleId); }
+function vehicleAggFor(v,key){
+  const recs=v[key]||[];
+  if(recs.length===0) return {status:'none'};
+  let worst='valid';
+  for(const r of recs){ const s=statusFor(r.expiry); if(RANK[s]>RANK[worst]) worst=s; }
+  return {status:worst};
+}
+
+/* ---------------- site equipment config ---------------- */
+const SITE_TABS = [
+  {key:'profile', label:'Profile'},
+  {key:'powerTools', label:'Power Tools'},
+  {key:'harness', label:'Safety Harness'},
+  {key:'ladders', label:'Ladders'},
+  {key:'otherPpe', label:'Other PPE'},
+];
+const SITE_RECORD_TYPES = {
+  powerTools:{
+    title:'Power tools', addLabel:'+ Add power tool', hasExpiry:true, hasAttachment:true, attachLabel:'TPI certificate',
+    fields:[
+      {key:'type', label:'Tool type', type:'select', options:['Grinder','Drill','Cutting machine','Welding machine','Compressor','Other'], required:true},
+      {key:'serial', label:'Serial number', type:'text'},
+      {key:'expiry', label:'TPI certificate expiry', type:'date', required:true},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+  },
+  harness:{
+    title:'Safety harness', addLabel:'+ Add harness', hasExpiry:true, hasAttachment:true, attachLabel:'certificate / photo',
+    fields:[
+      {key:'serial', label:'Serial number', type:'text', required:true},
+      {key:'expiry', label:'Expiry date', type:'date', required:true},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+  },
+  ladders:{
+    title:'Ladders', addLabel:'+ Add ladder', hasExpiry:true, hasAttachment:true, attachLabel:'inspection certificate / photo',
+    fields:[
+      {key:'type', label:'Ladder type', type:'select', options:['Straight ladder','Extension ladder','Step ladder','Platform ladder','Other'], required:true},
+      {key:'idTag', label:'ID tag / serial', type:'text'},
+      {key:'expiry', label:'Inspection due date', type:'date', required:true},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+  },
+  otherPpe:{
+    title:'Other PPE', addLabel:'+ Add PPE item', hasExpiry:true, hasAttachment:true, attachLabel:'certificate / photo',
+    fields:[
+      {key:'item', label:'Item', type:'text', required:true},
+      {key:'serial', label:'Serial number', type:'text'},
+      {key:'expiry', label:'Expiry date', type:'date'},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+  },
+};
+
+let siteEquipmentList=[];
+let activeSiteId=null, activeSiteTab='profile', editingSiteRecordId=null, siteAddFormOpen=false;
+let siteFilters={q:'', division:'all'};
+let unsubscribeSiteEquipment=null;
+
+function activeSites(){ return siteEquipmentList.filter(s=>!s.deleted); }
+function deletedSites(){ return siteEquipmentList.filter(s=>s.deleted); }
+function currentSite(){ return siteEquipmentList.find(s=>s.id===activeSiteId); }
+function siteAggFor(s,key){
+  const recs=s[key]||[];
+  if(recs.length===0) return {status:'none'};
+  let worst='valid';
+  for(const r of recs){ const st=statusFor(r.expiry); if(RANK[st]>RANK[worst]) worst=st; }
+  return {status:worst};
+}
+
+function activeWorkers(){ return workers.filter(w=>!w.deleted); }
+function deletedWorkers(){ return workers.filter(w=>w.deleted); }
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function genId(){ return (crypto.randomUUID? crypto.randomUUID() : 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2)); }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),2600); }
+
+function daysUntil(dateStr){
+  if(!dateStr) return null;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const d=new Date(dateStr+'T00:00:00');
+  if(isNaN(d)) return null;
+  return Math.round((d-today)/86400000);
+}
+function statusFor(dateStr){
+  const d=daysUntil(dateStr);
+  if(d===null) return 'valid';
+  if(d<0) return 'expired';
+  if(d<=30) return 'expiring';
+  return 'valid';
+}
+const RANK={valid:0, expiring:1, expired:2};
+function badgeHtml(status, labelMap){
+  const map = labelMap || {valid:'Valid',expiring:'Expiring soon',expired:'Expired',none:'None logged',missing:'Not inducted',unfit:'Unfit'};
+  const cls = status==='valid'?'ok': status==='expiring'?'warn': (status==='expired'||status==='unfit')?'danger':'muted';
+  return `<span class="badge ${cls}">${map[status]||status}</span>`;
+}
+
+function aggFor(worker,key){
+  const recs = worker[key]||[];
+  if(recs.length===0) return key==='inductions' ? {status:'missing'} : {status:'none'};
+  let worst='valid';
+  for(const r of recs){ const s=statusFor(r.expiry); if(RANK[s]>RANK[worst]) worst=s; }
+  return {status:worst};
+}
+function civilIdStatus(w){
+  if(!w.civilIdExpiry) return {status:'none'};
+  return {status:statusFor(w.civilIdExpiry)};
+}
+function medicalStatus(w){
+  const recs=w.medical||[];
+  if(recs.length===0) return {status:'none'};
+  if(recs.some(r=>r.result==='Unfit')) return {status:'unfit'};
+  let worst='valid';
+  for(const r of recs){ const s=statusFor(r.expiry); if(RANK[s]>RANK[worst]) worst=s; }
+  return {status:worst};
+}
+function computeFlags(w){
+  const induction=aggFor(w,'inductions');
+  const training=aggFor(w,'trainings');
+  const competency=aggFor(w,'competency');
+  const licenses=aggFor(w,'licenses');
+  const medical=medicalStatus(w);
+  const civilId=civilIdStatus(w);
+  const warnings=(w.warnings||[]);
+  const violations=(w.violations||[]);
+  const warnColor = warnings.some(x=>x.level==='Final warning') ? 'danger' : warnings.length? 'warn':'';
+  const vioColor = violations.some(x=>x.severity==='Critical') ? 'danger' : violations.some(x=>x.severity==='Major') ? 'warn' : violations.length? 'warn':'';
+  return {induction,training,competency,licenses,medical,civilId,warningsCount:warnings.length,warnColor,violationsCount:violations.length,vioColor};
+}
+
+/* ---------------- auth ---------------- */
+auth.onAuthStateChanged(user=>{
+  if(user){
+    document.getElementById('authOverlay').hidden=true;
+    document.getElementById('signOutBtn').hidden=false;
+    startData();
+    startVehicleData();
+    startSiteData();
+  } else {
+    if(unsubscribeWorkers){ unsubscribeWorkers(); unsubscribeWorkers=null; }
+    if(unsubscribeVehicles){ unsubscribeVehicles(); unsubscribeVehicles=null; }
+    if(unsubscribeSiteEquipment){ unsubscribeSiteEquipment(); unsubscribeSiteEquipment=null; }
+    workers=[]; vehicles=[]; siteEquipmentList=[];
+    document.getElementById('authOverlay').hidden=false;
+    document.getElementById('signOutBtn').hidden=true;
+    document.getElementById('workerRows').innerHTML='<tr><td colspan="11" class="empty-state">Sign in to load workforce data…</td></tr>';
+    document.getElementById('vehicleRows').innerHTML='<tr><td colspan="5" class="empty-state">Sign in to load vehicle data…</td></tr>';
+    document.getElementById('siteRows').innerHTML='<tr><td colspan="6" class="empty-state">Sign in to load site equipment data…</td></tr>';
+  }
+});
+
+async function startData(){
+  try{
+    await maybeSeed();
+    unsubscribeWorkers = db.collection('workers').orderBy('fullName','asc').onSnapshot(snap=>{
+      workers = snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
+      renderAll();
+    }, err=>{ console.error(err); toast('Sync error — some data may be stale.'); document.getElementById('dbUnavailableBanner').hidden=false; });
+  }catch(e){ console.error(e); document.getElementById('dbUnavailableBanner').hidden=false; }
+}
+
+function startVehicleData(){
+  try{
+    unsubscribeVehicles = db.collection('vehicles').orderBy('vehicleNumber','asc').onSnapshot(snap=>{
+      vehicles = snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
+      renderVehicleAll();
+    }, err=>{ console.error(err); toast('Sync error — some vehicle data may be stale.'); });
+  }catch(e){ console.error(e); }
+}
+
+function startSiteData(){
+  try{
+    unsubscribeSiteEquipment = db.collection('siteEquipment').orderBy('siteName','asc').onSnapshot(snap=>{
+      siteEquipmentList = snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
+      renderSiteAll();
+    }, err=>{ console.error(err); toast('Sync error — some site equipment data may be stale.'); });
+  }catch(e){ console.error(e); }
+}
+
+async function maybeSeed(){
+  try{
+    const snap = await db.collection('workers').limit(1).get();
+    if(!snap.empty) return;
+    const samples = [
+      {isSample:true, fullName:'Arjun Mehta', civilId:'784-1988-5512340-9', civilIdExpiry:'2027-03-14', nationality:'Indian', dateOfBirth:'1988-04-12', bloodGroup:'O+', mobileNumber:'+971 50 111 2233',
+        designation:'Leading Hand', trade:'Scaffolder', contractor:'Falcon MEP Contracting', dateOfJoining:'2024-02-10', status:'active',
+        experienceGCCYears:'6', experienceOtherYears:'3', priorExperienceNotes:'Qatar 2019–2023, scaffolder, Al Bidda Contracting; India 2016–2019, apprentice fitter.',
+        emergencyContactName:'Sunita Mehta', emergencyContactRelation:'Spouse', emergencyContactPhone:'+91 98765 43210',
+        inductions:[{id:genId(), site:'Marina Tower Phase 2', date:'2025-11-01', expiry:'2026-11-01', conductedBy:'S. Khalid, HSE Officer', notes:'Site + working-at-height induction'}],
+        trainings:[{id:genId(), name:'Working at Height', provider:'SafetyFirst Training Centre', date:'2025-10-15', expiry:'2027-10-15', notes:''}],
+        competency:[{id:genId(), skill:'Scaffolding erection', result:'Competent', assessor:'M. Rao', date:'2025-10-20', expiry:'2026-10-20', notes:''}],
+        licenses:[{id:genId(), type:'Labor Card / Work Permit', number:'LC-44210', issuingAuthority:'MOHRE', date:'2024-02-05', expiry:'2026-10-05', notes:''}],
+        medical:[{id:genId(), type:'PDO Medical Fitness', result:'Fit', date:'2025-09-01', expiry:'2026-09-01', clinic:'Gulf Medical Centre', doctor:'Dr. Al Farsi', notes:''}],
+        warnings:[], violations:[]},
+      {isSample:true, fullName:'Salman Iqbal', civilId:'784-1992-7788110-2', civilIdExpiry:'2026-10-01', nationality:'Pakistani', dateOfBirth:'1992-08-02', bloodGroup:'B+', mobileNumber:'+971 55 222 4455',
+        designation:'Rigger', trade:'Rigger', contractor:'Falcon MEP Contracting', dateOfJoining:'2023-06-01', status:'active',
+        experienceGCCYears:'4', experienceOtherYears:'2', priorExperienceNotes:'Pakistan 2018–2020, general labour.',
+        emergencyContactName:'Imran Iqbal', emergencyContactRelation:'Brother', emergencyContactPhone:'+92 300 1234567',
+        inductions:[{id:genId(), site:'Marina Tower Phase 2', date:'2024-01-05', expiry:'2025-01-05', conductedBy:'S. Khalid, HSE Officer', notes:''}],
+        trainings:[], competency:[],
+        licenses:[{id:genId(), type:'Driving License', number:'DL-902341', issuingAuthority:'RTA', date:'2022-05-01', expiry:'2026-10-15', notes:'Light vehicle'}],
+        medical:[{id:genId(), type:'OQ Medical Fitness', result:'Fit', date:'2025-10-05', expiry:'2026-10-05', clinic:'Al Shifa Clinic', doctor:'Dr. Hassan', notes:'Previous screening: General Medical Screening, 2024-09-01, Fit.'}],
+        warnings:[{id:genId(), level:'Written – 1st', date:'2026-06-12', reason:'Not wearing safety harness while working at height', issuedBy:'HSE Manager', notes:'Toolbox talk repeated for the crew'}],
+        violations:[{id:genId(), category:'No PPE', severity:'Major', date:'2026-06-12', description:'Found working at height without a safety harness on level 14.', actionTaken:'Stopped work, re-issued PPE, written warning issued.', reportedBy:'HSE Inspector'}]},
+    ];
+    for(const s of samples){ await db.collection('workers').add(s); }
+  }catch(e){ console.error('seed failed', e); }
+}
+
+/* ---------------- render ---------------- */
+function renderAll(){
+  renderTiles();
+  renderTradeFilter();
+  renderTable();
+  document.getElementById('clearSampleBtn').hidden = !activeWorkers().some(w=>w.isSample);
+  const trashCount=deletedWorkers().length;
+  document.getElementById('trashBtn').textContent = `🗑 Deleted workers (${trashCount})`;
+  if(activeWorkerId) renderDrawer();
+  if(!document.getElementById('trashDrawer').hidden) renderTrashBody();
+}
+
+function renderTiles(){
+  const list=activeWorkers();
+  const total=list.length;
+  const active=list.filter(w=>(w.status||'active')!=='inactive').length;
+  function agg(key){
+    let expired=0, expiring=0, missing=0;
+    for(const w of list){
+      const recs=w[key]||[];
+      if(recs.length===0){ if(key==='inductions') missing++; continue; }
+      let worst='valid';
+      for(const r of recs){ const s=statusFor(r.expiry); if(RANK[s]>RANK[worst]) worst=s; }
+      if(worst==='expired') expired++; else if(worst==='expiring') expiring++;
+    }
+    return {expired,expiring,missing};
+  }
+  const ind=agg('inductions'), tr=agg('trainings'), comp=agg('competency'), lic=agg('licenses');
+  let civExpired=0, civExpiring=0;
+  for(const w of list){ if(!w.civilIdExpiry) continue; const s=statusFor(w.civilIdExpiry); if(s==='expired') civExpired++; else if(s==='expiring') civExpiring++; }
+  let medUnfit=0, medExpired=0, medExpiring=0;
+  for(const w of list){
+    const recs=w.medical||[]; if(recs.length===0) continue;
+    if(recs.some(r=>r.result==='Unfit')){ medUnfit++; continue; }
+    let worst='valid';
+    for(const r of recs){ const s=statusFor(r.expiry); if(RANK[s]>RANK[worst]) worst=s; }
+    if(worst==='expired') medExpired++; else if(worst==='expiring') medExpiring++;
+  }
+  const totalWarnings=list.reduce((n,w)=>n+((w.warnings||[]).length),0);
+  const finalWarn=list.filter(w=>(w.warnings||[]).some(x=>x.level==='Final warning')).length;
+  let vio90=0, vioCrit=0;
+  for(const w of list){ for(const v of (w.violations||[])){ const d=daysUntil(v.date); if(d!==null && -d<=90){ vio90++; if(v.severity==='Critical') vioCrit++; } } }
+
+  const tiles=[
+    {label:'Workforce', num:total, cls:'', sub:`${active} active`, cat:'--cat-1', icon:'👥'},
+    {label:'Civil ID', num:civExpired, cls:civExpired?'danger':(civExpiring?'warn':'ok'), sub:`${civExpiring} expiring soon`, cat:'--cat-2', icon:'🪪'},
+    {label:'Induction', num:ind.expired+ind.missing, cls:(ind.expired+ind.missing)?'danger':'ok', sub:`${ind.expiring} expiring soon · ${ind.missing} not inducted`, cat:'--cat-3', icon:'📋'},
+    {label:'Training', num:tr.expired, cls:tr.expired?'danger':'ok', sub:`${tr.expiring} expiring soon`, cat:'--cat-4', icon:'🎓'},
+    {label:'Competency', num:comp.expired, cls:comp.expired?'danger':'ok', sub:`${comp.expiring} expiring soon`, cat:'--cat-5', icon:'✅'},
+    {label:'Medical fitness', num:medUnfit+medExpired, cls:(medUnfit+medExpired)?'danger':'ok', sub:`${medUnfit} unfit · ${medExpiring} expiring soon`, cat:'--cat-6', icon:'⚕️'},
+    {label:'Licenses', num:lic.expired, cls:lic.expired?'danger':'ok', sub:`${lic.expiring} expiring soon`, cat:'--cat-7', icon:'📄'},
+    {label:'Warning letters', num:totalWarnings, cls:finalWarn?'danger':(totalWarnings?'warn':''), sub:`${finalWarn} at final warning`, cat:'--cat-8', icon:'⚠️'},
+    {label:'Violations (90d)', num:vio90, cls:vioCrit?'danger':(vio90?'warn':''), sub:`${vioCrit} critical`, cat:'--cat-9', icon:'🚫'},
+  ];
+  document.getElementById('tiles').innerHTML = tiles.map(t=>`
+    <div class="tile" style="--tile-accent:var(${t.cat})">
+      <div class="tile-head"><div class="tile-icon">${t.icon}</div><div class="tile-label">${t.label}</div></div>
+      <div class="tile-num ${t.cls}">${t.num}</div><div class="tile-sub">${t.sub}</div>
+    </div>
+  `).join('');
+}
+
+function renderTradeFilter(){
+  const sel=document.getElementById('tradeFilter');
+  const trades=[...new Set(activeWorkers().map(w=>w.trade).filter(Boolean))].sort();
+  const cur=sel.value;
+  sel.innerHTML = '<option value="all">All trades</option>' + trades.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  if(trades.includes(cur)) sel.value=cur;
+}
+
+function matches(w){
+  if(w.deleted) return false;
+  const q=filters.q.trim().toLowerCase();
+  if(q && !((w.fullName||'')+' '+(w.civilId||'')).toLowerCase().includes(q)) return false;
+  if(filters.trade!=='all' && w.trade!==filters.trade) return false;
+  if(filters.status!=='all' && (w.status||'active')!==filters.status) return false;
+  return true;
+}
+
+function renderTable(){
+  const tbody=document.getElementById('workerRows');
+  if(!auth.currentUser) return;
+  if(activeWorkers().length===0){ tbody.innerHTML='<tr><td colspan="11" class="empty-state">No workers yet — click “Add worker” to get started.</td></tr>'; return; }
+  const list=workers.filter(matches);
+  if(list.length===0){ tbody.innerHTML='<tr><td colspan="11" class="empty-state">No workers match your filters.</td></tr>'; return; }
+  tbody.innerHTML=list.map(w=>{
+    const f=computeFlags(w);
+    return `<tr data-id="${w.id}">
+      <td><div class="wname">${esc(w.fullName)}${w.isSample?'<span class="sample-tag">SAMPLE</span>':''}</div><div class="wsub">${esc(w.designation||w.contractor||'')}</div></td>
+      <td class="mono">${esc(w.civilId||'—')}${f.civilId.status!=='none'?`<div style="margin-top:3px;">${badgeHtml(f.civilId.status,{valid:'Valid',expiring:'Expiring soon',expired:'Expired'})}</div>`:''}</td>
+      <td>${esc(w.trade||'—')}</td>
+      <td>${(w.status||'active')==='inactive'?'<span class="badge muted">Inactive</span>':'<span class="badge ok">Active</span>'}</td>
+      <td>${badgeHtml(f.induction.status)}</td>
+      <td>${badgeHtml(f.training.status)}</td>
+      <td>${badgeHtml(f.competency.status)}</td>
+      <td>${badgeHtml(f.medical.status)}</td>
+      <td>${badgeHtml(f.licenses.status)}</td>
+      <td><span class="pill-count ${f.warnColor}">${f.warningsCount}</span></td>
+      <td><span class="pill-count ${f.vioColor}">${f.violationsCount}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ---------------- vehicle rendering ---------------- */
+function renderVehicleAll(){
+  renderVehicleTiles();
+  renderVehicleTable();
+  const trashCount=deletedVehicles().length;
+  document.getElementById('vehicleTrashBtn').textContent = `🗑 Deleted vehicles (${trashCount})`;
+  if(activeVehicleId) renderVehicleDrawer();
+  if(!document.getElementById('vehicleTrashDrawer').hidden) renderVehicleTrashBody();
+}
+
+function renderVehicleTiles(){
+  const list=activeVehicles();
+  const total=list.length;
+  const own=list.filter(v=>(v.ownership||'Own')==='Own').length;
+  const rental=total-own;
+  function agg(key){
+    let expired=0, expiring=0;
+    for(const v of list){
+      const recs=v[key]||[]; if(recs.length===0) continue;
+      let worst='valid';
+      for(const r of recs){ const s=statusFor(r.expiry); if(RANK[s]>RANK[worst]) worst=s; }
+      if(worst==='expired') expired++; else if(worst==='expiring') expiring++;
+    }
+    return {expired,expiring};
+  }
+  const doc=agg('documents'), ppe=agg('ppe');
+  const tiles=[
+    {label:'Fleet', num:total, cls:'', sub:`${own} own · ${rental} rental`, cat:'--cat-1', icon:'🚚'},
+    {label:'Documents', num:doc.expired, cls:doc.expired?'danger':(doc.expiring?'warn':'ok'), sub:`${doc.expiring} expiring soon`, cat:'--cat-2', icon:'📄'},
+    {label:'PPE & safety kit', num:ppe.expired, cls:ppe.expired?'danger':(ppe.expiring?'warn':'ok'), sub:`${ppe.expiring} expiring soon`, cat:'--cat-6', icon:'🦺'},
+  ];
+  document.getElementById('vehicleTiles').innerHTML = tiles.map(t=>`
+    <div class="tile" style="--tile-accent:var(${t.cat})">
+      <div class="tile-head"><div class="tile-icon">${t.icon}</div><div class="tile-label">${t.label}</div></div>
+      <div class="tile-num ${t.cls}">${t.num}</div><div class="tile-sub">${t.sub}</div>
+    </div>
+  `).join('');
+}
+
+function vehicleMatches(v){
+  if(v.deleted) return false;
+  const q=vehicleFilters.q.trim().toLowerCase();
+  if(q && !((v.vehicleNumber||'')+' '+(v.model||'')).toLowerCase().includes(q)) return false;
+  if(vehicleFilters.ownership!=='all' && (v.ownership||'Own')!==vehicleFilters.ownership) return false;
+  return true;
+}
+
+function renderVehicleTable(){
+  const tbody=document.getElementById('vehicleRows');
+  if(!auth.currentUser) return;
+  if(activeVehicles().length===0){ tbody.innerHTML='<tr><td colspan="5" class="empty-state">No vehicles yet — click “Add vehicle” to get started.</td></tr>'; return; }
+  const list=vehicles.filter(vehicleMatches);
+  if(list.length===0){ tbody.innerHTML='<tr><td colspan="5" class="empty-state">No vehicles match your filters.</td></tr>'; return; }
+  tbody.innerHTML=list.map(v=>{
+    const doc=vehicleAggFor(v,'documents'), ppe=vehicleAggFor(v,'ppe');
+    return `<tr data-id="${v.id}">
+      <td class="mono">${esc(v.vehicleNumber)}</td>
+      <td>${esc(v.model||'—')}</td>
+      <td>${(v.ownership||'Own')==='Rental'?'<span class="badge warn">Rental</span>':'<span class="badge ok">Own</span>'}</td>
+      <td>${badgeHtml(doc.status)}</td>
+      <td>${badgeHtml(ppe.status)}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ---------------- site equipment rendering ---------------- */
+function renderSiteAll(){
+  renderSiteTiles();
+  renderSiteTable();
+  const trashCount=deletedSites().length;
+  document.getElementById('siteTrashBtn').textContent = `🗑 Deleted sites (${trashCount})`;
+  if(activeSiteId) renderSiteDrawer();
+  if(!document.getElementById('siteTrashDrawer').hidden) renderSiteTrashBody();
+}
+
+function renderSiteTiles(){
+  const list=activeSites();
+  const total=list.length;
+  function agg(key){
+    let expired=0, expiring=0;
+    for(const s of list){
+      const recs=s[key]||[]; if(recs.length===0) continue;
+      let worst='valid';
+      for(const r of recs){ const st=statusFor(r.expiry); if(RANK[st]>RANK[worst]) worst=st; }
+      if(worst==='expired') expired++; else if(worst==='expiring') expiring++;
+    }
+    return {expired,expiring};
+  }
+  const pt=agg('powerTools'), ha=agg('harness'), la=agg('ladders'), op=agg('otherPpe');
+  const tiles=[
+    {label:'Sites', num:total, cls:'', sub:'active sites', cat:'--cat-1', icon:'🏗️'},
+    {label:'Power tools', num:pt.expired, cls:pt.expired?'danger':(pt.expiring?'warn':'ok'), sub:`${pt.expiring} expiring soon`, cat:'--cat-3', icon:'🔧'},
+    {label:'Safety harness', num:ha.expired, cls:ha.expired?'danger':(ha.expiring?'warn':'ok'), sub:`${ha.expiring} expiring soon`, cat:'--cat-5', icon:'🦺'},
+    {label:'Ladders', num:la.expired, cls:la.expired?'danger':(la.expiring?'warn':'ok'), sub:`${la.expiring} expiring soon`, cat:'--cat-7', icon:'🪜'},
+    {label:'Other PPE', num:op.expired, cls:op.expired?'danger':(op.expiring?'warn':'ok'), sub:`${op.expiring} expiring soon`, cat:'--cat-9', icon:'🥽'},
+  ];
+  document.getElementById('siteTiles').innerHTML = tiles.map(t=>`
+    <div class="tile" style="--tile-accent:var(${t.cat})">
+      <div class="tile-head"><div class="tile-icon">${t.icon}</div><div class="tile-label">${t.label}</div></div>
+      <div class="tile-num ${t.cls}">${t.num}</div><div class="tile-sub">${t.sub}</div>
+    </div>
+  `).join('');
+}
+
+function siteMatches(s){
+  if(s.deleted) return false;
+  const q=siteFilters.q.trim().toLowerCase();
+  if(q && !((s.siteName||'')).toLowerCase().includes(q)) return false;
+  if(siteFilters.division!=='all' && (s.division||'Civil')!==siteFilters.division) return false;
+  return true;
+}
+
+function renderSiteTable(){
+  const tbody=document.getElementById('siteRows');
+  if(!auth.currentUser) return;
+  if(activeSites().length===0){ tbody.innerHTML='<tr><td colspan="6" class="empty-state">No sites yet — click “Add site” to get started.</td></tr>'; return; }
+  const list=siteEquipmentList.filter(siteMatches);
+  if(list.length===0){ tbody.innerHTML='<tr><td colspan="6" class="empty-state">No sites match your filters.</td></tr>'; return; }
+  tbody.innerHTML=list.map(s=>{
+    const pt=siteAggFor(s,'powerTools'), ha=siteAggFor(s,'harness'), la=siteAggFor(s,'ladders'), op=siteAggFor(s,'otherPpe');
+    return `<tr data-id="${s.id}">
+      <td>${esc(s.siteName)}</td>
+      <td>${esc(s.division||'Civil')}</td>
+      <td>${badgeHtml(pt.status)}</td>
+      <td>${badgeHtml(ha.status)}</td>
+      <td>${badgeHtml(la.status)}</td>
+      <td>${badgeHtml(op.status)}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ---------------- vehicle drawer ---------------- */
+function openVehicleDrawer(id){
+  activeVehicleId=id; activeVehicleTab='profile'; editingVehicleRecordId=null; vehicleAddFormOpen=false;
+  document.getElementById('vehicleDrawerOverlay').hidden=false;
+  document.getElementById('vehicleDrawer').hidden=false;
+  renderVehicleDrawer();
+}
+function closeVehicleDrawer(){
+  activeVehicleId=null;
+  document.getElementById('vehicleDrawerOverlay').hidden=true;
+  document.getElementById('vehicleDrawer').hidden=true;
+}
+function renderVehicleDrawer(){
+  const v=currentVehicle();
+  if(!v){ closeVehicleDrawer(); return; }
+  document.getElementById('vehicleDrawerName').textContent=v.vehicleNumber;
+  document.getElementById('vehicleDrawerSub').textContent=(v.model||'')+(v.ownership?' · '+v.ownership:'');
+  document.getElementById('vehicleDrawerTabs').innerHTML=VEHICLE_TABS.map(t=>`<button type="button" class="tab-btn ${t.key===activeVehicleTab?'active':''}" data-vtab="${t.key}">${t.label}</button>`).join('');
+  renderVehicleDrawerBody();
+}
+function renderVehicleDrawerBody(){
+  const v=currentVehicle(); if(!v) return;
+  const body=document.getElementById('vehicleDrawerBody');
+  if(activeVehicleTab==='profile'){ body.innerHTML=vehicleProfileTabHtml(v); return; }
+  const cfg=VEHICLE_RECORD_TYPES[activeVehicleTab];
+  const savedActiveTab=activeTab, savedEditing=editingRecordId, savedAddOpen=addFormOpen;
+  activeTab=activeVehicleTab; editingRecordId=editingVehicleRecordId; addFormOpen=vehicleAddFormOpen;
+  body.innerHTML=recordTabHtml(v, activeVehicleTab, cfg);
+  activeTab=savedActiveTab; editingRecordId=savedEditing; addFormOpen=savedAddOpen;
+}
+
+function vehicleProfileTabHtml(v){
+  const countsHtml = VEHICLE_COUNT_FIELDS.map(f=>`<label>${esc(f.label)} — count<input type="number" min="0" step="1" data-vfield="${f.key}" value="${esc(v[f.key]!=null?v[f.key]:'0')}"></label>`).join('');
+  return `
+  <form id="vehicleProfileForm">
+    <div class="subhead">Vehicle details</div>
+    <div class="form-grid">
+      <label>Vehicle number *<input class="mono" data-vfield="vehicleNumber" required value="${esc(v.vehicleNumber||'')}"></label>
+      <label>Model<input data-vfield="model" value="${esc(v.model||'')}"></label>
+      <label>Ownership<select data-vfield="ownership"><option value="Own" ${(v.ownership||'Own')==='Own'?'selected':''}>Own</option><option value="Rental" ${v.ownership==='Rental'?'selected':''}>Rental</option></select></label>
+    </div>
+    <div class="subhead">Onboard equipment counts</div>
+    <div class="form-grid">${countsHtml}</div>
+    <div class="form-actions" style="margin-top:16px;"><button type="submit" class="btn btn-primary">Save changes</button></div>
+  </form>
+  <div class="danger-zone">
+    <p>Removing a vehicle moves it to Deleted vehicles, where its full record can be restored at any time — or permanently removed for good (this also frees up the storage space used by its documents and PPE certificates).</p>
+    <button type="button" class="btn btn-danger btn-sm" id="deleteVehicleBtn" data-armed="0">Delete vehicle</button>
+  </div>`;
+}
+
+/* ---------------- vehicle trash ---------------- */
+function openVehicleTrash(){
+  document.getElementById('vehicleTrashOverlay').hidden=false;
+  document.getElementById('vehicleTrashDrawer').hidden=false;
+  renderVehicleTrashBody();
+}
+function closeVehicleTrash(){
+  document.getElementById('vehicleTrashOverlay').hidden=true;
+  document.getElementById('vehicleTrashDrawer').hidden=true;
+}
+function renderVehicleTrashBody(){
+  const body=document.getElementById('vehicleTrashBody');
+  const list=deletedVehicles();
+  body.innerHTML = list.length ? list.map(v=>`
+    <div class="record-card">
+      <div class="record-card-top">
+        <div class="record-card-title">${esc(v.vehicleNumber)}</div>
+        <div class="record-card-actions">
+          <button type="button" class="btn btn-sm" data-vrestore="${v.id}">Restore</button>
+          <button type="button" class="btn btn-danger btn-sm" data-vpurge="${v.id}" data-armed="0">Delete forever</button>
+        </div>
+      </div>
+      <div class="record-fields">
+        <div class="rf"><span class="rf-k">Model</span><span class="rf-v">${esc(v.model||'—')}</span></div>
+        <div class="rf"><span class="rf-k">Ownership</span><span class="rf-v">${esc(v.ownership||'Own')}</span></div>
+        <div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc((v.deletedAt||'').slice(0,10)||'—')}</span></div>
+      </div>
+    </div>`).join('') : `<p class="wsub">Nothing in the trash.</p>`;
+}
+
+/* ---------------- site equipment drawer ---------------- */
+function openSiteDrawer(id){
+  activeSiteId=id; activeSiteTab='profile'; editingSiteRecordId=null; siteAddFormOpen=false;
+  document.getElementById('siteDrawerOverlay').hidden=false;
+  document.getElementById('siteDrawer').hidden=false;
+  renderSiteDrawer();
+}
+function closeSiteDrawer(){
+  activeSiteId=null;
+  document.getElementById('siteDrawerOverlay').hidden=true;
+  document.getElementById('siteDrawer').hidden=true;
+}
+function renderSiteDrawer(){
+  const s=currentSite();
+  if(!s){ closeSiteDrawer(); return; }
+  document.getElementById('siteDrawerName').textContent=s.siteName;
+  document.getElementById('siteDrawerSub').textContent=(s.division||'Civil')+(s.location?' · '+s.location:'');
+  document.getElementById('siteDrawerTabs').innerHTML=SITE_TABS.map(t=>`<button type="button" class="tab-btn ${t.key===activeSiteTab?'active':''}" data-stab="${t.key}">${t.label}</button>`).join('');
+  renderSiteDrawerBody();
+}
+function renderSiteDrawerBody(){
+  const s=currentSite(); if(!s) return;
+  const body=document.getElementById('siteDrawerBody');
+  if(activeSiteTab==='profile'){ body.innerHTML=siteProfileTabHtml(s); return; }
+  const cfg=SITE_RECORD_TYPES[activeSiteTab];
+  const savedActiveTab=activeTab, savedEditing=editingRecordId, savedAddOpen=addFormOpen;
+  activeTab=activeSiteTab; editingRecordId=editingSiteRecordId; addFormOpen=siteAddFormOpen;
+  body.innerHTML=recordTabHtml(s, activeSiteTab, cfg);
+  activeTab=savedActiveTab; editingRecordId=savedEditing; addFormOpen=savedAddOpen;
+}
+
+function siteProfileTabHtml(s){
+  return `
+  <form id="siteProfileForm">
+    <div class="subhead">Site details</div>
+    <div class="form-grid">
+      <label>Site name *<input data-sfield="siteName" required value="${esc(s.siteName||'')}"></label>
+      <label>Division<select data-sfield="division"><option value="Civil" ${(s.division||'Civil')==='Civil'?'selected':''}>Civil</option><option value="Scaffolding" ${s.division==='Scaffolding'?'selected':''}>Scaffolding</option><option value="Rental" ${s.division==='Rental'?'selected':''}>Rental</option><option value="Office staff" ${s.division==='Office staff'?'selected':''}>Office staff</option></select></label>
+      <label>Location<input data-sfield="location" value="${esc(s.location||'')}"></label>
+    </div>
+    <div class="form-actions" style="margin-top:16px;"><button type="submit" class="btn btn-primary">Save changes</button></div>
+  </form>
+  <div class="danger-zone">
+    <p>Removing a site moves it to Deleted sites, where its full record can be restored at any time — or permanently removed for good (this also frees up the storage space used by its certificates and PPE photos).</p>
+    <button type="button" class="btn btn-danger btn-sm" id="deleteSiteBtn" data-armed="0">Delete site</button>
+  </div>`;
+}
+
+/* ---------------- site equipment trash ---------------- */
+function openSiteTrash(){
+  document.getElementById('siteTrashOverlay').hidden=false;
+  document.getElementById('siteTrashDrawer').hidden=false;
+  renderSiteTrashBody();
+}
+function closeSiteTrash(){
+  document.getElementById('siteTrashOverlay').hidden=true;
+  document.getElementById('siteTrashDrawer').hidden=true;
+}
+function renderSiteTrashBody(){
+  const body=document.getElementById('siteTrashBody');
+  const list=deletedSites();
+  body.innerHTML = list.length ? list.map(s=>`
+    <div class="record-card">
+      <div class="record-card-top">
+        <div class="record-card-title">${esc(s.siteName)}</div>
+        <div class="record-card-actions">
+          <button type="button" class="btn btn-sm" data-srestore="${s.id}">Restore</button>
+          <button type="button" class="btn btn-danger btn-sm" data-spurge="${s.id}" data-armed="0">Delete forever</button>
+        </div>
+      </div>
+      <div class="record-fields">
+        <div class="rf"><span class="rf-k">Division</span><span class="rf-v">${esc(s.division||'Civil')}</span></div>
+        <div class="rf"><span class="rf-k">Location</span><span class="rf-v">${esc(s.location||'—')}</span></div>
+        <div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc((s.deletedAt||'').slice(0,10)||'—')}</span></div>
+      </div>
+    </div>`).join('') : `<p class="wsub">Nothing in the trash.</p>`;
+}
+
+/* ---------------- drawer ---------------- */
+function openDrawer(id){
+  activeWorkerId=id; activeTab='profile'; editingRecordId=null; addFormOpen=false;
+  document.getElementById('drawerOverlay').hidden=false;
+  document.getElementById('drawer').hidden=false;
+  renderDrawer();
+}
+function closeDrawer(){
+  activeWorkerId=null;
+  document.getElementById('drawerOverlay').hidden=true;
+  document.getElementById('drawer').hidden=true;
+}
+function currentWorker(){ return workers.find(w=>w.id===activeWorkerId); }
+
+/* ---------------- trash ---------------- */
+function openTrash(){
+  document.getElementById('trashOverlay').hidden=false;
+  document.getElementById('trashDrawer').hidden=false;
+  renderTrashBody();
+}
+function closeTrash(){
+  document.getElementById('trashOverlay').hidden=true;
+  document.getElementById('trashDrawer').hidden=true;
+}
+function renderTrashBody(){
+  const body=document.getElementById('trashBody');
+  const list=deletedWorkers();
+  body.innerHTML = list.length ? list.map(w=>`
+    <div class="record-card">
+      <div class="record-card-top">
+        <div class="record-card-title">${esc(w.fullName)}</div>
+        <div class="record-card-actions">
+          <button type="button" class="btn btn-sm" data-restore="${w.id}">Restore</button>
+          <button type="button" class="btn btn-danger btn-sm" data-purge="${w.id}" data-armed="0">Delete forever</button>
+        </div>
+      </div>
+      <div class="record-fields">
+        <div class="rf"><span class="rf-k">Civil ID</span><span class="rf-v">${esc(w.civilId||'—')}</span></div>
+        <div class="rf"><span class="rf-k">Trade</span><span class="rf-v">${esc(w.trade||'—')}</span></div>
+        <div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc((w.deletedAt||'').slice(0,10)||'—')}</span></div>
+      </div>
+    </div>`).join('') : `<p class="wsub">Nothing in the trash.</p>`;
+}
+
+function renderDrawer(){
+  const w=currentWorker();
+  if(!w){ closeDrawer(); return; }
+  document.getElementById('drawerName').textContent=w.fullName;
+  document.getElementById('drawerSub').textContent=(w.civilId||'')+(w.trade?' · '+w.trade:'');
+  document.getElementById('drawerTabs').innerHTML=TABS.map(t=>`<button type="button" class="tab-btn ${t.key===activeTab?'active':''}" data-tab="${t.key}">${t.label}</button>`).join('');
+  renderDrawerBody();
+}
+
+function renderDrawerBody(){
+  const w=currentWorker(); if(!w) return;
+  const body=document.getElementById('drawerBody');
+  if(activeTab==='profile'){ body.innerHTML=profileTabHtml(w); wireSignaturePad(); return; }
+  const cfg=RECORD_TYPES[activeTab];
+  body.innerHTML=recordTabHtml(w, activeTab, cfg);
+}
+
+/* ---------------- attachments (Firebase Storage) ---------------- */
+function attachmentPreviewHtml(att, label){
+  if(att && att.url){
+    const isImg = (att.contentType||'').startsWith('image/');
+    return isImg
+      ? `<a href="${att.url}" target="_blank" rel="noopener"><img class="att-thumb" src="${att.url}" alt="${esc(label)}"></a>`
+      : `<a class="att-link" href="${att.url}" target="_blank" rel="noopener">📄 View ${esc(label)}</a>`;
+  }
+  return `<span class="att-none">No file attached</span>`;
+}
+function attachmentBlock(worker, key, record, label, targetKey){
+  const att = record ? record.attachment : worker[targetKey];
+  const inner = attachmentPreviewHtml(att, label);
+  const uploadFor = record ? `${key}:${record.id}` : targetKey;
+  const uploadCtl = `<label class="upload-btn">Upload ${esc(label)}<input type="file" hidden data-attach-for="${uploadFor}"></label>`;
+  return `<div class="att-block">${inner}${uploadCtl}</div>`;
+}
+async function uploadToStorage(file){
+  const safeName = (file.name||'file').replace(/[^a-zA-Z0-9._-]/g,'_');
+  const path = 'attachments/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '_' + safeName;
+  const ref = storage.ref().child(path);
+  const snap = await ref.put(file);
+  const url = await snap.ref.getDownloadURL();
+  return {url, path, contentType: file.type || 'application/octet-stream'};
+}
+async function deleteStorageFile(path){
+  if(!path) return;
+  try{ await storage.ref().child(path).delete(); }
+  catch(e){ /* already gone or never uploaded — safe to ignore */ }
+}
+function collectAttachmentPaths(entity, recordTypesMap, singleKeys){
+  recordTypesMap = recordTypesMap || RECORD_TYPES;
+  singleKeys = singleKeys || ['photo','civilIdScan','signature'];
+  const paths=[];
+  for(const k of singleKeys){ if(entity[k] && entity[k].path) paths.push(entity[k].path); }
+  for(const key of Object.keys(recordTypesMap)){
+    for(const rec of (entity[key]||[])){
+      if(rec.attachment && rec.attachment.path) paths.push(rec.attachment.path);
+    }
+  }
+  return paths;
+}
+async function deleteAllAttachments(entity, recordTypesMap, singleKeys){
+  const paths=collectAttachmentPaths(entity, recordTypesMap, singleKeys);
+  await Promise.all(paths.map(deleteStorageFile));
+}
+
+function wireSignaturePad(){
+  const canvas=document.getElementById('sigPad'); if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle='#1a1f1c'; ctx.lineWidth=2.2; ctx.lineJoin='round'; ctx.lineCap='round';
+  let drawing=false, hasDrawn=false;
+  function pos(e){
+    const r=canvas.getBoundingClientRect();
+    const scaleX=canvas.width/r.width, scaleY=canvas.height/r.height;
+    return {x:(e.clientX-r.left)*scaleX, y:(e.clientY-r.top)*scaleY};
+  }
+  function start(e){ drawing=true; hasDrawn=true; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); try{ canvas.setPointerCapture(e.pointerId); }catch(err){} }
+  function move(e){ if(!drawing) return; const p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); }
+  function end(){ drawing=false; }
+  canvas.addEventListener('pointerdown', start);
+  canvas.addEventListener('pointermove', move);
+  canvas.addEventListener('pointerup', end);
+  canvas.addEventListener('pointerleave', end);
+  const clearBtn=document.getElementById('sigClearBtn');
+  const saveBtn=document.getElementById('sigSaveBtn');
+  clearBtn.addEventListener('click', ()=>{ ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height); hasDrawn=false; });
+  saveBtn.addEventListener('click', ()=>{
+    if(!hasDrawn){ toast('Draw a signature first'); return; }
+    canvas.toBlob(async blob=>{
+      if(!blob) return;
+      try{
+        const file=new File([blob], 'signature.png', {type:'image/png'});
+        const att=await uploadToStorage(file);
+        const w=currentWorker(); if(!w) return;
+        await updateWorker(w.id, {signature:att});
+        toast('Signature saved');
+      }catch(e){ console.error(e); toast('Could not save signature'); }
+    }, 'image/png');
+  });
+}
+
+const BLOOD_GROUPS=['A+','A-','B+','B-','AB+','AB-','O+','O-','Unknown'];
+function profileTabHtml(w){
+  const photo = attachmentBlock(w,null,null,'photo','photo');
+  const civilScan = attachmentBlock(w,null,null,'Civil ID scan','civilIdScan');
+  const signaturePreview = attachmentPreviewHtml(w.signature, 'signature');
+  const gcc=parseFloat(w.experienceGCCYears)||0, other=parseFloat(w.experienceOtherYears)||0;
+  const total=(gcc+other);
+  return `
+  <form id="profileForm">
+    <div class="subhead">Personal details</div>
+    <div class="form-grid">
+      <label>Full name *<input data-field="fullName" required value="${esc(w.fullName||'')}"></label>
+      <label>Civil ID *<input class="mono" data-field="civilId" required value="${esc(w.civilId||'')}"></label>
+      <label>Civil ID expiry<input type="date" data-field="civilIdExpiry" value="${esc(w.civilIdExpiry||'')}"></label>
+      <label>Nationality<input data-field="nationality" value="${esc(w.nationality||'')}"></label>
+      <label>Date of birth<input type="date" data-field="dateOfBirth" value="${esc(w.dateOfBirth||'')}"></label>
+      <label>Blood group<select data-field="bloodGroup"><option value="">Select…</option>${BLOOD_GROUPS.map(b=>`<option value="${b}" ${w.bloodGroup===b?'selected':''}>${b}</option>`).join('')}</select></label>
+      <label>Mobile number<input type="tel" data-field="mobileNumber" value="${esc(w.mobileNumber||'')}" placeholder="e.g. +971 50 123 4567"></label>
+    </div>
+
+    <div class="subhead">Employment</div>
+    <div class="form-grid">
+      <label>Designation<input data-field="designation" value="${esc(w.designation||'')}" placeholder="e.g. Foreman, Supervisor"></label>
+      <label>Trade / occupation *<input data-field="trade" required value="${esc(w.trade||'')}"></label>
+      <label>Subcontractor / company<input data-field="contractor" value="${esc(w.contractor||'')}"></label>
+      <label>Date of joining<input type="date" data-field="dateOfJoining" value="${esc(w.dateOfJoining||'')}"></label>
+      <label>Employment status<select data-field="status"><option value="active" ${(w.status||'active')==='active'?'selected':''}>Active</option><option value="inactive" ${w.status==='inactive'?'selected':''}>Inactive</option></select></label>
+    </div>
+
+    <div class="subhead">Work experience</div>
+    <div class="form-grid">
+      <label>Experience in GCC (years)<input type="number" min="0" step="0.5" data-field="experienceGCCYears" value="${esc(w.experienceGCCYears||'')}"></label>
+      <label>Experience outside GCC (years)<input type="number" min="0" step="0.5" data-field="experienceOtherYears" value="${esc(w.experienceOtherYears||'')}"></label>
+    </div>
+    <div class="exp-total">Total experience: ${total? total+' years' : '—'}</div>
+    <label>Work history / prior experience notes<textarea data-field="priorExperienceNotes" placeholder="e.g. Qatar 2019–2023, steel fixer, ABC Contracting; India 2015–2019, apprentice">${esc(w.priorExperienceNotes||'')}</textarea></label>
+
+    <div class="subhead">Emergency contact</div>
+    <div class="form-grid">
+      <label>Contact name<input data-field="emergencyContactName" value="${esc(w.emergencyContactName||'')}"></label>
+      <label>Relationship<input data-field="emergencyContactRelation" value="${esc(w.emergencyContactRelation||'')}" placeholder="e.g. Spouse, Brother"></label>
+      <label>Contact phone<input type="tel" data-field="emergencyContactPhone" value="${esc(w.emergencyContactPhone||'')}"></label>
+    </div>
+
+    <div class="form-actions" style="margin-top:16px;"><button type="submit" class="btn btn-primary">Save changes</button></div>
+  </form>
+  <div class="section-head" style="margin-top:20px;"><h3>Photo</h3></div>
+  ${photo}
+  <div class="section-head" style="margin-top:16px;"><h3>Civil ID scan</h3></div>
+  ${civilScan}
+  <div class="section-head" style="margin-top:16px;"><h3>Signature on file</h3></div>
+  <div class="att-block">${signaturePreview}</div>
+  <div class="sig-pad-wrap">
+    <canvas id="sigPad" class="sig-canvas" width="420" height="140"></canvas>
+    <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+      <button type="button" class="btn btn-sm" id="sigClearBtn">Clear pad</button>
+      <button type="button" class="btn btn-primary btn-sm" id="sigSaveBtn">Save drawn signature</button>
+      <label class="upload-btn">Upload signature image<input type="file" hidden data-attach-for="signature"></label>
+    </div>
+  </div>
+  <div class="danger-zone">
+    <p>Removing a worker moves them to Deleted workers, where their full record can be restored at any time — or permanently removed for good (this also frees up the storage space used by their photo, scans and certificates).</p>
+    <button type="button" class="btn btn-danger btn-sm" id="deleteWorkerBtn" data-armed="0">Delete worker</button>
+  </div>`;
+}
+
+function recordTabHtml(w,key,cfg){
+  const recs=(w[key]||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const cards = recs.length ? recs.map(r=>{
+    const titleField=cfg.fields[0].key;
+    const resultBadge = r.result==='Unfit' ? `<span class="badge danger">Unfit</span>` : (r.result==='Fit with restrictions' ? `<span class="badge warn">Fit with restrictions</span>` : (r.result==='Fit' ? `<span class="badge ok">Fit</span>` : ''));
+    const expiryBadge = cfg.hasExpiry ? (r.expiry? badgeHtml(statusFor(r.expiry)) : `<span class="badge muted">No expiry set</span>`) : (r.level==='Final warning' ? `<span class="badge danger">Final warning</span>` : (r.severity? `<span class="badge ${r.severity==='Critical'?'danger':r.severity==='Major'?'warn':'muted'}">${esc(r.severity)}</span>` : ''));
+    const fieldsHtml = cfg.fields.slice(1).map(f=> r[f.key] ? `<div class="rf"><span class="rf-k">${esc(f.label)}</span><span class="rf-v">${esc(r[f.key])}</span></div>` : '').join('');
+    const attach = cfg.hasAttachment ? attachmentBlock(w,key,r,cfg.attachLabel) : '';
+    return `<div class="record-card">
+      <div class="record-card-top">
+        <div class="record-card-title">${esc(r[titleField]||'')} ${key==='medical'?resultBadge:''} ${expiryBadge}</div>
+        <div class="record-card-actions">
+          <button type="button" class="icon-btn" data-edit="${key}:${r.id}" aria-label="Edit">✎</button>
+          <button type="button" class="icon-btn danger" data-del="${key}:${r.id}" data-armed="0" aria-label="Delete">🗑</button>
+        </div>
+      </div>
+      <div class="record-fields">${fieldsHtml}</div>
+      ${attach}
+    </div>`;
+  }).join('') : `<p class="wsub">No ${cfg.title.toLowerCase()} logged yet.</p>`;
+
+  const editing = editingRecordId ? recs.find(r=>r.id===editingRecordId) : null;
+  const formFields = cfg.fields.map(f=>{
+    const val = editing ? (editing[f.key]||'') : '';
+    if(f.type==='textarea') return `<label>${esc(f.label)}${f.required?' *':''}<textarea data-field="${f.key}" ${f.required?'required':''}>${esc(val)}</textarea></label>`;
+    if(f.type==='select') return `<label>${esc(f.label)}${f.required?' *':''}<select data-field="${f.key}" ${f.required?'required':''}><option value="">Select…</option>${f.options.map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
+    return `<label>${esc(f.label)}${f.required?' *':''}<input type="${f.type}" data-field="${f.key}" value="${esc(val)}" ${f.required?'required':''} ${f.placeholder?`placeholder="${esc(f.placeholder)}"`:''}></label>`;
+  }).join('');
+
+  return `
+  <div class="section-head"><h3>${esc(cfg.title)}</h3><button type="button" class="btn btn-sm" id="toggleRecordForm">${addFormOpen? 'Cancel' : esc(cfg.addLabel)}</button></div>
+  <form id="recordForm" data-editing="${editingRecordId||''}" ${addFormOpen ? '' : 'hidden'} style="margin-bottom:16px;">
+    <div class="form-grid">${formFields}</div>
+    <div class="form-actions"><button type="submit" class="btn btn-primary btn-sm">${editingRecordId? 'Save changes':'Save record'}</button></div>
+  </form>
+  <div id="recordList">${cards}</div>`;
+}
+
+/* ---------------- writes ---------------- */
+async function updateWorker(id, data){
+  try{ await db.collection('workers').doc(id).update(data); toast('Saved'); }
+  catch(e){ console.error(e); toast('Could not save — '+(e.code||'error')); }
+}
+async function updateWorkerArray(worker,key,arr){
+  await updateWorker(worker.id, {[key]:arr});
+}
+async function updateVehicle(id, data){
+  try{ await db.collection('vehicles').doc(id).update(data); toast('Saved'); }
+  catch(e){ console.error(e); toast('Could not save — '+(e.code||'error')); }
+}
+async function updateVehicleArray(vehicle,key,arr){
+  await updateVehicle(vehicle.id, {[key]:arr});
+}
+async function updateSite(id, data){
+  try{ await db.collection('siteEquipment').doc(id).update(data); toast('Saved'); }
+  catch(e){ console.error(e); toast('Could not save — '+(e.code||'error')); }
+}
+async function updateSiteArray(site,key,arr){
+  await updateSite(site.id, {[key]:arr});
+}
+
+/* ---------------- PDF profile export ---------------- */
+async function fetchImageDataUrl(url){
+  if(!url) return null;
+  try{
+    const res=await fetch(url);
+    if(!res.ok) return null;
+    const blob=await res.blob();
+    return await new Promise((resolve,reject)=>{
+      const r=new FileReader();
+      r.onload=()=>resolve(r.result);
+      r.onerror=reject;
+      r.readAsDataURL(blob);
+    });
+  }catch(e){ return null; }
+}
+function imgFormat(dataUrl){
+  if(dataUrl.startsWith('data:image/png')) return 'PNG';
+  if(dataUrl.startsWith('data:image/jpeg')||dataUrl.startsWith('data:image/jpg')) return 'JPEG';
+  return 'PNG';
+}
+async function buildProfilePdf(w){
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const marginX=40, pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
+  let y=54;
+  function ensure(h){ if(y+h>pageH-36){ doc.addPage(); y=48; } }
+  function h2(text){ ensure(26); doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(216,30,44); doc.text(text.toUpperCase(), marginX, y); doc.setTextColor(20,20,20); y+=6; doc.setDrawColor(210); doc.line(marginX,y,pageW-marginX,y); y+=14; }
+  function kv(label,value){ if(value===undefined||value===null||value==='') value='—'; ensure(15); doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(100,105,98); doc.text(String(label), marginX, y); doc.setTextColor(20,20,20); doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.text(String(value), marginX+150, y); y+=14; }
+  function para(text){ if(!text) return; ensure(14); doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(20,20,20); const lines=doc.splitTextToSize(text, pageW-2*marginX); lines.forEach(l=>{ ensure(11); doc.text(l, marginX, y); y+=11; }); y+=4; }
+  function section(title,key,cfg){
+    h2(title);
+    const recs=(w[key]||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    if(!recs.length){ ensure(13); doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(130,130,130); doc.text('None logged', marginX, y); doc.setTextColor(20,20,20); y+=16; return; }
+    for(const r of recs){
+      ensure(14);
+      const titleVal=r[cfg.fields[0].key]||'';
+      let tag='';
+      if(cfg.hasExpiry){ tag = r.expiry? `  ·  valid until ${r.expiry} (${statusFor(r.expiry)})` : '  ·  no expiry set'; }
+      else if(r.level) tag=`  ·  ${r.level}`;
+      else if(r.severity) tag=`  ·  ${r.severity}`;
+      doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(20,20,20);
+      doc.text(`•  ${titleVal}${tag}`, marginX, y); y+=12;
+      const bits=cfg.fields.slice(1).filter(f=>f.key!=='expiry' && r[f.key]).map(f=>`${f.label}: ${r[f.key]}`).join('    ');
+      if(bits){ doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(100,105,98); const lines=doc.splitTextToSize(bits, pageW-2*marginX-12); lines.forEach(l=>{ ensure(10); doc.text(l, marginX+12, y); y+=10; }); doc.setTextColor(20,20,20); }
+      y+=4;
+    }
+    y+=2;
+  }
+
+  try{
+    const logoUrl=await fetchImageDataUrl('logo.png');
+    if(logoUrl){ doc.addImage(logoUrl, 'PNG', marginX, 24, 32, 45); }
+  }catch(e){}
+  doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(20,20,20);
+  doc.text('Burhan Oil & Trade Services', marginX+40, 38);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(120,120,120);
+  doc.text('Workforce HSE Register', marginX+40, 48);
+  doc.setTextColor(20,20,20);
+  y = 88;
+
+  if(w.photo && w.photo.url){
+    const photoUrl=await fetchImageDataUrl(w.photo.url);
+    if(photoUrl){ try{ doc.addImage(photoUrl, imgFormat(photoUrl), pageW-marginX-64, 24, 64, 64); }catch(e){} }
+  }
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(20,20,20);
+  doc.text(w.fullName||'Worker profile', marginX, y); y+=18;
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(100,105,98);
+  doc.text(`Civil ID ${w.civilId||'—'}   ·   ${w.designation? w.designation+' — ':''}${w.trade||'—'}   ·   ${(w.status||'active')==='inactive'?'Inactive':'Active'}`, marginX, y);
+  doc.setTextColor(20,20,20); y+=22;
+
+  h2('Personal details');
+  kv('Full name', w.fullName); kv('Civil ID', w.civilId); kv('Civil ID expiry', w.civilIdExpiry);
+  kv('Nationality', w.nationality); kv('Date of birth', w.dateOfBirth); kv('Blood group', w.bloodGroup);
+  kv('Mobile number', w.mobileNumber);
+
+  h2('Employment');
+  kv('Designation', w.designation); kv('Trade / occupation', w.trade); kv('Subcontractor / company', w.contractor);
+  kv('Date of joining', w.dateOfJoining); kv('Employment status', (w.status||'active')==='inactive'?'Inactive':'Active');
+
+  h2('Work experience');
+  const gcc=parseFloat(w.experienceGCCYears)||0, other=parseFloat(w.experienceOtherYears)||0;
+  kv('Experience in GCC', w.experienceGCCYears? w.experienceGCCYears+' years':'—');
+  kv('Experience outside GCC', w.experienceOtherYears? w.experienceOtherYears+' years':'—');
+  kv('Total experience', (gcc+other)? (gcc+other)+' years':'—');
+  para(w.priorExperienceNotes);
+
+  h2('Emergency contact');
+  kv('Contact name', w.emergencyContactName); kv('Relationship', w.emergencyContactRelation); kv('Contact phone', w.emergencyContactPhone);
+
+  section('Induction records','inductions',RECORD_TYPES.inductions);
+  section('Training records','trainings',RECORD_TYPES.trainings);
+  section('Competency assessments','competency',RECORD_TYPES.competency);
+  section('Medical fitness & screening','medical',RECORD_TYPES.medical);
+  section('Licenses & permits','licenses',RECORD_TYPES.licenses);
+  section('Warning letters','warnings',RECORD_TYPES.warnings);
+  section('Violations','violations',RECORD_TYPES.violations);
+
+  if(w.signature && w.signature.url){
+    h2('Signature on file');
+    const sigUrl=await fetchImageDataUrl(w.signature.url);
+    if(sigUrl){ ensure(66); try{ doc.addImage(sigUrl, imgFormat(sigUrl), marginX, y, 150, 55); y+=62; }catch(e){ para('Signature on file (view it in the register).'); } }
+    else para('Signature on file (view it in the register).');
+  }
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(150,150,150);
+  doc.text(`Generated ${new Date().toISOString().slice(0,10)} from Workforce HSE Register`, marginX, pageH-20);
+  return doc;
+}
+
+async function downloadProfile(){
+  const w=currentWorker(); if(!w) return;
+  if(!(window.jspdf && window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
+  try{
+    const doc=await buildProfilePdf(w);
+    const filename=(w.fullName||'worker').trim().replace(/[^a-z0-9]+/gi,'_').replace(/^_+|_+$/g,'')+'_profile.pdf';
+    doc.save(filename);
+    toast('Profile downloaded');
+  }catch(e){ console.error(e); toast('Could not generate the PDF'); }
+}
+
+/* ---------------- vehicle PDF export ---------------- */
+async function buildVehiclePdf(v){
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const marginX=40, pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
+  let y=54;
+  function ensure(h){ if(y+h>pageH-36){ doc.addPage(); y=48; } }
+  function h2(text){ ensure(26); doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(216,30,44); doc.text(text.toUpperCase(), marginX, y); doc.setTextColor(20,20,20); y+=6; doc.setDrawColor(210); doc.line(marginX,y,pageW-marginX,y); y+=14; }
+  function kv(label,value){ if(value===undefined||value===null||value==='') value='—'; ensure(15); doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(100,105,98); doc.text(String(label), marginX, y); doc.setTextColor(20,20,20); doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.text(String(value), marginX+150, y); y+=14; }
+  function section(title,key,cfg){
+    h2(title);
+    const recs=(v[key]||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    if(!recs.length){ ensure(13); doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(130,130,130); doc.text('None logged', marginX, y); doc.setTextColor(20,20,20); y+=16; return; }
+    for(const r of recs){
+      ensure(14);
+      const titleVal=r[cfg.fields[0].key]||'';
+      const tag = cfg.hasExpiry ? (r.expiry? `  ·  valid until ${r.expiry} (${statusFor(r.expiry)})` : '  ·  no expiry set') : '';
+      doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(20,20,20);
+      doc.text(`•  ${titleVal}${tag}`, marginX, y); y+=12;
+      const bits=cfg.fields.slice(1).filter(f=>f.key!=='expiry' && r[f.key]).map(f=>`${f.label}: ${r[f.key]}`).join('    ');
+      if(bits){ doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(100,105,98); const lines=doc.splitTextToSize(bits, pageW-2*marginX-12); lines.forEach(l=>{ ensure(10); doc.text(l, marginX+12, y); y+=10; }); doc.setTextColor(20,20,20); }
+      y+=4;
+    }
+    y+=2;
+  }
+
+  try{
+    const logoUrl=await fetchImageDataUrl('logo.png');
+    if(logoUrl){ doc.addImage(logoUrl, 'PNG', marginX, 24, 32, 45); }
+  }catch(e){}
+  doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(20,20,20);
+  doc.text('Burhan Oil & Trade Services', marginX+40, 38);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(120,120,120);
+  doc.text('Vehicle Register', marginX+40, 48);
+  doc.setTextColor(20,20,20);
+  y=88;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(20,20,20);
+  doc.text(v.vehicleNumber||'Vehicle profile', marginX, y); y+=18;
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(100,105,98);
+  doc.text(`${v.model||'—'}   ·   ${v.ownership||'Own'}`, marginX, y);
+  doc.setTextColor(20,20,20); y+=22;
+
+  h2('Vehicle details');
+  kv('Vehicle number', v.vehicleNumber); kv('Model', v.model); kv('Ownership', v.ownership||'Own');
+
+  h2('Onboard equipment counts');
+  for(const f of VEHICLE_COUNT_FIELDS){ kv(f.label, v[f.key]!=null? v[f.key] : '0'); }
+
+  section('Vehicle documents','documents',VEHICLE_RECORD_TYPES.documents);
+  section('PPE & safety equipment','ppe',VEHICLE_RECORD_TYPES.ppe);
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(150,150,150);
+  doc.text(`Generated ${new Date().toISOString().slice(0,10)} from Vehicle Register`, marginX, pageH-20);
+  return doc;
+}
+
+async function downloadVehicleProfile(){
+  const v=currentVehicle(); if(!v) return;
+  if(!(window.jspdf && window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
+  try{
+    const doc=await buildVehiclePdf(v);
+    const filename=(v.vehicleNumber||'vehicle').trim().replace(/[^a-z0-9]+/gi,'_').replace(/^_+|_+$/g,'')+'_profile.pdf';
+    doc.save(filename);
+    toast('Vehicle profile downloaded');
+  }catch(e){ console.error(e); toast('Could not generate the PDF'); }
+}
+
+/* ---------------- site equipment PDF export ---------------- */
+async function buildSitePdf(s){
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const marginX=40, pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
+  let y=54;
+  function ensure(h){ if(y+h>pageH-36){ doc.addPage(); y=48; } }
+  function h2(text){ ensure(26); doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(216,30,44); doc.text(text.toUpperCase(), marginX, y); doc.setTextColor(20,20,20); y+=6; doc.setDrawColor(210); doc.line(marginX,y,pageW-marginX,y); y+=14; }
+  function kv(label,value){ if(value===undefined||value===null||value==='') value='—'; ensure(15); doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(100,105,98); doc.text(String(label), marginX, y); doc.setTextColor(20,20,20); doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.text(String(value), marginX+150, y); y+=14; }
+  function section(title,key,cfg){
+    h2(title);
+    const recs=(s[key]||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    if(!recs.length){ ensure(13); doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(130,130,130); doc.text('None logged', marginX, y); doc.setTextColor(20,20,20); y+=16; return; }
+    for(const r of recs){
+      ensure(14);
+      const titleVal=r[cfg.fields[0].key]||'';
+      const tag = cfg.hasExpiry ? (r.expiry? `  ·  valid until ${r.expiry} (${statusFor(r.expiry)})` : '  ·  no expiry set') : '';
+      doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(20,20,20);
+      doc.text(`•  ${titleVal}${tag}`, marginX, y); y+=12;
+      const bits=cfg.fields.slice(1).filter(f=>f.key!=='expiry' && r[f.key]).map(f=>`${f.label}: ${r[f.key]}`).join('    ');
+      if(bits){ doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(100,105,98); const lines=doc.splitTextToSize(bits, pageW-2*marginX-12); lines.forEach(l=>{ ensure(10); doc.text(l, marginX+12, y); y+=10; }); doc.setTextColor(20,20,20); }
+      y+=4;
+    }
+    y+=2;
+  }
+
+  try{
+    const logoUrl=await fetchImageDataUrl('logo.png');
+    if(logoUrl){ doc.addImage(logoUrl, 'PNG', marginX, 24, 32, 45); }
+  }catch(e){}
+  doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(20,20,20);
+  doc.text('Burhan Oil & Trade Services', marginX+40, 38);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(120,120,120);
+  doc.text('Site Equipment Register', marginX+40, 48);
+  doc.setTextColor(20,20,20);
+  y=88;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(20,20,20);
+  doc.text(s.siteName||'Site profile', marginX, y); y+=18;
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(100,105,98);
+  doc.text(`${s.division||'Civil'}   ·   ${s.location||'—'}`, marginX, y);
+  doc.setTextColor(20,20,20); y+=22;
+
+  h2('Site details');
+  kv('Site name', s.siteName); kv('Division', s.division||'Civil'); kv('Location', s.location);
+
+  section('Power tools','powerTools',SITE_RECORD_TYPES.powerTools);
+  section('Safety harness','harness',SITE_RECORD_TYPES.harness);
+  section('Ladders','ladders',SITE_RECORD_TYPES.ladders);
+  section('Other PPE','otherPpe',SITE_RECORD_TYPES.otherPpe);
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(150,150,150);
+  doc.text(`Generated ${new Date().toISOString().slice(0,10)} from Site Equipment Register`, marginX, pageH-20);
+  return doc;
+}
+
+async function downloadSiteProfile(){
+  const s=currentSite(); if(!s) return;
+  if(!(window.jspdf && window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
+  try{
+    const doc=await buildSitePdf(s);
+    const filename=(s.siteName||'site').trim().replace(/[^a-z0-9]+/gi,'_').replace(/^_+|_+$/g,'')+'_profile.pdf';
+    doc.save(filename);
+    toast('Site profile downloaded');
+  }catch(e){ console.error(e); toast('Could not generate the PDF'); }
+}
+
+/* ---------------- events ---------------- */
+document.addEventListener('DOMContentLoaded', ()=>{
+
+  document.getElementById('loginForm').addEventListener('submit', e=>{
+    e.preventDefault();
+    const email=document.getElementById('loginEmail').value.trim();
+    const pass=document.getElementById('loginPassword').value;
+    const err=document.getElementById('authError');
+    err.hidden=true;
+    auth.signInWithEmailAndPassword(email, pass).catch(e=>{
+      err.textContent = 'Sign-in failed — check your email and password.';
+      err.hidden=false;
+    });
+  });
+  document.getElementById('signOutBtn').addEventListener('click', ()=>auth.signOut());
+
+  document.getElementById('addWorkerBtn').addEventListener('click', ()=>{
+    document.getElementById('addWorkerPanel').hidden=false;
+  });
+  document.getElementById('cancelAddWorker').addEventListener('click', ()=>{
+    document.getElementById('addWorkerPanel').hidden=true;
+    document.getElementById('addWorkerForm').reset();
+  });
+  document.getElementById('addWorkerForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const data={status:'active', inductions:[],trainings:[],competency:[],medical:[],licenses:[],warnings:[],violations:[], createdAt:new Date().toISOString()};
+    e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
+    try{
+      await db.collection('workers').add(data);
+      toast('Worker added');
+      e.target.reset();
+      document.getElementById('addWorkerPanel').hidden=true;
+    }catch(err){ console.error(err); toast('Could not add worker'); }
+  });
+
+  document.getElementById('clearSampleBtn').addEventListener('click', async function(){
+    if(this.dataset.armed!=='1'){
+      this.dataset.armed='1'; const orig=this.textContent; this.textContent='Confirm — delete sample data?';
+      setTimeout(()=>{ this.dataset.armed='0'; this.textContent=orig; }, 4000);
+      return;
+    }
+    this.dataset.armed='0';
+    const samples=activeWorkers().filter(w=>w.isSample);
+    for(const s of samples){ try{ await db.collection('workers').doc(s.id).delete(); }catch(e){} }
+    toast('Sample data removed');
+  });
+
+  document.getElementById('searchInput').addEventListener('input', e=>{ filters.q=e.target.value; renderTable(); });
+  document.getElementById('tradeFilter').addEventListener('change', e=>{ filters.trade=e.target.value; renderTable(); });
+  document.getElementById('statusFilter').addEventListener('change', e=>{ filters.status=e.target.value; renderTable(); });
+
+  document.getElementById('workerRows').addEventListener('click', e=>{
+    const tr=e.target.closest('tr[data-id]'); if(tr) openDrawer(tr.dataset.id);
+  });
+  document.getElementById('drawerClose').addEventListener('click', closeDrawer);
+  document.getElementById('downloadPdfBtn').addEventListener('click', downloadProfile);
+  document.getElementById('drawerOverlay').addEventListener('click', closeDrawer);
+
+  document.getElementById('trashBtn').addEventListener('click', openTrash);
+  document.getElementById('trashClose').addEventListener('click', closeTrash);
+  document.getElementById('trashOverlay').addEventListener('click', closeTrash);
+  document.getElementById('trashBody').addEventListener('click', async e=>{
+    const restoreBtn=e.target.closest('[data-restore]');
+    if(restoreBtn){
+      await updateWorker(restoreBtn.dataset.restore, {deleted:false, deletedAt:null});
+      toast('Worker restored');
+      return;
+    }
+    const purgeBtn=e.target.closest('[data-purge]');
+    if(purgeBtn){
+      if(purgeBtn.dataset.armed!=='1'){
+        purgeBtn.dataset.armed='1'; purgeBtn.textContent='Confirm — cannot be undone';
+        setTimeout(()=>{ if(purgeBtn.dataset.armed==='1'){ purgeBtn.dataset.armed='0'; purgeBtn.textContent='Delete forever'; } },4000);
+        return;
+      }
+      try{
+        const w=workers.find(x=>x.id===purgeBtn.dataset.purge);
+        if(w) await deleteAllAttachments(w);
+        await db.collection('workers').doc(purgeBtn.dataset.purge).delete();
+        toast('Worker and their files permanently removed');
+      }
+      catch(err){ console.error(err); toast('Could not remove worker'); }
+      return;
+    }
+  });
+
+  document.getElementById('drawerTabs').addEventListener('click', e=>{
+    const b=e.target.closest('[data-tab]'); if(!b) return;
+    activeTab=b.dataset.tab; editingRecordId=null; addFormOpen=false; renderDrawer();
+  });
+
+  document.getElementById('drawerBody').addEventListener('submit', async e=>{
+    if(e.target.id==='profileForm'){
+      e.preventDefault();
+      const w=currentWorker(); if(!w) return;
+      const data={}; e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
+      await updateWorker(w.id,data);
+    }
+    if(e.target.id==='recordForm'){
+      e.preventDefault();
+      const w=currentWorker(); if(!w) return;
+      const cfg=RECORD_TYPES[activeTab];
+      const data={}; e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
+      const arr=(w[activeTab]||[]).slice();
+      if(editingRecordId){
+        const idx=arr.findIndex(r=>r.id===editingRecordId);
+        if(idx>-1) arr[idx]={...arr[idx], ...data};
+      } else {
+        arr.push({id:genId(), ...data});
+      }
+      editingRecordId=null; addFormOpen=false;
+      await updateWorkerArray(w,activeTab,arr);
+    }
+  });
+
+  document.getElementById('drawerBody').addEventListener('click', async e=>{
+    if(e.target.id==='toggleRecordForm'){
+      addFormOpen = !addFormOpen;
+      editingRecordId = null;
+      renderDrawerBody();
+      return;
+    }
+    const editBtn=e.target.closest('[data-edit]');
+    if(editBtn){ const [key,rid]=editBtn.dataset.edit.split(':'); editingRecordId=rid; addFormOpen=true; renderDrawerBody(); return; }
+    const delBtn=e.target.closest('[data-del]');
+    if(delBtn){
+      if(delBtn.dataset.armed!=='1'){
+        delBtn.dataset.armed='1'; delBtn.textContent='✔'; setTimeout(()=>{ if(delBtn.dataset.armed==='1'){ delBtn.dataset.armed='0'; delBtn.textContent='🗑'; } },4000);
+        return;
+      }
+      const [key,rid]=delBtn.dataset.del.split(':');
+      const w=currentWorker(); if(!w) return;
+      const removed=(w[key]||[]).find(r=>r.id===rid);
+      const arr=(w[key]||[]).filter(r=>r.id!==rid);
+      await updateWorkerArray(w,key,arr);
+      if(removed && removed.attachment && removed.attachment.path) deleteStorageFile(removed.attachment.path);
+      return;
+    }
+    const delWorkerBtn=e.target.closest('#deleteWorkerBtn');
+    if(delWorkerBtn){
+      if(delWorkerBtn.dataset.armed!=='1'){
+        delWorkerBtn.dataset.armed='1'; delWorkerBtn.textContent='Confirm delete — cannot be undone';
+        setTimeout(()=>{ if(delWorkerBtn.dataset.armed==='1'){ delWorkerBtn.dataset.armed='0'; delWorkerBtn.textContent='Delete worker'; } },4000);
+        return;
+      }
+      const w=currentWorker(); if(!w) return;
+      try{ await updateWorker(w.id, {deleted:true, deletedAt:new Date().toISOString()}); toast('Worker moved to Deleted workers'); closeDrawer(); }
+      catch(err){ toast('Could not delete'); }
+      return;
+    }
+  });
+
+  document.getElementById('drawerBody').addEventListener('change', async e=>{
+    if(!e.target.matches('[data-attach-for]')) return;
+    const file=e.target.files[0]; if(!file) return;
+    const target=e.target.dataset.attachFor;
+    try{
+      const att=await uploadToStorage(file);
+      const w=currentWorker(); if(!w) return;
+      if(target==='photo' || target==='civilIdScan' || target==='signature'){
+        const old=w[target];
+        await updateWorker(w.id, {[target]:att});
+        if(old && old.path) deleteStorageFile(old.path);
+      } else {
+        const [key,rid]=target.split(':');
+        const arr=(w[key]||[]).slice();
+        const idx=arr.findIndex(r=>r.id===rid);
+        if(idx>-1){
+          const old=arr[idx].attachment;
+          arr[idx]={...arr[idx], attachment:att};
+          await updateWorkerArray(w,key,arr);
+          if(old && old.path) deleteStorageFile(old.path);
+        }
+      }
+      toast('File attached');
+    }catch(err){ console.error(err); toast('Upload failed'); }
+  });
+
+  /* ---------------- side navigation ---------------- */
+  document.querySelectorAll('.sidenav-btn[data-section]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const section=btn.dataset.section;
+      document.querySelectorAll('.sidenav-btn[data-section]').forEach(b=>b.classList.toggle('active', b===btn));
+      document.getElementById('workforceSection').hidden = section!=='workforce';
+      document.getElementById('vehiclesSection').hidden = section!=='vehicles';
+      document.getElementById('siteSection').hidden = section!=='site';
+    });
+  });
+
+  /* ---------------- vehicle: add / search / table ---------------- */
+  document.getElementById('addVehicleBtn').addEventListener('click', ()=>{
+    document.getElementById('addVehiclePanel').hidden=false;
+  });
+  document.getElementById('cancelAddVehicle').addEventListener('click', ()=>{
+    document.getElementById('addVehiclePanel').hidden=true;
+    document.getElementById('addVehicleForm').reset();
+  });
+  document.getElementById('addVehicleForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const data={ownership:'Own', documents:[], ppe:[], jackCount:0, wheelStopperCount:0, brassHammerCount:0, warningTriangleCount:0, createdAt:new Date().toISOString()};
+    e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
+    try{
+      await db.collection('vehicles').add(data);
+      toast('Vehicle added');
+      e.target.reset();
+      document.getElementById('addVehiclePanel').hidden=true;
+    }catch(err){ console.error(err); toast('Could not add vehicle'); }
+  });
+  document.getElementById('vehicleSearchInput').addEventListener('input', e=>{ vehicleFilters.q=e.target.value; renderVehicleTable(); });
+  document.getElementById('vehicleOwnershipFilter').addEventListener('change', e=>{ vehicleFilters.ownership=e.target.value; renderVehicleTable(); });
+  document.getElementById('vehicleRows').addEventListener('click', e=>{
+    const tr=e.target.closest('tr[data-id]'); if(tr) openVehicleDrawer(tr.dataset.id);
+  });
+
+  /* ---------------- vehicle: drawer ---------------- */
+  document.getElementById('vehicleDrawerClose').addEventListener('click', closeVehicleDrawer);
+  document.getElementById('vehicleDrawerOverlay').addEventListener('click', closeVehicleDrawer);
+  document.getElementById('downloadVehiclePdfBtn').addEventListener('click', downloadVehicleProfile);
+  document.getElementById('vehicleDrawerTabs').addEventListener('click', e=>{
+    const b=e.target.closest('[data-vtab]'); if(!b) return;
+    activeVehicleTab=b.dataset.vtab; editingVehicleRecordId=null; vehicleAddFormOpen=false; renderVehicleDrawer();
+  });
+
+  /* ---------------- vehicle: trash ---------------- */
+  document.getElementById('vehicleTrashBtn').addEventListener('click', openVehicleTrash);
+  document.getElementById('vehicleTrashClose').addEventListener('click', closeVehicleTrash);
+  document.getElementById('vehicleTrashOverlay').addEventListener('click', closeVehicleTrash);
+  document.getElementById('vehicleTrashBody').addEventListener('click', async e=>{
+    const restoreBtn=e.target.closest('[data-vrestore]');
+    if(restoreBtn){
+      await updateVehicle(restoreBtn.dataset.vrestore, {deleted:false, deletedAt:null});
+      toast('Vehicle restored');
+      return;
+    }
+    const purgeBtn=e.target.closest('[data-vpurge]');
+    if(purgeBtn){
+      if(purgeBtn.dataset.armed!=='1'){
+        purgeBtn.dataset.armed='1'; purgeBtn.textContent='Confirm — cannot be undone';
+        setTimeout(()=>{ if(purgeBtn.dataset.armed==='1'){ purgeBtn.dataset.armed='0'; purgeBtn.textContent='Delete forever'; } },4000);
+        return;
+      }
+      try{
+        const v=vehicles.find(x=>x.id===purgeBtn.dataset.vpurge);
+        if(v) await deleteAllAttachments(v, VEHICLE_RECORD_TYPES, []);
+        await db.collection('vehicles').doc(purgeBtn.dataset.vpurge).delete();
+        toast('Vehicle and its files permanently removed');
+      }
+      catch(err){ console.error(err); toast('Could not remove vehicle'); }
+      return;
+    }
+  });
+
+  /* ---------------- vehicle: profile + record form submit ---------------- */
+  document.getElementById('vehicleDrawerBody').addEventListener('submit', async e=>{
+    if(e.target.id==='vehicleProfileForm'){
+      e.preventDefault();
+      const v=currentVehicle(); if(!v) return;
+      const data={};
+      e.target.querySelectorAll('[data-vfield]').forEach(el=>{
+        data[el.dataset.vfield] = el.type==='number' ? (parseInt(el.value,10)||0) : el.value;
+      });
+      await updateVehicle(v.id,data);
+    }
+    if(e.target.id==='recordForm'){
+      e.preventDefault();
+      const v=currentVehicle(); if(!v) return;
+      const data={}; e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
+      const arr=(v[activeVehicleTab]||[]).slice();
+      if(editingVehicleRecordId){
+        const idx=arr.findIndex(r=>r.id===editingVehicleRecordId);
+        if(idx>-1) arr[idx]={...arr[idx], ...data};
+      } else {
+        arr.push({id:genId(), ...data});
+      }
+      editingVehicleRecordId=null; vehicleAddFormOpen=false;
+      await updateVehicleArray(v,activeVehicleTab,arr);
+    }
+  });
+
+  /* ---------------- vehicle: record edit/delete/toggle + delete vehicle ---------------- */
+  document.getElementById('vehicleDrawerBody').addEventListener('click', async e=>{
+    if(e.target.id==='toggleRecordForm'){
+      vehicleAddFormOpen = !vehicleAddFormOpen;
+      editingVehicleRecordId = null;
+      renderVehicleDrawerBody();
+      return;
+    }
+    const editBtn=e.target.closest('[data-edit]');
+    if(editBtn){ const [,rid]=editBtn.dataset.edit.split(':'); editingVehicleRecordId=rid; vehicleAddFormOpen=true; renderVehicleDrawerBody(); return; }
+    const delBtn=e.target.closest('[data-del]');
+    if(delBtn){
+      if(delBtn.dataset.armed!=='1'){
+        delBtn.dataset.armed='1'; delBtn.textContent='✔'; setTimeout(()=>{ if(delBtn.dataset.armed==='1'){ delBtn.dataset.armed='0'; delBtn.textContent='🗑'; } },4000);
+        return;
+      }
+      const [key,rid]=delBtn.dataset.del.split(':');
+      const v=currentVehicle(); if(!v) return;
+      const removed=(v[key]||[]).find(r=>r.id===rid);
+      const arr=(v[key]||[]).filter(r=>r.id!==rid);
+      await updateVehicleArray(v,key,arr);
+      if(removed && removed.attachment && removed.attachment.path) deleteStorageFile(removed.attachment.path);
+      return;
+    }
+    const delVehicleBtn=e.target.closest('#deleteVehicleBtn');
+    if(delVehicleBtn){
+      if(delVehicleBtn.dataset.armed!=='1'){
+        delVehicleBtn.dataset.armed='1'; delVehicleBtn.textContent='Confirm delete — cannot be undone';
+        setTimeout(()=>{ if(delVehicleBtn.dataset.armed==='1'){ delVehicleBtn.dataset.armed='0'; delVehicleBtn.textContent='Delete vehicle'; } },4000);
+        return;
+      }
+      const v=currentVehicle(); if(!v) return;
+      try{ await updateVehicle(v.id, {deleted:true, deletedAt:new Date().toISOString()}); toast('Vehicle moved to Deleted vehicles'); closeVehicleDrawer(); }
+      catch(err){ toast('Could not delete'); }
+      return;
+    }
+  });
+
+  /* ---------------- vehicle: attachment upload ---------------- */
+  document.getElementById('vehicleDrawerBody').addEventListener('change', async e=>{
+    if(!e.target.matches('[data-attach-for]')) return;
+    const file=e.target.files[0]; if(!file) return;
+    const target=e.target.dataset.attachFor;
+    try{
+      const att=await uploadToStorage(file);
+      const v=currentVehicle(); if(!v) return;
+      const [key,rid]=target.split(':');
+      const arr=(v[key]||[]).slice();
+      const idx=arr.findIndex(r=>r.id===rid);
+      if(idx>-1){
+        const old=arr[idx].attachment;
+        arr[idx]={...arr[idx], attachment:att};
+        await updateVehicleArray(v,key,arr);
+        if(old && old.path) deleteStorageFile(old.path);
+      }
+      toast('File attached');
+    }catch(err){ console.error(err); toast('Upload failed'); }
+  });
+
+  /* ---------------- site: add / search / table ---------------- */
+  document.getElementById('addSiteBtn').addEventListener('click', ()=>{
+    document.getElementById('addSitePanel').hidden=false;
+  });
+  document.getElementById('cancelAddSite').addEventListener('click', ()=>{
+    document.getElementById('addSitePanel').hidden=true;
+    document.getElementById('addSiteForm').reset();
+  });
+  document.getElementById('addSiteForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const data={division:'Civil', powerTools:[], harness:[], ladders:[], otherPpe:[], createdAt:new Date().toISOString()};
+    e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
+    try{
+      await db.collection('siteEquipment').add(data);
+      toast('Site added');
+      e.target.reset();
+      document.getElementById('addSitePanel').hidden=true;
+    }catch(err){ console.error(err); toast('Could not add site'); }
+  });
+  document.getElementById('siteSearchInput').addEventListener('input', e=>{ siteFilters.q=e.target.value; renderSiteTable(); });
+  document.getElementById('siteDivisionFilter').addEventListener('change', e=>{ siteFilters.division=e.target.value; renderSiteTable(); });
+  document.getElementById('siteRows').addEventListener('click', e=>{
+    const tr=e.target.closest('tr[data-id]'); if(tr) openSiteDrawer(tr.dataset.id);
+  });
+
+  /* ---------------- site: drawer ---------------- */
+  document.getElementById('siteDrawerClose').addEventListener('click', closeSiteDrawer);
+  document.getElementById('siteDrawerOverlay').addEventListener('click', closeSiteDrawer);
+  document.getElementById('downloadSitePdfBtn').addEventListener('click', downloadSiteProfile);
+  document.getElementById('siteDrawerTabs').addEventListener('click', e=>{
+    const b=e.target.closest('[data-stab]'); if(!b) return;
+    activeSiteTab=b.dataset.stab; editingSiteRecordId=null; siteAddFormOpen=false; renderSiteDrawer();
+  });
+
+  /* ---------------- site: trash ---------------- */
+  document.getElementById('siteTrashBtn').addEventListener('click', openSiteTrash);
+  document.getElementById('siteTrashClose').addEventListener('click', closeSiteTrash);
+  document.getElementById('siteTrashOverlay').addEventListener('click', closeSiteTrash);
+  document.getElementById('siteTrashBody').addEventListener('click', async e=>{
+    const restoreBtn=e.target.closest('[data-srestore]');
+    if(restoreBtn){
+      await updateSite(restoreBtn.dataset.srestore, {deleted:false, deletedAt:null});
+      toast('Site restored');
+      return;
+    }
+    const purgeBtn=e.target.closest('[data-spurge]');
+    if(purgeBtn){
+      if(purgeBtn.dataset.armed!=='1'){
+        purgeBtn.dataset.armed='1'; purgeBtn.textContent='Confirm — cannot be undone';
+        setTimeout(()=>{ if(purgeBtn.dataset.armed==='1'){ purgeBtn.dataset.armed='0'; purgeBtn.textContent='Delete forever'; } },4000);
+        return;
+      }
+      try{
+        const s=siteEquipmentList.find(x=>x.id===purgeBtn.dataset.spurge);
+        if(s) await deleteAllAttachments(s, SITE_RECORD_TYPES, []);
+        await db.collection('siteEquipment').doc(purgeBtn.dataset.spurge).delete();
+        toast('Site and its files permanently removed');
+      }
+      catch(err){ console.error(err); toast('Could not remove site'); }
+      return;
+    }
+  });
+
+  /* ---------------- site: profile + record form submit ---------------- */
+  document.getElementById('siteDrawerBody').addEventListener('submit', async e=>{
+    if(e.target.id==='siteProfileForm'){
+      e.preventDefault();
+      const s=currentSite(); if(!s) return;
+      const data={};
+      e.target.querySelectorAll('[data-sfield]').forEach(el=>{ data[el.dataset.sfield]=el.value; });
+      await updateSite(s.id,data);
+    }
+    if(e.target.id==='recordForm'){
+      e.preventDefault();
+      const s=currentSite(); if(!s) return;
+      const data={}; e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
+      const arr=(s[activeSiteTab]||[]).slice();
+      if(editingSiteRecordId){
+        const idx=arr.findIndex(r=>r.id===editingSiteRecordId);
+        if(idx>-1) arr[idx]={...arr[idx], ...data};
+      } else {
+        arr.push({id:genId(), ...data});
+      }
+      editingSiteRecordId=null; siteAddFormOpen=false;
+      await updateSiteArray(s,activeSiteTab,arr);
+    }
+  });
+
+  /* ---------------- site: record edit/delete/toggle + delete site ---------------- */
+  document.getElementById('siteDrawerBody').addEventListener('click', async e=>{
+    if(e.target.id==='toggleRecordForm'){
+      siteAddFormOpen = !siteAddFormOpen;
+      editingSiteRecordId = null;
+      renderSiteDrawerBody();
+      return;
+    }
+    const editBtn=e.target.closest('[data-edit]');
+    if(editBtn){ const [,rid]=editBtn.dataset.edit.split(':'); editingSiteRecordId=rid; siteAddFormOpen=true; renderSiteDrawerBody(); return; }
+    const delBtn=e.target.closest('[data-del]');
+    if(delBtn){
+      if(delBtn.dataset.armed!=='1'){
+        delBtn.dataset.armed='1'; delBtn.textContent='✔'; setTimeout(()=>{ if(delBtn.dataset.armed==='1'){ delBtn.dataset.armed='0'; delBtn.textContent='🗑'; } },4000);
+        return;
+      }
+      const [key,rid]=delBtn.dataset.del.split(':');
+      const s=currentSite(); if(!s) return;
+      const removed=(s[key]||[]).find(r=>r.id===rid);
+      const arr=(s[key]||[]).filter(r=>r.id!==rid);
+      await updateSiteArray(s,key,arr);
+      if(removed && removed.attachment && removed.attachment.path) deleteStorageFile(removed.attachment.path);
+      return;
+    }
+    const delSiteBtn=e.target.closest('#deleteSiteBtn');
+    if(delSiteBtn){
+      if(delSiteBtn.dataset.armed!=='1'){
+        delSiteBtn.dataset.armed='1'; delSiteBtn.textContent='Confirm delete — cannot be undone';
+        setTimeout(()=>{ if(delSiteBtn.dataset.armed==='1'){ delSiteBtn.dataset.armed='0'; delSiteBtn.textContent='Delete site'; } },4000);
+        return;
+      }
+      const s=currentSite(); if(!s) return;
+      try{ await updateSite(s.id, {deleted:true, deletedAt:new Date().toISOString()}); toast('Site moved to Deleted sites'); closeSiteDrawer(); }
+      catch(err){ toast('Could not delete'); }
+      return;
+    }
+  });
+
+  /* ---------------- site: attachment upload ---------------- */
+  document.getElementById('siteDrawerBody').addEventListener('change', async e=>{
+    if(!e.target.matches('[data-attach-for]')) return;
+    const file=e.target.files[0]; if(!file) return;
+    const target=e.target.dataset.attachFor;
+    try{
+      const att=await uploadToStorage(file);
+      const s=currentSite(); if(!s) return;
+      const [key,rid]=target.split(':');
+      const arr=(s[key]||[]).slice();
+      const idx=arr.findIndex(r=>r.id===rid);
+      if(idx>-1){
+        const old=arr[idx].attachment;
+        arr[idx]={...arr[idx], attachment:att};
+        await updateSiteArray(s,key,arr);
+        if(old && old.path) deleteStorageFile(old.path);
+      }
+      toast('File attached');
+    }catch(err){ console.error(err); toast('Upload failed'); }
+  });
+});
+
+// Register the service worker so this page can be installed as an app
+// (Add to Home Screen) and opens instantly on repeat visits.
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
