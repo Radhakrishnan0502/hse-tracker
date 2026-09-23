@@ -1,13 +1,19 @@
 // Minimal service worker — enables "Add to Home Screen" / installable app behavior.
 // It caches only the app shell (this page + icons) so the app opens instantly,
 // while all data (Firestore, Storage, sign-in) always goes over the network live.
-const CACHE_NAME = 'hse-tracker-shell-v1';
+//
+// Network-first: every load tries the network first so you always get the
+// latest version after an update, and only falls back to the cached copy if
+// you're offline. (Previous versions were cache-first, which is why updates
+// only ever showed up in Incognito — this fixes that for good.)
+const CACHE_NAME = 'hse-tracker-shell-v3';
 const SHELL_FILES = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './logo.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -33,17 +39,12 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET' || url.origin !== self.location.origin) return;
 
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return (
-        cached ||
-        fetch(event.request)
-          .then((response) => {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
-            return response;
-          })
-          .catch(() => cached)
-      );
-    })
+    fetch(event.request)
+      .then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
