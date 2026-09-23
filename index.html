@@ -179,7 +179,11 @@ tbody tr:hover{background:var(--surface-2);}
 .field-row .v{font-weight:500;}
 .att-block{margin-top:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
 .att-thumb{width:56px; height:56px; object-fit:cover; border-radius:8px; border:1px solid var(--line);}
-.att-link{font-size:12.5px; color:var(--accent); font-weight:600; text-decoration:none;}
+.att-file-icon{font-size:26px; flex:none;}
+.att-present{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.att-actions{display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+a.att-link, button.att-link{font-size:12.5px; color:var(--accent); font-weight:600; text-decoration:none; background:none; border:none; padding:0; font-family:inherit; cursor:pointer;}
+button.att-link.att-remove{color:var(--danger);}
 .upload-btn{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--accent); border:1px dashed var(--accent); border-radius:8px; padding:6px 10px; cursor:pointer;}
 .att-none{font-size:12px; color:var(--ink-muted);}
 .sig-pad-wrap{margin-top:8px;}
@@ -209,6 +213,7 @@ tbody tr:hover{background:var(--surface-2);}
 .division-tab:hover{color:var(--ink); border-color:var(--accent);}
 .division-tab.active{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
 .month-input{max-width:170px;}
+.month-nav{display:flex; align-items:center; gap:6px;}
 
 .hero-row{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px;}
 @media (max-width:760px){.hero-row{grid-template-columns:repeat(2,1fr);}}
@@ -277,10 +282,10 @@ tbody tr:hover{background:var(--surface-2);}
 <div class="app-shell">
   <aside class="sidenav">
     <img src="logo.png" alt="Burhan Oil & Trade Services" class="sidenav-logo">
+    <button type="button" class="sidenav-btn" data-section="report"><span class="sidenav-icon">📊</span> Monthly Report</button>
     <button type="button" class="sidenav-btn active" data-section="workforce"><span class="sidenav-icon">👥</span> Workforce</button>
     <button type="button" class="sidenav-btn" data-section="vehicles"><span class="sidenav-icon">🚚</span> Vehicles</button>
     <button type="button" class="sidenav-btn" data-section="site"><span class="sidenav-icon">🛠️</span> Site Equipment</button>
-    <button type="button" class="sidenav-btn" data-section="report"><span class="sidenav-icon">📊</span> Monthly Report</button>
   </aside>
   <div class="app-content">
 
@@ -471,7 +476,11 @@ tbody tr:hover{background:var(--surface-2);}
         <button type="button" class="division-tab" data-rdiv="Scaffolding">Scaffolding</button>
         <button type="button" class="division-tab" data-rdiv="Rental">Rental</button>
         <button type="button" class="division-tab" data-rdiv="Office staff">Office staff</button>
-        <input type="month" id="reportMonthInput" class="month-input" style="margin-left:auto;">
+        <div class="month-nav" style="margin-left:auto;">
+          <button type="button" class="btn btn-sm" id="reportPrevMonthBtn" aria-label="Previous month">◀</button>
+          <input type="month" id="reportMonthInput" class="month-input">
+          <button type="button" class="btn btn-sm" id="reportNextMonthBtn" aria-label="Next month">▶</button>
+        </div>
       </div>
 
       <div class="panel" id="addReportEntryPanel" hidden>
@@ -1815,20 +1824,28 @@ function renderDrawerBody(){
 }
 
 /* ---------------- attachments (Firebase Storage) ---------------- */
-function attachmentPreviewHtml(att, label){
+function attachmentPreviewHtml(att, label, removeTarget){
   if(att && att.url){
     const isImg = (att.contentType||'').startsWith('image/');
-    return isImg
+    const thumb = isImg
       ? `<a href="${att.url}" target="_blank" rel="noopener"><img class="att-thumb" src="${att.url}" alt="${esc(label)}"></a>`
-      : `<a class="att-link" href="${att.url}" target="_blank" rel="noopener">📄 View ${esc(label)}</a>`;
+      : `<span class="att-file-icon">📄</span>`;
+    return `<div class="att-present">
+      ${thumb}
+      <div class="att-actions">
+        <a class="att-link" href="${att.url}" target="_blank" rel="noopener">View</a>
+        <button type="button" class="att-link" data-download-url="${esc(att.url)}" data-download-name="${esc(att.name||label)}">Download</button>
+        <button type="button" class="att-link att-remove" data-remove-attach="${esc(removeTarget)}" data-armed="0">Remove</button>
+      </div>
+    </div>`;
   }
   return `<span class="att-none">No file attached</span>`;
 }
 function attachmentBlock(worker, key, record, label, targetKey){
   const att = record ? record.attachment : worker[targetKey];
-  const inner = attachmentPreviewHtml(att, label);
   const uploadFor = record ? `${key}:${record.id}` : targetKey;
-  const uploadCtl = `<label class="upload-btn">Upload ${esc(label)}<input type="file" hidden data-attach-for="${uploadFor}"></label>`;
+  const inner = attachmentPreviewHtml(att, label, uploadFor);
+  const uploadCtl = `<label class="upload-btn">${att&&att.url?'Replace':'Upload'} ${esc(label)}<input type="file" hidden data-attach-for="${uploadFor}"></label>`;
   return `<div class="att-block">${inner}${uploadCtl}</div>`;
 }
 async function uploadToStorage(file){
@@ -1837,7 +1854,23 @@ async function uploadToStorage(file){
   const ref = storage.ref().child(path);
   const snap = await ref.put(file);
   const url = await snap.ref.getDownloadURL();
-  return {url, path, contentType: file.type || 'application/octet-stream'};
+  return {url, path, contentType: file.type || 'application/octet-stream', name: file.name || safeName};
+}
+async function downloadAttachment(url, filename){
+  try{
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('fetch failed: '+res.status);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl; a.download = filename || 'download';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(blobUrl), 4000);
+  }catch(e){
+    console.error(e);
+    toast('Could not download directly — opening it in a new tab instead');
+    window.open(url, '_blank');
+  }
 }
 async function deleteStorageFile(path){
   if(!path) return;
@@ -2296,6 +2329,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
   document.getElementById('signOutBtn').addEventListener('click', ()=>auth.signOut());
 
+  /* ---------------- attachments: download (shared across all trackers) ---------------- */
+  document.addEventListener('click', e=>{
+    const b=e.target.closest('[data-download-url]'); if(!b) return;
+    downloadAttachment(b.dataset.downloadUrl, b.dataset.downloadName);
+  });
+
   document.getElementById('addWorkerBtn').addEventListener('click', ()=>{
     document.getElementById('addWorkerPanel').hidden=false;
   });
@@ -2400,6 +2439,32 @@ document.addEventListener('DOMContentLoaded', ()=>{
       addFormOpen = !addFormOpen;
       editingRecordId = null;
       renderDrawerBody();
+      return;
+    }
+    const removeBtn=e.target.closest('[data-remove-attach]');
+    if(removeBtn){
+      if(removeBtn.dataset.armed!=='1'){
+        removeBtn.dataset.armed='1'; removeBtn.textContent='Confirm?'; setTimeout(()=>{ if(removeBtn.dataset.armed==='1'){ removeBtn.dataset.armed='0'; removeBtn.textContent='Remove'; } },4000);
+        return;
+      }
+      const target=removeBtn.dataset.removeAttach;
+      const w=currentWorker(); if(!w) return;
+      if(target==='photo' || target==='civilIdScan' || target==='signature'){
+        const old=w[target];
+        await updateWorker(w.id, {[target]:null});
+        if(old && old.path) deleteStorageFile(old.path);
+      } else {
+        const [key,rid]=target.split(':');
+        const arr=(w[key]||[]).slice();
+        const idx=arr.findIndex(r=>r.id===rid);
+        if(idx>-1){
+          const old=arr[idx].attachment;
+          arr[idx]={...arr[idx], attachment:null};
+          await updateWorkerArray(w,key,arr);
+          if(old && old.path) deleteStorageFile(old.path);
+        }
+      }
+      toast('File removed');
       return;
     }
     const editBtn=e.target.closest('[data-edit]');
@@ -2568,6 +2633,25 @@ document.addEventListener('DOMContentLoaded', ()=>{
       renderVehicleDrawerBody();
       return;
     }
+    const removeBtn=e.target.closest('[data-remove-attach]');
+    if(removeBtn){
+      if(removeBtn.dataset.armed!=='1'){
+        removeBtn.dataset.armed='1'; removeBtn.textContent='Confirm?'; setTimeout(()=>{ if(removeBtn.dataset.armed==='1'){ removeBtn.dataset.armed='0'; removeBtn.textContent='Remove'; } },4000);
+        return;
+      }
+      const [key,rid]=removeBtn.dataset.removeAttach.split(':');
+      const v=currentVehicle(); if(!v) return;
+      const arr=(v[key]||[]).slice();
+      const idx=arr.findIndex(r=>r.id===rid);
+      if(idx>-1){
+        const old=arr[idx].attachment;
+        arr[idx]={...arr[idx], attachment:null};
+        await updateVehicleArray(v,key,arr);
+        if(old && old.path) deleteStorageFile(old.path);
+      }
+      toast('File removed');
+      return;
+    }
     const editBtn=e.target.closest('[data-edit]');
     if(editBtn){ const [,rid]=editBtn.dataset.edit.split(':'); editingVehicleRecordId=rid; vehicleAddFormOpen=true; renderVehicleDrawerBody(); return; }
     const delBtn=e.target.closest('[data-del]');
@@ -2715,6 +2799,25 @@ document.addEventListener('DOMContentLoaded', ()=>{
       renderSiteDrawerBody();
       return;
     }
+    const removeBtn=e.target.closest('[data-remove-attach]');
+    if(removeBtn){
+      if(removeBtn.dataset.armed!=='1'){
+        removeBtn.dataset.armed='1'; removeBtn.textContent='Confirm?'; setTimeout(()=>{ if(removeBtn.dataset.armed==='1'){ removeBtn.dataset.armed='0'; removeBtn.textContent='Remove'; } },4000);
+        return;
+      }
+      const [key,rid]=removeBtn.dataset.removeAttach.split(':');
+      const s=currentSite(); if(!s) return;
+      const arr=(s[key]||[]).slice();
+      const idx=arr.findIndex(r=>r.id===rid);
+      if(idx>-1){
+        const old=arr[idx].attachment;
+        arr[idx]={...arr[idx], attachment:null};
+        await updateSiteArray(s,key,arr);
+        if(old && old.path) deleteStorageFile(old.path);
+      }
+      toast('File removed');
+      return;
+    }
     const editBtn=e.target.closest('[data-edit]');
     if(editBtn){ const [,rid]=editBtn.dataset.edit.split(':'); editingSiteRecordId=rid; siteAddFormOpen=true; renderSiteDrawerBody(); return; }
     const delBtn=e.target.closest('[data-del]');
@@ -2772,6 +2875,15 @@ document.addEventListener('DOMContentLoaded', ()=>{
     reportMonth = e.target.value || new Date().toISOString().slice(0,7);
     renderReportAll();
   });
+  function shiftReportMonth(delta){
+    const [y,m] = reportMonth.split('-').map(Number);
+    const d = new Date(y, (m-1)+delta, 1);
+    reportMonth = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    document.getElementById('reportMonthInput').value = reportMonth;
+    renderReportAll();
+  }
+  document.getElementById('reportPrevMonthBtn').addEventListener('click', ()=>shiftReportMonth(-1));
+  document.getElementById('reportNextMonthBtn').addEventListener('click', ()=>shiftReportMonth(1));
   document.getElementById('reportDivisionTabs').addEventListener('click', e=>{
     const b=e.target.closest('[data-rdiv]'); if(!b) return;
     reportDivision=b.dataset.rdiv;
