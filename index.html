@@ -203,6 +203,47 @@ tbody tr:hover{background:var(--surface-2);}
 .danger-zone{margin-top:24px; padding-top:16px; border-top:1px solid var(--line);}
 .danger-zone p{color:var(--ink-muted); font-size:12px; margin:0 0 8px;}
 
+/* ---- monthly report ---- */
+.division-tabs{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;}
+.division-tab{padding:8px 14px; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--ink-muted); font-weight:600; font-size:12.5px;}
+.division-tab:hover{color:var(--ink); border-color:var(--accent);}
+.division-tab.active{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
+.month-input{max-width:170px;}
+
+.hero-row{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px;}
+@media (max-width:760px){.hero-row{grid-template-columns:repeat(2,1fr);}}
+.hero-tile{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; text-align:center; box-shadow:var(--shadow);}
+.hero-num{font-family:var(--font-display); font-weight:800; font-size:26px; font-variant-numeric:tabular-nums;}
+.hero-label{font-size:10.5px; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.04em; margin-top:4px;}
+
+.report-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:18px; align-items:start;}
+@media (max-width:900px){.report-grid{grid-template-columns:1fr;}}
+.chart-card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; box-shadow:var(--shadow);}
+.chart-card h3{font-size:13.5px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; gap:8px;}
+.chart-card .chart-total{font-size:11px; color:var(--ink-muted); font-weight:500; text-transform:none; letter-spacing:0;}
+
+.donut-wrap{display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
+.donut-svg{flex:none;}
+.donut-center-num{font-family:var(--font-display); font-weight:800; font-size:20px;}
+.donut-center-label{font-size:9px; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.04em;}
+.legend{display:flex; flex-direction:column; gap:7px; flex:1; min-width:150px;}
+.legend-item{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ink-muted);}
+.legend-swatch{width:10px; height:10px; border-radius:3px; flex:none;}
+.legend-val{margin-left:auto; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums;}
+
+.bar-chart{display:flex; flex-direction:column; gap:10px;}
+.bar-row{display:grid; grid-template-columns:96px 1fr 34px; align-items:center; gap:10px;}
+.bar-row-label{font-size:12px; color:var(--ink-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.bar-track{background:var(--surface-2); border-radius:4px; height:14px; position:relative; overflow:hidden;}
+.bar-fill{height:100%; border-radius:4px; min-width:3px;}
+.bar-row-val{font-size:12px; font-weight:700; text-align:right; font-variant-numeric:tabular-nums;}
+.bar-section-label{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-muted); font-weight:700; margin:14px 0 8px;}
+.bar-section-label:first-child{margin-top:0;}
+
+.report-category-fields{margin-top:10px;}
+.tiles-4{grid-template-columns:repeat(4,1fr) !important;}
+@media (max-width:900px){.tiles-4{grid-template-columns:repeat(2,1fr) !important;}}
+
 .toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:10px 16px; border-radius:9px; font-size:13px; box-shadow:var(--shadow); z-index:60; opacity:0; pointer-events:none; transition:opacity .2s;}
 .toast.show{opacity:1;}
 [hidden]{display:none !important;}
@@ -239,7 +280,7 @@ tbody tr:hover{background:var(--surface-2);}
     <button type="button" class="sidenav-btn active" data-section="workforce"><span class="sidenav-icon">👥</span> Workforce</button>
     <button type="button" class="sidenav-btn" data-section="vehicles"><span class="sidenav-icon">🚚</span> Vehicles</button>
     <button type="button" class="sidenav-btn" data-section="site"><span class="sidenav-icon">🛠️</span> Site Equipment</button>
-    <button type="button" class="sidenav-btn" disabled><span class="sidenav-icon">📊</span> Monthly Report <span class="sidenav-soon">Soon</span></button>
+    <button type="button" class="sidenav-btn" data-section="report"><span class="sidenav-icon">📊</span> Monthly Report</button>
   </aside>
   <div class="app-content">
 
@@ -407,6 +448,77 @@ tbody tr:hover{background:var(--surface-2);}
           </thead>
           <tbody id="siteRows">
             <tr><td colspan="6" class="empty-state">Sign in to load site equipment data…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <main class="app-main" id="reportSection" hidden>
+      <div class="topbar">
+        <div>
+          <h1>Monthly HSE Report</h1>
+          <p>Safe man-hours, near-misses, LTIs and incidents alongside proactive activity — training, TBTs, inductions, audits, site visits and vehicle checks — live per division or combined for all of Burhan Oil &amp; Trade Services.</p>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-sm" id="downloadReportPdfBtn" type="button">⬇ PDF report</button>
+          <button class="btn btn-primary" id="addReportEntryBtn" type="button">+ Log an entry</button>
+        </div>
+      </div>
+
+      <div class="division-tabs" id="reportDivisionTabs">
+        <button type="button" class="division-tab active" data-rdiv="all">All divisions</button>
+        <button type="button" class="division-tab" data-rdiv="Civil">Civil</button>
+        <button type="button" class="division-tab" data-rdiv="Scaffolding">Scaffolding</button>
+        <button type="button" class="division-tab" data-rdiv="Rental">Rental</button>
+        <button type="button" class="division-tab" data-rdiv="Office staff">Office staff</button>
+        <input type="month" id="reportMonthInput" class="month-input" style="margin-left:auto;">
+      </div>
+
+      <div class="panel" id="addReportEntryPanel" hidden>
+        <h3 id="reportEntryPanelTitle">Log an HSE activity</h3>
+        <form id="addReportEntryForm">
+          <div class="form-grid">
+            <label>Division *<select data-rfield="division" required>
+              <option value="Civil">Civil</option>
+              <option value="Scaffolding">Scaffolding</option>
+              <option value="Rental">Rental</option>
+              <option value="Office staff">Office staff</option>
+            </select></label>
+            <label>Category *<select id="reportCategorySelect" data-rfield="category" required></select></label>
+            <div id="reportDateFieldWrap"></div>
+          </div>
+          <div class="report-category-fields" id="reportCategoryFields"></div>
+          <div class="form-actions">
+            <button type="button" class="btn" id="cancelAddReportEntry">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="saveReportEntryBtn">Save entry</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="hero-row" id="reportHero"></div>
+
+      <div class="report-grid">
+        <div class="chart-card">
+          <h3><span>Proactive activity mix</span><span class="chart-total" id="reportDonutTotal"></span></h3>
+          <div id="reportDonut"></div>
+        </div>
+        <div class="chart-card" id="reportBarCard">
+          <h3><span id="reportBarTitle">Divisions compared</span></h3>
+          <div id="reportBarChart"></div>
+        </div>
+      </div>
+
+      <div class="tiles tiles-4" id="reportTiles"></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th><th>Division</th><th>Category</th><th>Details</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="reportRows">
+            <tr><td colspan="5" class="empty-state">Sign in to load report data…</td></tr>
           </tbody>
         </table>
       </div>
@@ -730,6 +842,76 @@ function siteAggFor(s,key){
   return {status:worst};
 }
 
+/* ---------------- monthly HSE report config ---------------- */
+const DIVISIONS = ['Civil','Scaffolding','Rental','Office staff'];
+// Fixed hue order per division — validated for CVD + contrast on --bg (see dataviz palette check)
+const DIVISION_COLORS = {Civil:'--cat-1', Scaffolding:'--cat-2', Rental:'--cat-4', 'Office staff':'--cat-6'};
+// Fixed hue order for the activity-mix donut — validated as a 7-slot categorical set
+const ACTIVITY_DONUT_KEYS = ['training','tbt','induction','siteVisit','internalAudit','vehicleInspection','hseObservation'];
+const REPORT_CATEGORIES = {
+  manHours:{ label:'Safe man-hours (monthly)', unit:'month', cat:'--cat-1',
+    fields:[{key:'hours', label:'Man-hours', type:'number', required:true}] },
+  nearMiss:{ label:'Near miss', unit:'date', cat:'--cat-2',
+    fields:[{key:'description', label:'Description', type:'textarea', required:true},{key:'actionTaken', label:'Action taken', type:'textarea'}] },
+  lti:{ label:'Lost Time Injury (LTI)', unit:'date', cat:'--cat-9',
+    fields:[{key:'description', label:'Description', type:'textarea', required:true},{key:'daysLost', label:'Days lost', type:'number'},{key:'actionTaken', label:'Action taken', type:'textarea'}] },
+  incident:{ label:'Incident', unit:'date', cat:'--cat-9',
+    fields:[{key:'severity', label:'Severity', type:'select', options:['Minor','Major','Critical'], required:true},{key:'description', label:'Description', type:'textarea', required:true},{key:'actionTaken', label:'Action taken', type:'textarea'}] },
+  training:{ label:'Internal training', unit:'date', cat:'--cat-1',
+    fields:[{key:'topic', label:'Topic', type:'text', required:true},{key:'attendees', label:'Attendees', type:'number'},{key:'conductedBy', label:'Conducted by', type:'text'}] },
+  vehicleInspection:{ label:'Vehicle inspection', unit:'date', cat:'--cat-6',
+    fields:[{key:'vehicleNumber', label:'Vehicle number', type:'text', required:true},{key:'result', label:'Result', type:'select', options:['Pass','Fail','Needs attention']}] },
+  hseObservation:{ label:'HSE observation', unit:'date', cat:'--cat-7',
+    fields:[{key:'type', label:'Type', type:'select', options:['Positive','Unsafe act','Unsafe condition'], required:true},{key:'description', label:'Description', type:'textarea'},{key:'actionTaken', label:'Action taken', type:'textarea'}] },
+  internalAudit:{ label:'Internal audit', unit:'date', cat:'--cat-5',
+    fields:[{key:'area', label:'Area / scope', type:'text', required:true},{key:'findings', label:'Findings (count)', type:'number'},{key:'conductedBy', label:'Conducted by', type:'text'}] },
+  siteVisit:{ label:'Site visit', unit:'date', cat:'--cat-4',
+    fields:[{key:'visitedBy', label:'Visited by', type:'text', required:true},{key:'purpose', label:'Purpose', type:'text'}] },
+  induction:{ label:'Induction', unit:'date', cat:'--cat-3',
+    fields:[{key:'count', label:'Workers inducted', type:'number', required:true},{key:'conductedBy', label:'Conducted by', type:'text'}] },
+  tbt:{ label:'Toolbox talk (TBT)', unit:'date', cat:'--cat-2',
+    fields:[{key:'topic', label:'Topic', type:'text', required:true},{key:'attendees', label:'Attendees', type:'number'},{key:'conductedBy', label:'Conducted by', type:'text'}] },
+  vehicleKm:{ label:'Vehicle KM driven (monthly)', unit:'month', cat:'--cat-8',
+    fields:[{key:'km', label:'KM driven', type:'number', required:true}] },
+  vehicleIncident:{ label:'Vehicle incident', unit:'date', cat:'--cat-9',
+    fields:[{key:'vehicleNumber', label:'Vehicle number', type:'text', required:true},{key:'severity', label:'Severity', type:'select', options:['Minor','Major','Critical']},{key:'description', label:'Description', type:'textarea'}] },
+};
+const REPORT_TILE_ORDER = ['manHours','training','tbt','induction','siteVisit','internalAudit','vehicleInspection','hseObservation','nearMiss','lti','incident','vehicleKm','vehicleIncident'];
+
+let reportEntries=[];
+let unsubscribeReportEntries=null;
+let reportDivision='all';
+let reportMonth=new Date().toISOString().slice(0,7);
+let reportAddFormOpen=false;
+let editingReportEntryId=null;
+
+function entryMonth(e){ return REPORT_CATEGORIES[e.category] && REPORT_CATEGORIES[e.category].unit==='month' ? (e.date||'') : (e.date||'').slice(0,7); }
+function reportEntriesFor(division, month){
+  return reportEntries.filter(e=> (division==='all' || e.division===division) && entryMonth(e)===month);
+}
+function computeReportMetrics(entries){
+  const m={};
+  for(const key of Object.keys(REPORT_CATEGORIES)) m[key]=0;
+  m.trainingAttendees=0; m.tbtAttendees=0; m.ltiDaysLost=0; m.internalAuditFindings=0;
+  for(const e of entries){
+    const cat=e.category;
+    if(!REPORT_CATEGORIES[cat]) continue;
+    if(cat==='manHours') m.manHours += Number(e.hours)||0;
+    else if(cat==='vehicleKm') m.vehicleKm += Number(e.km)||0;
+    else if(cat==='induction') m.induction += Number(e.count)||0;
+    else {
+      m[cat] += 1;
+      if(cat==='training') m.trainingAttendees += Number(e.attendees)||0;
+      if(cat==='tbt') m.tbtAttendees += Number(e.attendees)||0;
+      if(cat==='lti') m.ltiDaysLost += Number(e.daysLost)||0;
+      if(cat==='internalAudit') m.internalAuditFindings += Number(e.findings)||0;
+    }
+  }
+  m.proactiveTotal = ACTIVITY_DONUT_KEYS.reduce((n,k)=>n+m[k],0);
+  m.safetyEventsTotal = m.nearMiss + m.lti + m.incident + m.vehicleIncident;
+  return m;
+}
+
 function activeWorkers(){ return workers.filter(w=>!w.deleted); }
 function deletedWorkers(){ return workers.filter(w=>w.deleted); }
 
@@ -799,16 +981,19 @@ auth.onAuthStateChanged(user=>{
     startData();
     startVehicleData();
     startSiteData();
+    startReportData();
   } else {
     if(unsubscribeWorkers){ unsubscribeWorkers(); unsubscribeWorkers=null; }
     if(unsubscribeVehicles){ unsubscribeVehicles(); unsubscribeVehicles=null; }
     if(unsubscribeSiteEquipment){ unsubscribeSiteEquipment(); unsubscribeSiteEquipment=null; }
-    workers=[]; vehicles=[]; siteEquipmentList=[];
+    if(unsubscribeReportEntries){ unsubscribeReportEntries(); unsubscribeReportEntries=null; }
+    workers=[]; vehicles=[]; siteEquipmentList=[]; reportEntries=[];
     document.getElementById('authOverlay').hidden=false;
     document.getElementById('signOutBtn').hidden=true;
     document.getElementById('workerRows').innerHTML='<tr><td colspan="11" class="empty-state">Sign in to load workforce data…</td></tr>';
     document.getElementById('vehicleRows').innerHTML='<tr><td colspan="5" class="empty-state">Sign in to load vehicle data…</td></tr>';
     document.getElementById('siteRows').innerHTML='<tr><td colspan="6" class="empty-state">Sign in to load site equipment data…</td></tr>';
+    document.getElementById('reportRows').innerHTML='<tr><td colspan="5" class="empty-state">Sign in to load report data…</td></tr>';
   }
 });
 
@@ -837,6 +1022,15 @@ function startSiteData(){
       siteEquipmentList = snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
       renderSiteAll();
     }, err=>{ console.error(err); toast('Sync error — some site equipment data may be stale.'); });
+  }catch(e){ console.error(e); }
+}
+
+function startReportData(){
+  try{
+    unsubscribeReportEntries = db.collection('hseLogs').orderBy('date','desc').onSnapshot(snap=>{
+      reportEntries = snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
+      renderReportAll();
+    }, err=>{ console.error(err); toast('Sync error — some report data may be stale.'); });
   }catch(e){ console.error(e); }
 }
 
@@ -1261,6 +1455,302 @@ function renderSiteTrashBody(){
         <div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc((s.deletedAt||'').slice(0,10)||'—')}</span></div>
       </div>
     </div>`).join('') : `<p class="wsub">Nothing in the trash.</p>`;
+}
+
+/* ---------------- monthly HSE report rendering ---------------- */
+function renderReportAll(){
+  const entries = reportEntriesFor(reportDivision, reportMonth);
+  const metrics = computeReportMetrics(entries);
+  renderReportHero(metrics);
+  renderReportDonut(metrics);
+  renderReportBar();
+  renderReportTiles(metrics);
+  renderReportTable(entries);
+}
+
+function renderReportHero(m){
+  const heroes = [
+    {label:'Safe man-hours', num:m.manHours.toLocaleString()},
+    {label:'Proactive activities', num:m.proactiveTotal},
+    {label:'Safety events (NM+LTI+INC+VI)', num:m.safetyEventsTotal},
+    {label:'Vehicle KM driven', num:m.vehicleKm.toLocaleString()},
+  ];
+  document.getElementById('reportHero').innerHTML = heroes.map(h=>`
+    <div class="hero-tile"><div class="hero-num">${h.num}</div><div class="hero-label">${esc(h.label)}</div></div>
+  `).join('');
+}
+
+function renderReportDonut(m){
+  const segs = ACTIVITY_DONUT_KEYS.map(k=>({key:k, label:REPORT_CATEGORIES[k].label, value:m[k], color:REPORT_CATEGORIES[k].cat}));
+  const total = segs.reduce((n,s)=>n+s.value,0);
+  document.getElementById('reportDonutTotal').textContent = total ? `${total} total` : '';
+  const wrap = document.getElementById('reportDonut');
+  if(total===0){
+    wrap.innerHTML = `<p class="wsub">No proactive activity logged for this period yet.</p>`;
+    return;
+  }
+  const r=52, cx=64, cy=64, circumference=2*Math.PI*r, gap=2;
+  let offset=0;
+  const arcs = segs.filter(s=>s.value>0).map(s=>{
+    const frac = s.value/total;
+    const len = Math.max(circumference*frac - gap, 0);
+    const dasharray = `${len} ${circumference-len}`;
+    const dashoffset = -offset;
+    offset += circumference*frac;
+    return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(${s.color})" stroke-width="16" stroke-dasharray="${dasharray}" stroke-dashoffset="${dashoffset}" transform="rotate(-90 ${cx} ${cy})"><title>${esc(s.label)}: ${s.value} (${Math.round(frac*100)}%)</title></circle>`;
+  }).join('');
+  const svg = `<svg class="donut-svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="Proactive activity mix">${arcs}
+    <text x="${cx}" y="${cy-4}" text-anchor="middle" class="donut-center-num" fill="var(--ink)">${total}</text>
+    <text x="${cx}" y="${cy+12}" text-anchor="middle" class="donut-center-label" fill="var(--ink-muted)">LOGGED</text>
+  </svg>`;
+  const legend = segs.map(s=>`
+    <div class="legend-item"><span class="legend-swatch" style="background:var(${s.color})"></span><span>${esc(s.label)}</span><span class="legend-val">${s.value}</span></div>
+  `).join('');
+  wrap.innerHTML = `<div class="donut-wrap">${svg}<div class="legend">${legend}</div></div>`;
+}
+
+function renderReportBar(){
+  const card = document.getElementById('reportBarCard');
+  const chart = document.getElementById('reportBarChart');
+  const titleEl = document.getElementById('reportBarTitle');
+  if(reportDivision!=='all'){
+    titleEl.textContent = 'This division, last 3 months';
+    const months=[]; const base=reportMonth+'-01';
+    const d0=new Date(base+'T00:00:00');
+    for(let i=2;i>=0;i--){ const d=new Date(d0.getFullYear(), d0.getMonth()-i, 1); months.push(d.toISOString().slice(0,7)); }
+    const rows = months.map(mo=>{
+      const mm = computeReportMetrics(reportEntriesFor(reportDivision, mo));
+      return {label:mo, value:mm.proactiveTotal};
+    });
+    const max = Math.max(1, ...rows.map(r=>r.value));
+    chart.innerHTML = `<div class="bar-section-label">Proactive activities per month</div><div class="bar-chart">${rows.map(r=>`
+      <div class="bar-row">
+        <div class="bar-row-label">${esc(r.label)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.round(r.value/max*100)}%; background:var(--accent);"></div></div>
+        <div class="bar-row-val">${r.value}</div>
+      </div>`).join('')}</div>`;
+    return;
+  }
+  titleEl.textContent = `Divisions compared — ${reportMonth}`;
+  function rowsFor(keys){
+    return DIVISIONS.map(div=>{
+      const mm = computeReportMetrics(reportEntriesFor(div, reportMonth));
+      const value = keys.reduce((n,k)=>n+mm[k],0);
+      return {label:div, value, color:DIVISION_COLORS[div]};
+    });
+  }
+  function barsHtml(rows){
+    const max = Math.max(1, ...rows.map(r=>r.value));
+    return `<div class="bar-chart">${rows.map(r=>`
+      <div class="bar-row">
+        <div class="bar-row-label">${esc(r.label)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.round(r.value/max*100)}%; background:var(${r.color});"></div></div>
+        <div class="bar-row-val">${r.value}</div>
+      </div>`).join('')}</div>`;
+  }
+  const proactiveRows = rowsFor(ACTIVITY_DONUT_KEYS);
+  const safetyRows = rowsFor(['nearMiss','lti','incident','vehicleIncident']);
+  chart.innerHTML = `
+    <div class="bar-section-label">Proactive activities</div>${barsHtml(proactiveRows)}
+    <div class="bar-section-label">Safety events (near miss + LTI + incident + vehicle incident)</div>${barsHtml(safetyRows)}
+  `;
+}
+
+function renderReportTiles(m){
+  const tiles = REPORT_TILE_ORDER.map(key=>{
+    const cfg=REPORT_CATEGORIES[key];
+    let cls='';
+    if(['nearMiss','lti','incident','vehicleIncident'].includes(key)) cls = m[key]>0 ? 'danger' : 'ok';
+    let sub='';
+    if(key==='training') sub=`${m.trainingAttendees} attendees`;
+    else if(key==='tbt') sub=`${m.tbtAttendees} attendees`;
+    else if(key==='lti') sub=`${m.ltiDaysLost} days lost`;
+    else if(key==='internalAudit') sub=`${m.internalAuditFindings} findings`;
+    else if(key==='manHours') sub='this month';
+    else if(key==='vehicleKm') sub='this month';
+    const num = key==='manHours' ? m.manHours.toLocaleString() : (key==='vehicleKm' ? m.vehicleKm.toLocaleString() : m[key]);
+    return `<div class="tile" style="--tile-accent:var(${cfg.cat})">
+      <div class="tile-head"><div class="tile-label">${esc(cfg.label)}</div></div>
+      <div class="tile-num ${cls}">${num}</div><div class="tile-sub">${esc(sub)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('reportTiles').innerHTML = tiles;
+}
+
+function reportEntrySummary(e){
+  const cfg=REPORT_CATEGORIES[e.category]; if(!cfg) return '';
+  if(e.category==='manHours') return `${e.hours||0} man-hours`;
+  if(e.category==='vehicleKm') return `${e.km||0} km`;
+  const parts=[];
+  if(e.description) parts.push(e.description);
+  if(e.topic) parts.push(e.topic);
+  if(e.area) parts.push(e.area);
+  if(e.visitedBy) parts.push('Visited by '+e.visitedBy);
+  if(e.vehicleNumber) parts.push(e.vehicleNumber);
+  if(e.severity) parts.push(e.severity);
+  if(e.type) parts.push(e.type);
+  if(e.result) parts.push(e.result);
+  if(e.count) parts.push(e.count+' workers');
+  if(e.attendees) parts.push(e.attendees+' attendees');
+  return parts.join(' · ') || '—';
+}
+
+function renderReportTable(entries){
+  const tbody=document.getElementById('reportRows');
+  if(!auth.currentUser) return;
+  if(entries.length===0){ tbody.innerHTML='<tr><td colspan="5" class="empty-state">No entries logged for this period yet — click “Log an entry” to get started.</td></tr>'; return; }
+  const list=entries.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  tbody.innerHTML=list.map(e=>{
+    const cfg=REPORT_CATEGORIES[e.category];
+    return `<tr data-rid="${e.id}">
+      <td class="mono">${esc(e.date||'—')}</td>
+      <td>${esc(e.division||'—')}</td>
+      <td>${esc(cfg?cfg.label:e.category)}</td>
+      <td>${esc(reportEntrySummary(e))}</td>
+      <td style="text-align:right; white-space:nowrap;">
+        <button type="button" class="icon-btn" data-redit="${e.id}" aria-label="Edit">✎</button>
+        <button type="button" class="icon-btn danger" data-rdel="${e.id}" data-armed="0" aria-label="Delete">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ---------------- monthly HSE report — add/edit form ---------------- */
+function reportDateFieldHtml(category, value){
+  const cfg=REPORT_CATEGORIES[category];
+  if(cfg.unit==='month') return `<label>Month *<input type="month" data-rfield="date" required value="${esc(value||reportMonth)}"></label>`;
+  return `<label>Date *<input type="date" data-rfield="date" required value="${esc(value||'')}"></label>`;
+}
+function reportCategoryFieldsHtml(category, editing){
+  const cfg=REPORT_CATEGORIES[category];
+  return cfg.fields.map(f=>{
+    const val = editing ? (editing[f.key]!=null?editing[f.key]:'') : '';
+    if(f.type==='textarea') return `<label>${esc(f.label)}${f.required?' *':''}<textarea data-rfield="${f.key}" ${f.required?'required':''}>${esc(val)}</textarea></label>`;
+    if(f.type==='select') return `<label>${esc(f.label)}${f.required?' *':''}<select data-rfield="${f.key}" ${f.required?'required':''}><option value="">Select…</option>${f.options.map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
+    return `<label>${esc(f.label)}${f.required?' *':''}<input type="${f.type}" data-rfield="${f.key}" value="${esc(val)}" ${f.required?'required':''}></label>`;
+  }).join('');
+}
+function renderReportCategorySelect(selected){
+  const sel=document.getElementById('reportCategorySelect');
+  sel.innerHTML = Object.keys(REPORT_CATEGORIES).map(k=>`<option value="${k}" ${k===selected?'selected':''}>${esc(REPORT_CATEGORIES[k].label)}</option>`).join('');
+}
+function renderReportEntryForm(category, editing, setDivision){
+  renderReportCategorySelect(category);
+  document.getElementById('reportDateFieldWrap').innerHTML = reportDateFieldHtml(category, editing?editing.date:null);
+  document.getElementById('reportCategoryFields').innerHTML = reportCategoryFieldsHtml(category, editing);
+  if(setDivision){
+    const divSel=document.querySelector('#addReportEntryForm [data-rfield="division"]');
+    if(divSel) divSel.value = editing ? (editing.division||'Civil') : (reportDivision!=='all'?reportDivision:'Civil');
+  }
+  document.getElementById('reportEntryPanelTitle').textContent = editing ? 'Edit HSE activity' : 'Log an HSE activity';
+  document.getElementById('saveReportEntryBtn').textContent = editing ? 'Save changes' : 'Save entry';
+}
+function openReportEntryForm(entryId){
+  editingReportEntryId = entryId || null;
+  const editing = entryId ? reportEntries.find(e=>e.id===entryId) : null;
+  const category = editing ? editing.category : 'training';
+  document.getElementById('addReportEntryPanel').hidden=false;
+  renderReportEntryForm(category, editing, true);
+}
+function closeReportEntryForm(){
+  editingReportEntryId=null;
+  document.getElementById('addReportEntryPanel').hidden=true;
+  document.getElementById('addReportEntryForm').reset();
+}
+
+/* ---------------- monthly HSE report PDF export ---------------- */
+async function buildReportPdf(division, month){
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const marginX=40, pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
+  let y=54;
+  function ensure(h){ if(y+h>pageH-36){ doc.addPage(); y=48; } }
+  function h2(text){ ensure(26); doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(216,30,44); doc.text(text.toUpperCase(), marginX, y); doc.setTextColor(20,20,20); y+=6; doc.setDrawColor(210); doc.line(marginX,y,pageW-marginX,y); y+=14; }
+  function kv(label,value){ if(value===undefined||value===null||value==='') value='—'; ensure(15); doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(100,105,98); doc.text(String(label), marginX, y); doc.setTextColor(20,20,20); doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.text(String(value), marginX+190, y); y+=14; }
+  function bar(label, value, max, color){
+    ensure(16);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(80,84,80);
+    doc.text(label, marginX, y);
+    const trackX=marginX+110, trackW=pageW-2*marginX-150;
+    doc.setFillColor(230,230,230); doc.rect(trackX, y-8, trackW, 8, 'F');
+    const w = max>0 ? Math.max(2, trackW*(value/max)) : 0;
+    doc.setFillColor(color[0],color[1],color[2]); doc.rect(trackX, y-8, w, 8, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(20,20,20);
+    doc.text(String(value), trackX+trackW+8, y);
+    y+=14;
+  }
+
+  try{ const logoUrl=await fetchImageDataUrl('logo.png'); if(logoUrl){ doc.addImage(logoUrl, 'PNG', marginX, 24, 32, 45); } }catch(e){}
+  doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(20,20,20);
+  doc.text('Burhan Oil & Trade Services', marginX+40, 38);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(120,120,120);
+  doc.text('Monthly HSE Report', marginX+40, 48);
+  doc.setTextColor(20,20,20);
+  y=88;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(20,20,20);
+  doc.text(division==='all' ? 'All divisions' : division, marginX, y); y+=18;
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(100,105,98);
+  doc.text(`Reporting month: ${month}`, marginX, y);
+  doc.setTextColor(20,20,20); y+=22;
+
+  const entries = reportEntriesFor(division, month);
+  const m = computeReportMetrics(entries);
+
+  h2('Headline figures');
+  kv('Safe man-hours', m.manHours.toLocaleString());
+  kv('Proactive activities logged', m.proactiveTotal);
+  kv('Safety events (near miss + LTI + incident + vehicle incident)', m.safetyEventsTotal);
+  kv('Vehicle KM driven', m.vehicleKm.toLocaleString());
+
+  h2('Proactive activity mix');
+  for(const k of ACTIVITY_DONUT_KEYS){ kv(REPORT_CATEGORIES[k].label, m[k]); }
+
+  h2('Safety performance');
+  kv('Near miss', m.nearMiss);
+  kv('Lost Time Injury (LTI)', m.lti+ (m.ltiDaysLost? ` (${m.ltiDaysLost} days lost)`:''));
+  kv('Incident', m.incident);
+  kv('Vehicle incident', m.vehicleIncident);
+  kv('Vehicle inspections done', m.vehicleInspection);
+
+  if(division==='all'){
+    h2('Divisions compared — proactive activities');
+    const rows = DIVISIONS.map(div=>({label:div, value:computeReportMetrics(reportEntriesFor(div,month)).proactiveTotal}));
+    const max=Math.max(1, ...rows.map(r=>r.value));
+    const colorMap={Civil:[8,145,178], Scaffolding:[173,124,0], Rental:[5,150,105], 'Office staff':[236,72,153]};
+    for(const r of rows) bar(r.label, r.value, max, colorMap[r.label]);
+
+    h2('Divisions compared — safety events');
+    const rows2 = DIVISIONS.map(div=>{ const mm=computeReportMetrics(reportEntriesFor(div,month)); return {label:div, value:mm.safetyEventsTotal}; });
+    const max2=Math.max(1, ...rows2.map(r=>r.value));
+    for(const r of rows2) bar(r.label, r.value, max2, colorMap[r.label]);
+  }
+
+  h2('Activity log');
+  const sorted = entries.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  if(!sorted.length){ ensure(13); doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(130,130,130); doc.text('None logged', marginX, y); doc.setTextColor(20,20,20); y+=16; }
+  for(const e of sorted){
+    ensure(12);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.2); doc.setTextColor(40,40,40);
+    const line = `${e.date||'—'}  ·  ${e.division||'—'}  ·  ${REPORT_CATEGORIES[e.category]?REPORT_CATEGORIES[e.category].label:e.category}  ·  ${reportEntrySummary(e)}`;
+    const lines=doc.splitTextToSize(line, pageW-2*marginX);
+    lines.forEach(l=>{ ensure(11); doc.text(l, marginX, y); y+=11; });
+  }
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(150,150,150);
+  doc.text(`Generated ${new Date().toISOString().slice(0,10)} from Monthly HSE Report`, marginX, pageH-20);
+  return doc;
+}
+
+async function downloadReportPdf(){
+  if(!(window.jspdf && window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
+  try{
+    const doc=await buildReportPdf(reportDivision, reportMonth);
+    const divPart=(reportDivision==='all'?'All_Divisions':reportDivision).replace(/[^a-z0-9]+/gi,'_');
+    const filename=`HSE_Monthly_Report_${divPart}_${reportMonth}.pdf`;
+    doc.save(filename);
+    toast('Monthly report downloaded');
+  }catch(e){ console.error(e); toast('Could not generate the PDF'); }
 }
 
 /* ---------------- drawer ---------------- */
@@ -1976,6 +2466,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       document.getElementById('workforceSection').hidden = section!=='workforce';
       document.getElementById('vehiclesSection').hidden = section!=='vehicles';
       document.getElementById('siteSection').hidden = section!=='site';
+      document.getElementById('reportSection').hidden = section!=='report';
     });
   });
 
@@ -2274,6 +2765,62 @@ document.addEventListener('DOMContentLoaded', ()=>{
       toast('File attached');
     }catch(err){ console.error(err); toast('Upload failed'); }
   });
+
+  /* ---------------- monthly report: init + division/month controls ---------------- */
+  document.getElementById('reportMonthInput').value = reportMonth;
+  document.getElementById('reportMonthInput').addEventListener('change', e=>{
+    reportMonth = e.target.value || new Date().toISOString().slice(0,7);
+    renderReportAll();
+  });
+  document.getElementById('reportDivisionTabs').addEventListener('click', e=>{
+    const b=e.target.closest('[data-rdiv]'); if(!b) return;
+    reportDivision=b.dataset.rdiv;
+    document.querySelectorAll('#reportDivisionTabs [data-rdiv]').forEach(t=>t.classList.toggle('active', t===b));
+    renderReportAll();
+  });
+
+  /* ---------------- monthly report: add / edit entry ---------------- */
+  document.getElementById('addReportEntryBtn').addEventListener('click', ()=> openReportEntryForm(null));
+  document.getElementById('cancelAddReportEntry').addEventListener('click', closeReportEntryForm);
+  document.getElementById('reportCategorySelect').addEventListener('change', e=>{
+    renderReportEntryForm(e.target.value, editingReportEntryId ? reportEntries.find(x=>x.id===editingReportEntryId) : null, false);
+  });
+  document.getElementById('addReportEntryForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const data={};
+    e.target.querySelectorAll('[data-rfield]').forEach(el=>{
+      const key=el.dataset.rfield;
+      data[key] = el.type==='number' ? (el.value===''?null:Number(el.value)) : el.value;
+    });
+    try{
+      if(editingReportEntryId){
+        await db.collection('hseLogs').doc(editingReportEntryId).update(data);
+        toast('Entry updated');
+      } else {
+        data.createdAt=new Date().toISOString();
+        await db.collection('hseLogs').add(data);
+        toast('Entry logged');
+      }
+      closeReportEntryForm();
+    }catch(err){ console.error(err); toast('Could not save entry'); }
+  });
+
+  document.getElementById('reportRows').addEventListener('click', async e=>{
+    const editBtn=e.target.closest('[data-redit]');
+    if(editBtn){ openReportEntryForm(editBtn.dataset.redit); return; }
+    const delBtn=e.target.closest('[data-rdel]');
+    if(delBtn){
+      if(delBtn.dataset.armed!=='1'){
+        delBtn.dataset.armed='1'; delBtn.textContent='✔'; setTimeout(()=>{ if(delBtn.dataset.armed==='1'){ delBtn.dataset.armed='0'; delBtn.textContent='🗑'; } },4000);
+        return;
+      }
+      try{ await db.collection('hseLogs').doc(delBtn.dataset.rdel).delete(); toast('Entry deleted'); }
+      catch(err){ console.error(err); toast('Could not delete entry'); }
+      return;
+    }
+  });
+
+  document.getElementById('downloadReportPdfBtn').addEventListener('click', downloadReportPdf);
 });
 
 // Register the service worker so this page can be installed as an app
