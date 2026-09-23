@@ -285,7 +285,7 @@ button.att-link.att-remove{color:var(--danger);}
     <button type="button" class="sidenav-btn" data-section="report"><span class="sidenav-icon">📊</span> Monthly Report</button>
     <button type="button" class="sidenav-btn active" data-section="workforce"><span class="sidenav-icon">👥</span> Workforce</button>
     <button type="button" class="sidenav-btn" data-section="vehicles"><span class="sidenav-icon">🚚</span> Vehicles</button>
-    <button type="button" class="sidenav-btn" data-section="site"><span class="sidenav-icon">🛠️</span> Site Equipment</button>
+    <button type="button" class="sidenav-btn" data-section="site"><span class="sidenav-icon">📁</span> Project Details</button>
   </aside>
   <div class="app-content">
 
@@ -316,7 +316,7 @@ button.att-link.att-remove{color:var(--danger);}
             <label>Full name *<input data-field="fullName" required placeholder="e.g. Ramesh Kumar"></label>
             <label>Civil ID *<input class="mono" data-field="civilId" required placeholder="e.g. 784-1990-1234567-1"></label>
             <label>Nationality<input data-field="nationality" placeholder="e.g. Indian"></label>
-            <label>Trade / occupation *<input data-field="trade" required placeholder="e.g. Steel Fixer"></label>
+            <label>Trade / occupation *<select data-field="trade" required><option value="">Select…</option><option value="Office Staff">Office Staff</option><option value="Scaffolding Division">Scaffolding Division</option><option value="Civil Division">Civil Division</option><option value="Rental Division">Rental Division</option><option value="Sub Contractor">Sub Contractor</option></select></label>
             <label>Subcontractor / company<input data-field="contractor" placeholder="e.g. Al Futtaim Contracting"></label>
             <label>Date of joining<input type="date" data-field="dateOfJoining"></label>
           </div>
@@ -407,34 +407,34 @@ button.att-link.att-remove{color:var(--danger);}
     <main class="app-main" id="siteSection" hidden>
       <div class="topbar">
         <div>
-          <h1>Site Equipment Register</h1>
-          <p>One live record per site — power tools with TPI certificates, safety harnesses, ladders and other PPE, each tracked with its own expiry and certificate.</p>
+          <h1>Project Details</h1>
+          <p>One live record per project — client, scope and duration, plus power tools with TPI certificates, safety harnesses, ladders and other PPE, each tracked with its own expiry and certificate.</p>
         </div>
         <div class="topbar-actions">
-          <button class="btn btn-sm" id="siteTrashBtn" type="button">🗑 Deleted sites (0)</button>
-          <button class="btn btn-primary" id="addSiteBtn">+ Add site</button>
+          <button class="btn btn-sm" id="siteTrashBtn" type="button">🗑 Deleted projects (0)</button>
+          <button class="btn btn-primary" id="addSiteBtn">+ Add project</button>
         </div>
       </div>
 
       <div class="tiles" id="siteTiles"></div>
 
       <div class="panel" id="addSitePanel" hidden>
-        <h3>Add a site</h3>
+        <h3>Add a project</h3>
         <form id="addSiteForm">
           <div class="form-grid">
-            <label>Site name *<input data-field="siteName" required placeholder="e.g. Marina Tower Phase 2"></label>
+            <label>Project name *<input data-field="siteName" required placeholder="e.g. Marina Tower Phase 2"></label>
             <label>Division<select data-field="division"><option value="Civil">Civil</option><option value="Scaffolding">Scaffolding</option><option value="Rental">Rental</option><option value="Office staff">Office staff</option></select></label>
             <label>Location<input data-field="location" placeholder="e.g. Muscat, Oman"></label>
           </div>
           <div class="form-actions">
             <button type="button" class="btn" id="cancelAddSite">Cancel</button>
-            <button type="submit" class="btn btn-primary">Save site</button>
+            <button type="submit" class="btn btn-primary">Save project</button>
           </div>
         </form>
       </div>
 
       <div class="toolbar">
-        <input type="search" id="siteSearchInput" placeholder="Search site name…">
+        <input type="search" id="siteSearchInput" placeholder="Search project name…">
         <select id="siteDivisionFilter">
           <option value="all">All divisions</option>
           <option value="Civil">Civil</option>
@@ -448,11 +448,11 @@ button.att-link.att-remove{color:var(--danger);}
         <table>
           <thead>
             <tr>
-              <th>Site name</th><th>Division</th><th>Power tools</th><th>Safety harness</th><th>Ladders</th><th>Other PPE</th>
+              <th>Project name</th><th>Division</th><th>Power tools</th><th>Safety harness</th><th>Ladders</th><th>Other PPE</th>
             </tr>
           </thead>
           <tbody id="siteRows">
-            <tr><td colspan="6" class="empty-state">Sign in to load site equipment data…</td></tr>
+            <tr><td colspan="6" class="empty-state">Sign in to load project data…</td></tr>
           </tbody>
         </table>
       </div>
@@ -612,8 +612,8 @@ button.att-link.att-remove{color:var(--danger);}
 <aside class="drawer" id="siteTrashDrawer" hidden>
   <div class="drawer-head">
     <div>
-      <h2>Deleted sites</h2>
-      <div class="wsub">Restore a site, or remove it for good. Permanent removal cannot be undone.</div>
+      <h2>Deleted projects</h2>
+      <div class="wsub">Restore a project, or remove it for good. Permanent removal cannot be undone.</div>
     </div>
     <button class="icon-btn" id="siteTrashClose" aria-label="Close">✕</button>
   </div>
@@ -656,6 +656,13 @@ const TABS = [
   {key:'warnings', label:'Warnings'},
   {key:'violations', label:'Violations'},
 ];
+
+const TRADE_CATEGORIES = ['Office Staff','Scaffolding Division','Civil Division','Rental Division','Sub Contractor'];
+function tradeSelectHtml(current){
+  const opts = TRADE_CATEGORIES.slice();
+  if(current && !opts.includes(current)) opts.unshift(current); // keep an older/custom value visible instead of silently losing it
+  return `<option value="">Select…</option>` + opts.map(o=>`<option value="${esc(o)}" ${o===current?'selected':''}>${esc(o)}</option>`).join('');
+}
 
 const RECORD_TYPES = {
   inductions:{
@@ -750,7 +757,7 @@ const VEHICLE_RECORD_TYPES = {
   documents:{
     title:'Vehicle documents', addLabel:'+ Add document', hasExpiry:true, hasAttachment:true, attachLabel:'document scan',
     fields:[
-      {key:'type', label:'Document type', type:'select', options:['MOT','Insurance','IVMS','DFMS','RAS Sticker','Other'], required:true},
+      {key:'type', label:'Document type', type:'select', options:['Vehicle Registration','MOT','Insurance','IVMS','DFMS','RAS Sticker','Other'], required:true},
       {key:'date', label:'Done date', type:'date'},
       {key:'expiry', label:'Expiry date', type:'date', required:true},
       {key:'notes', label:'Notes', type:'textarea'},
@@ -759,7 +766,7 @@ const VEHICLE_RECORD_TYPES = {
   ppe:{
     title:'PPE & safety equipment', addLabel:'+ Add PPE item', hasExpiry:true, hasAttachment:true, attachLabel:'certificate / photo',
     fields:[
-      {key:'item', label:'Item', type:'select', options:['NH-15 mask','Safety harness','H2S detector','Fire extinguisher','Other'], required:true},
+      {key:'item', label:'Item', type:'select', options:['NH-15 mask','Safety harness','H2S detector','Fire extinguisher','Oxygen Cylinder','Other'], required:true},
       {key:'serial', label:'Serial number', type:'text'},
       {key:'expiry', label:'Expiry date', type:'date', required:true},
       {key:'notes', label:'Notes', type:'textarea'},
@@ -801,7 +808,7 @@ const SITE_RECORD_TYPES = {
   powerTools:{
     title:'Power tools', addLabel:'+ Add power tool', hasExpiry:true, hasAttachment:true, attachLabel:'TPI certificate',
     fields:[
-      {key:'type', label:'Tool type', type:'select', options:['Grinder','Drill','Cutting machine','Welding machine','Compressor','Other'], required:true},
+      {key:'type', label:'Tool type', type:'text', required:true, placeholder:'e.g. Grinder, Drill, Welding machine'},
       {key:'serial', label:'Serial number', type:'text'},
       {key:'expiry', label:'TPI certificate expiry', type:'date', required:true},
       {key:'notes', label:'Notes', type:'textarea'},
@@ -884,8 +891,16 @@ const REPORT_CATEGORIES = {
     fields:[{key:'km', label:'KM driven', type:'number', required:true}] },
   vehicleIncident:{ label:'Vehicle incident', unit:'date', cat:'--cat-9',
     fields:[{key:'vehicleNumber', label:'Vehicle number', type:'text', required:true},{key:'severity', label:'Severity', type:'select', options:['Minor','Major','Critical']},{key:'description', label:'Description', type:'textarea'}] },
+  mockDrill:{ label:'Mock drill', unit:'date', cat:'--cat-3',
+    fields:[{key:'type', label:'Drill type', type:'select', options:['Fire evacuation','Emergency response','Muster point drill','Spill response','Other'], required:true},{key:'participants', label:'Participants', type:'number'},{key:'conductedBy', label:'Conducted by', type:'text'},{key:'notes', label:'Notes', type:'textarea'}] },
+  ppeIssuance:{ label:'PPE issuance', unit:'date', cat:'--cat-7',
+    fields:[{key:'item', label:'PPE item', type:'text', required:true, placeholder:'e.g. Safety gloves, goggles, ear plugs'},{key:'quantity', label:'Quantity issued', type:'number'},{key:'issuedTo', label:'Issued to', type:'text', placeholder:'e.g. worker name or division'},{key:'notes', label:'Notes', type:'textarea'}] },
+  fac:{ label:'First Aid Case (FAC)', unit:'date', cat:'--cat-9',
+    fields:[{key:'description', label:'Description', type:'textarea', required:true},{key:'bodyPart', label:'Body part affected', type:'text'},{key:'actionTaken', label:'Action taken', type:'textarea'}] },
+  mti:{ label:'Medical Treatment Injury (MTI)', unit:'date', cat:'--cat-9',
+    fields:[{key:'description', label:'Description', type:'textarea', required:true},{key:'treatmentGiven', label:'Treatment given', type:'text'},{key:'actionTaken', label:'Action taken', type:'textarea'}] },
 };
-const REPORT_TILE_ORDER = ['manHours','training','tbt','induction','siteVisit','internalAudit','vehicleInspection','hseObservation','nearMiss','lti','incident','vehicleKm','vehicleIncident'];
+const REPORT_TILE_ORDER = ['manHours','training','tbt','induction','siteVisit','internalAudit','vehicleInspection','hseObservation','mockDrill','ppeIssuance','nearMiss','fac','mti','lti','incident','vehicleKm','vehicleIncident'];
 
 let reportEntries=[];
 let unsubscribeReportEntries=null;
@@ -902,6 +917,7 @@ function computeReportMetrics(entries){
   const m={};
   for(const key of Object.keys(REPORT_CATEGORIES)) m[key]=0;
   m.trainingAttendees=0; m.tbtAttendees=0; m.ltiDaysLost=0; m.internalAuditFindings=0;
+  m.mockDrillParticipants=0; m.ppeIssuanceQty=0;
   for(const e of entries){
     const cat=e.category;
     if(!REPORT_CATEGORIES[cat]) continue;
@@ -914,6 +930,8 @@ function computeReportMetrics(entries){
       if(cat==='tbt') m.tbtAttendees += Number(e.attendees)||0;
       if(cat==='lti') m.ltiDaysLost += Number(e.daysLost)||0;
       if(cat==='internalAudit') m.internalAuditFindings += Number(e.findings)||0;
+      if(cat==='mockDrill') m.mockDrillParticipants += Number(e.participants)||0;
+      if(cat==='ppeIssuance') m.ppeIssuanceQty += Number(e.quantity)||0;
     }
   }
   m.proactiveTotal = ACTIVITY_DONUT_KEYS.reduce((n,k)=>n+m[k],0);
@@ -1001,7 +1019,7 @@ auth.onAuthStateChanged(user=>{
     document.getElementById('signOutBtn').hidden=true;
     document.getElementById('workerRows').innerHTML='<tr><td colspan="11" class="empty-state">Sign in to load workforce data…</td></tr>';
     document.getElementById('vehicleRows').innerHTML='<tr><td colspan="5" class="empty-state">Sign in to load vehicle data…</td></tr>';
-    document.getElementById('siteRows').innerHTML='<tr><td colspan="6" class="empty-state">Sign in to load site equipment data…</td></tr>';
+    document.getElementById('siteRows').innerHTML='<tr><td colspan="6" class="empty-state">Sign in to load project data…</td></tr>';
     document.getElementById('reportRows').innerHTML='<tr><td colspan="5" class="empty-state">Sign in to load report data…</td></tr>';
   }
 });
@@ -1030,7 +1048,7 @@ function startSiteData(){
     unsubscribeSiteEquipment = db.collection('siteEquipment').orderBy('siteName','asc').onSnapshot(snap=>{
       siteEquipmentList = snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
       renderSiteAll();
-    }, err=>{ console.error(err); toast('Sync error — some site equipment data may be stale.'); });
+    }, err=>{ console.error(err); toast('Sync error — some project data may be stale.'); });
   }catch(e){ console.error(e); }
 }
 
@@ -1246,7 +1264,7 @@ function renderSiteAll(){
   renderSiteTiles();
   renderSiteTable();
   const trashCount=deletedSites().length;
-  document.getElementById('siteTrashBtn').textContent = `🗑 Deleted sites (${trashCount})`;
+  document.getElementById('siteTrashBtn').textContent = `🗑 Deleted projects (${trashCount})`;
   if(activeSiteId) renderSiteDrawer();
   if(!document.getElementById('siteTrashDrawer').hidden) renderSiteTrashBody();
 }
@@ -1266,7 +1284,7 @@ function renderSiteTiles(){
   }
   const pt=agg('powerTools'), ha=agg('harness'), la=agg('ladders'), op=agg('otherPpe');
   const tiles=[
-    {label:'Sites', num:total, cls:'', sub:'active sites', cat:'--cat-1', icon:'🏗️'},
+    {label:'Projects', num:total, cls:'', sub:'active projects', cat:'--cat-1', icon:'🏗️'},
     {label:'Power tools', num:pt.expired, cls:pt.expired?'danger':(pt.expiring?'warn':'ok'), sub:`${pt.expiring} expiring soon`, cat:'--cat-3', icon:'🔧'},
     {label:'Safety harness', num:ha.expired, cls:ha.expired?'danger':(ha.expiring?'warn':'ok'), sub:`${ha.expiring} expiring soon`, cat:'--cat-5', icon:'🦺'},
     {label:'Ladders', num:la.expired, cls:la.expired?'danger':(la.expiring?'warn':'ok'), sub:`${la.expiring} expiring soon`, cat:'--cat-7', icon:'🪜'},
@@ -1291,7 +1309,7 @@ function siteMatches(s){
 function renderSiteTable(){
   const tbody=document.getElementById('siteRows');
   if(!auth.currentUser) return;
-  if(activeSites().length===0){ tbody.innerHTML='<tr><td colspan="6" class="empty-state">No sites yet — click “Add site” to get started.</td></tr>'; return; }
+  if(activeSites().length===0){ tbody.innerHTML='<tr><td colspan="6" class="empty-state">No projects yet — click “Add project” to get started.</td></tr>'; return; }
   const list=siteEquipmentList.filter(siteMatches);
   if(list.length===0){ tbody.innerHTML='<tr><td colspan="6" class="empty-state">No sites match your filters.</td></tr>'; return; }
   tbody.innerHTML=list.map(s=>{
@@ -1422,17 +1440,21 @@ function renderSiteDrawerBody(){
 function siteProfileTabHtml(s){
   return `
   <form id="siteProfileForm">
-    <div class="subhead">Site details</div>
+    <div class="subhead">Project details</div>
     <div class="form-grid">
-      <label>Site name *<input data-sfield="siteName" required value="${esc(s.siteName||'')}"></label>
+      <label>Project name *<input data-sfield="siteName" required value="${esc(s.siteName||'')}"></label>
       <label>Division<select data-sfield="division"><option value="Civil" ${(s.division||'Civil')==='Civil'?'selected':''}>Civil</option><option value="Scaffolding" ${s.division==='Scaffolding'?'selected':''}>Scaffolding</option><option value="Rental" ${s.division==='Rental'?'selected':''}>Rental</option><option value="Office staff" ${s.division==='Office staff'?'selected':''}>Office staff</option></select></label>
+      <label>Client name<input data-sfield="clientName" value="${esc(s.clientName||'')}" placeholder="e.g. PDO, OQ, Duqm Refinery"></label>
       <label>Location<input data-sfield="location" value="${esc(s.location||'')}"></label>
+      <label>Project handled by<input data-sfield="projectHandledBy" value="${esc(s.projectHandledBy||'')}" placeholder="e.g. Project Manager / Supervisor name"></label>
+      <label>Project duration<input data-sfield="projectDuration" value="${esc(s.projectDuration||'')}" placeholder="e.g. Jan 2025 – Dec 2025, or 6 months"></label>
     </div>
+    <label>Scope of work<textarea data-sfield="scopeOfWork" placeholder="e.g. Scaffolding erection and dismantling for tank farm turnaround">${esc(s.scopeOfWork||'')}</textarea></label>
     <div class="form-actions" style="margin-top:16px;"><button type="submit" class="btn btn-primary">Save changes</button></div>
   </form>
   <div class="danger-zone">
-    <p>Removing a site moves it to Deleted sites, where its full record can be restored at any time — or permanently removed for good (this also frees up the storage space used by its certificates and PPE photos).</p>
-    <button type="button" class="btn btn-danger btn-sm" id="deleteSiteBtn" data-armed="0">Delete site</button>
+    <p>Removing a project moves it to Deleted projects, where its full record can be restored at any time — or permanently removed for good (this also frees up the storage space used by its certificates and PPE photos).</p>
+    <button type="button" class="btn btn-danger btn-sm" id="deleteSiteBtn" data-armed="0">Delete project</button>
   </div>`;
 }
 
@@ -1569,12 +1591,14 @@ function renderReportTiles(m){
   const tiles = REPORT_TILE_ORDER.map(key=>{
     const cfg=REPORT_CATEGORIES[key];
     let cls='';
-    if(['nearMiss','lti','incident','vehicleIncident'].includes(key)) cls = m[key]>0 ? 'danger' : 'ok';
+    if(['nearMiss','lti','incident','vehicleIncident','fac','mti'].includes(key)) cls = m[key]>0 ? 'danger' : 'ok';
     let sub='';
     if(key==='training') sub=`${m.trainingAttendees} attendees`;
     else if(key==='tbt') sub=`${m.tbtAttendees} attendees`;
     else if(key==='lti') sub=`${m.ltiDaysLost} days lost`;
     else if(key==='internalAudit') sub=`${m.internalAuditFindings} findings`;
+    else if(key==='mockDrill') sub=`${m.mockDrillParticipants} participants`;
+    else if(key==='ppeIssuance') sub=`${m.ppeIssuanceQty} items issued`;
     else if(key==='manHours') sub='this month';
     else if(key==='vehicleKm') sub='this month';
     const num = key==='manHours' ? m.manHours.toLocaleString() : (key==='vehicleKm' ? m.vehicleKm.toLocaleString() : m[key]);
@@ -1601,6 +1625,12 @@ function reportEntrySummary(e){
   if(e.result) parts.push(e.result);
   if(e.count) parts.push(e.count+' workers');
   if(e.attendees) parts.push(e.attendees+' attendees');
+  if(e.participants) parts.push(e.participants+' participants');
+  if(e.item) parts.push(e.item);
+  if(e.quantity) parts.push(e.quantity+' issued');
+  if(e.issuedTo) parts.push('Issued to '+e.issuedTo);
+  if(e.bodyPart) parts.push(e.bodyPart);
+  if(e.treatmentGiven) parts.push(e.treatmentGiven);
   return parts.join(' · ') || '—';
 }
 
@@ -1717,10 +1747,16 @@ async function buildReportPdf(division, month){
 
   h2('Safety performance');
   kv('Near miss', m.nearMiss);
+  kv('First Aid Case (FAC)', m.fac);
+  kv('Medical Treatment Injury (MTI)', m.mti);
   kv('Lost Time Injury (LTI)', m.lti+ (m.ltiDaysLost? ` (${m.ltiDaysLost} days lost)`:''));
   kv('Incident', m.incident);
   kv('Vehicle incident', m.vehicleIncident);
   kv('Vehicle inspections done', m.vehicleInspection);
+
+  h2('Other HSE activities');
+  kv('Mock drills conducted', m.mockDrill + (m.mockDrillParticipants? ` (${m.mockDrillParticipants} participants)`:''));
+  kv('PPE issuance entries', m.ppeIssuance + (m.ppeIssuanceQty? ` (${m.ppeIssuanceQty} items)`:''));
 
   if(division==='all'){
     h2('Divisions compared — proactive activities');
@@ -1953,7 +1989,7 @@ function profileTabHtml(w){
     <div class="subhead">Employment</div>
     <div class="form-grid">
       <label>Designation<input data-field="designation" value="${esc(w.designation||'')}" placeholder="e.g. Foreman, Supervisor"></label>
-      <label>Trade / occupation *<input data-field="trade" required value="${esc(w.trade||'')}"></label>
+      <label>Trade / occupation *<select data-field="trade" required>${tradeSelectHtml(w.trade||'')}</select></label>
       <label>Subcontractor / company<input data-field="contractor" value="${esc(w.contractor||'')}"></label>
       <label>Date of joining<input type="date" data-field="dateOfJoining" value="${esc(w.dateOfJoining||'')}"></label>
       <label>Employment status<select data-field="status"><option value="active" ${(w.status||'active')==='active'?'selected':''}>Active</option><option value="inactive" ${w.status==='inactive'?'selected':''}>Inactive</option></select></label>
@@ -2279,18 +2315,20 @@ async function buildSitePdf(s){
   doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(20,20,20);
   doc.text('Burhan Oil & Trade Services', marginX+40, 38);
   doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(120,120,120);
-  doc.text('Site Equipment Register', marginX+40, 48);
+  doc.text('Project Details', marginX+40, 48);
   doc.setTextColor(20,20,20);
   y=88;
 
   doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(20,20,20);
-  doc.text(s.siteName||'Site profile', marginX, y); y+=18;
+  doc.text(s.siteName||'Project profile', marginX, y); y+=18;
   doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(100,105,98);
   doc.text(`${s.division||'Civil'}   ·   ${s.location||'—'}`, marginX, y);
   doc.setTextColor(20,20,20); y+=22;
 
-  h2('Site details');
-  kv('Site name', s.siteName); kv('Division', s.division||'Civil'); kv('Location', s.location);
+  h2('Project details');
+  kv('Project name', s.siteName); kv('Division', s.division||'Civil'); kv('Client name', s.clientName);
+  kv('Location', s.location); kv('Project handled by', s.projectHandledBy); kv('Project duration', s.projectDuration);
+  if(s.scopeOfWork){ ensure(15); doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(100,105,98); doc.text('Scope of work', marginX, y); doc.setTextColor(20,20,20); y+=12; doc.setFont('helvetica','normal'); doc.setFontSize(9); const lines=doc.splitTextToSize(s.scopeOfWork, pageW-2*marginX); lines.forEach(l=>{ ensure(11); doc.text(l, marginX, y); y+=11; }); y+=4; }
 
   section('Power tools','powerTools',SITE_RECORD_TYPES.powerTools);
   section('Safety harness','harness',SITE_RECORD_TYPES.harness);
@@ -2298,7 +2336,7 @@ async function buildSitePdf(s){
   section('Other PPE','otherPpe',SITE_RECORD_TYPES.otherPpe);
 
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(150,150,150);
-  doc.text(`Generated ${new Date().toISOString().slice(0,10)} from Site Equipment Register`, marginX, pageH-20);
+  doc.text(`Generated ${new Date().toISOString().slice(0,10)} from Project Details`, marginX, pageH-20);
   return doc;
 }
 
@@ -2307,9 +2345,9 @@ async function downloadSiteProfile(){
   if(!(window.jspdf && window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
   try{
     const doc=await buildSitePdf(s);
-    const filename=(s.siteName||'site').trim().replace(/[^a-z0-9]+/gi,'_').replace(/^_+|_+$/g,'')+'_profile.pdf';
+    const filename=(s.siteName||'project').trim().replace(/[^a-z0-9]+/gi,'_').replace(/^_+|_+$/g,'')+'_profile.pdf';
     doc.save(filename);
-    toast('Site profile downloaded');
+    toast('Project profile downloaded');
   }catch(e){ console.error(e); toast('Could not generate the PDF'); }
 }
 
@@ -2717,10 +2755,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
     e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
     try{
       await db.collection('siteEquipment').add(data);
-      toast('Site added');
+      toast('Project added');
       e.target.reset();
       document.getElementById('addSitePanel').hidden=true;
-    }catch(err){ console.error(err); toast('Could not add site'); }
+    }catch(err){ console.error(err); toast('Could not add project'); }
   });
   document.getElementById('siteSearchInput').addEventListener('input', e=>{ siteFilters.q=e.target.value; renderSiteTable(); });
   document.getElementById('siteDivisionFilter').addEventListener('change', e=>{ siteFilters.division=e.target.value; renderSiteTable(); });
@@ -2838,11 +2876,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(delSiteBtn){
       if(delSiteBtn.dataset.armed!=='1'){
         delSiteBtn.dataset.armed='1'; delSiteBtn.textContent='Confirm delete — cannot be undone';
-        setTimeout(()=>{ if(delSiteBtn.dataset.armed==='1'){ delSiteBtn.dataset.armed='0'; delSiteBtn.textContent='Delete site'; } },4000);
+        setTimeout(()=>{ if(delSiteBtn.dataset.armed==='1'){ delSiteBtn.dataset.armed='0'; delSiteBtn.textContent='Delete project'; } },4000);
         return;
       }
       const s=currentSite(); if(!s) return;
-      try{ await updateSite(s.id, {deleted:true, deletedAt:new Date().toISOString()}); toast('Site moved to Deleted sites'); closeSiteDrawer(); }
+      try{ await updateSite(s.id, {deleted:true, deletedAt:new Date().toISOString()}); toast('Project moved to Deleted projects'); closeSiteDrawer(); }
       catch(err){ toast('Could not delete'); }
       return;
     }
