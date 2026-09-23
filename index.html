@@ -1934,7 +1934,7 @@ const BLOOD_GROUPS=['A+','A-','B+','B-','AB+','AB-','O+','O-','Unknown'];
 function profileTabHtml(w){
   const photo = attachmentBlock(w,null,null,'photo','photo');
   const civilScan = attachmentBlock(w,null,null,'Civil ID scan','civilIdScan');
-  const signaturePreview = attachmentPreviewHtml(w.signature, 'signature');
+  const signaturePreview = attachmentPreviewHtml(w.signature, 'signature', 'signature');
   const gcc=parseFloat(w.experienceGCCYears)||0, other=parseFloat(w.experienceOtherYears)||0;
   const total=(gcc+other);
   return `
