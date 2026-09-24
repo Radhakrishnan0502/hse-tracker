@@ -277,6 +277,17 @@ label.pick-row:hover{background:var(--surface-2);}
 label.pick-row input[type=checkbox]{width:auto; flex:none;}
 .pick-main{display:flex; flex-direction:column; flex:1; min-width:0;}
 .equip-line .icon-btn{width:26px; height:26px;}
+.stat-cards{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
+@media (max-width:520px){.stat-cards{grid-template-columns:1fr;}}
+.stat-card{border:1px solid var(--line); border-radius:10px; padding:12px; background:var(--surface-2); text-align:center;}
+.stat-card-num{font-family:var(--font-display); font-weight:800; font-size:20px; font-variant-numeric:tabular-nums;}
+.stat-card-num.ok{color:var(--ok);} .stat-card-num.warn{color:var(--warn);}
+.stat-card-label{font-size:10.5px; color:var(--ink-muted); margin-top:4px; line-height:1.3;}
+table.stats-table{min-width:0;}
+table.stats-table tbody tr{cursor:default;}
+table.stats-table td, table.stats-table th{padding:7px 10px; font-size:12.5px;}
+.stat-val{font-variant-numeric:tabular-nums; font-weight:600;}
+.stat-val.danger{color:var(--danger);} .stat-val.ok{color:var(--ok);}
 .notice{background:var(--warn-bg); color:var(--warn); border:1px solid var(--warn); border-radius:9px; padding:10px 12px; font-size:12.5px; margin-bottom:12px;}
 .tiles-4{grid-template-columns:repeat(4,1fr) !important;}
 @media (max-width:900px){.tiles-4{grid-template-columns:repeat(2,1fr) !important;}}
@@ -586,10 +597,17 @@ label.pick-row input[type=checkbox]{width:auto; flex:none;}
         </div>
       </div>
 
+      <div class="toolbar" style="margin-top:-2px;">
+        <label style="flex-direction:row; align-items:center; gap:8px;">Project
+          <select id="reportProjectFilter" style="max-width:260px;"><option value="all">All projects</option></select>
+        </label>
+      </div>
+
       <div class="panel" id="addReportEntryPanel" hidden>
         <h3 id="reportEntryPanelTitle">Log an HSE activity</h3>
         <form id="addReportEntryForm">
           <div class="form-grid">
+            <label>Project<select data-rfield="projectId" id="reportProjectSelect"><option value="">— No specific project —</option></select></label>
             <label>Division *<select data-rfield="division" required>
               <option value="Civil">Civil Division</option>
               <option value="Scaffolding">Scaffolding Division</option>
@@ -626,11 +644,11 @@ label.pick-row input[type=checkbox]{width:auto; flex:none;}
         <table>
           <thead>
             <tr>
-              <th>Date</th><th>Division</th><th>Category</th><th>Details</th><th></th>
+              <th>Date</th><th>Division</th><th>Project</th><th>Category</th><th>Details</th><th></th>
             </tr>
           </thead>
           <tbody id="reportRows">
-            <tr><td colspan="5" class="empty-state">Sign in to load report data…</td></tr>
+            <tr><td colspan="6" class="empty-state">Sign in to load report data…</td></tr>
           </tbody>
         </table>
       </div>
@@ -926,6 +944,7 @@ function vehicleAggFor(v,key){
 /* ---------------- site equipment config ---------------- */
 const SITE_TABS = [
   {key:'profile', label:'Profile'},
+  {key:'hseStats', label:'HSE statistics'},
   {key:'team', label:'Team'},
   {key:'vehicles', label:'Vehicles'},
   {key:'equipment', label:'Equipment on site'},
@@ -992,7 +1011,8 @@ const SITE_RECORD_TYPES = {
 let siteEquipmentList=[];
 let activeSiteId=null, activeSiteTab='profile', editingSiteRecordId=null, siteAddFormOpen=false;
 let siteFilters={q:'', division:'all', status:'all'};
-let sitePickerOpen=null, sitePickerQuery='';   // 'team' | 'vehicles' | null
+let sitePickerOpen=null, sitePickerQuery='';
+let siteStatsMonth=new Date().toISOString().slice(0,7);   // 'team' | 'vehicles' | null
 let unsubscribeSiteEquipment=null;
 
 function activeSites(){ return siteEquipmentList.filter(s=>!s.deleted); }
@@ -1181,13 +1201,24 @@ const REPORT_TILE_ORDER = ['manHours','training','tbt','induction','siteVisit','
 let reportEntries=[];
 let unsubscribeReportEntries=null;
 let reportDivision='all';
+let reportProject='all';   // 'all' | 'none' | a project id
 let reportMonth=new Date().toISOString().slice(0,7);
 let reportAddFormOpen=false;
 let editingReportEntryId=null;
 
 function entryMonth(e){ return REPORT_CATEGORIES[e.category] && REPORT_CATEGORIES[e.category].unit==='month' ? (e.date||'') : (e.date||'').slice(0,7); }
-function reportEntriesFor(division, month){
-  return reportEntries.filter(e=> (division==='all' || e.division===division) && entryMonth(e)===month);
+function reportProjectMatch(e, project){
+  if(!project || project==='all') return true;
+  if(project==='none') return !e.projectId;
+  return e.projectId===project;
+}
+function reportEntriesFor(division, month, project){
+  return reportEntries.filter(e=> (division==='all' || e.division===division) && entryMonth(e)===month && reportProjectMatch(e, project));
+}
+function projectName(id){
+  if(!id) return '';
+  const s=siteEquipmentList.find(x=>x.id===id);
+  return s ? (s.siteName||'Unnamed project') : 'Removed project';
 }
 function computeReportMetrics(entries){
   const m={};
@@ -1299,7 +1330,7 @@ auth.onAuthStateChanged(user=>{
     document.getElementById('workerRows').innerHTML='<tr><td colspan="11" class="empty-state">Sign in to load workforce data…</td></tr>';
     document.getElementById('vehicleRows').innerHTML='<tr><td colspan="5" class="empty-state">Sign in to load vehicle data…</td></tr>';
     document.getElementById('siteRows').innerHTML='<tr><td colspan="8" class="empty-state">Sign in to load project data…</td></tr>';
-    document.getElementById('reportRows').innerHTML='<tr><td colspan="5" class="empty-state">Sign in to load report data…</td></tr>';
+    document.getElementById('reportRows').innerHTML='<tr><td colspan="6" class="empty-state">Sign in to load report data…</td></tr>';
   }
 });
 
@@ -1328,6 +1359,7 @@ function startSiteData(){
       siteEquipmentList = snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
       renderSiteAll();
       renderEquipAll();           // location names come from projects
+      renderReportAll();          // project names / filter in the Monthly Report
       migrateLegacySiteEquipment();
     }, err=>{ console.error(err); toast('Sync error — some project data may be stale.'); });
   }catch(e){ console.error(e); }
@@ -1394,6 +1426,7 @@ function startReportData(){
     unsubscribeReportEntries = db.collection('hseLogs').orderBy('date','desc').onSnapshot(snap=>{
       reportEntries = snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
       renderReportAll();
+      if(activeSiteId) renderSiteDrawer();   // project HSE statistics tab
     }, err=>{ console.error(err); toast('Sync error — some report data may be stale.'); });
   }catch(e){ console.error(e); }
 }
@@ -1836,6 +1869,7 @@ function renderSiteDrawerBody(){
   const body=document.getElementById('siteDrawerBody');
   if(activeSiteTab==='profile'){ body.innerHTML=siteProfileTabHtml(s); return; }
   if(activeSiteTab==='equipment'){ body.innerHTML=siteEquipmentTabHtml(s); return; }
+  if(activeSiteTab==='hseStats'){ body.innerHTML=siteStatsTabHtml(s); return; }
   if(activeSiteTab==='team'){ body.innerHTML=siteTeamTabHtml(s); return; }
   if(activeSiteTab==='vehicles'){ body.innerHTML=siteVehiclesTabHtml(s); return; }
   const cfg=SITE_RECORD_TYPES[activeSiteTab];
@@ -1903,6 +1937,83 @@ function siteProfileTabHtml(s){
     <p>Removing a project moves it to Deleted projects, where its full record can be restored at any time — or permanently removed for good (its HSE document files are deleted, its equipment goes back to store, and its team and vehicles are un-assigned).</p>
     <button type="button" class="btn btn-danger btn-sm" id="deleteSiteBtn" data-armed="0">Delete project</button>
   </div>`;
+}
+
+// Project-level HSE figures — everything logged in the Monthly Report with this project picked
+function projectHseFigures(siteId){
+  const all=reportEntries.filter(e=>e.projectId===siteId);
+  const total=computeReportMetrics(all);
+  const perMillion = n => total.manHours ? (n*1000000/total.manHours) : null;
+  const ltiDates=all.filter(e=>e.category==='lti' && e.date).map(e=>e.date.slice(0,10)).sort();
+  const lastLti=ltiDates.length ? ltiDates[ltiDates.length-1] : null;
+  return {all, total, ltif:perMillion(total.lti), trcf:perMillion(total.lti+total.mti), lastLti, daysSinceLti: lastLti ? -daysUntil(lastLti) : null};
+}
+function fmtRate(v){ return v===null ? '—' : (Math.round(v*100)/100).toFixed(2); }
+const PROJECT_STAT_ROWS = [
+  {key:'manHours', label:'Safe man-hours', fmt:m=>m.manHours.toLocaleString()},
+  {key:'nearMiss', label:'Near miss', bad:true},
+  {key:'fac', label:'First Aid Case (FAC)', bad:true},
+  {key:'mti', label:'Medical Treatment Injury (MTI)', bad:true},
+  {key:'lti', label:'Lost Time Injury (LTI)', bad:true, fmt:m=>m.lti+(m.ltiDaysLost?` (${m.ltiDaysLost} days lost)`:'')},
+  {key:'incident', label:'Incident', bad:true},
+  {key:'vehicleIncident', label:'Vehicle incident', bad:true},
+  {key:'training', label:'Internal training', fmt:m=>m.training+(m.trainingAttendees?` (${m.trainingAttendees} attendees)`:'')},
+  {key:'tbt', label:'Toolbox talks (TBT)', fmt:m=>m.tbt+(m.tbtAttendees?` (${m.tbtAttendees} attendees)`:'')},
+  {key:'induction', label:'Workers inducted'},
+  {key:'siteVisit', label:'Site visits'},
+  {key:'internalAudit', label:'Internal audits', fmt:m=>m.internalAudit+(m.internalAuditFindings?` (${m.internalAuditFindings} findings)`:'')},
+  {key:'vehicleInspection', label:'Vehicle inspections'},
+  {key:'hseObservation', label:'HSE observations'},
+  {key:'mockDrill', label:'Mock drills', fmt:m=>m.mockDrill+(m.mockDrillParticipants?` (${m.mockDrillParticipants} participants)`:'')},
+  {key:'ppeIssuance', label:'PPE issuance', fmt:m=>m.ppeIssuance+(m.ppeIssuanceQty?` (${m.ppeIssuanceQty} items)`:'')},
+  {key:'vehicleKm', label:'Vehicle KM driven', fmt:m=>m.vehicleKm.toLocaleString()},
+];
+function siteStatsTabHtml(s){
+  const f=projectHseFigures(s.id);
+  const month=computeReportMetrics(f.all.filter(e=>entryMonth(e)===siteStatsMonth));
+  const cell=(row,m)=>{
+    const v = row.fmt ? row.fmt(m) : m[row.key];
+    const cls = row.bad ? (m[row.key]>0 ? 'danger' : 'ok') : '';
+    return `<td class="stat-val ${cls}">${esc(v)}</td>`;
+  };
+  const ltiText = f.lastLti ? `${f.daysSinceLti} days` : (s.startDate && daysUntil(s.startDate)<=0 ? `${-daysUntil(s.startDate)} days` : 'No LTI');
+  const ltiSub = f.lastLti ? `since last LTI (${esc(f.lastLti)})` : (s.startDate && daysUntil(s.startDate)<=0 ? 'since project start — no LTI recorded' : 'recorded for this project');
+  const recent=f.all.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,8);
+  return `
+  <div class="section-head" style="flex-wrap:wrap; gap:8px;">
+    <h3>HSE statistics</h3>
+    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+      <button type="button" class="btn btn-sm" id="siteOpenReportBtn">Open in Monthly Report</button>
+      <button type="button" class="btn btn-primary btn-sm" id="siteLogEntryBtn">+ Log HSE entry</button>
+    </div>
+  </div>
+  <p class="wsub" style="margin:0 0 12px;">Everything logged in the Monthly Report with this project selected. Log once — it counts here, in its division, and in the company total.</p>
+  <div class="stat-cards">
+    <div class="stat-card"><div class="stat-card-num ${f.lastLti && f.daysSinceLti<30?'warn':'ok'}">${esc(ltiText)}</div><div class="stat-card-label">${ltiSub}</div></div>
+    <div class="stat-card" title="Lost Time Injury Frequency = LTIs × 1,000,000 ÷ man-hours"><div class="stat-card-num">${fmtRate(f.ltif)}</div><div class="stat-card-label">LTIF — per million man-hours</div></div>
+    <div class="stat-card" title="Total Recordable Case Frequency = (LTI + MTI) × 1,000,000 ÷ man-hours. First aid cases are not counted."><div class="stat-card-num">${fmtRate(f.trcf)}</div><div class="stat-card-label">TRCF — (LTI + MTI) per million man-hours</div></div>
+  </div>
+  <div class="month-nav" style="margin:14px 0 8px;">
+    <button type="button" class="btn btn-sm" id="siteStatsPrev" aria-label="Previous month">◀</button>
+    <input type="month" id="siteStatsMonthInput" class="month-input" value="${esc(siteStatsMonth)}">
+    <button type="button" class="btn btn-sm" id="siteStatsNext" aria-label="Next month">▶</button>
+  </div>
+  <div class="table-wrap" style="box-shadow:none;">
+    <table class="stats-table">
+      <thead><tr><th></th><th>${esc(siteStatsMonth)}</th><th>Project to date</th></tr></thead>
+      <tbody>${PROJECT_STAT_ROWS.map(r=>`<tr><td>${esc(r.label)}</td>${cell(r,month)}${cell(r,f.total)}</tr>`).join('')}</tbody>
+    </table>
+  </div>
+  <div class="subhead">Latest entries for this project</div>
+  ${recent.length ? recent.map(e=>`<div class="rf"><span class="rf-k mono">${esc(e.date||'—')}</span><span class="rf-v"><strong>${esc(REPORT_CATEGORIES[e.category]?REPORT_CATEGORIES[e.category].label:e.category)}</strong> · ${esc(reportEntrySummary(e))}</span></div>`).join('') : '<p class="wsub">Nothing logged for this project yet.</p>'}`;
+}
+function goToReportForProject(siteId, openForm){
+  closeSiteDrawer();
+  document.querySelector('.sidenav-btn[data-section="report"]').click();
+  reportProject=siteId;
+  document.querySelector('#reportDivisionTabs [data-rdiv="all"]').click();   // show every division for this project
+  if(openForm) openReportEntryForm(null, siteId);
+  window.scrollTo(0,0);
 }
 
 function sitePickerHtml(kind, s){
@@ -2202,7 +2313,8 @@ async function updateEquip(id, data){
 
 /* ---------------- monthly HSE report rendering ---------------- */
 function renderReportAll(){
-  const entries = reportEntriesFor(reportDivision, reportMonth);
+  renderReportProjectFilter();
+  const entries = reportEntriesFor(reportDivision, reportMonth, reportProject);
   const metrics = computeReportMetrics(entries);
   renderReportHero(metrics);
   renderReportDonut(metrics);
@@ -2262,7 +2374,7 @@ function renderReportBar(){
     const d0=new Date(base+'T00:00:00');
     for(let i=2;i>=0;i--){ const d=new Date(d0.getFullYear(), d0.getMonth()-i, 1); months.push(d.toISOString().slice(0,7)); }
     const rows = months.map(mo=>{
-      const mm = computeReportMetrics(reportEntriesFor(reportDivision, mo));
+      const mm = computeReportMetrics(reportEntriesFor(reportDivision, mo, reportProject));
       return {label:mo, value:mm.proactiveTotal};
     });
     const max = Math.max(1, ...rows.map(r=>r.value));
@@ -2277,7 +2389,7 @@ function renderReportBar(){
   titleEl.textContent = `Divisions compared — ${reportMonth}`;
   function rowsFor(keys){
     return DIVISIONS.map(div=>{
-      const mm = computeReportMetrics(reportEntriesFor(div, reportMonth));
+      const mm = computeReportMetrics(reportEntriesFor(div, reportMonth, reportProject));
       const value = keys.reduce((n,k)=>n+mm[k],0);
       return {label:divLabel(div), value, color:DIVISION_COLORS[div]};
     });
@@ -2349,13 +2461,14 @@ function reportEntrySummary(e){
 function renderReportTable(entries){
   const tbody=document.getElementById('reportRows');
   if(!auth.currentUser) return;
-  if(entries.length===0){ tbody.innerHTML='<tr><td colspan="5" class="empty-state">No entries logged for this period yet — click “Log an entry” to get started.</td></tr>'; return; }
+  if(entries.length===0){ tbody.innerHTML='<tr><td colspan="6" class="empty-state">No entries logged for this period yet — click “Log an entry” to get started.</td></tr>'; return; }
   const list=entries.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   tbody.innerHTML=list.map(e=>{
     const cfg=REPORT_CATEGORIES[e.category];
     return `<tr data-rid="${e.id}">
       <td class="mono">${esc(e.date||'—')}</td>
       <td>${esc(e.division?divLabel(e.division):'—')}</td>
+      <td>${e.projectId ? esc(projectName(e.projectId)) : '<span class="wsub">—</span>'}</td>
       <td>${esc(cfg?cfg.label:e.category)}</td>
       <td>${esc(reportEntrySummary(e))}</td>
       <td style="text-align:right; white-space:nowrap;">
@@ -2385,23 +2498,49 @@ function renderReportCategorySelect(selected){
   const sel=document.getElementById('reportCategorySelect');
   sel.innerHTML = Object.keys(REPORT_CATEGORIES).map(k=>`<option value="${k}" ${k===selected?'selected':''}>${esc(REPORT_CATEGORIES[k].label)}</option>`).join('');
 }
-function renderReportEntryForm(category, editing, setDivision){
+function reportProjectOptionsHtml(selected){
+  // Current (not completed) projects, plus the entry's own project if it has since been completed/removed
+  const list=activeSites().filter(s=>projectStatus(s)!=='Completed' || s.id===selected)
+    .sort((a,b)=>(a.siteName||'').localeCompare(b.siteName||''));
+  let html=`<option value="">— No specific project —</option>` + list.map(s=>`<option value="${esc(s.id)}" ${s.id===selected?'selected':''}>${esc(s.siteName||'Unnamed project')}${projectStatus(s)==='Completed'?' (completed)':''}</option>`).join('');
+  if(selected && !list.some(s=>s.id===selected)) html+=`<option value="${esc(selected)}" selected>${esc(projectName(selected))}</option>`;
+  return html;
+}
+function renderReportProjectFilter(){
+  const sel=document.getElementById('reportProjectFilter'); if(!sel) return;
+  const ids=new Set(activeSites().map(s=>s.id));
+  for(const e of reportEntries) if(e.projectId) ids.add(e.projectId);
+  const opts=[...ids].map(id=>({id, name:projectName(id)})).sort((a,b)=>a.name.localeCompare(b.name));
+  sel.innerHTML = `<option value="all">All projects</option><option value="none">No specific project</option>` + opts.map(o=>`<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('');
+  if(reportProject!=='all' && reportProject!=='none' && !ids.has(reportProject)) reportProject='all';
+  sel.value=reportProject;
+}
+function setReportProject(id){
+  reportProject=id||'all';
+  renderReportAll();
+}
+
+function renderReportEntryForm(category, editing, setDivision, presetProjectId){
   renderReportCategorySelect(category);
   document.getElementById('reportDateFieldWrap').innerHTML = reportDateFieldHtml(category, editing?editing.date:null);
   document.getElementById('reportCategoryFields').innerHTML = reportCategoryFieldsHtml(category, editing);
   if(setDivision){
     const divSel=document.querySelector('#addReportEntryForm [data-rfield="division"]');
-    if(divSel) divSel.value = editing ? (editing.division||'Civil') : (reportDivision!=='all'?reportDivision:'Civil');
+    const projSel=document.getElementById('reportProjectSelect');
+    const projId = editing ? (editing.projectId||'') : (presetProjectId || ((reportProject!=='all' && reportProject!=='none') ? reportProject : ''));
+    projSel.innerHTML = reportProjectOptionsHtml(projId);
+    const proj = projId ? siteEquipmentList.find(s=>s.id===projId) : null;
+    if(divSel) divSel.value = editing ? (editing.division||'Civil') : (proj ? (proj.division||'Civil') : (reportDivision!=='all'?reportDivision:'Civil'));
   }
   document.getElementById('reportEntryPanelTitle').textContent = editing ? 'Edit HSE activity' : 'Log an HSE activity';
   document.getElementById('saveReportEntryBtn').textContent = editing ? 'Save changes' : 'Save entry';
 }
-function openReportEntryForm(entryId){
+function openReportEntryForm(entryId, presetProjectId){
   editingReportEntryId = entryId || null;
   const editing = entryId ? reportEntries.find(e=>e.id===entryId) : null;
   const category = editing ? editing.category : 'training';
   document.getElementById('addReportEntryPanel').hidden=false;
-  renderReportEntryForm(category, editing, true);
+  renderReportEntryForm(category, editing, true, presetProjectId);
 }
 function closeReportEntryForm(){
   editingReportEntryId=null;
@@ -2410,7 +2549,7 @@ function closeReportEntryForm(){
 }
 
 /* ---------------- monthly HSE report PDF export ---------------- */
-async function buildReportPdf(division, month){
+async function buildReportPdf(division, month, project){
   const {jsPDF} = window.jspdf;
   const doc = new jsPDF({unit:'pt', format:'a4'});
   const marginX=40, pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
@@ -2442,10 +2581,10 @@ async function buildReportPdf(division, month){
   doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(20,20,20);
   doc.text(division==='all' ? 'All divisions' : divLabel(division), marginX, y); y+=18;
   doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(100,105,98);
-  doc.text(`Reporting month: ${month}`, marginX, y);
+  doc.text(`Reporting month: ${month}` + (project && project!=='all' ? `   ·   Project: ${project==='none' ? 'No specific project' : projectName(project)}` : ''), marginX, y);
   doc.setTextColor(20,20,20); y+=22;
 
-  const entries = reportEntriesFor(division, month);
+  const entries = reportEntriesFor(division, month, project);
   const m = computeReportMetrics(entries);
 
   h2('Headline figures');
@@ -2472,13 +2611,13 @@ async function buildReportPdf(division, month){
 
   if(division==='all'){
     h2('Divisions compared — proactive activities');
-    const rows = DIVISIONS.map(div=>({div, label:divLabel(div), value:computeReportMetrics(reportEntriesFor(div,month)).proactiveTotal}));
+    const rows = DIVISIONS.map(div=>({div, label:divLabel(div), value:computeReportMetrics(reportEntriesFor(div,month,project)).proactiveTotal}));
     const max=Math.max(1, ...rows.map(r=>r.value));
     const colorMap={Civil:[8,145,178], Scaffolding:[173,124,0], Rental:[5,150,105], 'Office staff':[236,72,153]};
     for(const r of rows) bar(r.label, r.value, max, colorMap[r.div]);
 
     h2('Divisions compared — safety events');
-    const rows2 = DIVISIONS.map(div=>{ const mm=computeReportMetrics(reportEntriesFor(div,month)); return {div, label:divLabel(div), value:mm.safetyEventsTotal}; });
+    const rows2 = DIVISIONS.map(div=>{ const mm=computeReportMetrics(reportEntriesFor(div,month,project)); return {div, label:divLabel(div), value:mm.safetyEventsTotal}; });
     const max2=Math.max(1, ...rows2.map(r=>r.value));
     for(const r of rows2) bar(r.label, r.value, max2, colorMap[r.div]);
   }
@@ -2489,7 +2628,7 @@ async function buildReportPdf(division, month){
   for(const e of sorted){
     ensure(12);
     doc.setFont('helvetica','normal'); doc.setFontSize(8.2); doc.setTextColor(40,40,40);
-    const line = `${e.date||'—'}  ·  ${e.division?divLabel(e.division):'—'}  ·  ${REPORT_CATEGORIES[e.category]?REPORT_CATEGORIES[e.category].label:e.category}  ·  ${reportEntrySummary(e)}`;
+    const line = `${e.date||'—'}  ·  ${e.division?divLabel(e.division):'—'}${e.projectId?'  ·  '+projectName(e.projectId):''}  ·  ${REPORT_CATEGORIES[e.category]?REPORT_CATEGORIES[e.category].label:e.category}  ·  ${reportEntrySummary(e)}`;
     const lines=doc.splitTextToSize(line, pageW-2*marginX);
     lines.forEach(l=>{ ensure(11); doc.text(l, marginX, y); y+=11; });
   }
@@ -2502,9 +2641,10 @@ async function buildReportPdf(division, month){
 async function downloadReportPdf(){
   if(!(window.jspdf && window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
   try{
-    const doc=await buildReportPdf(reportDivision, reportMonth);
+    const doc=await buildReportPdf(reportDivision, reportMonth, reportProject);
     const divPart=(reportDivision==='all'?'All_Divisions':reportDivision).replace(/[^a-z0-9]+/gi,'_');
-    const filename=`HSE_Monthly_Report_${divPart}_${reportMonth}.pdf`;
+    const projPart=(reportProject!=='all' && reportProject!=='none') ? '_'+projectName(reportProject).replace(/[^a-z0-9]+/gi,'_') : '';
+    const filename=`HSE_Monthly_Report_${divPart}${projPart}_${reportMonth}.pdf`;
     doc.save(filename);
     toast('Monthly report downloaded');
   }catch(e){ console.error(e); toast('Could not generate the PDF'); }
@@ -3050,6 +3190,14 @@ async function buildSitePdf(s){
   kv('Client representative', [s.clientRepName, s.clientRepPhone, s.clientRepEmail].filter(Boolean).join('  ·  '));
   kv('Client HSE focal person', [s.clientHseName, s.clientHsePhone].filter(Boolean).join('  ·  '));
 
+  // HSE statistics for this project, from the Monthly Report
+  const hf=projectHseFigures(s.id);
+  h2(`HSE statistics — project to date (${hf.all.length} entries)`);
+  kv('Days since last LTI', hf.lastLti ? `${hf.daysSinceLti} (last LTI ${hf.lastLti})` : 'No LTI recorded');
+  kv('LTIF (per million man-hours)', fmtRate(hf.ltif));
+  kv('TRCF (LTI + MTI per million)', fmtRate(hf.trcf));
+  for(const r of PROJECT_STAT_ROWS){ kv(r.label, r.fmt ? r.fmt(hf.total) : hf.total[r.key]); }
+
   function lineList(title, items, render){
     h2(title);
     if(!items.length){ ensure(13); doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(130,130,130); doc.text('None assigned', marginX, y); doc.setTextColor(20,20,20); y+=16; return; }
@@ -3589,6 +3737,15 @@ document.addEventListener('DOMContentLoaded', ()=>{
   /* ---------------- site: record edit/delete/toggle + delete site ---------------- */
   document.getElementById('siteDrawerBody').addEventListener('click', async e=>{
     const s0=currentSite();
+    // --- HSE statistics tab ---
+    if(e.target.id==='siteLogEntryBtn' && s0){ goToReportForProject(s0.id, true); return; }
+    if(e.target.id==='siteOpenReportBtn' && s0){ goToReportForProject(s0.id, false); return; }
+    if(e.target.id==='siteStatsPrev' || e.target.id==='siteStatsNext'){
+      const [y,m]=siteStatsMonth.split('-').map(Number);
+      const d=new Date(y, (m-1)+(e.target.id==='siteStatsNext'?1:-1), 1);
+      siteStatsMonth=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      renderSiteDrawerBody(); return;
+    }
     // --- team & vehicle assignment ---
     if(e.target.id==='sitePickerOpenTeam' || e.target.id==='sitePickerOpenVehicles'){
       sitePickerOpen = e.target.id==='sitePickerOpenTeam' ? 'team' : 'vehicles'; sitePickerQuery=''; renderSiteDrawerBody(); return;
@@ -3670,6 +3827,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   });
 
+  document.getElementById('siteDrawerBody').addEventListener('change', e=>{
+    if(e.target.id!=='siteStatsMonthInput' || !e.target.value) return;
+    siteStatsMonth=e.target.value; renderSiteDrawerBody();
+  });
   document.getElementById('siteDrawerBody').addEventListener('input', e=>{
     if(e.target.id!=='sitePickerSearch') return;
     sitePickerQuery=e.target.value;
@@ -3844,6 +4005,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
     renderReportAll();
   });
 
+  document.getElementById('reportProjectFilter').addEventListener('change', e=>setReportProject(e.target.value));
+  // picking a project fills in its division automatically
+  document.getElementById('reportProjectSelect').addEventListener('change', e=>{
+    const s=siteEquipmentList.find(x=>x.id===e.target.value);
+    const divSel=document.querySelector('#addReportEntryForm [data-rfield="division"]');
+    if(s && divSel) divSel.value=s.division||'Civil';
+  });
+
   /* ---------------- monthly report: add / edit entry ---------------- */
   document.getElementById('addReportEntryBtn').addEventListener('click', ()=> openReportEntryForm(null));
   document.getElementById('cancelAddReportEntry').addEventListener('click', closeReportEntryForm);
@@ -3857,6 +4026,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const key=el.dataset.rfield;
       data[key] = el.type==='number' ? (el.value===''?null:Number(el.value)) : el.value;
     });
+    if(!data.projectId) data.projectId=null;
     try{
       if(editingReportEntryId){
         await db.collection('hseLogs').doc(editingReportEntryId).update(data);
