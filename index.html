@@ -246,6 +246,29 @@ button.att-link.att-remove{color:var(--danger);}
 .bar-section-label:first-child{margin-top:0;}
 
 .report-category-fields{margin-top:10px;}
+
+/* ---- plant & equipment register ---- */
+.pane-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin:4px 0 12px;}
+.pane-head h2{font-size:17px;}
+.tab-count{display:inline-block; margin-left:6px; font-size:11px; font-weight:700; opacity:.75;}
+.loc-card{border:1px solid var(--line); border-radius:10px; padding:12px; background:var(--surface-2); margin-bottom:6px;}
+.loc-card-top{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
+.loc-now{font-size:13px;}
+.loc-now strong{font-size:14.5px;}
+.move-form{margin-top:12px;}
+.history-list{list-style:none; margin:0; padding:0;}
+.history-list li{display:flex; gap:10px; padding:8px 0; border-bottom:1px dashed var(--line); font-size:12.5px;}
+.history-list li:last-child{border-bottom:none;}
+.history-date{color:var(--ink-muted); min-width:84px; flex:none; font-family:var(--font-mono); font-size:11.5px; padding-top:1px;}
+.history-note{color:var(--ink-muted); font-size:12px; margin-top:2px;}
+.equip-group{margin-bottom:16px;}
+.equip-group h4{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-muted); margin:0 0 8px; display:flex; justify-content:space-between;}
+.equip-line{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 10px; border:1px solid var(--line); border-radius:9px; margin-bottom:6px; background:var(--surface-2); cursor:pointer;}
+.equip-line:hover{border-color:var(--accent);}
+.equip-line-main{min-width:0;}
+.equip-line-title{font-weight:600; font-size:13px;}
+.equip-line-badges{display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; flex:none;}
+.notice{background:var(--warn-bg); color:var(--warn); border:1px solid var(--warn); border-radius:9px; padding:10px 12px; font-size:12.5px; margin-bottom:12px;}
 .tiles-4{grid-template-columns:repeat(4,1fr) !important;}
 @media (max-width:900px){.tiles-4{grid-template-columns:repeat(2,1fr) !important;}}
 
@@ -284,7 +307,7 @@ button.att-link.att-remove{color:var(--danger);}
     <img src="logo.png" alt="Burhan Oil & Trade Services" class="sidenav-logo">
     <button type="button" class="sidenav-btn" data-section="report"><span class="sidenav-icon">📊</span> Monthly Report</button>
     <button type="button" class="sidenav-btn active" data-section="workforce"><span class="sidenav-icon">👥</span> Workforce</button>
-    <button type="button" class="sidenav-btn" data-section="vehicles"><span class="sidenav-icon">🚚</span> Vehicles</button>
+    <button type="button" class="sidenav-btn" data-section="vehicles"><span class="sidenav-icon">🛠️</span> Plant &amp; Equipment</button>
     <button type="button" class="sidenav-btn" data-section="site"><span class="sidenav-icon">📁</span> Project Details</button>
   </aside>
   <div class="app-content">
@@ -355,8 +378,18 @@ button.att-link.att-remove{color:var(--danger);}
     <main class="app-main" id="vehiclesSection" hidden>
       <div class="topbar">
         <div>
-          <h1>Vehicle Register</h1>
-          <p>One live record per vehicle — documents (MOT, insurance, IVMS, DFMS, RAS sticker), onboard PPE with serial numbers and expiry, and simple counts for jacks, wheel stoppers, brass hammers and warning triangles.</p>
+          <h1>Plant &amp; Equipment</h1>
+          <p>Your fleet, plus every power tool, lifting gear, harness, ladder, fire extinguisher and specialized PPE item in the company — each with its certificate, expiry, current location (store or project) and full movement history.</p>
+        </div>
+      </div>
+
+      <nav class="division-tabs" id="plantTabs"></nav>
+
+      <div id="fleetPane">
+      <div class="pane-head">
+        <div>
+          <h2>Fleet</h2>
+          <div class="wsub">Vehicle documents (registration, MOT, insurance, IVMS, DFMS, RAS sticker), onboard PPE &amp; safety kit, and counts for jacks, wheel stoppers, brass hammers and warning triangles.</div>
         </div>
         <div class="topbar-actions">
           <button class="btn btn-sm" id="vehicleTrashBtn" type="button">🗑 Deleted vehicles (0)</button>
@@ -402,13 +435,68 @@ button.att-link.att-remove{color:var(--danger);}
           </tbody>
         </table>
       </div>
+      </div><!-- /fleetPane -->
+
+      <div id="registerPane" hidden>
+        <div class="pane-head">
+          <div>
+            <h2 id="equipPaneTitle"></h2>
+            <div class="wsub" id="equipPaneSub"></div>
+          </div>
+          <div class="topbar-actions">
+            <button class="btn btn-sm" id="equipTrashBtn" type="button">🗑 Deleted items (0)</button>
+            <button class="btn btn-primary" id="addEquipBtn" type="button">+ Add</button>
+          </div>
+        </div>
+
+        <div class="tiles tiles-4" id="equipTiles"></div>
+
+        <div class="panel" id="addEquipPanel" hidden>
+          <h3 id="addEquipTitle">Add an item</h3>
+          <form id="addEquipForm">
+            <div class="form-grid" id="addEquipFields"></div>
+            <div class="form-actions">
+              <button type="button" class="btn" id="cancelAddEquip">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save item</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="toolbar">
+          <input type="search" id="equipSearchInput" placeholder="Search name or serial no…">
+          <select id="equipLocationFilter"><option value="all">All locations</option></select>
+          <select id="equipConditionFilter">
+            <option value="all">Any condition</option>
+            <option value="In service">In service</option>
+            <option value="Out for TPI / repair">Out for TPI / repair</option>
+            <option value="Damaged / quarantined">Damaged / quarantined</option>
+          </select>
+          <select id="equipStatusFilter">
+            <option value="all">Any expiry status</option>
+            <option value="expired">Expired</option>
+            <option value="expiring">Expiring within 30 days</option>
+            <option value="valid">Valid</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Item</th><th>Serial no.</th><th>Location</th><th>Condition</th><th>Certificate / expiry</th></tr>
+            </thead>
+            <tbody id="equipRows">
+              <tr><td colspan="5" class="empty-state">Sign in to load equipment data…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div><!-- /registerPane -->
     </main>
 
     <main class="app-main" id="siteSection" hidden>
       <div class="topbar">
         <div>
           <h1>Project Details</h1>
-          <p>One live record per project — client, scope and duration, plus power tools with TPI certificates, safety harnesses, ladders and other PPE, each tracked with its own expiry and certificate.</p>
+          <p>One live record per project — client, scope and duration, plus every tool, harness, ladder, extinguisher and PPE item currently on site (managed from Plant &amp; Equipment).</p>
         </div>
         <div class="topbar-actions">
           <button class="btn btn-sm" id="siteTrashBtn" type="button">🗑 Deleted projects (0)</button>
@@ -448,7 +536,7 @@ button.att-link.att-remove{color:var(--danger);}
         <table>
           <thead>
             <tr>
-              <th>Project name</th><th>Division</th><th>Power tools</th><th>Safety harness</th><th>Ladders</th><th>Other PPE</th>
+              <th>Project name</th><th>Division</th><th>Client</th><th>Equipment on site</th><th>Certificates</th><th>Out of service</th>
             </tr>
           </thead>
           <tbody id="siteRows">
@@ -620,6 +708,30 @@ button.att-link.att-remove{color:var(--danger);}
   <div class="drawer-body" id="siteTrashBody"></div>
 </aside>
 
+<div class="drawer-overlay" id="equipDrawerOverlay" hidden></div>
+<aside class="drawer" id="equipDrawer" hidden>
+  <div class="drawer-head">
+    <div>
+      <h2 id="equipDrawerName"></h2>
+      <div class="wsub mono" id="equipDrawerSub"></div>
+    </div>
+    <button class="icon-btn" id="equipDrawerClose" aria-label="Close panel">✕</button>
+  </div>
+  <div class="drawer-body" id="equipDrawerBody"></div>
+</aside>
+
+<div class="drawer-overlay" id="equipTrashOverlay" hidden></div>
+<aside class="drawer" id="equipTrashDrawer" hidden>
+  <div class="drawer-head">
+    <div>
+      <h2>Deleted equipment</h2>
+      <div class="wsub">Restore an item, or remove it for good (this also deletes its certificate file). Permanent removal cannot be undone.</div>
+    </div>
+    <button class="icon-btn" id="equipTrashClose" aria-label="Close">✕</button>
+  </div>
+  <div class="drawer-body" id="equipTrashBody"></div>
+</aside>
+
 <div class="toast" id="toast"></div>
 
 <!-- Firebase (compat SDK — keeps the same collection().doc() style as the rest of this file) -->
@@ -751,7 +863,7 @@ let unsubscribeWorkers=null;
 const VEHICLE_TABS = [
   {key:'profile', label:'Profile'},
   {key:'documents', label:'Documents'},
-  {key:'ppe', label:'PPE'},
+  {key:'ppe', label:'PPE & safety kit'},
 ];
 const VEHICLE_RECORD_TYPES = {
   documents:{
@@ -799,11 +911,10 @@ function vehicleAggFor(v,key){
 /* ---------------- site equipment config ---------------- */
 const SITE_TABS = [
   {key:'profile', label:'Profile'},
-  {key:'powerTools', label:'Power Tools'},
-  {key:'harness', label:'Safety Harness'},
-  {key:'ladders', label:'Ladders'},
-  {key:'otherPpe', label:'Other PPE'},
+  {key:'equipment', label:'Equipment on site'},
 ];
+// Kept only so older project records (from before the Plant & Equipment register)
+// can be read and moved into the register automatically — no longer shown as tabs.
 const SITE_RECORD_TYPES = {
   powerTools:{
     title:'Power tools', addLabel:'+ Add power tool', hasExpiry:true, hasAttachment:true, attachLabel:'TPI certificate',
@@ -856,6 +967,126 @@ function siteAggFor(s,key){
   let worst='valid';
   for(const r of recs){ const st=statusFor(r.expiry); if(RANK[st]>RANK[worst]) worst=st; }
   return {status:worst};
+}
+
+/* ---------------- plant & equipment register config ---------------- */
+// Every movable item lives once in the 'equipment' collection with a category,
+// a current location ('store' or a project id), a condition and a move history.
+const EQUIP_CATEGORIES = {
+  powerTools:{ label:'Power tools & equipment', short:'Power tools', icon:'🔧', noun:'tool / equipment', emailLabel:'Power tool / equipment (TPI)',
+    fields:[
+      {key:'name', label:'Tool / equipment name', type:'text', required:true, placeholder:'e.g. Grinder, Drill, Welding machine'},
+      {key:'make', label:'Make / model', type:'text', placeholder:'e.g. Bosch GWS 22-230'},
+      {key:'serial', label:'Serial number', type:'text', required:true},
+      {key:'certNo', label:'TPI certificate no.', type:'text'},
+      {key:'expiry', label:'TPI certificate expiry', type:'date', required:true},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+    display:e=>e.name||'Tool' },
+  liftingGear:{ label:'Lifting gear', short:'Lifting gear', icon:'⛓️', noun:'lifting gear item', emailLabel:'Lifting gear (TPI)',
+    fields:[
+      {key:'type', label:'Type', type:'select', required:true, options:['Web sling','Wire rope sling','Chain sling','Round sling','Shackle','Chain block','Lever hoist','Eye bolt','Beam clamp','Other']},
+      {key:'swl', label:'Safe working load (SWL)', type:'text', placeholder:'e.g. 2 T'},
+      {key:'serial', label:'Serial / ID number', type:'text', required:true},
+      {key:'certNo', label:'TPI certificate no.', type:'text'},
+      {key:'expiry', label:'TPI certificate expiry', type:'date', required:true},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+    display:e=>(e.type||'Lifting gear')+(e.swl?` · SWL ${e.swl}`:'') },
+  harness:{ label:'Full body harness', short:'Harness', icon:'🦺', noun:'harness', emailLabel:'Full body harness',
+    fields:[
+      {key:'make', label:'Make / model', type:'text', placeholder:'e.g. 3M DBI-SALA'},
+      {key:'serial', label:'Serial number', type:'text', required:true},
+      {key:'certNo', label:'Certificate no.', type:'text'},
+      {key:'expiry', label:'Expiry / inspection due', type:'date', required:true},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+    display:e=>e.make?`Full body harness · ${e.make}`:'Full body harness' },
+  ladders:{ label:'Ladders', short:'Ladders', icon:'🪜', noun:'ladder', emailLabel:'Ladder',
+    fields:[
+      {key:'type', label:'Ladder type', type:'select', required:true, options:['Straight ladder','Extension ladder','Step ladder','Platform ladder','Other']},
+      {key:'serial', label:'ID tag / serial no.', type:'text', required:true},
+      {key:'expiry', label:'Inspection due date', type:'date', required:true},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+    display:e=>e.type||'Ladder' },
+  extinguishers:{ label:'Fire extinguishers', short:'Fire extinguishers', icon:'🧯', noun:'fire extinguisher', emailLabel:'Fire extinguisher',
+    fields:[
+      {key:'extType', label:'Type', type:'select', required:true, options:['DCP (dry powder)','CO₂','Foam','Water','Wet chemical','Other']},
+      {key:'capacityKg', label:'Capacity (kg)', type:'number', required:true},
+      {key:'serial', label:'Serial number', type:'text', required:true},
+      {key:'expiry', label:'Expiry / next inspection', type:'date', required:true},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+    display:e=>`${e.extType||'Fire extinguisher'}${e.capacityKg?` · ${e.capacityKg} kg`:''}` },
+  specialPpe:{ label:'Specialized PPE', short:'Specialized PPE', icon:'🥽', noun:'PPE item', emailLabel:'Specialized PPE',
+    fields:[
+      {key:'name', label:'Item', type:'text', required:true, placeholder:'e.g. SCBA set, gas detector, fall arrester'},
+      {key:'make', label:'Make / model', type:'text'},
+      {key:'serial', label:'Serial number', type:'text', required:true},
+      {key:'certNo', label:'TPI certificate no.', type:'text'},
+      {key:'expiry', label:'Expiry', type:'date', required:true},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+    display:e=>e.name||'PPE item' },
+};
+const EQUIP_CATEGORY_ORDER = ['powerTools','liftingGear','harness','ladders','extinguishers','specialPpe'];
+const EQUIP_CONDITIONS = ['In service','Out for TPI / repair','Damaged / quarantined'];
+// How older project tabs map into the register (used once, automatically)
+const LEGACY_SITE_MAP = {
+  powerTools:{cat:'powerTools', map:r=>({name:r.type||'', serial:r.serial||'', expiry:r.expiry||'', notes:r.notes||''})},
+  harness:{cat:'harness', map:r=>({serial:r.serial||'', expiry:r.expiry||'', notes:r.notes||''})},
+  ladders:{cat:'ladders', map:r=>({type:r.type||'', serial:r.idTag||'', expiry:r.expiry||'', notes:r.notes||''})},
+  otherPpe:{cat:'specialPpe', map:r=>({name:r.item||'', serial:r.serial||'', expiry:r.expiry||'', notes:r.notes||''})},
+};
+
+let equipmentList=[];
+let unsubscribeEquipment=null;
+let equipmentLoadError=null;
+let equipmentLoaded=false;
+let activePlantTab='fleet';
+let activeEquipId=null, equipMoveOpen=false;
+let equipFilters={q:'', location:'all', condition:'all', status:'all'};
+let equipMigrationRunning=false;
+
+function activeEquipment(){ return equipmentList.filter(e=>!e.deleted); }
+function deletedEquipment(){ return equipmentList.filter(e=>e.deleted); }
+function currentEquip(){ return equipmentList.find(e=>e.id===activeEquipId); }
+function equipTitle(e){ const c=EQUIP_CATEGORIES[e.category]; return c ? c.display(e) : (e.displayName||'Item'); }
+function equipLoc(e){ return e.location || 'store'; }
+function locLabel(loc){
+  if(!loc || loc==='store') return 'In store';
+  const s=siteEquipmentList.find(x=>x.id===loc);
+  if(!s) return 'Unknown project';
+  return (s.siteName||'Unnamed project') + (s.deleted?' (deleted project)':'');
+}
+function equipAtSite(siteId){ return activeEquipment().filter(e=>equipLoc(e)===siteId); }
+function conditionBadge(c){
+  const cond=c||'In service';
+  const cls = cond==='In service' ? 'ok' : cond==='Damaged / quarantined' ? 'danger' : 'warn';
+  return `<span class="badge ${cls}">${esc(cond)}</span>`;
+}
+function expiryCell(e){
+  if(!e.expiry) return `<span class="badge muted">No expiry set</span>`;
+  return `${badgeHtml(statusFor(e.expiry))} <span class="wsub mono" style="display:inline;">${esc(e.expiry)}</span>`;
+}
+function localToday(){ const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); }
+function equipFieldsHtml(cat, item, attr){
+  // attr = the data-* attribute the submit handler reads ('data-field' or 'data-efield')
+  return EQUIP_CATEGORIES[cat].fields.map(f=>{
+    const val = item ? (item[f.key]!=null ? item[f.key] : '') : '';
+    const req = f.required ? 'required' : '';
+    const lbl = `${esc(f.label)}${f.required?' *':''}`;
+    if(f.type==='textarea') return `<label style="grid-column:1/-1;">${lbl}<textarea ${attr}="${f.key}" ${req}>${esc(val)}</textarea></label>`;
+    if(f.type==='select') return `<label>${lbl}<select ${attr}="${f.key}" ${req}><option value="">Select…</option>${f.options.map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
+    const extra = f.type==='number' ? 'min="0" step="any"' : '';
+    return `<label>${lbl}<input type="${f.type}" ${attr}="${f.key}" value="${esc(val)}" ${req} ${extra} ${f.placeholder?`placeholder="${esc(f.placeholder)}"`:''}></label>`;
+  }).join('');
+}
+function locationOptionsHtml(selected, excludeLoc){
+  const opts=[{v:'store', l:'In store'}, ...activeSites().slice().sort((a,b)=>(a.siteName||'').localeCompare(b.siteName||'')).map(s=>({v:s.id, l:s.siteName||'Unnamed project'}))]
+    .filter(o=>o.v!==excludeLoc);
+  return opts.map(o=>`<option value="${esc(o.v)}" ${o.v===selected?'selected':''}>${esc(o.l)}</option>`).join('');
 }
 
 /* ---------------- monthly HSE report config ---------------- */
@@ -1008,13 +1239,16 @@ auth.onAuthStateChanged(user=>{
     startData();
     startVehicleData();
     startSiteData();
+    startEquipmentData();
     startReportData();
   } else {
     if(unsubscribeWorkers){ unsubscribeWorkers(); unsubscribeWorkers=null; }
     if(unsubscribeVehicles){ unsubscribeVehicles(); unsubscribeVehicles=null; }
     if(unsubscribeSiteEquipment){ unsubscribeSiteEquipment(); unsubscribeSiteEquipment=null; }
+    if(unsubscribeEquipment){ unsubscribeEquipment(); unsubscribeEquipment=null; }
     if(unsubscribeReportEntries){ unsubscribeReportEntries(); unsubscribeReportEntries=null; }
-    workers=[]; vehicles=[]; siteEquipmentList=[]; reportEntries=[];
+    workers=[]; vehicles=[]; siteEquipmentList=[]; equipmentList=[]; reportEntries=[]; equipmentLoaded=false;
+    document.getElementById('equipRows').innerHTML='<tr><td colspan="5" class="empty-state">Sign in to load equipment data…</td></tr>';
     document.getElementById('authOverlay').hidden=false;
     document.getElementById('signOutBtn').hidden=true;
     document.getElementById('workerRows').innerHTML='<tr><td colspan="11" class="empty-state">Sign in to load workforce data…</td></tr>';
@@ -1048,8 +1282,66 @@ function startSiteData(){
     unsubscribeSiteEquipment = db.collection('siteEquipment').orderBy('siteName','asc').onSnapshot(snap=>{
       siteEquipmentList = snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
       renderSiteAll();
+      renderEquipAll();           // location names come from projects
+      migrateLegacySiteEquipment();
     }, err=>{ console.error(err); toast('Sync error — some project data may be stale.'); });
   }catch(e){ console.error(e); }
+}
+
+function startEquipmentData(){
+  try{
+    unsubscribeEquipment = db.collection('equipment').onSnapshot(snap=>{
+      equipmentLoadError=null;
+      equipmentLoaded=true;
+      equipmentList = snap.docs.map(d=>({id:d.id, ...(d.data()||{})}))
+        .sort((a,b)=> equipTitle(a).localeCompare(equipTitle(b)) || String(a.serial||'').localeCompare(String(b.serial||'')));
+      renderEquipAll();
+      renderSiteAll();            // project pages show what's on site
+      migrateLegacySiteEquipment();
+    }, err=>{
+      console.error(err);
+      equipmentLoadError = err && err.code==='permission-denied' ? 'rules' : 'other';
+      renderEquipAll();
+    });
+  }catch(e){ console.error(e); }
+}
+
+// One-time move of tools that were entered inside projects (old Power Tools /
+// Harness / Ladders / Other PPE tabs) into the company-wide register. Uses fixed
+// document ids, so running it twice (e.g. on two devices) never makes duplicates,
+// and a project's old lists are only cleared after every item was copied.
+async function migrateLegacySiteEquipment(){
+  if(equipMigrationRunning || equipmentLoadError || !equipmentLoaded) return;
+  const todo = siteEquipmentList.filter(s=>Object.keys(LEGACY_SITE_MAP).some(k=>(s[k]||[]).length));
+  if(!todo.length) return;
+  equipMigrationRunning=true;
+  let moved=0;
+  try{
+    const today=localToday();
+    for(const s of todo){
+      for(const key of Object.keys(LEGACY_SITE_MAP)){
+        const conf=LEGACY_SITE_MAP[key];
+        const recs=s[key]||[];
+        for(let i=0;i<recs.length;i++){
+          const r=recs[i];
+          const docId=`mig_${s.id}_${key}_${r.id||i}`;
+          const item={category:conf.cat, ...conf.map(r), location:s.id, condition:'In service',
+            attachment:r.attachment||null, createdAt:new Date().toISOString(),
+            history:[{kind:'move', date:today, from:null, to:s.id, fromLabel:'—', toLabel:s.siteName||'Project', note:'Moved automatically from the old project equipment list'}],
+            migratedFrom:{siteId:s.id, key, recId:r.id||String(i)}};
+          item.displayName = EQUIP_CATEGORIES[conf.cat].display(item);
+          await db.collection('equipment').doc(docId).set(item);
+          moved++;
+        }
+      }
+      await db.collection('siteEquipment').doc(s.id).update({powerTools:[], harness:[], ladders:[], otherPpe:[], equipmentMigratedAt:new Date().toISOString()});
+    }
+    if(moved) toast(`Moved ${moved} item(s) from projects into Plant & Equipment`);
+  }catch(e){
+    console.error('equipment migration failed', e);
+  }finally{
+    equipMigrationRunning=false;
+  }
 }
 
 function startReportData(){
@@ -1198,6 +1490,7 @@ function renderTable(){
 
 /* ---------------- vehicle rendering ---------------- */
 function renderVehicleAll(){
+  renderPlantTabs();
   renderVehicleTiles();
   renderVehicleTable();
   const trashCount=deletedVehicles().length;
@@ -1271,26 +1564,29 @@ function renderSiteAll(){
   if(!document.getElementById('siteTrashDrawer').hidden) renderSiteTrashBody();
 }
 
+function siteEquipSummary(siteId){
+  const items=equipAtSite(siteId);
+  let expired=0, expiring=0, outOfService=0;
+  for(const e of items){
+    const st=statusFor(e.expiry);
+    if(e.expiry && st==='expired') expired++; else if(e.expiry && st==='expiring') expiring++;
+    if((e.condition||'In service')!=='In service') outOfService++;
+  }
+  const worst = expired ? 'expired' : expiring ? 'expiring' : (items.length ? 'valid' : 'none');
+  return {count:items.length, expired, expiring, outOfService, worst};
+}
+
 function renderSiteTiles(){
   const list=activeSites();
   const total=list.length;
-  function agg(key){
-    let expired=0, expiring=0;
-    for(const s of list){
-      const recs=s[key]||[]; if(recs.length===0) continue;
-      let worst='valid';
-      for(const r of recs){ const st=statusFor(r.expiry); if(RANK[st]>RANK[worst]) worst=st; }
-      if(worst==='expired') expired++; else if(worst==='expiring') expiring++;
-    }
-    return {expired,expiring};
-  }
-  const pt=agg('powerTools'), ha=agg('harness'), la=agg('ladders'), op=agg('otherPpe');
+  let onSite=0, expired=0, expiring=0, oos=0;
+  for(const s of list){ const m=siteEquipSummary(s.id); onSite+=m.count; expired+=m.expired; expiring+=m.expiring; oos+=m.outOfService; }
+  const inStore=activeEquipment().filter(e=>equipLoc(e)==='store').length;
   const tiles=[
     {label:'Projects', num:total, cls:'', sub:'active projects', cat:'--cat-1', icon:'🏗️'},
-    {label:'Power tools', num:pt.expired, cls:pt.expired?'danger':(pt.expiring?'warn':'ok'), sub:`${pt.expiring} expiring soon`, cat:'--cat-3', icon:'🔧'},
-    {label:'Safety harness', num:ha.expired, cls:ha.expired?'danger':(ha.expiring?'warn':'ok'), sub:`${ha.expiring} expiring soon`, cat:'--cat-5', icon:'🦺'},
-    {label:'Ladders', num:la.expired, cls:la.expired?'danger':(la.expiring?'warn':'ok'), sub:`${la.expiring} expiring soon`, cat:'--cat-7', icon:'🪜'},
-    {label:'Other PPE', num:op.expired, cls:op.expired?'danger':(op.expiring?'warn':'ok'), sub:`${op.expiring} expiring soon`, cat:'--cat-9', icon:'🥽'},
+    {label:'Equipment on sites', num:onSite, cls:'', sub:`${inStore} more in store`, cat:'--cat-3', icon:'🔧'},
+    {label:'Expired on sites', num:expired, cls:expired?'danger':'ok', sub:`${expiring} expiring within 30 days`, cat:'--cat-9', icon:'⛔'},
+    {label:'Out of service on sites', num:oos, cls:oos?'warn':'ok', sub:'out for TPI / repair or damaged', cat:'--cat-7', icon:'🔒'},
   ];
   document.getElementById('siteTiles').innerHTML = tiles.map(t=>`
     <div class="tile" style="--tile-accent:var(${t.cat})">
@@ -1315,14 +1611,14 @@ function renderSiteTable(){
   const list=siteEquipmentList.filter(siteMatches);
   if(list.length===0){ tbody.innerHTML='<tr><td colspan="6" class="empty-state">No sites match your filters.</td></tr>'; return; }
   tbody.innerHTML=list.map(s=>{
-    const pt=siteAggFor(s,'powerTools'), ha=siteAggFor(s,'harness'), la=siteAggFor(s,'ladders'), op=siteAggFor(s,'otherPpe');
+    const m=siteEquipSummary(s.id);
     return `<tr data-id="${s.id}">
-      <td>${esc(s.siteName)}</td>
+      <td class="wname">${esc(s.siteName)}</td>
       <td>${esc(s.division||'Civil')}</td>
-      <td>${badgeHtml(pt.status)}</td>
-      <td>${badgeHtml(ha.status)}</td>
-      <td>${badgeHtml(la.status)}</td>
-      <td>${badgeHtml(op.status)}</td>
+      <td>${esc(s.clientName||'—')}</td>
+      <td><span class="pill-count">${m.count}</span></td>
+      <td>${m.worst==='none' ? '<span class="badge muted">No equipment</span>' : badgeHtml(m.worst)}</td>
+      <td>${m.outOfService ? `<span class="pill-count warn">${m.outOfService}</span>` : '<span class="pill-count">0</span>'}</td>
     </tr>`;
   }).join('');
 }
@@ -1432,11 +1728,37 @@ function renderSiteDrawerBody(){
   const s=currentSite(); if(!s) return;
   const body=document.getElementById('siteDrawerBody');
   if(activeSiteTab==='profile'){ body.innerHTML=siteProfileTabHtml(s); return; }
+  if(activeSiteTab==='equipment'){ body.innerHTML=siteEquipmentTabHtml(s); return; }
   const cfg=SITE_RECORD_TYPES[activeSiteTab];
   const savedActiveTab=activeTab, savedEditing=editingRecordId, savedAddOpen=addFormOpen;
   activeTab=activeSiteTab; editingRecordId=editingSiteRecordId; addFormOpen=siteAddFormOpen;
   body.innerHTML=recordTabHtml(s, activeSiteTab, cfg);
   activeTab=savedActiveTab; editingRecordId=savedEditing; addFormOpen=savedAddOpen;
+}
+
+function siteEquipmentTabHtml(s){
+  const items=equipAtSite(s.id);
+  const m=siteEquipSummary(s.id);
+  const intro = `<p class="wsub" style="margin:0 0 14px;">Everything currently located at this project, pulled live from <strong>Plant &amp; Equipment</strong>. To send an item here or move it to another project, open it and use <strong>Move</strong>. Click any item to open it.</p>`;
+  if(!items.length) return intro + `<p class="wsub">No equipment at this project yet.</p>`;
+  const summary = `<div class="record-fields" style="margin-bottom:14px;">
+      <div class="rf"><span class="rf-k">Items on site</span><span class="rf-v">${m.count}</span></div>
+      <div class="rf"><span class="rf-k">Expired</span><span class="rf-v">${m.expired ? `<span class="badge danger">${m.expired}</span>` : '0'}</span></div>
+      <div class="rf"><span class="rf-k">Expiring ≤ 30 days</span><span class="rf-v">${m.expiring ? `<span class="badge warn">${m.expiring}</span>` : '0'}</span></div>
+      <div class="rf"><span class="rf-k">Out of service</span><span class="rf-v">${m.outOfService}</span></div>
+    </div>`;
+  const groups = EQUIP_CATEGORY_ORDER.map(cat=>{
+    const list=items.filter(e=>e.category===cat);
+    if(!list.length) return '';
+    return `<div class="equip-group">
+      <h4><span>${EQUIP_CATEGORIES[cat].icon} ${esc(EQUIP_CATEGORIES[cat].label)}</span><span>${list.length}</span></h4>
+      ${list.map(e=>`<div class="equip-line" data-open-equip="${e.id}">
+        <div class="equip-line-main"><div class="equip-line-title">${esc(equipTitle(e))}</div><div class="wsub mono">S/N ${esc(e.serial||'—')}</div></div>
+        <div class="equip-line-badges">${(e.condition||'In service')!=='In service'?conditionBadge(e.condition):''}${e.expiry?badgeHtml(statusFor(e.expiry)):'<span class="badge muted">No expiry</span>'}</div>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+  return intro + summary + groups;
 }
 
 function siteProfileTabHtml(s){
@@ -1488,6 +1810,218 @@ function renderSiteTrashBody(){
         <div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc((s.deletedAt||'').slice(0,10)||'—')}</span></div>
       </div>
     </div>`).join('') : `<p class="wsub">Nothing in the trash.</p>`;
+}
+
+/* ---------------- plant & equipment rendering ---------------- */
+function renderPlantTabs(){
+  const counts={}; for(const e of activeEquipment()) counts[e.category]=(counts[e.category]||0)+1;
+  const tabs=[{key:'fleet', label:'🚚 Fleet', n:activeVehicles().length}, ...EQUIP_CATEGORY_ORDER.map(k=>({key:k, label:`${EQUIP_CATEGORIES[k].icon} ${EQUIP_CATEGORIES[k].short}`, n:counts[k]||0}))];
+  document.getElementById('plantTabs').innerHTML = tabs.map(t=>`<button type="button" class="division-tab ${t.key===activePlantTab?'active':''}" data-ptab="${t.key}">${t.label}<span class="tab-count">${t.n}</span></button>`).join('');
+  document.getElementById('fleetPane').hidden = activePlantTab!=='fleet';
+  document.getElementById('registerPane').hidden = activePlantTab==='fleet';
+}
+
+function renderEquipAll(){
+  renderPlantTabs();
+  document.getElementById('equipTrashBtn').textContent = `🗑 Deleted items (${deletedEquipment().length})`;
+  if(activePlantTab!=='fleet'){
+    const cat=EQUIP_CATEGORIES[activePlantTab];
+    document.getElementById('equipPaneTitle').textContent = cat.label;
+    document.getElementById('equipPaneSub').textContent = `Every ${cat.noun} in the company, where it is right now, and when its certificate expires.`;
+    document.getElementById('addEquipBtn').textContent = `+ Add ${cat.noun}`;
+    renderEquipTiles();
+    renderEquipLocationFilter();
+    renderEquipTable();
+  }
+  if(activeEquipId) renderEquipDrawer();
+  if(!document.getElementById('equipTrashDrawer').hidden) renderEquipTrashBody();
+}
+
+function renderEquipTiles(){
+  const list=activeEquipment().filter(e=>e.category===activePlantTab);
+  const inStore=list.filter(e=>equipLoc(e)==='store').length;
+  const onSites=list.length-inStore;
+  const expired=list.filter(e=>e.expiry && statusFor(e.expiry)==='expired').length;
+  const expiring=list.filter(e=>e.expiry && statusFor(e.expiry)==='expiring').length;
+  const oos=list.filter(e=>(e.condition||'In service')!=='In service').length;
+  const tiles=[
+    {label:'Total', num:list.length, cls:'', sub:`${inStore} in store · ${onSites} on projects`, cat:'--cat-1', icon:EQUIP_CATEGORIES[activePlantTab].icon},
+    {label:'Expired', num:expired, cls:expired?'danger':'ok', sub:'certificate / inspection overdue', cat:'--cat-9', icon:'⛔'},
+    {label:'Expiring soon', num:expiring, cls:expiring?'warn':'ok', sub:'within the next 30 days', cat:'--cat-2', icon:'⏳'},
+    {label:'Out of service', num:oos, cls:oos?'warn':'ok', sub:'out for TPI / repair or damaged', cat:'--cat-7', icon:'🔒'},
+  ];
+  document.getElementById('equipTiles').innerHTML = tiles.map(t=>`
+    <div class="tile" style="--tile-accent:var(${t.cat})">
+      <div class="tile-head"><div class="tile-icon">${t.icon}</div><div class="tile-label">${t.label}</div></div>
+      <div class="tile-num ${t.cls}">${t.num}</div><div class="tile-sub">${t.sub}</div>
+    </div>`).join('');
+}
+
+function renderEquipLocationFilter(){
+  const sel=document.getElementById('equipLocationFilter');
+  const cur=equipFilters.location;
+  // active projects, plus any other location that still has items (e.g. a deleted project)
+  const locs=new Set(activeSites().map(s=>s.id));
+  for(const e of activeEquipment()){ const l=equipLoc(e); if(l!=='store') locs.add(l); }
+  const opts=[...locs].map(id=>({v:id, l:locLabel(id)})).sort((a,b)=>a.l.localeCompare(b.l));
+  sel.innerHTML = `<option value="all">All locations</option><option value="store">In store</option>` + opts.map(o=>`<option value="${esc(o.v)}">${esc(o.l)}</option>`).join('');
+  sel.value = (cur==='all' || cur==='store' || locs.has(cur)) ? cur : 'all';
+  equipFilters.location = sel.value;
+}
+
+function equipMatches(e){
+  if(e.deleted || e.category!==activePlantTab) return false;
+  const q=equipFilters.q.trim().toLowerCase();
+  if(q && !(equipTitle(e)+' '+(e.serial||'')+' '+(e.make||'')+' '+(e.certNo||'')).toLowerCase().includes(q)) return false;
+  if(equipFilters.location!=='all' && equipLoc(e)!==equipFilters.location) return false;
+  if(equipFilters.condition!=='all' && (e.condition||'In service')!==equipFilters.condition) return false;
+  if(equipFilters.status!=='all'){ if(!e.expiry || statusFor(e.expiry)!==equipFilters.status) return false; }
+  return true;
+}
+
+function renderEquipTable(){
+  const tbody=document.getElementById('equipRows');
+  if(!auth.currentUser) return;
+  if(equipmentLoadError==='rules'){
+    tbody.innerHTML='<tr><td colspan="5" class="empty-state">The equipment register needs a one-time Firebase rules update before it can load. Paste the new rules into Firebase Console → Firestore Database → Rules, then refresh this page.</td></tr>';
+    return;
+  }
+  if(equipmentLoadError){ tbody.innerHTML='<tr><td colspan="5" class="empty-state">Could not load equipment right now — check your connection and refresh.</td></tr>'; return; }
+  const cat=EQUIP_CATEGORIES[activePlantTab];
+  const all=activeEquipment().filter(e=>e.category===activePlantTab);
+  if(all.length===0){ tbody.innerHTML=`<tr><td colspan="5" class="empty-state">No ${esc(cat.label.toLowerCase())} registered yet — click “+ Add ${esc(cat.noun)}” to get started.</td></tr>`; return; }
+  const list=equipmentList.filter(equipMatches);
+  if(list.length===0){ tbody.innerHTML='<tr><td colspan="5" class="empty-state">No items match your filters.</td></tr>'; return; }
+  tbody.innerHTML=list.map(e=>`<tr data-id="${e.id}">
+      <td><div class="wname">${esc(equipTitle(e))}</div>${e.make && e.category!=='harness'?`<div class="wsub">${esc(e.make)}</div>`:''}</td>
+      <td class="mono">${esc(e.serial||'—')}</td>
+      <td>${equipLoc(e)==='store' ? '<span class="badge muted">In store</span>' : esc(locLabel(equipLoc(e)))}</td>
+      <td>${conditionBadge(e.condition)}</td>
+      <td>${expiryCell(e)}</td>
+    </tr>`).join('');
+}
+
+function openAddEquipForm(){
+  const cat=EQUIP_CATEGORIES[activePlantTab];
+  document.getElementById('addEquipTitle').textContent = `Add a ${cat.noun}`;
+  const defaultLoc = (equipFilters.location!=='all') ? equipFilters.location : 'store';
+  document.getElementById('addEquipFields').innerHTML = equipFieldsHtml(activePlantTab, null, 'data-field') +
+    `<label>Location *<select data-field="location" required>${locationOptionsHtml(defaultLoc)}</select></label>` +
+    `<label>Condition<select data-field="condition">${EQUIP_CONDITIONS.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')}</select></label>`;
+  document.getElementById('addEquipPanel').hidden=false;
+}
+function closeAddEquipForm(){
+  document.getElementById('addEquipPanel').hidden=true;
+  document.getElementById('addEquipForm').reset();
+}
+
+/* ---------------- equipment item drawer ---------------- */
+function openEquipDrawer(id){
+  activeEquipId=id; equipMoveOpen=false;
+  document.getElementById('equipDrawerOverlay').hidden=false;
+  document.getElementById('equipDrawer').hidden=false;
+  renderEquipDrawer();
+}
+function closeEquipDrawer(){
+  activeEquipId=null; equipMoveOpen=false;
+  document.getElementById('equipDrawerOverlay').hidden=true;
+  document.getElementById('equipDrawer').hidden=true;
+}
+function renderEquipDrawer(){
+  const e=currentEquip();
+  if(!e || e.deleted){ closeEquipDrawer(); return; }
+  const cat=EQUIP_CATEGORIES[e.category];
+  document.getElementById('equipDrawerName').textContent = equipTitle(e);
+  document.getElementById('equipDrawerSub').textContent = `${cat?cat.label:'Equipment'} · S/N ${e.serial||'—'}`;
+  document.getElementById('equipDrawerBody').innerHTML = equipDrawerBodyHtml(e);
+}
+function historyItemHtml(h){
+  let main;
+  if(h.kind==='condition') main = esc(h.note||'Condition changed');
+  else if(!h.from) main = `Registered at <strong>${esc(h.toLabel||'—')}</strong>`;
+  else main = `${esc(h.fromLabel||'—')} → <strong>${esc(h.toLabel||'—')}</strong>`;
+  const note = (h.kind!=='condition' && h.note) ? `<div class="history-note">${esc(h.note)}</div>` : '';
+  return `<li><span class="history-date">${esc(h.date||'—')}</span><div>${main}${note}</div></li>`;
+}
+function equipDrawerBodyHtml(e){
+  const loc=equipLoc(e);
+  const hist=(e.history||[]).slice();
+  const lastMove=[...hist].reverse().find(h=>h.kind!=='condition');
+  const since = lastMove && lastMove.date ? ` <span class="wsub" style="display:inline;">since ${esc(lastMove.date)}</span>` : '';
+  const moveForm = equipMoveOpen ? `
+    <form id="equipMoveForm" class="move-form">
+      <div class="form-grid">
+        <label>Move to *<select data-mfield="to" required><option value="">Select…</option>${locationOptionsHtml('', loc)}</select></label>
+        <label>Date *<input type="date" data-mfield="date" required value="${localToday()}"></label>
+        <label>Note<input data-mfield="note" placeholder="e.g. sent with crew, DN-1042"></label>
+      </div>
+      <div class="form-actions"><button type="button" class="btn btn-sm" id="equipMoveCancel">Cancel</button><button type="submit" class="btn btn-primary btn-sm">Save move</button></div>
+    </form>` : '';
+  const histHtml = hist.length ? `<ul class="history-list">${hist.slice().reverse().map(historyItemHtml).join('')}</ul>` : `<p class="wsub">No history yet.</p>`;
+  return `
+  <div class="loc-card">
+    <div class="loc-card-top">
+      <div class="loc-now">Currently: <strong>${esc(locLabel(loc))}</strong>${since}</div>
+      ${equipMoveOpen ? '' : `<button type="button" class="btn btn-primary btn-sm" id="equipMoveBtn">⇄ Move</button>`}
+    </div>
+    <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">${conditionBadge(e.condition)} ${e.expiry?badgeHtml(statusFor(e.expiry)):'<span class="badge muted">No expiry set</span>'}</div>
+    ${moveForm}
+  </div>
+
+  <div class="subhead" style="margin-top:18px;">Details</div>
+  <form id="equipDetailsForm">
+    <div class="form-grid">
+      ${equipFieldsHtml(e.category, e, 'data-efield')}
+      <label>Condition<select data-efield="condition">${EQUIP_CONDITIONS.map(c=>`<option value="${esc(c)}" ${(e.condition||'In service')===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
+    </div>
+    <div class="form-actions"><button type="submit" class="btn btn-primary btn-sm">Save changes</button></div>
+  </form>
+
+  <div class="subhead">Certificate / photo</div>
+  ${attachmentBlock(e, null, null, 'certificate', 'attachment')}
+
+  <div class="subhead">Movement &amp; condition history</div>
+  ${histHtml}
+
+  <div class="danger-zone">
+    <p>Deleting moves this item to Deleted items, where it can be restored — or removed for good.</p>
+    <button type="button" class="btn btn-danger btn-sm" id="deleteEquipBtn" data-armed="0">Delete item</button>
+  </div>`;
+}
+
+/* ---------------- equipment trash ---------------- */
+function openEquipTrash(){
+  document.getElementById('equipTrashOverlay').hidden=false;
+  document.getElementById('equipTrashDrawer').hidden=false;
+  renderEquipTrashBody();
+}
+function closeEquipTrash(){
+  document.getElementById('equipTrashOverlay').hidden=true;
+  document.getElementById('equipTrashDrawer').hidden=true;
+}
+function renderEquipTrashBody(){
+  const list=deletedEquipment();
+  document.getElementById('equipTrashBody').innerHTML = list.length ? list.map(e=>`
+    <div class="record-card">
+      <div class="record-card-top">
+        <div class="record-card-title">${esc(equipTitle(e))}</div>
+        <div class="record-card-actions">
+          <button type="button" class="btn btn-sm" data-erestore="${e.id}">Restore</button>
+          <button type="button" class="btn btn-danger btn-sm" data-epurge="${e.id}" data-armed="0">Delete forever</button>
+        </div>
+      </div>
+      <div class="record-fields">
+        <div class="rf"><span class="rf-k">Category</span><span class="rf-v">${esc(EQUIP_CATEGORIES[e.category]?EQUIP_CATEGORIES[e.category].label:e.category)}</span></div>
+        <div class="rf"><span class="rf-k">Serial no.</span><span class="rf-v">${esc(e.serial||'—')}</span></div>
+        <div class="rf"><span class="rf-k">Last location</span><span class="rf-v">${esc(locLabel(equipLoc(e)))}</span></div>
+        <div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc((e.deletedAt||'').slice(0,10)||'—')}</span></div>
+      </div>
+    </div>`).join('') : `<p class="wsub">Nothing in the trash.</p>`;
+}
+
+async function updateEquip(id, data){
+  try{ await db.collection('equipment').doc(id).update(data); toast('Saved'); }
+  catch(e){ console.error(e); toast('Could not save — '+(e.code||'error')); }
 }
 
 /* ---------------- monthly HSE report rendering ---------------- */
@@ -2332,10 +2866,25 @@ async function buildSitePdf(s){
   kv('Location', s.location); kv('Project handled by', s.projectHandledBy); kv('Project duration', s.projectDuration);
   if(s.scopeOfWork){ ensure(15); doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(100,105,98); doc.text('Scope of work', marginX, y); doc.setTextColor(20,20,20); y+=12; doc.setFont('helvetica','normal'); doc.setFontSize(9); const lines=doc.splitTextToSize(s.scopeOfWork, pageW-2*marginX); lines.forEach(l=>{ ensure(11); doc.text(l, marginX, y); y+=11; }); y+=4; }
 
-  section('Power tools','powerTools',SITE_RECORD_TYPES.powerTools);
-  section('Safety harness','harness',SITE_RECORD_TYPES.harness);
-  section('Ladders','ladders',SITE_RECORD_TYPES.ladders);
-  section('Other PPE','otherPpe',SITE_RECORD_TYPES.otherPpe);
+  // Equipment currently on site, from the Plant & Equipment register
+  const onSite=equipAtSite(s.id);
+  h2(`Equipment on site (${onSite.length})`);
+  if(!onSite.length){ ensure(13); doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(130,130,130); doc.text('No equipment recorded at this project', marginX, y); doc.setTextColor(20,20,20); y+=16; }
+  for(const cat of EQUIP_CATEGORY_ORDER){
+    const list=onSite.filter(e=>e.category===cat);
+    if(!list.length) continue;
+    ensure(18); doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(60,60,60);
+    doc.text(`${EQUIP_CATEGORIES[cat].label} (${list.length})`, marginX, y); y+=13;
+    for(const e of list){
+      ensure(12);
+      const st = e.expiry ? `${e.expiry} (${statusFor(e.expiry)})` : 'no expiry set';
+      const cond = (e.condition||'In service')!=='In service' ? `  ·  ${e.condition}` : '';
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(20,20,20);
+      const line=`•  ${equipTitle(e)}  ·  S/N ${e.serial||'—'}  ·  expiry ${st}${cond}`;
+      doc.splitTextToSize(line, pageW-2*marginX-8).forEach(l=>{ ensure(11); doc.text(l, marginX+8, y); y+=11; });
+    }
+    y+=4;
+  }
 
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(150,150,150);
   doc.text(`Generated ${new Date().toISOString().slice(0,10)} from Project Details`, marginX, pageH-20);
@@ -2785,7 +3334,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const restoreBtn=e.target.closest('[data-srestore]');
     if(restoreBtn){
       await updateSite(restoreBtn.dataset.srestore, {deleted:false, deletedAt:null});
-      toast('Site restored');
+      toast('Project restored');
       return;
     }
     const purgeBtn=e.target.closest('[data-spurge]');
@@ -2798,8 +3347,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
       try{
         const s=siteEquipmentList.find(x=>x.id===purgeBtn.dataset.spurge);
         if(s) await deleteAllAttachments(s, SITE_RECORD_TYPES, []);
+        // Anything still located at this project goes back to the store, with the move logged
+        const today=localToday();
+        for(const item of equipmentList.filter(x=>equipLoc(x)===purgeBtn.dataset.spurge)){
+          const hist=(item.history||[]).concat([{kind:'move', date:today, from:purgeBtn.dataset.spurge, to:'store', fromLabel:(s&&s.siteName)||'Project', toLabel:'In store', note:'Project was permanently removed'}]);
+          await db.collection('equipment').doc(item.id).update({location:'store', history:hist});
+        }
         await db.collection('siteEquipment').doc(purgeBtn.dataset.spurge).delete();
-        toast('Site and its files permanently removed');
+        toast('Project permanently removed — its equipment was returned to store');
       }
       catch(err){ console.error(err); toast('Could not remove site'); }
       return;
@@ -2833,6 +3388,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   /* ---------------- site: record edit/delete/toggle + delete site ---------------- */
   document.getElementById('siteDrawerBody').addEventListener('click', async e=>{
+    const openEq=e.target.closest('[data-open-equip]');
+    if(openEq){ openEquipDrawer(openEq.dataset.openEquip); return; }
     if(e.target.id==='toggleRecordForm'){
       siteAddFormOpen = !siteAddFormOpen;
       editingSiteRecordId = null;
@@ -2907,6 +3464,130 @@ document.addEventListener('DOMContentLoaded', ()=>{
       }
       toast('File attached');
     }catch(err){ console.error(err); toast('Upload failed'); }
+  });
+
+  /* ---------------- plant & equipment: tabs / add / filters / table ---------------- */
+  document.getElementById('plantTabs').addEventListener('click', e=>{
+    const b=e.target.closest('[data-ptab]'); if(!b) return;
+    activePlantTab=b.dataset.ptab;
+    closeAddEquipForm();
+    renderEquipAll();
+  });
+  document.getElementById('addEquipBtn').addEventListener('click', openAddEquipForm);
+  document.getElementById('cancelAddEquip').addEventListener('click', closeAddEquipForm);
+  document.getElementById('addEquipForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const data={}; e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
+    const loc=data.location||'store';
+    const item={...data, category:activePlantTab, location:loc, condition:data.condition||'In service', attachment:null,
+      createdAt:new Date().toISOString(),
+      history:[{kind:'move', date:localToday(), from:null, to:loc, fromLabel:'—', toLabel:locLabel(loc), note:''}]};
+    item.displayName=EQUIP_CATEGORIES[activePlantTab].display(item);
+    try{
+      await db.collection('equipment').add(item);
+      toast('Item added');
+      closeAddEquipForm();
+    }catch(err){ console.error(err); toast(err && err.code==='permission-denied' ? 'Blocked — the Firebase rules still need the one-time update' : 'Could not add item'); }
+  });
+  document.getElementById('equipSearchInput').addEventListener('input', e=>{ equipFilters.q=e.target.value; renderEquipTable(); });
+  document.getElementById('equipLocationFilter').addEventListener('change', e=>{ equipFilters.location=e.target.value; renderEquipTable(); });
+  document.getElementById('equipConditionFilter').addEventListener('change', e=>{ equipFilters.condition=e.target.value; renderEquipTable(); });
+  document.getElementById('equipStatusFilter').addEventListener('change', e=>{ equipFilters.status=e.target.value; renderEquipTable(); });
+  document.getElementById('equipRows').addEventListener('click', e=>{
+    const tr=e.target.closest('tr[data-id]'); if(tr) openEquipDrawer(tr.dataset.id);
+  });
+
+  /* ---------------- plant & equipment: item drawer ---------------- */
+  document.getElementById('equipDrawerClose').addEventListener('click', closeEquipDrawer);
+  document.getElementById('equipDrawerOverlay').addEventListener('click', closeEquipDrawer);
+  document.getElementById('equipDrawerBody').addEventListener('submit', async e=>{
+    const item=currentEquip(); if(!item) return;
+    if(e.target.id==='equipDetailsForm'){
+      e.preventDefault();
+      const data={}; e.target.querySelectorAll('[data-efield]').forEach(el=>{ data[el.dataset.efield]=el.value; });
+      const oldCond=item.condition||'In service';
+      if(data.condition && data.condition!==oldCond){
+        data.history=(item.history||[]).concat([{kind:'condition', date:localToday(), note:`Condition changed: ${oldCond} → ${data.condition}`}]);
+      }
+      data.displayName=EQUIP_CATEGORIES[item.category].display({...item, ...data});
+      await updateEquip(item.id, data);
+      return;
+    }
+    if(e.target.id==='equipMoveForm'){
+      e.preventDefault();
+      const m={}; e.target.querySelectorAll('[data-mfield]').forEach(el=>{ m[el.dataset.mfield]=el.value; });
+      const from=equipLoc(item);
+      if(!m.to || m.to===from){ toast('Pick a different location'); return; }
+      const hist=(item.history||[]).concat([{kind:'move', date:m.date||localToday(), from, to:m.to, fromLabel:locLabel(from), toLabel:locLabel(m.to), note:m.note||''}]);
+      equipMoveOpen=false;
+      await updateEquip(item.id, {location:m.to, history:hist});
+      toast(`Moved to ${locLabel(m.to)}`);
+      return;
+    }
+  });
+  document.getElementById('equipDrawerBody').addEventListener('click', async e=>{
+    const item=currentEquip(); if(!item) return;
+    if(e.target.id==='equipMoveBtn'){ equipMoveOpen=true; renderEquipDrawer(); return; }
+    if(e.target.id==='equipMoveCancel'){ equipMoveOpen=false; renderEquipDrawer(); return; }
+    const removeBtn=e.target.closest('[data-remove-attach]');
+    if(removeBtn){
+      if(removeBtn.dataset.armed!=='1'){
+        removeBtn.dataset.armed='1'; removeBtn.textContent='Confirm?'; setTimeout(()=>{ if(removeBtn.dataset.armed==='1'){ removeBtn.dataset.armed='0'; removeBtn.textContent='Remove'; } },4000);
+        return;
+      }
+      const old=item.attachment;
+      await updateEquip(item.id, {attachment:null});
+      if(old && old.path) deleteStorageFile(old.path);
+      toast('File removed');
+      return;
+    }
+    const delBtn=e.target.closest('#deleteEquipBtn');
+    if(delBtn){
+      if(delBtn.dataset.armed!=='1'){
+        delBtn.dataset.armed='1'; delBtn.textContent='Confirm delete';
+        setTimeout(()=>{ if(delBtn.dataset.armed==='1'){ delBtn.dataset.armed='0'; delBtn.textContent='Delete item'; } },4000);
+        return;
+      }
+      await updateEquip(item.id, {deleted:true, deletedAt:new Date().toISOString()});
+      toast('Item moved to Deleted items');
+      closeEquipDrawer();
+      return;
+    }
+  });
+  document.getElementById('equipDrawerBody').addEventListener('change', async e=>{
+    if(!e.target.matches('[data-attach-for]')) return;
+    const file=e.target.files[0]; if(!file) return;
+    const item=currentEquip(); if(!item) return;
+    try{
+      const att=await uploadToStorage(file);
+      const old=item.attachment;
+      await updateEquip(item.id, {attachment:att});
+      if(old && old.path) deleteStorageFile(old.path);
+      toast('File attached');
+    }catch(err){ console.error(err); toast('Upload failed'); }
+  });
+
+  /* ---------------- plant & equipment: trash ---------------- */
+  document.getElementById('equipTrashBtn').addEventListener('click', openEquipTrash);
+  document.getElementById('equipTrashClose').addEventListener('click', closeEquipTrash);
+  document.getElementById('equipTrashOverlay').addEventListener('click', closeEquipTrash);
+  document.getElementById('equipTrashBody').addEventListener('click', async e=>{
+    const restoreBtn=e.target.closest('[data-erestore]');
+    if(restoreBtn){ await updateEquip(restoreBtn.dataset.erestore, {deleted:false, deletedAt:null}); toast('Item restored'); return; }
+    const purgeBtn=e.target.closest('[data-epurge]');
+    if(purgeBtn){
+      if(purgeBtn.dataset.armed!=='1'){
+        purgeBtn.dataset.armed='1'; purgeBtn.textContent='Confirm — cannot be undone';
+        setTimeout(()=>{ if(purgeBtn.dataset.armed==='1'){ purgeBtn.dataset.armed='0'; purgeBtn.textContent='Delete forever'; } },4000);
+        return;
+      }
+      try{
+        const item=equipmentList.find(x=>x.id===purgeBtn.dataset.epurge);
+        if(item && item.attachment && item.attachment.path) await deleteStorageFile(item.attachment.path);
+        await db.collection('equipment').doc(purgeBtn.dataset.epurge).delete();
+        toast('Item and its file permanently removed');
+      }catch(err){ console.error(err); toast('Could not remove item'); }
+    }
   });
 
   /* ---------------- monthly report: init + division/month controls ---------------- */
