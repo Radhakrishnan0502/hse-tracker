@@ -237,7 +237,7 @@ button.att-link.att-remove{color:var(--danger);}
 .legend-val{margin-left:auto; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums;}
 
 .bar-chart{display:flex; flex-direction:column; gap:10px;}
-.bar-row{display:grid; grid-template-columns:96px 1fr 34px; align-items:center; gap:10px;}
+.bar-row{display:grid; grid-template-columns:132px 1fr 34px; align-items:center; gap:10px;}
 .bar-row-label{font-size:12px; color:var(--ink-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .bar-track{background:var(--surface-2); border-radius:4px; height:14px; position:relative; overflow:hidden;}
 .bar-fill{height:100%; border-radius:4px; min-width:3px;}
@@ -268,6 +268,15 @@ button.att-link.att-remove{color:var(--danger);}
 .equip-line-main{min-width:0;}
 .equip-line-title{font-weight:600; font-size:13px;}
 .equip-line-badges{display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; flex:none;}
+.pick-panel{padding:12px; margin-bottom:12px;}
+.pick-panel input[type=search]{margin-bottom:8px;}
+.pick-list{max-height:280px; overflow-y:auto; border:1px solid var(--line); border-radius:9px;}
+label.pick-row{flex-direction:row; align-items:center; gap:10px; padding:8px 10px; border-bottom:1px solid var(--line); cursor:pointer; color:var(--ink); font-weight:400;}
+label.pick-row:last-child{border-bottom:none;}
+label.pick-row:hover{background:var(--surface-2);}
+label.pick-row input[type=checkbox]{width:auto; flex:none;}
+.pick-main{display:flex; flex-direction:column; flex:1; min-width:0;}
+.equip-line .icon-btn{width:26px; height:26px;}
 .notice{background:var(--warn-bg); color:var(--warn); border:1px solid var(--warn); border-radius:9px; padding:10px 12px; font-size:12.5px; margin-bottom:12px;}
 .tiles-4{grid-template-columns:repeat(4,1fr) !important;}
 @media (max-width:900px){.tiles-4{grid-template-columns:repeat(2,1fr) !important;}}
@@ -504,14 +513,14 @@ button.att-link.att-remove{color:var(--danger);}
         </div>
       </div>
 
-      <div class="tiles" id="siteTiles"></div>
+      <div class="tiles tiles-4" id="siteTiles"></div>
 
       <div class="panel" id="addSitePanel" hidden>
         <h3>Add a project</h3>
         <form id="addSiteForm">
           <div class="form-grid">
             <label>Project name *<input data-field="siteName" required placeholder="e.g. Marina Tower Phase 2"></label>
-            <label>Division<select data-field="division"><option value="Civil">Civil</option><option value="Scaffolding">Scaffolding</option><option value="Rental">Rental</option><option value="Office staff">Office staff</option></select></label>
+            <label>Division<select data-field="division"><option value="Civil">Civil Division</option><option value="Scaffolding">Scaffolding Division</option><option value="Rental">Rental Division</option><option value="Office staff">Office Staff</option></select></label>
             <label>Location<input data-field="location" placeholder="e.g. Muscat, Oman"></label>
           </div>
           <div class="form-actions">
@@ -525,10 +534,16 @@ button.att-link.att-remove{color:var(--danger);}
         <input type="search" id="siteSearchInput" placeholder="Search project name…">
         <select id="siteDivisionFilter">
           <option value="all">All divisions</option>
-          <option value="Civil">Civil</option>
-          <option value="Scaffolding">Scaffolding</option>
-          <option value="Rental">Rental</option>
-          <option value="Office staff">Office staff</option>
+          <option value="Civil">Civil Division</option>
+          <option value="Scaffolding">Scaffolding Division</option>
+          <option value="Rental">Rental Division</option>
+          <option value="Office staff">Office Staff</option>
+        </select>
+        <select id="siteStatusFilter">
+          <option value="all">Any status</option>
+          <option value="Active">Active</option>
+          <option value="On hold">On hold</option>
+          <option value="Completed">Completed</option>
         </select>
       </div>
 
@@ -536,11 +551,11 @@ button.att-link.att-remove{color:var(--danger);}
         <table>
           <thead>
             <tr>
-              <th>Project name</th><th>Division</th><th>Client</th><th>Equipment on site</th><th>Certificates</th><th>Out of service</th>
+              <th>Project name</th><th>Division</th><th>Client</th><th>Status</th><th>Team</th><th>Vehicles</th><th>Equipment</th><th>Certificates &amp; docs</th>
             </tr>
           </thead>
           <tbody id="siteRows">
-            <tr><td colspan="6" class="empty-state">Sign in to load project data…</td></tr>
+            <tr><td colspan="8" class="empty-state">Sign in to load project data…</td></tr>
           </tbody>
         </table>
       </div>
@@ -560,10 +575,10 @@ button.att-link.att-remove{color:var(--danger);}
 
       <div class="division-tabs" id="reportDivisionTabs">
         <button type="button" class="division-tab active" data-rdiv="all">All divisions</button>
-        <button type="button" class="division-tab" data-rdiv="Civil">Civil</button>
-        <button type="button" class="division-tab" data-rdiv="Scaffolding">Scaffolding</button>
-        <button type="button" class="division-tab" data-rdiv="Rental">Rental</button>
-        <button type="button" class="division-tab" data-rdiv="Office staff">Office staff</button>
+        <button type="button" class="division-tab" data-rdiv="Civil">Civil Division</button>
+        <button type="button" class="division-tab" data-rdiv="Scaffolding">Scaffolding Division</button>
+        <button type="button" class="division-tab" data-rdiv="Rental">Rental Division</button>
+        <button type="button" class="division-tab" data-rdiv="Office staff">Office Staff</button>
         <div class="month-nav" style="margin-left:auto;">
           <button type="button" class="btn btn-sm" id="reportPrevMonthBtn" aria-label="Previous month">◀</button>
           <input type="month" id="reportMonthInput" class="month-input">
@@ -576,10 +591,10 @@ button.att-link.att-remove{color:var(--danger);}
         <form id="addReportEntryForm">
           <div class="form-grid">
             <label>Division *<select data-rfield="division" required>
-              <option value="Civil">Civil</option>
-              <option value="Scaffolding">Scaffolding</option>
-              <option value="Rental">Rental</option>
-              <option value="Office staff">Office staff</option>
+              <option value="Civil">Civil Division</option>
+              <option value="Scaffolding">Scaffolding Division</option>
+              <option value="Rental">Rental Division</option>
+              <option value="Office staff">Office Staff</option>
             </select></label>
             <label>Category *<select id="reportCategorySelect" data-rfield="category" required></select></label>
             <div id="reportDateFieldWrap"></div>
@@ -911,11 +926,32 @@ function vehicleAggFor(v,key){
 /* ---------------- site equipment config ---------------- */
 const SITE_TABS = [
   {key:'profile', label:'Profile'},
+  {key:'team', label:'Team'},
+  {key:'vehicles', label:'Vehicles'},
   {key:'equipment', label:'Equipment on site'},
+  {key:'hseDocs', label:'HSE documents'},
 ];
+const PROJECT_STATUSES = ['Active','On hold','Completed'];
+// Stored division values stay short (the Monthly Report groups by them);
+// these are the names shown on screen and in PDFs.
+const DIVISION_LABELS = {Civil:'Civil Division', Scaffolding:'Scaffolding Division', Rental:'Rental Division', 'Office staff':'Office Staff'};
+function divLabel(d){ return DIVISION_LABELS[d] || d || '—'; }
+function divisionOptionsHtml(selected){
+  return Object.keys(DIVISION_LABELS).map(v=>`<option value="${esc(v)}" ${v===selected?'selected':''}>${esc(DIVISION_LABELS[v])}</option>`).join('');
+}
 // Kept only so older project records (from before the Plant & Equipment register)
 // can be read and moved into the register automatically — no longer shown as tabs.
 const SITE_RECORD_TYPES = {
+  hseDocs:{
+    title:'HSE documents', addLabel:'+ Add document', hasExpiry:true, hasAttachment:true, attachLabel:'document',
+    fields:[
+      {key:'type', label:'Document type', type:'select', required:true, options:['HSE plan','Risk assessment','Method statement (RAMS)','Emergency response plan','Client HSE approval','Lifting plan','Permit / work authorization','Other']},
+      {key:'reference', label:'Title / reference no.', type:'text', placeholder:'e.g. BTS-HSE-PLN-004 Rev 2'},
+      {key:'date', label:'Issue / approval date', type:'date'},
+      {key:'expiry', label:'Review / expiry date', type:'date'},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+  },
   powerTools:{
     title:'Power tools', addLabel:'+ Add power tool', hasExpiry:true, hasAttachment:true, attachLabel:'TPI certificate',
     fields:[
@@ -955,7 +991,8 @@ const SITE_RECORD_TYPES = {
 
 let siteEquipmentList=[];
 let activeSiteId=null, activeSiteTab='profile', editingSiteRecordId=null, siteAddFormOpen=false;
-let siteFilters={q:'', division:'all'};
+let siteFilters={q:'', division:'all', status:'all'};
+let sitePickerOpen=null, sitePickerQuery='';   // 'team' | 'vehicles' | null
 let unsubscribeSiteEquipment=null;
 
 function activeSites(){ return siteEquipmentList.filter(s=>!s.deleted); }
@@ -1029,8 +1066,16 @@ const EQUIP_CATEGORIES = {
       {key:'notes', label:'Notes', type:'textarea'},
     ],
     display:e=>e.name||'PPE item' },
+  firstAid:{ label:'First aid kits', short:'First aid kits', icon:'⛑️', noun:'first aid kit', emailLabel:'First aid kit',
+    fields:[
+      {key:'kitType', label:'Kit type', type:'select', required:true, options:['Small kit (1–10 persons)','Medium kit (11–25 persons)','Large kit (26–50 persons)','Eye wash station','Burn kit','Other']},
+      {key:'serial', label:'Kit ID / serial no.', type:'text', required:true},
+      {key:'expiry', label:'Next inspection / earliest item expiry', type:'date', required:true},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+    display:e=>e.kitType||'First aid kit' },
 };
-const EQUIP_CATEGORY_ORDER = ['powerTools','liftingGear','harness','ladders','extinguishers','specialPpe'];
+const EQUIP_CATEGORY_ORDER = ['powerTools','liftingGear','harness','ladders','extinguishers','firstAid','specialPpe'];
 const EQUIP_CONDITIONS = ['In service','Out for TPI / repair','Damaged / quarantined'];
 // How older project tabs map into the register (used once, automatically)
 const LEGACY_SITE_MAP = {
@@ -1253,7 +1298,7 @@ auth.onAuthStateChanged(user=>{
     document.getElementById('signOutBtn').hidden=true;
     document.getElementById('workerRows').innerHTML='<tr><td colspan="11" class="empty-state">Sign in to load workforce data…</td></tr>';
     document.getElementById('vehicleRows').innerHTML='<tr><td colspan="5" class="empty-state">Sign in to load vehicle data…</td></tr>';
-    document.getElementById('siteRows').innerHTML='<tr><td colspan="6" class="empty-state">Sign in to load project data…</td></tr>';
+    document.getElementById('siteRows').innerHTML='<tr><td colspan="8" class="empty-state">Sign in to load project data…</td></tr>';
     document.getElementById('reportRows').innerHTML='<tr><td colspan="5" class="empty-state">Sign in to load report data…</td></tr>';
   }
 });
@@ -1393,6 +1438,7 @@ function renderAll(){
   document.getElementById('trashBtn').textContent = `🗑 Deleted workers (${trashCount})`;
   if(activeWorkerId) renderDrawer();
   if(!document.getElementById('trashDrawer').hidden) renderTrashBody();
+  renderSiteAll();   // project Team tabs & counts use worker data
 }
 
 function renderTiles(){
@@ -1497,6 +1543,7 @@ function renderVehicleAll(){
   document.getElementById('vehicleTrashBtn').textContent = `🗑 Deleted vehicles (${trashCount})`;
   if(activeVehicleId) renderVehicleDrawer();
   if(!document.getElementById('vehicleTrashDrawer').hidden) renderVehicleTrashBody();
+  renderSiteAll();   // project Vehicles tabs & counts use vehicle data
 }
 
 function renderVehicleTiles(){
@@ -1576,17 +1623,63 @@ function siteEquipSummary(siteId){
   return {count:items.length, expired, expiring, outOfService, worst};
 }
 
+function workersAtSite(siteId){ return activeWorkers().filter(w=>w.projectId===siteId); }
+function vehiclesAtSite(siteId){ return activeVehicles().filter(v=>v.projectId===siteId); }
+// What's wrong with a worker's paperwork, in plain words (empty list = all good)
+function workerIssues(w){
+  const f=computeFlags(w), out=[];
+  if(f.induction.status==='missing') out.push('Not inducted');
+  else if(f.induction.status==='expired') out.push('Induction expired');
+  if(f.medical.status==='unfit') out.push('Medically unfit');
+  else if(f.medical.status==='expired') out.push('Medical expired');
+  if(f.civilId.status==='expired') out.push('Civil ID expired');
+  if(f.licenses.status==='expired') out.push('License expired');
+  if(f.training.status==='expired') out.push('Training expired');
+  if(f.competency.status==='expired') out.push('Competency expired');
+  return out;
+}
+function vehicleIssues(v){
+  const out=[];
+  if(vehicleAggFor(v,'documents').status==='expired') out.push('Document expired');
+  if(vehicleAggFor(v,'ppe').status==='expired') out.push('Safety kit expired');
+  return out;
+}
+function siteDocsSummary(s){
+  let expired=0, expiring=0;
+  for(const d of (s.hseDocs||[])){ const st=statusFor(d.expiry); if(d.expiry && st==='expired') expired++; else if(d.expiry && st==='expiring') expiring++; }
+  return {count:(s.hseDocs||[]).length, expired, expiring};
+}
+function projectStatus(s){ return s.status || 'Active'; }
+function projectStatusBadge(s){
+  const st=projectStatus(s);
+  const cls = st==='Active' ? 'ok' : st==='On hold' ? 'warn' : 'muted';
+  let extra='';
+  if(st==='Active' && s.endDate){
+    const d=daysUntil(s.endDate);
+    if(d!==null && d<0) extra=` <span class="badge danger">End date passed</span>`;
+    else if(d!==null && d<=14) extra=` <span class="badge warn">Ends in ${d} day${d===1?'':'s'}</span>`;
+  }
+  return `<span class="badge ${cls}">${esc(st)}</span>${extra}`;
+}
+
 function renderSiteTiles(){
-  const list=activeSites();
-  const total=list.length;
-  let onSite=0, expired=0, expiring=0, oos=0;
-  for(const s of list){ const m=siteEquipSummary(s.id); onSite+=m.count; expired+=m.expired; expiring+=m.expiring; oos+=m.outOfService; }
+  const all=activeSites();
+  const list=all.filter(s=>projectStatus(s)!=='Completed');
+  const running=all.filter(s=>projectStatus(s)==='Active').length;
+  const onHold=all.filter(s=>projectStatus(s)==='On hold').length;
+  const done=all.length-running-onHold;
+  let people=0, peopleIssues=0, onSite=0, expired=0, expiring=0;
+  for(const s of list){
+    const team=workersAtSite(s.id); people+=team.length; peopleIssues+=team.filter(w=>workerIssues(w).length).length;
+    const m=siteEquipSummary(s.id), d=siteDocsSummary(s);
+    onSite+=m.count; expired+=m.expired+d.expired; expiring+=m.expiring+d.expiring;
+  }
   const inStore=activeEquipment().filter(e=>equipLoc(e)==='store').length;
   const tiles=[
-    {label:'Projects', num:total, cls:'', sub:'active projects', cat:'--cat-1', icon:'🏗️'},
+    {label:'Active projects', num:running, cls:'', sub:`${onHold} on hold · ${done} completed`, cat:'--cat-1', icon:'🏗️'},
+    {label:'People on sites', num:people, cls:peopleIssues?'warn':'', sub:`${peopleIssues} with expired or missing documents`, cat:'--cat-4', icon:'👷'},
     {label:'Equipment on sites', num:onSite, cls:'', sub:`${inStore} more in store`, cat:'--cat-3', icon:'🔧'},
-    {label:'Expired on sites', num:expired, cls:expired?'danger':'ok', sub:`${expiring} expiring within 30 days`, cat:'--cat-9', icon:'⛔'},
-    {label:'Out of service on sites', num:oos, cls:oos?'warn':'ok', sub:'out for TPI / repair or damaged', cat:'--cat-7', icon:'🔒'},
+    {label:'Expired on sites', num:expired, cls:expired?'danger':'ok', sub:`equipment + HSE documents · ${expiring} expiring soon`, cat:'--cat-9', icon:'⛔'},
   ];
   document.getElementById('siteTiles').innerHTML = tiles.map(t=>`
     <div class="tile" style="--tile-accent:var(${t.cat})">
@@ -1601,30 +1694,43 @@ function siteMatches(s){
   const q=siteFilters.q.trim().toLowerCase();
   if(q && !((s.siteName||'')).toLowerCase().includes(q)) return false;
   if(siteFilters.division!=='all' && (s.division||'Civil')!==siteFilters.division) return false;
+  if(siteFilters.status!=='all' && projectStatus(s)!==siteFilters.status) return false;
   return true;
 }
 
 function renderSiteTable(){
   const tbody=document.getElementById('siteRows');
   if(!auth.currentUser) return;
-  if(activeSites().length===0){ tbody.innerHTML='<tr><td colspan="6" class="empty-state">No projects yet — click “Add project” to get started.</td></tr>'; return; }
+  if(activeSites().length===0){ tbody.innerHTML='<tr><td colspan="8" class="empty-state">No projects yet — click “Add project” to get started.</td></tr>'; return; }
   const list=siteEquipmentList.filter(siteMatches);
-  if(list.length===0){ tbody.innerHTML='<tr><td colspan="6" class="empty-state">No sites match your filters.</td></tr>'; return; }
+  if(list.length===0){ tbody.innerHTML='<tr><td colspan="8" class="empty-state">No projects match your filters.</td></tr>'; return; }
   tbody.innerHTML=list.map(s=>{
-    const m=siteEquipSummary(s.id);
+    const m=siteEquipSummary(s.id), d=siteDocsSummary(s);
+    const team=workersAtSite(s.id), teamIssues=team.filter(w=>workerIssues(w).length).length;
+    const vans=vehiclesAtSite(s.id), vanIssues=vans.filter(v=>vehicleIssues(v).length).length;
+    const certWorst = (m.expired||d.expired) ? 'expired' : (m.expiring||d.expiring) ? 'expiring' : ((m.count||d.count) ? 'valid' : 'none');
+    const dates = (s.startDate&&s.endDate) ? `<div class="wsub mono">${esc(s.startDate)} → ${esc(s.endDate)}</div>` : s.endDate ? `<div class="wsub mono">until ${esc(s.endDate)}</div>` : s.startDate ? `<div class="wsub mono">from ${esc(s.startDate)}</div>` : '';
     return `<tr data-id="${s.id}">
-      <td class="wname">${esc(s.siteName)}</td>
-      <td>${esc(s.division||'Civil')}</td>
+      <td><div class="wname">${esc(s.siteName)}</div>${dates}</td>
+      <td>${esc(divLabel(s.division||'Civil'))}</td>
       <td>${esc(s.clientName||'—')}</td>
-      <td><span class="pill-count">${m.count}</span></td>
-      <td>${m.worst==='none' ? '<span class="badge muted">No equipment</span>' : badgeHtml(m.worst)}</td>
-      <td>${m.outOfService ? `<span class="pill-count warn">${m.outOfService}</span>` : '<span class="pill-count">0</span>'}</td>
+      <td>${projectStatusBadge(s)}</td>
+      <td><span class="pill-count ${teamIssues?'warn':''}" title="${teamIssues} with expired or missing documents">${team.length}</span></td>
+      <td><span class="pill-count ${vanIssues?'warn':''}">${vans.length}</span></td>
+      <td><span class="pill-count ${m.outOfService?'warn':''}">${m.count}</span></td>
+      <td>${certWorst==='none' ? '<span class="badge muted">Nothing logged</span>' : badgeHtml(certWorst)}</td>
     </tr>`;
   }).join('');
 }
 
 /* ---------------- vehicle drawer ---------------- */
+let drawerZ=41;
+function raiseDrawer(overlayId, drawerId){
+  document.getElementById(overlayId).style.zIndex = ++drawerZ;
+  document.getElementById(drawerId).style.zIndex = ++drawerZ;
+}
 function openVehicleDrawer(id){
+  raiseDrawer('vehicleDrawerOverlay','vehicleDrawer');
   activeVehicleId=id; activeVehicleTab='profile'; editingVehicleRecordId=null; vehicleAddFormOpen=false;
   document.getElementById('vehicleDrawerOverlay').hidden=false;
   document.getElementById('vehicleDrawer').hidden=false;
@@ -1639,7 +1745,7 @@ function renderVehicleDrawer(){
   const v=currentVehicle();
   if(!v){ closeVehicleDrawer(); return; }
   document.getElementById('vehicleDrawerName').textContent=v.vehicleNumber;
-  document.getElementById('vehicleDrawerSub').textContent=(v.model||'')+(v.ownership?' · '+v.ownership:'');
+  document.getElementById('vehicleDrawerSub').textContent=(v.model||'')+(v.ownership?' · '+v.ownership:'')+(v.projectId?' · 📍 '+locLabel(v.projectId):'');
   document.getElementById('vehicleDrawerTabs').innerHTML=VEHICLE_TABS.map(t=>`<button type="button" class="tab-btn ${t.key===activeVehicleTab?'active':''}" data-vtab="${t.key}">${t.label}</button>`).join('');
   renderVehicleDrawerBody();
 }
@@ -1706,7 +1812,8 @@ function renderVehicleTrashBody(){
 
 /* ---------------- site equipment drawer ---------------- */
 function openSiteDrawer(id){
-  activeSiteId=id; activeSiteTab='profile'; editingSiteRecordId=null; siteAddFormOpen=false;
+  raiseDrawer('siteDrawerOverlay','siteDrawer');
+  activeSiteId=id; activeSiteTab='profile'; editingSiteRecordId=null; siteAddFormOpen=false; sitePickerOpen=null; sitePickerQuery='';
   document.getElementById('siteDrawerOverlay').hidden=false;
   document.getElementById('siteDrawer').hidden=false;
   renderSiteDrawer();
@@ -1720,7 +1827,7 @@ function renderSiteDrawer(){
   const s=currentSite();
   if(!s){ closeSiteDrawer(); return; }
   document.getElementById('siteDrawerName').textContent=s.siteName;
-  document.getElementById('siteDrawerSub').textContent=(s.division||'Civil')+(s.location?' · '+s.location:'');
+  document.getElementById('siteDrawerSub').textContent=divLabel(s.division||'Civil')+(s.clientName?' · '+s.clientName:'')+(s.location?' · '+s.location:'');
   document.getElementById('siteDrawerTabs').innerHTML=SITE_TABS.map(t=>`<button type="button" class="tab-btn ${t.key===activeSiteTab?'active':''}" data-stab="${t.key}">${t.label}</button>`).join('');
   renderSiteDrawerBody();
 }
@@ -1729,6 +1836,8 @@ function renderSiteDrawerBody(){
   const body=document.getElementById('siteDrawerBody');
   if(activeSiteTab==='profile'){ body.innerHTML=siteProfileTabHtml(s); return; }
   if(activeSiteTab==='equipment'){ body.innerHTML=siteEquipmentTabHtml(s); return; }
+  if(activeSiteTab==='team'){ body.innerHTML=siteTeamTabHtml(s); return; }
+  if(activeSiteTab==='vehicles'){ body.innerHTML=siteVehiclesTabHtml(s); return; }
   const cfg=SITE_RECORD_TYPES[activeSiteTab];
   const savedActiveTab=activeTab, savedEditing=editingRecordId, savedAddOpen=addFormOpen;
   activeTab=activeSiteTab; editingRecordId=editingSiteRecordId; addFormOpen=siteAddFormOpen;
@@ -1762,24 +1871,90 @@ function siteEquipmentTabHtml(s){
 }
 
 function siteProfileTabHtml(s){
+  const statusOpts=PROJECT_STATUSES.map(v=>`<option value="${esc(v)}" ${projectStatus(s)===v?'selected':''}>${esc(v)}</option>`).join('');
   return `
+  <div style="margin-bottom:14px;">${projectStatusBadge(s)}</div>
   <form id="siteProfileForm">
     <div class="subhead">Project details</div>
     <div class="form-grid">
       <label>Project name *<input data-sfield="siteName" required value="${esc(s.siteName||'')}"></label>
-      <label>Division<select data-sfield="division"><option value="Civil" ${(s.division||'Civil')==='Civil'?'selected':''}>Civil</option><option value="Scaffolding" ${s.division==='Scaffolding'?'selected':''}>Scaffolding</option><option value="Rental" ${s.division==='Rental'?'selected':''}>Rental</option><option value="Office staff" ${s.division==='Office staff'?'selected':''}>Office staff</option></select></label>
-      <label>Client name<input data-sfield="clientName" value="${esc(s.clientName||'')}" placeholder="e.g. PDO, OQ, Duqm Refinery"></label>
-      <label>Location<input data-sfield="location" value="${esc(s.location||'')}"></label>
+      <label>Division<select data-sfield="division">${divisionOptionsHtml(s.division||'Civil')}</select></label>
+      <label>Status<select data-sfield="status">${statusOpts}</select></label>
+      <label>Start date<input type="date" data-sfield="startDate" value="${esc(s.startDate||'')}"></label>
+      <label>End date<input type="date" data-sfield="endDate" value="${esc(s.endDate||'')}"></label>
+      <label>Location<input data-sfield="location" value="${esc(s.location||'')}" placeholder="e.g. Fahud, Duqm"></label>
       <label>Project handled by<input data-sfield="projectHandledBy" value="${esc(s.projectHandledBy||'')}" placeholder="e.g. Project Manager / Supervisor name"></label>
-      <label>Project duration<input data-sfield="projectDuration" value="${esc(s.projectDuration||'')}" placeholder="e.g. Jan 2025 – Dec 2025, or 6 months"></label>
+      <label>Duration notes<input data-sfield="projectDuration" value="${esc(s.projectDuration||'')}" placeholder="optional, e.g. 6 months + extension"></label>
     </div>
     <label>Scope of work<textarea data-sfield="scopeOfWork" placeholder="e.g. Scaffolding erection and dismantling for tank farm turnaround">${esc(s.scopeOfWork||'')}</textarea></label>
+
+    <div class="subhead">Client &amp; contacts</div>
+    <div class="form-grid">
+      <label>Client name<input data-sfield="clientName" value="${esc(s.clientName||'')}" placeholder="e.g. PDO, OQ, Duqm Refinery"></label>
+      <label>Client representative<input data-sfield="clientRepName" value="${esc(s.clientRepName||'')}"></label>
+      <label>Representative phone<input type="tel" data-sfield="clientRepPhone" value="${esc(s.clientRepPhone||'')}" placeholder="+968 …"></label>
+      <label>Representative email<input type="email" data-sfield="clientRepEmail" value="${esc(s.clientRepEmail||'')}"></label>
+      <label>Client HSE focal person<input data-sfield="clientHseName" value="${esc(s.clientHseName||'')}"></label>
+      <label>HSE focal phone<input type="tel" data-sfield="clientHsePhone" value="${esc(s.clientHsePhone||'')}" placeholder="+968 …"></label>
+    </div>
     <div class="form-actions" style="margin-top:16px;"><button type="submit" class="btn btn-primary">Save changes</button></div>
   </form>
   <div class="danger-zone">
-    <p>Removing a project moves it to Deleted projects, where its full record can be restored at any time — or permanently removed for good (this also frees up the storage space used by its certificates and PPE photos).</p>
+    <p>Removing a project moves it to Deleted projects, where its full record can be restored at any time — or permanently removed for good (its HSE document files are deleted, its equipment goes back to store, and its team and vehicles are un-assigned).</p>
     <button type="button" class="btn btn-danger btn-sm" id="deleteSiteBtn" data-armed="0">Delete project</button>
   </div>`;
+}
+
+function sitePickerHtml(kind, s){
+  const q=sitePickerQuery.trim().toLowerCase();
+  const pool = kind==='team' ? activeWorkers().filter(w=>w.projectId!==s.id) : activeVehicles().filter(v=>v.projectId!==s.id);
+  const rows = pool.map(x=>{
+    const txt = (kind==='team' ? `${x.fullName||''} ${x.civilId||''} ${x.trade||''} ${x.designation||''}` : `${x.vehicleNumber||''} ${x.model||''}`).toLowerCase();
+    const hide = q && !txt.includes(q);
+    const name = kind==='team' ? esc(x.fullName||'—') : `<span class="mono">${esc(x.vehicleNumber||'—')}</span>`;
+    const sub = kind==='team' ? esc([x.designation, x.trade].filter(Boolean).join(' · ')||'—') : esc(x.model||'—');
+    const now = x.projectId ? `<span class="badge warn">Now at ${esc(locLabel(x.projectId))}</span>` : '<span class="badge muted">Not assigned</span>';
+    return `<label class="pick-row" data-text="${esc(txt)}" ${hide?'hidden':''}><input type="checkbox" data-pick="${x.id}"><span class="pick-main"><span class="wname">${name}</span><span class="wsub">${sub}</span></span>${now}</label>`;
+  }).join('');
+  const noun = kind==='team' ? 'workers' : 'vehicles';
+  return `<div class="panel pick-panel">
+    <input type="search" id="sitePickerSearch" placeholder="Search ${noun}…" value="${esc(sitePickerQuery)}">
+    <div class="pick-list">${rows || `<p class="wsub">No other ${noun} to add.</p>`}</div>
+    <p class="wsub" style="margin:8px 0 0;">Anyone already at another project will be moved here (they can only be at one project at a time).</p>
+    <div class="form-actions"><button type="button" class="btn btn-sm" id="sitePickerCancel">Cancel</button><button type="button" class="btn btn-primary btn-sm" id="sitePickerSave">Assign selected</button></div>
+  </div>`;
+}
+
+function siteTeamTabHtml(s){
+  const team=workersAtSite(s.id).slice().sort((a,b)=>(a.fullName||'').localeCompare(b.fullName||''));
+  const withIssues=team.filter(w=>workerIssues(w).length).length;
+  const head = `<div class="section-head"><h3>Team on this project (${team.length})</h3>${sitePickerOpen==='team' ? '' : '<button type="button" class="btn btn-sm" id="sitePickerOpenTeam">+ Assign workers</button>'}</div>`;
+  const note = team.length ? `<p class="wsub" style="margin:0 0 10px;">${withIssues ? `<span class="badge warn">${withIssues}</span> worker(s) have expired or missing documents — check before they start work.` : '✅ Everyone assigned here has valid induction, medical and licenses.'}</p>` : '';
+  const picker = sitePickerOpen==='team' ? sitePickerHtml('team', s) : '';
+  const list = team.length ? team.map(w=>{
+    const issues=workerIssues(w);
+    return `<div class="equip-line" data-open-worker="${w.id}">
+      <div class="equip-line-main"><div class="equip-line-title">${esc(w.fullName||'—')}</div><div class="wsub">${esc([w.designation, w.trade].filter(Boolean).join(' · ')||'—')}</div></div>
+      <div class="equip-line-badges">${issues.length ? issues.map(i=>`<span class="badge danger">${esc(i)}</span>`).join('') : '<span class="badge ok">All valid</span>'}
+        <button type="button" class="icon-btn danger" data-unassign-worker="${w.id}" title="Remove from this project" aria-label="Remove from project">✕</button></div>
+    </div>`;
+  }).join('') : '<p class="wsub">No workers assigned yet.</p>';
+  return head + note + picker + list;
+}
+
+function siteVehiclesTabHtml(s){
+  const vans=vehiclesAtSite(s.id).slice().sort((a,b)=>(a.vehicleNumber||'').localeCompare(b.vehicleNumber||''));
+  const head = `<div class="section-head"><h3>Vehicles on this project (${vans.length})</h3>${sitePickerOpen==='vehicles' ? '' : '<button type="button" class="btn btn-sm" id="sitePickerOpenVehicles">+ Assign vehicles</button>'}</div>`;
+  const picker = sitePickerOpen==='vehicles' ? sitePickerHtml('vehicles', s) : '';
+  const list = vans.length ? vans.map(v=>{
+    const issues=vehicleIssues(v);
+    return `<div class="equip-line" data-open-vehicle="${v.id}">
+      <div class="equip-line-main"><div class="equip-line-title mono">${esc(v.vehicleNumber||'—')}</div><div class="wsub">${esc(v.model||'—')} · ${esc(v.ownership||'Own')}</div></div>
+      <div class="equip-line-badges">${issues.length ? issues.map(i=>`<span class="badge danger">${esc(i)}</span>`).join('') : '<span class="badge ok">All valid</span>'}
+        <button type="button" class="icon-btn danger" data-unassign-vehicle="${v.id}" title="Remove from this project" aria-label="Remove from project">✕</button></div>
+    </div>`;
+  }).join('') : '<p class="wsub">No vehicles assigned yet.</p>';
+  return head + picker + list;
 }
 
 /* ---------------- site equipment trash ---------------- */
@@ -1917,6 +2092,7 @@ function closeAddEquipForm(){
 
 /* ---------------- equipment item drawer ---------------- */
 function openEquipDrawer(id){
+  raiseDrawer('equipDrawerOverlay','equipDrawer');
   activeEquipId=id; equipMoveOpen=false;
   document.getElementById('equipDrawerOverlay').hidden=false;
   document.getElementById('equipDrawer').hidden=false;
@@ -2103,7 +2279,7 @@ function renderReportBar(){
     return DIVISIONS.map(div=>{
       const mm = computeReportMetrics(reportEntriesFor(div, reportMonth));
       const value = keys.reduce((n,k)=>n+mm[k],0);
-      return {label:div, value, color:DIVISION_COLORS[div]};
+      return {label:divLabel(div), value, color:DIVISION_COLORS[div]};
     });
   }
   function barsHtml(rows){
@@ -2179,7 +2355,7 @@ function renderReportTable(entries){
     const cfg=REPORT_CATEGORIES[e.category];
     return `<tr data-rid="${e.id}">
       <td class="mono">${esc(e.date||'—')}</td>
-      <td>${esc(e.division||'—')}</td>
+      <td>${esc(e.division?divLabel(e.division):'—')}</td>
       <td>${esc(cfg?cfg.label:e.category)}</td>
       <td>${esc(reportEntrySummary(e))}</td>
       <td style="text-align:right; white-space:nowrap;">
@@ -2264,7 +2440,7 @@ async function buildReportPdf(division, month){
   y=88;
 
   doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(20,20,20);
-  doc.text(division==='all' ? 'All divisions' : division, marginX, y); y+=18;
+  doc.text(division==='all' ? 'All divisions' : divLabel(division), marginX, y); y+=18;
   doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(100,105,98);
   doc.text(`Reporting month: ${month}`, marginX, y);
   doc.setTextColor(20,20,20); y+=22;
@@ -2296,15 +2472,15 @@ async function buildReportPdf(division, month){
 
   if(division==='all'){
     h2('Divisions compared — proactive activities');
-    const rows = DIVISIONS.map(div=>({label:div, value:computeReportMetrics(reportEntriesFor(div,month)).proactiveTotal}));
+    const rows = DIVISIONS.map(div=>({div, label:divLabel(div), value:computeReportMetrics(reportEntriesFor(div,month)).proactiveTotal}));
     const max=Math.max(1, ...rows.map(r=>r.value));
     const colorMap={Civil:[8,145,178], Scaffolding:[173,124,0], Rental:[5,150,105], 'Office staff':[236,72,153]};
-    for(const r of rows) bar(r.label, r.value, max, colorMap[r.label]);
+    for(const r of rows) bar(r.label, r.value, max, colorMap[r.div]);
 
     h2('Divisions compared — safety events');
-    const rows2 = DIVISIONS.map(div=>{ const mm=computeReportMetrics(reportEntriesFor(div,month)); return {label:div, value:mm.safetyEventsTotal}; });
+    const rows2 = DIVISIONS.map(div=>{ const mm=computeReportMetrics(reportEntriesFor(div,month)); return {div, label:divLabel(div), value:mm.safetyEventsTotal}; });
     const max2=Math.max(1, ...rows2.map(r=>r.value));
-    for(const r of rows2) bar(r.label, r.value, max2, colorMap[r.label]);
+    for(const r of rows2) bar(r.label, r.value, max2, colorMap[r.div]);
   }
 
   h2('Activity log');
@@ -2313,7 +2489,7 @@ async function buildReportPdf(division, month){
   for(const e of sorted){
     ensure(12);
     doc.setFont('helvetica','normal'); doc.setFontSize(8.2); doc.setTextColor(40,40,40);
-    const line = `${e.date||'—'}  ·  ${e.division||'—'}  ·  ${REPORT_CATEGORIES[e.category]?REPORT_CATEGORIES[e.category].label:e.category}  ·  ${reportEntrySummary(e)}`;
+    const line = `${e.date||'—'}  ·  ${e.division?divLabel(e.division):'—'}  ·  ${REPORT_CATEGORIES[e.category]?REPORT_CATEGORIES[e.category].label:e.category}  ·  ${reportEntrySummary(e)}`;
     const lines=doc.splitTextToSize(line, pageW-2*marginX);
     lines.forEach(l=>{ ensure(11); doc.text(l, marginX, y); y+=11; });
   }
@@ -2336,6 +2512,7 @@ async function downloadReportPdf(){
 
 /* ---------------- drawer ---------------- */
 function openDrawer(id){
+  raiseDrawer('drawerOverlay','drawer');
   activeWorkerId=id; activeTab='profile'; editingRecordId=null; addFormOpen=false;
   document.getElementById('drawerOverlay').hidden=false;
   document.getElementById('drawer').hidden=false;
@@ -2382,7 +2559,7 @@ function renderDrawer(){
   const w=currentWorker();
   if(!w){ closeDrawer(); return; }
   document.getElementById('drawerName').textContent=w.fullName;
-  document.getElementById('drawerSub').textContent=(w.civilId||'')+(w.trade?' · '+w.trade:'');
+  document.getElementById('drawerSub').textContent=(w.civilId||'')+(w.trade?' · '+w.trade:'')+(w.projectId?' · 📍 '+locLabel(w.projectId):'');
   document.getElementById('drawerTabs').innerHTML=TABS.map(t=>`<button type="button" class="tab-btn ${t.key===activeTab?'active':''}" data-tab="${t.key}">${t.label}</button>`).join('');
   renderDrawerBody();
 }
@@ -2862,9 +3039,29 @@ async function buildSitePdf(s){
   doc.setTextColor(20,20,20); y+=22;
 
   h2('Project details');
-  kv('Project name', s.siteName); kv('Division', s.division||'Civil'); kv('Client name', s.clientName);
-  kv('Location', s.location); kv('Project handled by', s.projectHandledBy); kv('Project duration', s.projectDuration);
+  kv('Project name', s.siteName); kv('Division', divLabel(s.division||'Civil')); kv('Status', projectStatus(s));
+  kv('Start date', s.startDate); kv('End date', s.endDate);
+  kv('Location', s.location); kv('Project handled by', s.projectHandledBy);
+  if(s.projectDuration) kv('Duration notes', s.projectDuration);
   if(s.scopeOfWork){ ensure(15); doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(100,105,98); doc.text('Scope of work', marginX, y); doc.setTextColor(20,20,20); y+=12; doc.setFont('helvetica','normal'); doc.setFontSize(9); const lines=doc.splitTextToSize(s.scopeOfWork, pageW-2*marginX); lines.forEach(l=>{ ensure(11); doc.text(l, marginX, y); y+=11; }); y+=4; }
+
+  h2('Client & contacts');
+  kv('Client', s.clientName);
+  kv('Client representative', [s.clientRepName, s.clientRepPhone, s.clientRepEmail].filter(Boolean).join('  ·  '));
+  kv('Client HSE focal person', [s.clientHseName, s.clientHsePhone].filter(Boolean).join('  ·  '));
+
+  function lineList(title, items, render){
+    h2(title);
+    if(!items.length){ ensure(13); doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(130,130,130); doc.text('None assigned', marginX, y); doc.setTextColor(20,20,20); y+=16; return; }
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(20,20,20);
+    for(const it of items){ doc.splitTextToSize('•  '+render(it), pageW-2*marginX-8).forEach(l=>{ ensure(11); doc.text(l, marginX+8, y); y+=11; }); }
+    y+=4;
+  }
+  const team=workersAtSite(s.id).slice().sort((a,b)=>(a.fullName||'').localeCompare(b.fullName||''));
+  lineList(`Team (${team.length})`, team, w=>{ const iss=workerIssues(w); return `${w.fullName||'—'}  ·  ${[w.designation,w.trade].filter(Boolean).join(' / ')||'—'}  ·  Civil ID ${w.civilId||'—'}  ·  ${iss.length?'ATTENTION: '+iss.join(', '):'documents valid'}`; });
+  const vans=vehiclesAtSite(s.id);
+  lineList(`Vehicles (${vans.length})`, vans, v=>{ const iss=vehicleIssues(v); return `${v.vehicleNumber||'—'}  ·  ${v.model||'—'}  ·  ${v.ownership||'Own'}  ·  ${iss.length?'ATTENTION: '+iss.join(', '):'documents valid'}`; });
+  section('HSE documents','hseDocs',SITE_RECORD_TYPES.hseDocs);
 
   // Equipment currently on site, from the Plant & Equipment register
   const onSite=equipAtSite(s.id);
@@ -3313,6 +3510,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
   document.getElementById('siteSearchInput').addEventListener('input', e=>{ siteFilters.q=e.target.value; renderSiteTable(); });
   document.getElementById('siteDivisionFilter').addEventListener('change', e=>{ siteFilters.division=e.target.value; renderSiteTable(); });
+  document.getElementById('siteStatusFilter').addEventListener('change', e=>{ siteFilters.status=e.target.value; renderSiteTable(); });
   document.getElementById('siteRows').addEventListener('click', e=>{
     const tr=e.target.closest('tr[data-id]'); if(tr) openSiteDrawer(tr.dataset.id);
   });
@@ -3323,7 +3521,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('downloadSitePdfBtn').addEventListener('click', downloadSiteProfile);
   document.getElementById('siteDrawerTabs').addEventListener('click', e=>{
     const b=e.target.closest('[data-stab]'); if(!b) return;
-    activeSiteTab=b.dataset.stab; editingSiteRecordId=null; siteAddFormOpen=false; renderSiteDrawer();
+    activeSiteTab=b.dataset.stab; editingSiteRecordId=null; siteAddFormOpen=false; sitePickerOpen=null; sitePickerQuery=''; renderSiteDrawer();
   });
 
   /* ---------------- site: trash ---------------- */
@@ -3353,8 +3551,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
           const hist=(item.history||[]).concat([{kind:'move', date:today, from:purgeBtn.dataset.spurge, to:'store', fromLabel:(s&&s.siteName)||'Project', toLabel:'In store', note:'Project was permanently removed'}]);
           await db.collection('equipment').doc(item.id).update({location:'store', history:hist});
         }
+        for(const w of workers.filter(x=>x.projectId===purgeBtn.dataset.spurge)) await db.collection('workers').doc(w.id).update({projectId:null});
+        for(const v of vehicles.filter(x=>x.projectId===purgeBtn.dataset.spurge)) await db.collection('vehicles').doc(v.id).update({projectId:null});
         await db.collection('siteEquipment').doc(purgeBtn.dataset.spurge).delete();
-        toast('Project permanently removed — its equipment was returned to store');
+        toast('Project permanently removed — equipment returned to store, team and vehicles un-assigned');
       }
       catch(err){ console.error(err); toast('Could not remove site'); }
       return;
@@ -3388,6 +3588,31 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   /* ---------------- site: record edit/delete/toggle + delete site ---------------- */
   document.getElementById('siteDrawerBody').addEventListener('click', async e=>{
+    const s0=currentSite();
+    // --- team & vehicle assignment ---
+    if(e.target.id==='sitePickerOpenTeam' || e.target.id==='sitePickerOpenVehicles'){
+      sitePickerOpen = e.target.id==='sitePickerOpenTeam' ? 'team' : 'vehicles'; sitePickerQuery=''; renderSiteDrawerBody(); return;
+    }
+    if(e.target.id==='sitePickerCancel'){ sitePickerOpen=null; sitePickerQuery=''; renderSiteDrawerBody(); return; }
+    if(e.target.id==='sitePickerSave' && s0){
+      const ids=[...document.querySelectorAll('#siteDrawerBody [data-pick]:checked')].map(x=>x.dataset.pick);
+      if(!ids.length){ toast('Tick at least one first'); return; }
+      const coll = sitePickerOpen==='team' ? 'workers' : 'vehicles';
+      try{
+        for(const id of ids) await db.collection(coll).doc(id).update({projectId:s0.id, projectAssignedAt:new Date().toISOString()});
+        toast(`${ids.length} ${sitePickerOpen==='team'?'worker(s)':'vehicle(s)'} assigned to ${s0.siteName||'this project'}`);
+      }catch(err){ console.error(err); toast('Could not assign — '+(err.code||'error')); }
+      sitePickerOpen=null; sitePickerQuery=''; renderSiteDrawerBody();
+      return;
+    }
+    const unW=e.target.closest('[data-unassign-worker]');
+    if(unW){ e.stopPropagation(); try{ await db.collection('workers').doc(unW.dataset.unassignWorker).update({projectId:null}); toast('Removed from this project'); }catch(err){ toast('Could not update'); } return; }
+    const unV=e.target.closest('[data-unassign-vehicle]');
+    if(unV){ e.stopPropagation(); try{ await db.collection('vehicles').doc(unV.dataset.unassignVehicle).update({projectId:null}); toast('Removed from this project'); }catch(err){ toast('Could not update'); } return; }
+    const openW=e.target.closest('[data-open-worker]');
+    if(openW){ openDrawer(openW.dataset.openWorker); return; }
+    const openV=e.target.closest('[data-open-vehicle]');
+    if(openV){ openVehicleDrawer(openV.dataset.openVehicle); return; }
     const openEq=e.target.closest('[data-open-equip]');
     if(openEq){ openEquipDrawer(openEq.dataset.openEquip); return; }
     if(e.target.id==='toggleRecordForm'){
@@ -3443,6 +3668,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
       catch(err){ toast('Could not delete'); }
       return;
     }
+  });
+
+  document.getElementById('siteDrawerBody').addEventListener('input', e=>{
+    if(e.target.id!=='sitePickerSearch') return;
+    sitePickerQuery=e.target.value;
+    const q=sitePickerQuery.trim().toLowerCase();
+    document.querySelectorAll('#siteDrawerBody .pick-row').forEach(r=>{ r.hidden = !!q && !r.dataset.text.includes(q); });
   });
 
   /* ---------------- site: attachment upload ---------------- */
