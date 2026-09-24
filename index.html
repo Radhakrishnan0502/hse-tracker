@@ -305,6 +305,15 @@ table.stats-table tbody tr{cursor:default;}
 table.stats-table td, table.stats-table th{padding:7px 10px; font-size:12.5px;}
 .stat-val{font-variant-numeric:tabular-nums; font-weight:600;}
 .stat-val.danger{color:var(--danger);} .stat-val.ok{color:var(--ok);}
+.period-ctl{display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; background:var(--surface);}
+.seg button{border:none; background:transparent; color:var(--ink-muted); font-weight:600; font-size:12.5px; padding:7px 12px;}
+.seg button + button{border-left:1px solid var(--line);}
+.seg button.active{background:var(--accent); color:var(--accent-ink);}
+.year-label{min-width:64px; text-align:center; font-family:var(--font-display); font-weight:800; font-size:15px; padding:6px 10px; border:1px solid var(--line); border-radius:8px; background:var(--surface);}
+table.breakdown-table{min-width:880px;}
+table.breakdown-table tbody tr[data-open-site]{cursor:pointer;}
+table.breakdown-table tbody tr.total-row td{border-top:2px solid var(--line); background:var(--surface-2);}
 .notice{background:var(--warn-bg); color:var(--warn); border:1px solid var(--warn); border-radius:9px; padding:10px 12px; font-size:12.5px; margin-bottom:12px;}
 .tiles-4{grid-template-columns:repeat(4,1fr) !important;}
 @media (max-width:900px){.tiles-4{grid-template-columns:repeat(2,1fr) !important;}}
@@ -590,12 +599,17 @@ body.auth-open{overflow:hidden; height:100%;}
           </tbody>
         </table>
       </div>
+
+      <div class="chart-card" style="margin-top:18px;">
+        <h3 style="flex-wrap:wrap;"><span id="siteSummaryTitle">Project HSE summary</span><span id="siteSummaryCtl"></span></h3>
+        <div id="siteSummary"></div>
+      </div>
     </main>
 
     <main class="app-main" id="reportSection" hidden>
       <div class="topbar">
         <div>
-          <h1>Monthly HSE Report</h1>
+          <h1 id="reportTitle">Monthly HSE Report</h1>
           <p>Safe man-hours, near-misses, LTIs and incidents alongside proactive activity — training, TBTs, inductions, audits, site visits and vehicle checks — live per division or combined for all of Burhan Oil &amp; Trade Services.</p>
         </div>
         <div class="topbar-actions">
@@ -610,11 +624,7 @@ body.auth-open{overflow:hidden; height:100%;}
         <button type="button" class="division-tab" data-rdiv="Scaffolding">Scaffolding Division</button>
         <button type="button" class="division-tab" data-rdiv="Rental">Rental Division</button>
         <button type="button" class="division-tab" data-rdiv="Office staff">Office Staff</button>
-        <div class="month-nav" style="margin-left:auto;">
-          <button type="button" class="btn btn-sm" id="reportPrevMonthBtn" aria-label="Previous month">◀</button>
-          <input type="month" id="reportMonthInput" class="month-input">
-          <button type="button" class="btn btn-sm" id="reportNextMonthBtn" aria-label="Next month">▶</button>
-        </div>
+        <div id="reportPeriodCtl" style="margin-left:auto;"></div>
       </div>
 
       <div class="toolbar" style="margin-top:-2px;">
@@ -659,6 +669,11 @@ body.auth-open{overflow:hidden; height:100%;}
       </div>
 
       <div class="tiles tiles-4" id="reportTiles"></div>
+
+      <div class="chart-card" id="reportProjectsCard" style="margin-bottom:18px;">
+        <h3><span id="reportProjectsTitle">Projects</span></h3>
+        <div id="reportProjects"></div>
+      </div>
 
       <div class="table-wrap">
         <table>
@@ -1251,6 +1266,24 @@ let unsubscribeReportEntries=null;
 let reportDivision='all';
 let reportProject='all';   // 'all' | 'none' | a project id
 let reportMonth=new Date().toISOString().slice(0,7);
+let reportPeriod='month', reportYear=String(new Date().getFullYear());        // Monthly / Yearly switch
+let siteSumPeriod='month', siteSumMonth=reportMonth, siteSumYear=reportYear;  // Project Details summary card
+let siteStatsPeriod='month', siteStatsYear=reportYear;                         // project drawer › HSE statistics
+function reportPeriodKey(){ return reportPeriod==='year' ? reportYear : reportMonth; }
+const PERIOD_CTLS = {
+  report:   {get:()=>({period:reportPeriod, month:reportMonth, year:reportYear}), set:st=>{ reportPeriod=st.period; reportMonth=st.month; reportYear=st.year; renderReportAll(); },
+             ids:{input:'reportMonthInput', prev:'reportPrevMonthBtn', next:'reportNextMonthBtn'}},
+  sitesum:  {get:()=>({period:siteSumPeriod, month:siteSumMonth, year:siteSumYear}), set:st=>{ siteSumPeriod=st.period; siteSumMonth=st.month; siteSumYear=st.year; renderSiteSummary(); }, ids:{}},
+  sitestats:{get:()=>({period:siteStatsPeriod, month:siteStatsMonth, year:siteStatsYear}), set:st=>{ siteStatsPeriod=st.period; siteStatsMonth=st.month; siteStatsYear=st.year; renderSiteDrawerBody(); },
+             ids:{input:'siteStatsMonthInput', prev:'siteStatsPrev', next:'siteStatsNext'}},
+};
+
+function periodLabel(key){
+  if(!key) return '';
+  if(key.length===4) return 'Year ' + key;
+  const [y,m]=key.split('-').map(Number);
+  return new Date(y, m-1, 1).toLocaleString('en-GB', {month:'long', year:'numeric'});
+}
 let reportAddFormOpen=false;
 let editingReportEntryId=null;
 
@@ -1260,8 +1293,29 @@ function reportProjectMatch(e, project){
   if(project==='none') return !e.projectId;
   return e.projectId===project;
 }
-function reportEntriesFor(division, month, project){
-  return reportEntries.filter(e=> (division==='all' || e.division===division) && entryMonth(e)===month && reportProjectMatch(e, project));
+// periodKey is 'YYYY-MM' for a month or 'YYYY' for a whole year
+function reportEntriesFor(division, periodKey, project){
+  return reportEntries.filter(e=> (division==='all' || e.division===division) && entryMonth(e).startsWith(periodKey) && reportProjectMatch(e, project));
+}
+// Client complaints live on each project; counted by the date they were received
+function complaintsFor(division, periodKey, project){
+  const out=[];
+  for(const s of siteEquipmentList){
+    if(s.deleted) continue;
+    if(division!=='all' && (s.division||'Civil')!==division) continue;
+    if(project && project!=='all' && (project==='none' || s.id!==project)) continue;
+    for(const cmp of (s.complaints||[])) if((cmp.date||'').startsWith(periodKey)) out.push({...cmp, projectId:s.id});
+  }
+  return out;
+}
+function complaintCounts(list){
+  return {
+    received:list.length,
+    open:list.filter(x=>(x.status||'Open')==='Open').length,
+    pending:list.filter(x=>x.status==='Pending').length,
+    closed:list.filter(x=>x.status==='Closed').length,
+    overdue:list.filter(x=>complaintOverdueDays(x)).length,
+  };
 }
 function projectName(id){
   if(!id) return '';
@@ -1476,6 +1530,7 @@ function startReportData(){
     unsubscribeReportEntries = db.collection('hseLogs').orderBy('date','desc').onSnapshot(snap=>{
       reportEntries = snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
       renderReportAll();
+      renderSiteSummary();                   // Project Details summary card
       if(activeSiteId) renderSiteDrawer();   // project HSE statistics tab
     }, err=>{ console.error(err); toast('Sync error — some report data may be stale.'); });
   }catch(e){ console.error(e); }
@@ -1688,6 +1743,7 @@ function renderVehicleTable(){
 function renderSiteAll(){
   renderSiteTiles();
   renderSiteTable();
+  renderSiteSummary();
   const trashCount=deletedSites().length;
   document.getElementById('siteTrashBtn').textContent = `🗑 Deleted projects (${trashCount})`;
   if(activeSiteId) renderSiteDrawer();
@@ -2032,7 +2088,11 @@ const PROJECT_STAT_ROWS = [
 ];
 function siteStatsTabHtml(s){
   const f=projectHseFigures(s.id);
-  const month=computeReportMetrics(f.all.filter(e=>entryMonth(e)===siteStatsMonth));
+  const pkey = siteStatsPeriod==='year' ? siteStatsYear : siteStatsMonth;
+  const month=computeReportMetrics(f.all.filter(e=>entryMonth(e).startsWith(pkey)));
+  const allCmp=(s.complaints||[]), perCmp=allCmp.filter(x=>(x.date||'').startsWith(pkey));
+  const ccP=complaintCounts(perCmp), ccT=complaintCounts(allCmp);
+  const cmpRow=(label,a,b,bad)=>`<tr><td>${label}</td><td class="stat-val ${bad&&a>0?'danger':''}">${a}</td><td class="stat-val ${bad&&b>0?'danger':''}">${b}</td></tr>`;
   const cell=(row,m)=>{
     const v = row.fmt ? row.fmt(m) : m[row.key];
     const cls = row.bad ? (m[row.key]>0 ? 'danger' : 'ok') : '';
@@ -2055,15 +2115,13 @@ function siteStatsTabHtml(s){
     <div class="stat-card" title="Lost Time Injury Frequency = LTIs × 1,000,000 ÷ man-hours"><div class="stat-card-num">${fmtRate(f.ltif)}</div><div class="stat-card-label">LTIF — per million man-hours</div></div>
     <div class="stat-card" title="Total Recordable Case Frequency = (LTI + MTI) × 1,000,000 ÷ man-hours. First aid cases are not counted."><div class="stat-card-num">${fmtRate(f.trcf)}</div><div class="stat-card-label">TRCF — (LTI + MTI) per million man-hours</div></div>
   </div>
-  <div class="month-nav" style="margin:14px 0 8px;">
-    <button type="button" class="btn btn-sm" id="siteStatsPrev" aria-label="Previous month">◀</button>
-    <input type="month" id="siteStatsMonthInput" class="month-input" value="${esc(siteStatsMonth)}">
-    <button type="button" class="btn btn-sm" id="siteStatsNext" aria-label="Next month">▶</button>
-  </div>
+  <div style="margin:14px 0 8px;">${periodCtlHtml('sitestats')}</div>
   <div class="table-wrap" style="box-shadow:none;">
     <table class="stats-table">
-      <thead><tr><th></th><th>${esc(siteStatsMonth)}</th><th>Project to date</th></tr></thead>
-      <tbody>${PROJECT_STAT_ROWS.map(r=>`<tr><td>${esc(r.label)}</td>${cell(r,month)}${cell(r,f.total)}</tr>`).join('')}</tbody>
+      <thead><tr><th></th><th>${esc(periodLabel(pkey))}</th><th>Project to date</th></tr></thead>
+      <tbody>${PROJECT_STAT_ROWS.map(r=>`<tr><td>${esc(r.label)}</td>${cell(r,month)}${cell(r,f.total)}</tr>`).join('')}
+        ${cmpRow('Client complaints received', ccP.received, ccT.received, false)}
+        ${cmpRow('— still open or pending', ccP.open+ccP.pending, ccT.open+ccT.pending, true)}</tbody>
     </table>
   </div>
   <div class="subhead">Latest entries for this project</div>
@@ -2374,14 +2432,86 @@ async function updateEquip(id, data){
 }
 
 /* ---------------- monthly HSE report rendering ---------------- */
+function periodCtlHtml(which){
+  const P=PERIOD_CTLS[which], st=P.get(), ids=P.ids;
+  const idAttr = k => ids[k] ? `id="${ids[k]}"` : '';
+  return `<div class="period-ctl" data-pctl="${which}">
+    <div class="seg" role="group" aria-label="Period">
+      <button type="button" data-pact="month" class="${st.period==='month'?'active':''}">Monthly</button>
+      <button type="button" data-pact="year" class="${st.period==='year'?'active':''}">Yearly</button>
+    </div>
+    <button type="button" class="btn btn-sm" data-pact="prev" ${idAttr('prev')} aria-label="Previous">◀</button>
+    ${st.period==='month' ? `<input type="month" class="month-input" data-pact-input ${idAttr('input')} value="${esc(st.month)}">` : `<span class="year-label">${esc(st.year)}</span>`}
+    <button type="button" class="btn btn-sm" data-pact="next" ${idAttr('next')} aria-label="Next">▶</button>
+  </div>`;
+}
+function shiftPeriodState(st, delta){
+  if(st.period==='year'){ st.year=String(Number(st.year)+delta); return st; }
+  const [y,m]=st.month.split('-').map(Number); const d=new Date(y, m-1+delta, 1);
+  st.month=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  return st;
+}
+function periodKeyOf(st){ return st.period==='year' ? st.year : st.month; }
+
+// Project-by-project HSE figures for a month or a year
+function projectBreakdownHtml(division, key){
+  const ids=new Set();
+  for(const s of activeSites()){
+    if(division!=='all' && (s.division||'Civil')!==division) continue;
+    if(projectStatus(s)!=='Completed') ids.add(s.id);
+  }
+  for(const e of reportEntriesFor(division, key, 'all')) if(e.projectId) ids.add(e.projectId);
+  for(const x of complaintsFor(division, key, 'all')) ids.add(x.projectId);
+  const rows=[...ids].map(id=>{
+    const m=computeReportMetrics(reportEntriesFor(division, key, id));
+    const cc=complaintCounts(complaintsFor(division, key, id));
+    const s=siteEquipmentList.find(x=>x.id===id);
+    return {id, name:projectName(id), division:s?divLabel(s.division||'Civil'):'—', m, cc};
+  }).sort((a,b)=> b.m.manHours-a.m.manHours || a.name.localeCompare(b.name));
+  const unassigned=reportEntriesFor(division, key, 'none');
+  if(unassigned.length) rows.push({id:null, name:'No specific project', division:'—', m:computeReportMetrics(unassigned), cc:complaintCounts([])});
+  if(!rows.length) return `<p class="wsub">No projects or entries for ${esc(periodLabel(key))}.</p>`;
+  const tot=computeReportMetrics(reportEntriesFor(division, key, 'all')), tcc=complaintCounts(complaintsFor(division, key, 'all'));
+  const bad=(n)=>`<td class="stat-val ${n>0?'danger':''}">${n}</td>`;
+  const row=(r,isTotal)=>`<tr ${r.id?`data-open-site="${r.id}"`:''} class="${isTotal?'total-row':''}">
+      <td>${isTotal?'<strong>Total</strong>':`<span class="wname">${esc(r.name)}</span>`}</td><td>${esc(r.division)}</td>
+      <td class="stat-val">${r.m.manHours.toLocaleString()}</td>
+      ${bad(r.m.nearMiss)}${bad(r.m.fac)}${bad(r.m.mti)}${bad(r.m.lti)}${bad(r.m.incident+r.m.vehicleIncident)}
+      <td class="stat-val">${r.m.proactiveTotal+r.m.mockDrill+r.m.ppeIssuance}</td>
+      <td class="stat-val">${r.cc.received}${(r.cc.open+r.cc.pending)?` <span class="badge ${r.cc.overdue?'danger':'warn'}">${r.cc.open+r.cc.pending} unresolved</span>`:''}</td>
+    </tr>`;
+  return `<div class="table-wrap" style="box-shadow:none;"><table class="stats-table breakdown-table">
+    <thead><tr><th>Project</th><th>Division</th><th>Man-hours</th><th>Near miss</th><th>FAC</th><th>MTI</th><th>LTI</th><th>Incidents</th><th>Proactive</th><th>Client complaints</th></tr></thead>
+    <tbody>${rows.map(r=>row(r,false)).join('')}${row({name:'Total', division:'', m:tot, cc:tcc}, true)}</tbody>
+  </table></div>
+  <p class="wsub" style="margin:8px 0 0;">Incidents = incident + vehicle incident. Proactive = training, TBT, induction, site visits, audits, inspections, observations, mock drills and PPE issuance. Click a project to open it.</p>`;
+}
+function renderSiteSummary(){
+  const el=document.getElementById('siteSummary'); if(!el) return;
+  const st=PERIOD_CTLS.sitesum.get(), key=periodKeyOf(st);
+  document.getElementById('siteSummaryCtl').innerHTML=periodCtlHtml('sitesum');
+  document.getElementById('siteSummaryTitle').textContent=`Project HSE summary — ${periodLabel(key)}`;
+  el.innerHTML = auth.currentUser ? projectBreakdownHtml(siteFilters.division, key) : '';
+}
+
 function renderReportAll(){
   renderReportProjectFilter();
-  const entries = reportEntriesFor(reportDivision, reportMonth, reportProject);
+  const key = reportPeriodKey();
+  document.getElementById('reportPeriodCtl').innerHTML = periodCtlHtml('report');
+  document.getElementById('reportTitle').textContent = reportPeriod==='year' ? `Yearly HSE Report — ${reportYear}` : 'Monthly HSE Report';
+  const entries = reportEntriesFor(reportDivision, key, reportProject);
   const metrics = computeReportMetrics(entries);
+  const cc = complaintCounts(complaintsFor(reportDivision, key, reportProject));
   renderReportHero(metrics);
   renderReportDonut(metrics);
   renderReportBar();
-  renderReportTiles(metrics);
+  renderReportTiles(metrics, cc);
+  const showProjects = reportProject==='all';
+  document.getElementById('reportProjectsCard').hidden = !showProjects;
+  if(showProjects){
+    document.getElementById('reportProjectsTitle').textContent = `Projects — ${periodLabel(key)}`;
+    document.getElementById('reportProjects').innerHTML = projectBreakdownHtml(reportDivision, key);
+  }
   renderReportTable(entries);
 }
 
@@ -2431,13 +2561,18 @@ function renderReportBar(){
   const chart = document.getElementById('reportBarChart');
   const titleEl = document.getElementById('reportBarTitle');
   if(reportDivision!=='all'){
-    titleEl.textContent = 'This division, last 3 months';
-    const months=[]; const base=reportMonth+'-01';
-    const d0=new Date(base+'T00:00:00');
-    for(let i=2;i>=0;i--){ const d=new Date(d0.getFullYear(), d0.getMonth()-i, 1); months.push(d.toISOString().slice(0,7)); }
+    const months=[];
+    if(reportPeriod==='year'){
+      titleEl.textContent = `This division, month by month — ${reportYear}`;
+      for(let i=1;i<=12;i++) months.push(`${reportYear}-${String(i).padStart(2,'0')}`);
+    } else {
+      titleEl.textContent = 'This division, last 3 months';
+      const [yy,mm0]=reportMonth.split('-').map(Number);
+      for(let i=2;i>=0;i--){ const d=new Date(yy, mm0-1-i, 1); months.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')); }
+    }
     const rows = months.map(mo=>{
       const mm = computeReportMetrics(reportEntriesFor(reportDivision, mo, reportProject));
-      return {label:mo, value:mm.proactiveTotal};
+      return {label: reportPeriod==='year' ? new Date(Number(mo.slice(0,4)), Number(mo.slice(5))-1, 1).toLocaleString('en-GB',{month:'short'}) : mo, value:mm.proactiveTotal};
     });
     const max = Math.max(1, ...rows.map(r=>r.value));
     chart.innerHTML = `<div class="bar-section-label">Proactive activities per month</div><div class="bar-chart">${rows.map(r=>`
@@ -2448,10 +2583,10 @@ function renderReportBar(){
       </div>`).join('')}</div>`;
     return;
   }
-  titleEl.textContent = `Divisions compared — ${reportMonth}`;
+  titleEl.textContent = `Divisions compared — ${periodLabel(reportPeriodKey())}`;
   function rowsFor(keys){
     return DIVISIONS.map(div=>{
-      const mm = computeReportMetrics(reportEntriesFor(div, reportMonth, reportProject));
+      const mm = computeReportMetrics(reportEntriesFor(div, reportPeriodKey(), reportProject));
       const value = keys.reduce((n,k)=>n+mm[k],0);
       return {label:divLabel(div), value, color:DIVISION_COLORS[div]};
     });
@@ -2473,7 +2608,8 @@ function renderReportBar(){
   `;
 }
 
-function renderReportTiles(m){
+function renderReportTiles(m, cc){
+  const periodWord = reportPeriod==='year' ? 'this year' : 'this month';
   const tiles = REPORT_TILE_ORDER.map(key=>{
     const cfg=REPORT_CATEGORIES[key];
     let cls='';
@@ -2485,15 +2621,21 @@ function renderReportTiles(m){
     else if(key==='internalAudit') sub=`${m.internalAuditFindings} findings`;
     else if(key==='mockDrill') sub=`${m.mockDrillParticipants} participants`;
     else if(key==='ppeIssuance') sub=`${m.ppeIssuanceQty} items issued`;
-    else if(key==='manHours') sub='this month';
-    else if(key==='vehicleKm') sub='this month';
+    else if(key==='manHours') sub=periodWord;
+    else if(key==='vehicleKm') sub=periodWord;
     const num = key==='manHours' ? m.manHours.toLocaleString() : (key==='vehicleKm' ? m.vehicleKm.toLocaleString() : m[key]);
     return `<div class="tile" style="--tile-accent:var(${cfg.cat})">
-      <div class="tile-head"><div class="tile-label">${esc(cfg.label)}</div></div>
+      <div class="tile-head"><div class="tile-label">${esc(reportPeriod==='year' ? cfg.label.replace(' (monthly)','') : cfg.label)}</div></div>
       <div class="tile-num ${cls}">${num}</div><div class="tile-sub">${esc(sub)}</div>
     </div>`;
   }).join('');
-  document.getElementById('reportTiles').innerHTML = tiles;
+  const unresolved = cc ? cc.open+cc.pending : 0;
+  const complaintTile = cc ? `<div class="tile" style="--tile-accent:var(--cat-5)">
+      <div class="tile-head"><div class="tile-label">Client complaints</div></div>
+      <div class="tile-num ${cc.overdue?'danger':(unresolved?'warn':'')}">${cc.received}</div>
+      <div class="tile-sub">received ${periodWord} · ${cc.open} open · ${cc.pending} pending · ${cc.closed} closed${cc.overdue?` · ${cc.overdue} overdue`:''}</div>
+    </div>` : '';
+  document.getElementById('reportTiles').innerHTML = tiles + complaintTile;
 }
 
 function reportEntrySummary(e){
@@ -2636,14 +2778,14 @@ async function buildReportPdf(division, month, project){
   doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(20,20,20);
   doc.text('Burhan Oil & Trade Services', marginX+40, 38);
   doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(120,120,120);
-  doc.text('Monthly HSE Report', marginX+40, 48);
+  doc.text(month.length===4 ? 'Yearly HSE Report' : 'Monthly HSE Report', marginX+40, 48);
   doc.setTextColor(20,20,20);
   y=88;
 
   doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(20,20,20);
   doc.text(division==='all' ? 'All divisions' : divLabel(division), marginX, y); y+=18;
   doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(100,105,98);
-  doc.text(`Reporting month: ${month}` + (project && project!=='all' ? `   ·   Project: ${project==='none' ? 'No specific project' : projectName(project)}` : ''), marginX, y);
+  doc.text(`Reporting period: ${periodLabel(month)}` + (project && project!=='all' ? `   ·   Project: ${project==='none' ? 'No specific project' : projectName(project)}` : ''), marginX, y);
   doc.setTextColor(20,20,20); y+=22;
 
   const entries = reportEntriesFor(division, month, project);
@@ -2670,6 +2812,30 @@ async function buildReportPdf(division, month, project){
   h2('Other HSE activities');
   kv('Mock drills conducted', m.mockDrill + (m.mockDrillParticipants? ` (${m.mockDrillParticipants} participants)`:''));
   kv('PPE issuance entries', m.ppeIssuance + (m.ppeIssuanceQty? ` (${m.ppeIssuanceQty} items)`:''));
+
+  const cmpList=complaintsFor(division, month, project), cc=complaintCounts(cmpList);
+  h2('Client complaints');
+  kv('Received in this period', cc.received);
+  kv('Status now', `${cc.open} open  ·  ${cc.pending} pending  ·  ${cc.closed} closed${cc.overdue?`  ·  ${cc.overdue} overdue`:''}`);
+  for(const x of cmpList.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''))){
+    ensure(12); doc.setFont('helvetica','normal'); doc.setFontSize(8.2); doc.setTextColor(40,40,40);
+    const line=`${x.date||'—'}  ·  ${projectName(x.projectId)}  ·  ${x.category||'—'}  ·  ${x.status||'Open'}  ·  ${x.issue||''}${x.correctiveAction?'  →  '+x.correctiveAction:''}`;
+    doc.splitTextToSize(line, pageW-2*marginX).forEach(l=>{ ensure(11); doc.text(l, marginX, y); y+=11; });
+  }
+
+  if(!project || project==='all'){
+    h2('Projects compared');
+    const ids=new Set(); for(const e of entries) if(e.projectId) ids.add(e.projectId); for(const x of cmpList) ids.add(x.projectId);
+    const rowsP=[...ids].map(id=>({id, m:computeReportMetrics(reportEntriesFor(division, month, id)), cc:complaintCounts(complaintsFor(division, month, id))}))
+      .sort((a,b)=>b.m.manHours-a.m.manHours);
+    if(!rowsP.length){ ensure(13); doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(130,130,130); doc.text('No project-linked entries in this period', marginX, y); doc.setTextColor(20,20,20); y+=16; }
+    for(const r of rowsP){
+      ensure(12); doc.setFont('helvetica','normal'); doc.setFontSize(8.2); doc.setTextColor(20,20,20);
+      const line=`${projectName(r.id)}:  ${r.m.manHours.toLocaleString()} man-hours  ·  NM ${r.m.nearMiss}  ·  FAC ${r.m.fac}  ·  MTI ${r.m.mti}  ·  LTI ${r.m.lti}  ·  Incidents ${r.m.incident+r.m.vehicleIncident}  ·  Complaints ${r.cc.received} (${r.cc.open+r.cc.pending} unresolved)`;
+      doc.splitTextToSize(line, pageW-2*marginX).forEach(l=>{ ensure(11); doc.text(l, marginX, y); y+=11; });
+    }
+    y+=4;
+  }
 
   if(division==='all'){
     h2('Divisions compared — proactive activities');
@@ -2703,12 +2869,13 @@ async function buildReportPdf(division, month, project){
 async function downloadReportPdf(){
   if(!(window.jspdf && window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
   try{
-    const doc=await buildReportPdf(reportDivision, reportMonth, reportProject);
+    const key=reportPeriodKey();
+    const doc=await buildReportPdf(reportDivision, key, reportProject);
     const divPart=(reportDivision==='all'?'All_Divisions':reportDivision).replace(/[^a-z0-9]+/gi,'_');
     const projPart=(reportProject!=='all' && reportProject!=='none') ? '_'+projectName(reportProject).replace(/[^a-z0-9]+/gi,'_') : '';
-    const filename=`HSE_Monthly_Report_${divPart}${projPart}_${reportMonth}.pdf`;
+    const filename=`HSE_${reportPeriod==='year'?'Yearly':'Monthly'}_Report_${divPart}${projPart}_${key}.pdf`;
     doc.save(filename);
-    toast('Monthly report downloaded');
+    toast(reportPeriod==='year' ? 'Yearly report downloaded' : 'Monthly report downloaded');
   }catch(e){ console.error(e); toast('Could not generate the PDF'); }
 }
 
@@ -3762,7 +3929,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }catch(err){ console.error(err); toast('Could not add project'); }
   });
   document.getElementById('siteSearchInput').addEventListener('input', e=>{ siteFilters.q=e.target.value; renderSiteTable(); });
-  document.getElementById('siteDivisionFilter').addEventListener('change', e=>{ siteFilters.division=e.target.value; renderSiteTable(); });
+  document.getElementById('siteDivisionFilter').addEventListener('change', e=>{ siteFilters.division=e.target.value; renderSiteTable(); renderSiteSummary(); });
   document.getElementById('siteStatusFilter').addEventListener('change', e=>{ siteFilters.status=e.target.value; renderSiteTable(); });
   document.getElementById('siteRows').addEventListener('click', e=>{
     const tr=e.target.closest('tr[data-id]'); if(tr) openSiteDrawer(tr.dataset.id);
@@ -3849,12 +4016,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     // --- HSE statistics tab ---
     if(e.target.id==='siteLogEntryBtn' && s0){ goToReportForProject(s0.id, true); return; }
     if(e.target.id==='siteOpenReportBtn' && s0){ goToReportForProject(s0.id, false); return; }
-    if(e.target.id==='siteStatsPrev' || e.target.id==='siteStatsNext'){
-      const [y,m]=siteStatsMonth.split('-').map(Number);
-      const d=new Date(y, (m-1)+(e.target.id==='siteStatsNext'?1:-1), 1);
-      siteStatsMonth=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-      renderSiteDrawerBody(); return;
-    }
     // --- team & vehicle assignment ---
     if(e.target.id==='sitePickerOpenTeam' || e.target.id==='sitePickerOpenVehicles'){
       sitePickerOpen = e.target.id==='sitePickerOpenTeam' ? 'team' : 'vehicles'; sitePickerQuery=''; renderSiteDrawerBody(); return;
@@ -3936,10 +4097,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   });
 
-  document.getElementById('siteDrawerBody').addEventListener('change', e=>{
-    if(e.target.id!=='siteStatsMonthInput' || !e.target.value) return;
-    siteStatsMonth=e.target.value; renderSiteDrawerBody();
-  });
   document.getElementById('siteDrawerBody').addEventListener('input', e=>{
     if(e.target.id!=='sitePickerSearch') return;
     sitePickerQuery=e.target.value;
@@ -4093,20 +4250,24 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 
   /* ---------------- monthly report: init + division/month controls ---------------- */
-  document.getElementById('reportMonthInput').value = reportMonth;
-  document.getElementById('reportMonthInput').addEventListener('change', e=>{
-    reportMonth = e.target.value || new Date().toISOString().slice(0,7);
-    renderReportAll();
+  /* Monthly / Yearly controls (report, project summary, project statistics) — one shared handler */
+  document.addEventListener('click', e=>{
+    const b=e.target.closest('[data-pact]'); if(!b) return;
+    const wrap=b.closest('[data-pctl]'); if(!wrap) return;
+    const P=PERIOD_CTLS[wrap.dataset.pctl]; const st=P.get(); const a=b.dataset.pact;
+    if(a==='month' || a==='year') st.period=a; else shiftPeriodState(st, a==='next'?1:-1);
+    P.set(st);
   });
-  function shiftReportMonth(delta){
-    const [y,m] = reportMonth.split('-').map(Number);
-    const d = new Date(y, (m-1)+delta, 1);
-    reportMonth = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-    document.getElementById('reportMonthInput').value = reportMonth;
-    renderReportAll();
-  }
-  document.getElementById('reportPrevMonthBtn').addEventListener('click', ()=>shiftReportMonth(-1));
-  document.getElementById('reportNextMonthBtn').addEventListener('click', ()=>shiftReportMonth(1));
+  document.addEventListener('change', e=>{
+    if(!e.target.matches('[data-pact-input]') || !e.target.value) return;
+    const P=PERIOD_CTLS[e.target.closest('[data-pctl]').dataset.pctl]; const st=P.get();
+    st.month=e.target.value; P.set(st);
+  });
+  // clicking a project row in a summary table opens that project on its HSE statistics tab
+  document.addEventListener('click', e=>{
+    const tr=e.target.closest('tr[data-open-site]'); if(!tr) return;
+    openSiteDrawer(tr.dataset.openSite); activeSiteTab='hseStats'; renderSiteDrawer();
+  });
   document.getElementById('reportDivisionTabs').addEventListener('click', e=>{
     const b=e.target.closest('[data-rdiv]'); if(!b) return;
     reportDivision=b.dataset.rdiv;
