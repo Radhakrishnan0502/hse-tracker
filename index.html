@@ -329,7 +329,7 @@ button.att-link.att-remove{color:var(--danger);}
 
       <div class="toolbar">
         <input type="search" id="searchInput" placeholder="Search name or Civil ID…">
-        <select id="tradeFilter"><option value="all">All trades</option></select>
+        <select id="tradeFilter"><option value="all">All divisions</option></select>
         <select id="statusFilter">
           <option value="all">All workers</option>
           <option value="active">Active only</option>
@@ -1155,9 +1155,11 @@ function renderTiles(){
 
 function renderTradeFilter(){
   const sel=document.getElementById('tradeFilter');
-  const trades=[...new Set(activeWorkers().map(w=>w.trade).filter(Boolean))].sort();
+  // Fixed division list first, then any older free-text trades still on file (so those workers can still be filtered)
+  const legacy=[...new Set(activeWorkers().map(w=>w.trade).filter(t=>t && !TRADE_CATEGORIES.includes(t)))].sort();
+  const trades=[...TRADE_CATEGORIES, ...legacy];
   const cur=sel.value;
-  sel.innerHTML = '<option value="all">All trades</option>' + trades.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  sel.innerHTML = '<option value="all">All divisions</option>' + trades.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
   if(trades.includes(cur)) sel.value=cur;
 }
 
