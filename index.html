@@ -6,6 +6,9 @@
 <title>Burhan HSE — Workforce HSE Register</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b0b0d">
+<script>
+  try{ if(localStorage.getItem('hseTheme')==='light'){ document.documentElement.setAttribute('data-theme','light'); document.querySelector('meta[name="theme-color"]').setAttribute('content','#f4f5f7'); } }catch(e){}
+</script>
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,6 +17,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root{
+  color-scheme:dark;
   --bg:#0b0b0d;
   --surface:#17171b;
   --surface-2:#1f1f24;
@@ -27,6 +31,7 @@
   --danger:#ff6b5e;  --danger-bg:#331714;
   --muted:#9a9aa3;   --muted-bg:#1f1f24;
   --shadow:0 1px 2px rgba(0,0,0,.6), 0 10px 28px -14px rgba(0,0,0,.85);
+  --logo-shadow:0 2px 10px rgba(0,0,0,.5);
   /* categorical KPI-tile accents — fixed order, validated for CVD + contrast on --bg */
   --cat-1:#0891b2;  /* Workforce — cyan */
   --cat-2:#ad7c00;  /* Civil ID — banana gold */
@@ -41,32 +46,30 @@
   --font-body:'IBM Plex Sans',system-ui,sans-serif;
   --font-mono:'IBM Plex Mono',ui-monospace,monospace;
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#0b0b0d; --surface:#17171b; --surface-2:#1f1f24;
-    --ink:#f5f5f7; --ink-muted:#9a9aa3; --line:#2a2a30;
-    --accent:#d81e2c; --accent-ink:#ffffff;
-    --ok:#4fd48a; --ok-bg:#122b1f;
-    --warn:#f0a93c; --warn-bg:#332512;
-    --danger:#ff6b5e; --danger-bg:#331714;
-    --muted:#9a9aa3; --muted-bg:#1f1f24;
-    --shadow:0 1px 2px rgba(0,0,0,.6), 0 10px 28px -14px rgba(0,0,0,.85);
-  }
-}
-:root[data-theme="dark"]{
-    --bg:#0b0b0d; --surface:#17171b; --surface-2:#1f1f24;
-    --ink:#f5f5f7; --ink-muted:#9a9aa3; --line:#2a2a30;
-    --accent:#d81e2c; --accent-ink:#ffffff;
-    --ok:#4fd48a; --ok-bg:#122b1f;
-    --warn:#f0a93c; --warn-bg:#332512;
-    --danger:#ff6b5e; --danger-bg:#331714;
-    --muted:#9a9aa3; --muted-bg:#1f1f24;
-    --shadow:0 1px 2px rgba(0,0,0,.6), 0 10px 28px -14px rgba(0,0,0,.85);
+/* Light mode — chosen with the switch in the sidebar (remembered per device).
+   Status colours re-stepped for >=4.5:1 text contrast on light surfaces; the
+   categorical chart colours are unchanged (validated on both surfaces). */
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#f4f5f7;
+  --surface:#ffffff;
+  --surface-2:#f1f3f6;
+  --ink:#16181d;
+  --ink-muted:#5b6475;
+  --line:#e0e4ea;
+  --accent:#d81e2c;
+  --accent-ink:#ffffff;
+  --ok:#0f7650;      --ok-bg:#e6f4ef;
+  --warn:#b45309;    --warn-bg:#fef3e2;
+  --danger:#c0311a;  --danger-bg:#fdeceb;
+  --muted:#5b6475;   --muted-bg:#eef0f3;
+  --shadow:0 1px 2px rgba(16,24,40,.05), 0 8px 20px -12px rgba(16,24,40,.14);
+  --logo-shadow:0 1px 6px rgba(16,24,40,.12);
 }
 *{box-sizing:border-box;}
 body{
   background:var(--bg); color:var(--ink); font-family:var(--font-body);
-  padding-inline:16px; padding-block:20px 60px; max-width:1360px; margin:0 auto;
+  padding-inline:20px; padding-block:20px 60px; margin:0;
   font-size:14px; line-height:1.45;
 }
 h1,h2,h3{font-family:var(--font-display); letter-spacing:-.01em; text-wrap:balance; margin:0;}
@@ -83,26 +86,40 @@ label{display:flex; flex-direction:column; gap:4px; font-size:12.5px; color:var(
 .topbar p{margin:4px 0 0; color:var(--ink-muted); font-size:13px; max-width:52ch;}
 .topbar-actions{display:flex; gap:8px; flex-wrap:wrap;}
 .brand-row{display:flex; align-items:center; gap:14px;}
-.brand-logo{height:52px; width:auto; flex:none; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.5);}
-.brand-logo-sm{height:44px; width:auto; margin:0 auto 12px; display:block; border-radius:9px; box-shadow:0 2px 10px rgba(0,0,0,.45);}
+.brand-logo{height:52px; width:auto; flex:none; border-radius:10px; box-shadow:var(--logo-shadow);}
+.brand-logo-sm{height:44px; width:auto; margin:0 auto 12px; display:block; border-radius:9px; box-shadow:var(--logo-shadow);}
 
 /* ---- app shell / side nav ---- */
 .app-shell{display:flex; gap:22px; align-items:flex-start;}
 .sidenav{width:184px; flex:none; display:flex; flex-direction:column; gap:5px; position:sticky; top:20px;}
-.sidenav-logo{width:100%; max-width:120px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.5); margin:0 auto 14px; display:block;}
+.sidenav-logo{width:100%; max-width:120px; border-radius:10px; box-shadow:var(--logo-shadow); margin:0 auto 14px; display:block;}
 .sidenav-btn{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:9px; border:1px solid transparent; background:transparent; color:var(--ink-muted); font-weight:600; font-size:13px; text-align:left; width:100%;}
 .sidenav-btn:hover:not(:disabled){color:var(--ink); border-color:var(--line);}
 .sidenav-btn.active{background:var(--surface); border-color:var(--line); color:var(--ink); box-shadow:var(--shadow);}
 .sidenav-btn:disabled{opacity:.4; cursor:default;}
-.sidenav-icon{width:20px; text-align:center; font-size:15px; flex:none;}
+.sidenav-btn{padding:10px 14px; font-size:13.5px; letter-spacing:.01em;}
+.sidenav-btn.active{border-left:3px solid var(--accent); padding-left:12px;}
+.theme-switch{display:flex; align-items:center; gap:10px; margin-top:18px; padding:10px 14px; border:1px solid var(--line); border-radius:9px; background:transparent; color:var(--ink-muted); font-weight:600; font-size:12.5px; width:100%;}
+.theme-switch:hover{color:var(--ink); border-color:var(--accent);}
+.theme-switch-track{position:relative; width:32px; height:18px; border-radius:999px; background:var(--surface-2); border:1px solid var(--line); flex:none; transition:background .15s;}
+.theme-switch-knob{position:absolute; top:2px; left:2px; width:12px; height:12px; border-radius:50%; background:var(--ink-muted); transition:transform .15s, background .15s;}
+.theme-switch[aria-checked="true"] .theme-switch-track{background:var(--accent); border-color:var(--accent);}
+.theme-switch[aria-checked="true"] .theme-switch-knob{transform:translateX(14px); background:#ffffff;}
 .sidenav-soon{margin-left:auto; font-size:9px; text-transform:uppercase; letter-spacing:.04em; background:var(--muted-bg); color:var(--ink-muted); border-radius:5px; padding:2px 5px;}
 .app-content{flex:1; min-width:0;}
 .app-main{display:block;}
 @media (max-width:760px){
-  .app-shell{flex-direction:column;}
+  .app-shell{flex-direction:column; align-items:stretch;}
+  .app-content{width:100%;}   /* wide tables scroll inside their own box instead of widening the whole page */
   .sidenav{width:100%; flex-direction:row; flex-wrap:wrap; position:static; align-items:center;}
   .sidenav-logo{width:40px; height:40px; max-width:40px; margin:0 8px 0 0; object-fit:cover;}
   .sidenav-btn{width:auto;}
+  .sidenav-btn.active{border-left-width:1px; padding-left:14px; border-bottom:3px solid var(--accent);}
+  .theme-switch{width:auto; margin-top:0; margin-left:auto;}
+}
+@media (max-width:760px){
+  /* 16px text in form fields stops iPhones from zooming in (and shifting the page) when a field is tapped */
+  input,select,textarea{font-size:16px;}
 }
 .btn{border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:9px; padding:9px 14px; font-weight:600; font-size:13px; white-space:nowrap;}
 .btn:hover{border-color:var(--accent);}
@@ -296,15 +313,17 @@ table.stats-table td, table.stats-table th{padding:7px 10px; font-size:12.5px;}
 .toast.show{opacity:1;}
 [hidden]{display:none !important;}
 
-.auth-overlay{position:fixed; inset:0; z-index:100; background:var(--bg); display:flex; align-items:center; justify-content:center; padding:16px;}
-.auth-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:30px 26px; box-shadow:var(--shadow); width:100%; max-width:340px;}
+.auth-overlay{position:fixed; inset:0; z-index:100; background:var(--bg); display:flex; align-items:center; justify-content:center; padding:24px 16px; overflow-y:auto; overscroll-behavior:contain;}
+@media (max-width:760px){ .auth-overlay{align-items:flex-start; padding-top:56px;} }   /* fixed spot on phones: doesn't jump when the keyboard opens */
+body.auth-open{overflow:hidden; height:100%;}
+.auth-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:30px 26px; box-shadow:var(--shadow); width:100%; max-width:360px; margin:0 auto;}
 .auth-card h2{font-size:17px; margin-bottom:4px; text-align:center;}
 .auth-card p.wsub{text-align:center; margin-bottom:18px;}
 .auth-card .form-grid{grid-template-columns:1fr; gap:10px;}
 .auth-error{color:var(--danger); font-size:12.5px; margin-top:10px; text-align:center;}
 </style>
 </head>
-<body>
+<body class="auth-open">
 
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card">
@@ -325,10 +344,11 @@ table.stats-table td, table.stats-table th{padding:7px 10px; font-size:12.5px;}
 <div class="app-shell">
   <aside class="sidenav">
     <img src="logo.png" alt="Burhan Oil & Trade Services" class="sidenav-logo">
-    <button type="button" class="sidenav-btn" data-section="report"><span class="sidenav-icon">📊</span> Monthly Report</button>
-    <button type="button" class="sidenav-btn active" data-section="workforce"><span class="sidenav-icon">👥</span> Workforce</button>
-    <button type="button" class="sidenav-btn" data-section="vehicles"><span class="sidenav-icon">🛠️</span> Plant &amp; Equipment</button>
-    <button type="button" class="sidenav-btn" data-section="site"><span class="sidenav-icon">📁</span> Project Details</button>
+    <button type="button" class="sidenav-btn" data-section="report">Monthly Report</button>
+    <button type="button" class="sidenav-btn active" data-section="workforce">Workforce</button>
+    <button type="button" class="sidenav-btn" data-section="vehicles">Plant &amp; Equipment</button>
+    <button type="button" class="sidenav-btn" data-section="site">Project Details</button>
+    <button type="button" class="theme-switch" id="themeToggle" role="switch" aria-checked="false"><span class="theme-switch-track"><span class="theme-switch-knob"></span></span><span id="themeToggleLabel">Light mode</span></button>
   </aside>
   <div class="app-content">
 
@@ -945,6 +965,7 @@ function vehicleAggFor(v,key){
 const SITE_TABS = [
   {key:'profile', label:'Profile'},
   {key:'hseStats', label:'HSE statistics'},
+  {key:'complaints', label:'Client complaints'},
   {key:'team', label:'Team'},
   {key:'vehicles', label:'Vehicles'},
   {key:'equipment', label:'Equipment on site'},
@@ -960,7 +981,34 @@ function divisionOptionsHtml(selected){
 }
 // Kept only so older project records (from before the Plant & Equipment register)
 // can be read and moved into the register automatically — no longer shown as tabs.
+const COMPLAINT_STATUSES = ['Open','Pending','Closed'];
+function complaintOverdueDays(r){
+  if((r.status||'Open')==='Closed' || !r.targetDate) return null;
+  const d=daysUntil(r.targetDate);
+  return (d!==null && d<0) ? -d : null;
+}
+function complaintBadges(r){
+  const st=r.status||'Open';
+  const cls = st==='Closed' ? 'ok' : st==='Pending' ? 'warn' : 'danger';
+  const od=complaintOverdueDays(r);
+  return `<span class="badge ${cls}">${esc(st)}</span>` + (od ? ` <span class="badge danger">Overdue ${od} day${od===1?'':'s'}</span>` : '');
+}
 const SITE_RECORD_TYPES = {
+  complaints:{
+    title:'Client complaints', addLabel:'+ Log complaint', hasExpiry:false, hasAttachment:true, attachLabel:'evidence / closure proof',
+    cardBadge: complaintBadges,
+    fields:[
+      {key:'category', label:'Category', type:'select', required:true, options:['PPE','Housekeeping','Unsafe act','Unsafe condition','Permit to work','Lifting / rigging','Scaffolding','Vehicle / driving','Environmental / spill','Documentation','Behaviour / conduct','Other']},
+      {key:'date', label:'Date received', type:'date', required:true},
+      {key:'raisedBy', label:'Raised by (client)', type:'text', placeholder:'e.g. PDO HSE Advisor — name'},
+      {key:'issue', label:'Issue / complaint', type:'textarea', required:true},
+      {key:'correctiveAction', label:'Corrective action taken', type:'textarea'},
+      {key:'actionOwner', label:'Action owner', type:'text', placeholder:'who is responsible'},
+      {key:'targetDate', label:'Target close date', type:'date'},
+      {key:'status', label:'Status', type:'select', required:true, options:COMPLAINT_STATUSES, default:'Open'},
+      {key:'closedDate', label:'Closed on', type:'date'},
+    ],
+  },
   hseDocs:{
     title:'HSE documents', addLabel:'+ Add document', hasExpiry:true, hasAttachment:true, attachLabel:'document',
     fields:[
@@ -1311,6 +1359,7 @@ function computeFlags(w){
 auth.onAuthStateChanged(user=>{
   if(user){
     document.getElementById('authOverlay').hidden=true;
+    document.body.classList.remove('auth-open');
     document.getElementById('signOutBtn').hidden=false;
     startData();
     startVehicleData();
@@ -1326,6 +1375,7 @@ auth.onAuthStateChanged(user=>{
     workers=[]; vehicles=[]; siteEquipmentList=[]; equipmentList=[]; reportEntries=[]; equipmentLoaded=false;
     document.getElementById('equipRows').innerHTML='<tr><td colspan="5" class="empty-state">Sign in to load equipment data…</td></tr>';
     document.getElementById('authOverlay').hidden=false;
+    document.body.classList.add('auth-open');
     document.getElementById('signOutBtn').hidden=true;
     document.getElementById('workerRows').innerHTML='<tr><td colspan="11" class="empty-state">Sign in to load workforce data…</td></tr>';
     document.getElementById('vehicleRows').innerHTML='<tr><td colspan="5" class="empty-state">Sign in to load vehicle data…</td></tr>';
@@ -1861,7 +1911,11 @@ function renderSiteDrawer(){
   if(!s){ closeSiteDrawer(); return; }
   document.getElementById('siteDrawerName').textContent=s.siteName;
   document.getElementById('siteDrawerSub').textContent=divLabel(s.division||'Civil')+(s.clientName?' · '+s.clientName:'')+(s.location?' · '+s.location:'');
-  document.getElementById('siteDrawerTabs').innerHTML=SITE_TABS.map(t=>`<button type="button" class="tab-btn ${t.key===activeSiteTab?'active':''}" data-stab="${t.key}">${t.label}</button>`).join('');
+  const openComplaints=(s.complaints||[]).filter(r=>(r.status||'Open')!=='Closed').length;
+  document.getElementById('siteDrawerTabs').innerHTML=SITE_TABS.map(t=>{
+    const extra = (t.key==='complaints' && openComplaints) ? ` <span class="pill-count danger">${openComplaints}</span>` : '';
+    return `<button type="button" class="tab-btn ${t.key===activeSiteTab?'active':''}" data-stab="${t.key}">${t.label}${extra}</button>`;
+  }).join('');
   renderSiteDrawerBody();
 }
 function renderSiteDrawerBody(){
@@ -1875,7 +1929,15 @@ function renderSiteDrawerBody(){
   const cfg=SITE_RECORD_TYPES[activeSiteTab];
   const savedActiveTab=activeTab, savedEditing=editingRecordId, savedAddOpen=addFormOpen;
   activeTab=activeSiteTab; editingRecordId=editingSiteRecordId; addFormOpen=siteAddFormOpen;
-  body.innerHTML=recordTabHtml(s, activeSiteTab, cfg);
+  let pre='';
+  if(activeSiteTab==='complaints'){
+    const list=s.complaints||[];
+    const open=list.filter(r=>(r.status||'Open')==='Open').length, pending=list.filter(r=>r.status==='Pending').length, closed=list.filter(r=>r.status==='Closed').length;
+    const overdue=list.filter(r=>complaintOverdueDays(r)).length;
+    pre = (overdue ? `<div class="notice" style="background:var(--danger-bg); color:var(--danger); border-color:var(--danger);">⚠ ${overdue} complaint${overdue===1?' is':'s are'} past the target close date and still not closed.</div>` : '')
+        + (list.length ? `<p class="wsub" style="margin:0 0 12px;">${list.length} received · <strong>${open}</strong> open · ${pending} pending · ${closed} closed</p>` : '');
+  }
+  body.innerHTML=pre+recordTabHtml(s, activeSiteTab, cfg);
   activeTab=savedActiveTab; editingRecordId=savedEditing; addFormOpen=savedAddOpen;
 }
 
@@ -2737,7 +2799,34 @@ function attachmentBlock(worker, key, record, label, targetKey){
   const uploadCtl = `<label class="upload-btn">${att&&att.url?'Replace':'Upload'} ${esc(label)}<input type="file" hidden data-attach-for="${uploadFor}"></label>`;
   return `<div class="att-block">${inner}${uploadCtl}</div>`;
 }
+// Phone photos are usually 3–5 MB. Shrink them to max 1600 px on the long side
+// as JPEG before upload (plenty for certificates/IDs to stay readable).
+// PDFs and other files are never touched; small images are left as they are.
+const PHOTO_MAX_PX = 1600, PHOTO_QUALITY = 0.8, PHOTO_MIN_BYTES = 400*1024;
+function fmtBytes(n){ return n>=1048576 ? (n/1048576).toFixed(1)+' MB' : Math.max(1,Math.round(n/1024))+' KB'; }
+async function compressImageIfUseful(file){
+  try{
+    if(!file || !/^image\/(jpeg|jpg|png|webp)$/i.test(file.type||'') || file.size < PHOTO_MIN_BYTES) return file;
+    const url=URL.createObjectURL(file);
+    const img=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=url; });
+    URL.revokeObjectURL(url);
+    const w=img.naturalWidth, h=img.naturalHeight; if(!w || !h) return file;
+    const scale=Math.min(1, PHOTO_MAX_PX/Math.max(w,h));
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.round(w*scale); canvas.height=Math.round(h*scale);
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);   // transparent PNG areas become white, not black
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    const blob=await new Promise(res=>canvas.toBlob(res,'image/jpeg',PHOTO_QUALITY));
+    if(!blob || blob.size >= file.size) return file;                         // never make it bigger
+    const name=(file.name||'photo').replace(/\.[^.]+$/,'')+'.jpg';
+    const out=new File([blob], name, {type:'image/jpeg'});
+    toast(`Photo compressed: ${fmtBytes(file.size)} → ${fmtBytes(out.size)}`);
+    return out;
+  }catch(e){ console.warn('compression skipped', e); return file; }
+}
 async function uploadToStorage(file){
+  file = await compressImageIfUseful(file);
   const safeName = (file.name||'file').replace(/[^a-zA-Z0-9._-]/g,'_');
   const path = 'attachments/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '_' + safeName;
   const ref = storage.ref().child(path);
@@ -2890,7 +2979,7 @@ function recordTabHtml(w,key,cfg){
   const cards = recs.length ? recs.map(r=>{
     const titleField=cfg.fields[0].key;
     const resultBadge = r.result==='Unfit' ? `<span class="badge danger">Unfit</span>` : (r.result==='Fit with restrictions' ? `<span class="badge warn">Fit with restrictions</span>` : (r.result==='Fit' ? `<span class="badge ok">Fit</span>` : ''));
-    const expiryBadge = cfg.hasExpiry ? (r.expiry? badgeHtml(statusFor(r.expiry)) : `<span class="badge muted">No expiry set</span>`) : (r.level==='Final warning' ? `<span class="badge danger">Final warning</span>` : (r.severity? `<span class="badge ${r.severity==='Critical'?'danger':r.severity==='Major'?'warn':'muted'}">${esc(r.severity)}</span>` : ''));
+    const expiryBadge = cfg.cardBadge ? cfg.cardBadge(r) : cfg.hasExpiry ? (r.expiry? badgeHtml(statusFor(r.expiry)) : `<span class="badge muted">No expiry set</span>`) : (r.level==='Final warning' ? `<span class="badge danger">Final warning</span>` : (r.severity? `<span class="badge ${r.severity==='Critical'?'danger':r.severity==='Major'?'warn':'muted'}">${esc(r.severity)}</span>` : ''));
     const fieldsHtml = cfg.fields.slice(1).map(f=> r[f.key] ? `<div class="rf"><span class="rf-k">${esc(f.label)}</span><span class="rf-v">${esc(r[f.key])}</span></div>` : '').join('');
     const attach = cfg.hasAttachment ? attachmentBlock(w,key,r,cfg.attachLabel) : '';
     return `<div class="record-card">
@@ -2908,7 +2997,7 @@ function recordTabHtml(w,key,cfg){
 
   const editing = editingRecordId ? recs.find(r=>r.id===editingRecordId) : null;
   const formFields = cfg.fields.map(f=>{
-    const val = editing ? (editing[f.key]||'') : '';
+    const val = editing ? (editing[f.key]||'') : (f.default||'');
     if(f.type==='textarea') return `<label>${esc(f.label)}${f.required?' *':''}<textarea data-field="${f.key}" ${f.required?'required':''}>${esc(val)}</textarea></label>`;
     if(f.type==='select') return `<label>${esc(f.label)}${f.required?' *':''}<select data-field="${f.key}" ${f.required?'required':''}><option value="">Select…</option>${f.options.map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
     return `<label>${esc(f.label)}${f.required?' *':''}<input type="${f.type}" data-field="${f.key}" value="${esc(val)}" ${f.required?'required':''} ${f.placeholder?`placeholder="${esc(f.placeholder)}"`:''}></label>`;
@@ -3457,6 +3546,22 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }catch(err){ console.error(err); toast('Upload failed'); }
   });
 
+  /* ---------------- light / dark switch (remembered on this device) ---------------- */
+  function applyTheme(t){
+    const light = t==='light';
+    if(light) document.documentElement.setAttribute('data-theme','light'); else document.documentElement.removeAttribute('data-theme');
+    const btn=document.getElementById('themeToggle');
+    btn.setAttribute('aria-checked', light?'true':'false');
+    document.getElementById('themeToggleLabel').textContent='Light mode';
+    const meta=document.querySelector('meta[name="theme-color"]'); if(meta) meta.setAttribute('content', light?'#f4f5f7':'#0b0b0d');
+  }
+  applyTheme(document.documentElement.getAttribute('data-theme')==='light' ? 'light' : 'dark');
+  document.getElementById('themeToggle').addEventListener('click', ()=>{
+    const next = document.documentElement.getAttribute('data-theme')==='light' ? 'dark' : 'light';
+    applyTheme(next);
+    try{ localStorage.setItem('hseTheme', next); }catch(e){}
+  });
+
   /* ---------------- side navigation ---------------- */
   document.querySelectorAll('.sidenav-btn[data-section]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
@@ -3722,6 +3827,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
       e.preventDefault();
       const s=currentSite(); if(!s) return;
       const data={}; e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
+      if(activeSiteTab==='complaints'){
+        if(data.status==='Closed' && !data.closedDate) data.closedDate=localToday();
+        if(data.status!=='Closed') data.closedDate='';
+      }
       const arr=(s[activeSiteTab]||[]).slice();
       if(editingSiteRecordId){
         const idx=arr.findIndex(r=>r.id===editingSiteRecordId);
