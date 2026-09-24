@@ -1505,6 +1505,15 @@ function lockFormsForViewer(){
 new MutationObserver(()=>lockFormsForViewer()).observe(document.documentElement, {childList:true, subtree:true});
 
 /* ---------------- auth ---------------- */
+// Stop the live listeners BEFORE signing out, otherwise Firestore reports a
+// harmless "permission denied" on the way out and the warning banner stuck.
+function stopDataListeners(){
+  if(unsubscribeWorkers){ unsubscribeWorkers(); unsubscribeWorkers=null; }
+  if(unsubscribeVehicles){ unsubscribeVehicles(); unsubscribeVehicles=null; }
+  if(unsubscribeSiteEquipment){ unsubscribeSiteEquipment(); unsubscribeSiteEquipment=null; }
+  if(unsubscribeEquipment){ unsubscribeEquipment(); unsubscribeEquipment=null; }
+  if(unsubscribeReportEntries){ unsubscribeReportEntries(); unsubscribeReportEntries=null; }
+}
 auth.onAuthStateChanged(user=>{
   if(user){
     document.getElementById('authOverlay').hidden=true;
@@ -1517,11 +1526,8 @@ auth.onAuthStateChanged(user=>{
     startEquipmentData();
     startReportData();
   } else {
-    if(unsubscribeWorkers){ unsubscribeWorkers(); unsubscribeWorkers=null; }
-    if(unsubscribeVehicles){ unsubscribeVehicles(); unsubscribeVehicles=null; }
-    if(unsubscribeSiteEquipment){ unsubscribeSiteEquipment(); unsubscribeSiteEquipment=null; }
-    if(unsubscribeEquipment){ unsubscribeEquipment(); unsubscribeEquipment=null; }
-    if(unsubscribeReportEntries){ unsubscribeReportEntries(); unsubscribeReportEntries=null; }
+    stopDataListeners();
+    document.getElementById('dbUnavailableBanner').hidden=true;
     workers=[]; vehicles=[]; siteEquipmentList=[]; equipmentList=[]; reportEntries=[]; equipmentLoaded=false;
     document.getElementById('equipRows').innerHTML='<tr><td colspan="5" class="empty-state">Sign in to load equipment data…</td></tr>';
     document.getElementById('authOverlay').hidden=false;
@@ -1539,8 +1545,9 @@ async function startData(){
     await maybeSeed();
     unsubscribeWorkers = db.collection('workers').orderBy('fullName','asc').onSnapshot(snap=>{
       workers = snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
+      document.getElementById('dbUnavailableBanner').hidden=true;
       renderAll();
-    }, err=>{ console.error(err); toast('Sync error — some data may be stale.'); document.getElementById('dbUnavailableBanner').hidden=false; });
+    }, err=>{ console.error(err); if(!auth.currentUser) return; toast('Sync error — some data may be stale.'); document.getElementById('dbUnavailableBanner').hidden=false; });
   }catch(e){ console.error(e); document.getElementById('dbUnavailableBanner').hidden=false; }
 }
 
@@ -1549,7 +1556,7 @@ function startVehicleData(){
     unsubscribeVehicles = db.collection('vehicles').orderBy('vehicleNumber','asc').onSnapshot(snap=>{
       vehicles = snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
       renderVehicleAll();
-    }, err=>{ console.error(err); toast('Sync error — some vehicle data may be stale.'); });
+    }, err=>{ console.error(err); if(!auth.currentUser) return; toast('Sync error — some vehicle data may be stale.'); });
   }catch(e){ console.error(e); }
 }
 
@@ -1561,7 +1568,7 @@ function startSiteData(){
       renderEquipAll();           // location names come from projects
       renderReportAll();          // project names / filter in the Monthly Report
       migrateLegacySiteEquipment();
-    }, err=>{ console.error(err); toast('Sync error — some project data may be stale.'); });
+    }, err=>{ console.error(err); if(!auth.currentUser) return; toast('Sync error — some project data may be stale.'); });
   }catch(e){ console.error(e); }
 }
 
@@ -1628,7 +1635,7 @@ function startReportData(){
       renderReportAll();
       renderSiteSummary();                   // Project Details summary card
       if(activeSiteId) renderSiteDrawer();   // project HSE statistics tab
-    }, err=>{ console.error(err); toast('Sync error — some report data may be stale.'); });
+    }, err=>{ console.error(err); if(!auth.currentUser) return; toast('Sync error — some report data may be stale.'); });
   }catch(e){ console.error(e); }
 }
 
@@ -3915,7 +3922,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       err.hidden=false;
     });
   });
-  document.getElementById('signOutBtn').addEventListener('click', ()=>auth.signOut());
+  document.getElementById('signOutBtn').addEventListener('click', ()=>{ stopDataListeners(); auth.signOut(); });
 
   /* ---------------- attachments: download (shared across all trackers) ---------------- */
   document.addEventListener('click', e=>{
