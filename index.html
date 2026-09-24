@@ -314,6 +314,36 @@ table.stats-table td, table.stats-table th{padding:7px 10px; font-size:12.5px;}
 table.breakdown-table{min-width:880px;}
 table.breakdown-table tbody tr[data-open-site]{cursor:pointer;}
 table.breakdown-table tbody tr.total-row td{border-top:2px solid var(--line); background:var(--surface-2);}
+.updated-note{font-size:11.5px; color:var(--ink-muted); margin:0 0 12px; font-style:italic;}
+.view-only-badge{margin-top:18px; padding:9px 12px; border-radius:9px; background:var(--warn-bg); color:var(--warn); border:1px solid var(--warn); font-size:12px; font-weight:600; line-height:1.35;}
+body.read-only #addWorkerBtn, body.read-only #clearSampleBtn, body.read-only #addVehicleBtn, body.read-only #addSiteBtn,
+body.read-only #addEquipBtn, body.read-only #addReportEntryBtn, body.read-only .import-btn,
+body.read-only #trashBtn, body.read-only #vehicleTrashBtn, body.read-only #siteTrashBtn, body.read-only #equipTrashBtn,
+body.read-only [data-edit], body.read-only [data-del], body.read-only [data-redit], body.read-only [data-rdel],
+body.read-only #toggleRecordForm, body.read-only .upload-btn, body.read-only .att-remove, body.read-only .danger-zone,
+body.read-only #equipMoveBtn, body.read-only #sitePickerOpenTeam, body.read-only #sitePickerOpenVehicles,
+body.read-only [data-unassign-worker], body.read-only [data-unassign-vehicle], body.read-only #siteLogEntryBtn,
+body.read-only .drawer .form-actions, body.read-only .sig-pad-wrap, body.read-only #recordForm{display:none !important;}
+.qr-dialog{position:fixed; z-index:200; left:50%; top:50%; transform:translate(-50%,-50%); width:min(360px, calc(100% - 32px)); max-height:calc(100% - 32px); overflow:auto; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:18px; box-shadow:var(--shadow);}
+.qr-card{background:#ffffff; color:#111; border:1px solid #d8d8d8; border-radius:12px; padding:14px; text-align:center;}
+.qr-card-co{font-family:var(--font-display); font-weight:800; font-size:12px; letter-spacing:.04em; text-transform:uppercase; color:#b3121f;}
+.qr-image-wrap img, .qr-image-wrap canvas{width:100%; max-width:240px; height:auto; image-rendering:pixelated; display:block; margin:8px auto;}
+.qr-card-name{font-family:var(--font-display); font-weight:800; font-size:16px; color:#111;}
+.qr-card-sub{font-size:12px; color:#444; margin-top:2px;}
+#printArea{display:none;}
+@media print{
+  body.printing > *:not(#printArea){display:none !important;}
+  body.printing{background:#fff !important; padding:0 !important;}
+  body.printing #printArea{display:grid !important; grid-template-columns:repeat(3, 1fr); gap:10mm; padding:8mm;}
+  body.printing #printArea .qr-card{break-inside:avoid; page-break-inside:avoid; border:1px dashed #999;}
+  body.printing #printArea img{width:42mm; height:42mm; image-rendering:pixelated; display:block; margin:3mm auto;}
+}
+.drawer-wide{width:min(780px,100%);}
+.import-steps{margin:10px 0 16px; padding-left:20px; font-size:13px; line-height:1.9;}
+.import-summary{display:flex; gap:8px; flex-wrap:wrap; margin:12px 0;}
+table.import-table{min-width:560px;}
+table.import-table td{font-size:12.5px; padding:6px 10px;}
+table.import-table tbody tr{cursor:default;}
 .notice{background:var(--warn-bg); color:var(--warn); border:1px solid var(--warn); border-radius:9px; padding:10px 12px; font-size:12.5px; margin-bottom:12px;}
 .tiles-4{grid-template-columns:repeat(4,1fr) !important;}
 @media (max-width:900px){.tiles-4{grid-template-columns:repeat(2,1fr) !important;}}
@@ -357,6 +387,7 @@ body.auth-open{overflow:hidden; height:100%;}
     <button type="button" class="sidenav-btn active" data-section="workforce">Workforce</button>
     <button type="button" class="sidenav-btn" data-section="vehicles">Plant &amp; Equipment</button>
     <button type="button" class="sidenav-btn" data-section="site">Project Details</button>
+    <div class="view-only-badge" id="viewOnlyBadge" hidden>View only — changes are made by the HSE team</div>
     <button type="button" class="theme-switch" id="themeToggle" role="switch" aria-checked="false"><span class="theme-switch-track"><span class="theme-switch-knob"></span></span><span id="themeToggleLabel">Light mode</span></button>
   </aside>
   <div class="app-content">
@@ -373,6 +404,8 @@ body.auth-open{overflow:hidden; height:100%;}
         </div>
         <div class="topbar-actions">
           <button class="btn btn-ghost btn-sm" id="clearSampleBtn" hidden>Remove sample data</button>
+          <button class="btn btn-sm" id="printQrCardsBtn" type="button" title="Print QR ID cards for the workers currently shown">🖨 QR ID cards</button>
+          <button class="btn btn-sm import-btn" id="importWorkersBtn" type="button">⬆ Import Excel</button>
           <button class="btn btn-sm" id="trashBtn" type="button">🗑 Deleted workers (0)</button>
           <button class="btn btn-primary" id="addWorkerBtn">+ Add worker</button>
           <button class="btn btn-sm" id="signOutBtn" type="button" hidden>Sign out</button>
@@ -441,6 +474,7 @@ body.auth-open{overflow:hidden; height:100%;}
           <div class="wsub">Vehicle documents (registration, MOT, insurance, IVMS, DFMS, RAS sticker), onboard PPE &amp; safety kit, and counts for jacks, wheel stoppers, brass hammers and warning triangles.</div>
         </div>
         <div class="topbar-actions">
+          <button class="btn btn-sm import-btn" id="importVehiclesBtn" type="button">⬆ Import Excel</button>
           <button class="btn btn-sm" id="vehicleTrashBtn" type="button">🗑 Deleted vehicles (0)</button>
           <button class="btn btn-primary" id="addVehicleBtn">+ Add vehicle</button>
         </div>
@@ -493,6 +527,7 @@ body.auth-open{overflow:hidden; height:100%;}
             <div class="wsub" id="equipPaneSub"></div>
           </div>
           <div class="topbar-actions">
+            <button class="btn btn-sm import-btn" id="importEquipBtn" type="button">⬆ Import Excel</button>
             <button class="btn btn-sm" id="equipTrashBtn" type="button">🗑 Deleted items (0)</button>
             <button class="btn btn-primary" id="addEquipBtn" type="button">+ Add</button>
           </div>
@@ -700,6 +735,7 @@ body.auth-open{overflow:hidden; height:100%;}
       <div class="wsub mono" id="drawerSub"></div>
     </div>
     <div style="display:flex; gap:8px; align-items:flex-start; flex:none;">
+      <button type="button" class="btn btn-sm" id="workerQrBtn">QR code</button>
       <button type="button" class="btn btn-sm" id="downloadPdfBtn">⬇ PDF profile</button>
       <button class="icon-btn" id="drawerClose" aria-label="Close panel">✕</button>
     </div>
@@ -801,6 +837,37 @@ body.auth-open{overflow:hidden; height:100%;}
 </aside>
 
 <div class="toast" id="toast"></div>
+
+<div class="drawer-overlay" id="importOverlay" hidden></div>
+<aside class="drawer drawer-wide" id="importDrawer" hidden>
+  <div class="drawer-head">
+    <div>
+      <h2>Import from Excel</h2>
+      <div class="wsub">Add many records at once. Records already in the tracker are never changed, and you can still add and edit everything by hand.</div>
+    </div>
+    <button class="icon-btn" id="importClose" aria-label="Close">✕</button>
+  </div>
+  <div class="drawer-body" id="importBody"></div>
+</aside>
+
+<div class="drawer-overlay" id="qrOverlay" hidden></div>
+<div class="qr-dialog" id="qrDialog" role="dialog" aria-modal="true" aria-labelledby="qrDialogName" hidden>
+  <div class="qr-card" id="qrCardPreview">
+    <div class="qr-card-co">Burhan Oil &amp; Trade Services</div>
+    <div id="qrImageWrap" class="qr-image-wrap"></div>
+    <div class="qr-card-name" id="qrDialogName"></div>
+    <div class="qr-card-sub mono" id="qrDialogCivil"></div>
+    <div class="qr-card-sub" id="qrDialogTrade"></div>
+  </div>
+  <p class="wsub" style="text-align:center; margin:10px 0 0;">Scan to open this worker's HSE record (sign-in required).</p>
+  <div class="form-actions" style="justify-content:center;">
+    <button type="button" class="btn btn-sm" id="qrCloseBtn">Close</button>
+    <button type="button" class="btn btn-sm" id="qrDownloadBtn">⬇ Download image</button>
+    <button type="button" class="btn btn-primary btn-sm" id="qrPrintBtn">🖨 Print card</button>
+  </div>
+</div>
+
+<div id="printArea" aria-hidden="true"></div>
 
 <!-- Firebase (compat SDK — keeps the same collection().doc() style as the rest of this file) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -1409,12 +1476,41 @@ function computeFlags(w){
   return {induction,training,competency,licenses,medical,civilId,warningsCount:warnings.length,warnColor,violationsCount:violations.length,vioColor};
 }
 
+/* ---------------- who can edit ----------------
+   Only these sign-in emails can add / change / delete anything. Everyone else
+   who signs in (e.g. the MD) gets a view-only tracker. The SAME list must be in
+   the Firestore + Storage rules, which is what actually enforces it. */
+const EDITOR_EMAILS = ['burhanhse0502@gmail.com', 'hse@burhanservices.com'];
+function canEdit(){ const u=auth.currentUser; return !!u && EDITOR_EMAILS.includes(String(u.email||'').toLowerCase()); }
+// Every save records who made it and when
+function stamp(data){ const u=auth.currentUser; return {...data, updatedBy:(u && u.email)||'', updatedAt:new Date().toISOString()}; }
+function updatedNoteHtml(o){
+  if(!o) return '';
+  const when = o.updatedAt || o.createdAt; if(!when) return '';
+  const d=new Date(when); const dt = isNaN(d) ? String(when).slice(0,10) : d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const who = o.updatedAt ? (o.updatedBy||'') : (o.createdBy||'');
+  return `<div class="updated-note">${o.updatedAt?'Last updated':'Added'} ${esc(dt)}${who?` by ${esc(who)}`:''}</div>`;
+}
+function applyEditMode(){
+  const ro = !!auth.currentUser && !canEdit();
+  document.body.classList.toggle('read-only', ro);
+  const badge=document.getElementById('viewOnlyBadge'); if(badge) badge.hidden=!ro;
+  if(ro) lockFormsForViewer();
+}
+// In view-only mode, form fields inside panels are shown but can't be changed
+function lockFormsForViewer(){
+  if(!document.body.classList.contains('read-only')) return;
+  document.querySelectorAll('.drawer-body form input, .drawer-body form select, .drawer-body form textarea, .panel form input, .panel form select, .panel form textarea').forEach(el=>{ el.disabled=true; });
+}
+new MutationObserver(()=>lockFormsForViewer()).observe(document.documentElement, {childList:true, subtree:true});
+
 /* ---------------- auth ---------------- */
 auth.onAuthStateChanged(user=>{
   if(user){
     document.getElementById('authOverlay').hidden=true;
     document.body.classList.remove('auth-open');
     document.getElementById('signOutBtn').hidden=false;
+    applyEditMode();
     startData();
     startVehicleData();
     startSiteData();
@@ -1492,7 +1588,7 @@ function startEquipmentData(){
 // document ids, so running it twice (e.g. on two devices) never makes duplicates,
 // and a project's old lists are only cleared after every item was copied.
 async function migrateLegacySiteEquipment(){
-  if(equipMigrationRunning || equipmentLoadError || !equipmentLoaded) return;
+  if(equipMigrationRunning || equipmentLoadError || !equipmentLoaded || !canEdit()) return;
   const todo = siteEquipmentList.filter(s=>Object.keys(LEGACY_SITE_MAP).some(k=>(s[k]||[]).length));
   if(!todo.length) return;
   equipMigrationRunning=true;
@@ -1537,6 +1633,7 @@ function startReportData(){
 }
 
 async function maybeSeed(){
+  if(!canEdit()) return;
   try{
     const snap = await db.collection('workers').limit(1).get();
     if(!snap.empty) return;
@@ -1576,7 +1673,8 @@ function renderAll(){
   document.getElementById('trashBtn').textContent = `🗑 Deleted workers (${trashCount})`;
   if(activeWorkerId) renderDrawer();
   if(!document.getElementById('trashDrawer').hidden) renderTrashBody();
-  renderSiteAll();   // project Team tabs & counts use worker data
+  renderSiteAll();
+  if(pendingWorkerOpen) setTimeout(openPendingWorker, 0);   // project Team tabs & counts use worker data
 }
 
 function renderTiles(){
@@ -1901,7 +1999,7 @@ function renderVehicleDrawerBody(){
 
 function vehicleProfileTabHtml(v){
   const countsHtml = VEHICLE_COUNT_FIELDS.map(f=>`<label>${esc(f.label)} — count<input type="number" min="0" step="1" data-vfield="${f.key}" value="${esc(v[f.key]!=null?v[f.key]:'0')}"></label>`).join('');
-  return `
+  return `${updatedNoteHtml(v)}
   <form id="vehicleProfileForm">
     <div class="subhead">Vehicle details</div>
     <div class="form-grid">
@@ -2024,7 +2122,7 @@ function siteEquipmentTabHtml(s){
 
 function siteProfileTabHtml(s){
   const statusOpts=PROJECT_STATUSES.map(v=>`<option value="${esc(v)}" ${projectStatus(s)===v?'selected':''}>${esc(v)}</option>`).join('');
-  return `
+  return `${updatedNoteHtml(s)}
   <div style="margin-bottom:14px;">${projectStatusBadge(s)}</div>
   <form id="siteProfileForm">
     <div class="subhead">Project details</div>
@@ -2374,6 +2472,7 @@ function equipDrawerBodyHtml(e){
     <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">${conditionBadge(e.condition)} ${e.expiry?badgeHtml(statusFor(e.expiry)):'<span class="badge muted">No expiry set</span>'}</div>
     ${moveForm}
   </div>
+  ${updatedNoteHtml(e)}
 
   <div class="subhead" style="margin-top:18px;">Details</div>
   <form id="equipDetailsForm">
@@ -2427,7 +2526,7 @@ function renderEquipTrashBody(){
 }
 
 async function updateEquip(id, data){
-  try{ await db.collection('equipment').doc(id).update(data); toast('Saved'); }
+  try{ await db.collection('equipment').doc(id).update(stamp(data)); toast('Saved'); }
   catch(e){ console.error(e); toast('Could not save — '+(e.code||'error')); }
 }
 
@@ -3077,12 +3176,13 @@ function wireSignaturePad(){
 
 const BLOOD_GROUPS=['A+','A-','B+','B-','AB+','AB-','O+','O-','Unknown'];
 function profileTabHtml(w){
+  const updatedNote = updatedNoteHtml(w);
   const photo = attachmentBlock(w,null,null,'photo','photo');
   const civilScan = attachmentBlock(w,null,null,'Civil ID scan','civilIdScan');
   const signaturePreview = attachmentPreviewHtml(w.signature, 'signature', 'signature');
   const gcc=parseFloat(w.experienceGCCYears)||0, other=parseFloat(w.experienceOtherYears)||0;
   const total=(gcc+other);
-  return `
+  return `${updatedNote}
   <form id="profileForm">
     <div class="subhead">Personal details</div>
     <div class="form-grid">
@@ -3181,21 +3281,21 @@ function recordTabHtml(w,key,cfg){
 
 /* ---------------- writes ---------------- */
 async function updateWorker(id, data){
-  try{ await db.collection('workers').doc(id).update(data); toast('Saved'); }
+  try{ await db.collection('workers').doc(id).update(stamp(data)); toast('Saved'); }
   catch(e){ console.error(e); toast('Could not save — '+(e.code||'error')); }
 }
 async function updateWorkerArray(worker,key,arr){
   await updateWorker(worker.id, {[key]:arr});
 }
 async function updateVehicle(id, data){
-  try{ await db.collection('vehicles').doc(id).update(data); toast('Saved'); }
+  try{ await db.collection('vehicles').doc(id).update(stamp(data)); toast('Saved'); }
   catch(e){ console.error(e); toast('Could not save — '+(e.code||'error')); }
 }
 async function updateVehicleArray(vehicle,key,arr){
   await updateVehicle(vehicle.id, {[key]:arr});
 }
 async function updateSite(id, data){
-  try{ await db.collection('siteEquipment').doc(id).update(data); toast('Saved'); }
+  try{ await db.collection('siteEquipment').doc(id).update(stamp(data)); toast('Saved'); }
   catch(e){ console.error(e); toast('Could not save — '+(e.code||'error')); }
 }
 async function updateSiteArray(site,key,arr){
@@ -3503,6 +3603,304 @@ async function downloadSiteProfile(){
   }catch(e){ console.error(e); toast('Could not generate the PDF'); }
 }
 
+/* ---------------- import from Excel ---------------- */
+const XLSX_URL='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+const EQUIP_CATEGORY_ALIASES = {powerTools:['power tool','power tools','tool','tools','equipment'], liftingGear:['lifting gear','lifting','sling','shackle'], harness:['harness','full body harness','safety harness'],
+  ladders:['ladder','ladders'], extinguishers:['fire extinguisher','fire extinguishers','extinguisher','extinguishers'], firstAid:['first aid','first aid kit','first aid kits'], specialPpe:['specialized ppe','specialised ppe','special ppe','ppe']};
+const IMPORT_TYPES = {
+  workers:{label:'Workers', noun:'worker', coll:'workers', file:'Burhan_HSE_Workers_template.xlsx', cols:[
+    {key:'fullName', h:'Full name', req:true, help:'Worker full name', ex:'Ramesh Kumar'},
+    {key:'civilId', h:'Civil ID', req:true, help:'Civil ID / resident card number (used to spot duplicates)', ex:'784-1990-1234567-1'},
+    {key:'civilIdExpiry', h:'Civil ID expiry', date:true, help:'Date, e.g. 31/12/2027', ex:'31/12/2027'},
+    {key:'nationality', h:'Nationality', ex:'Indian'},
+    {key:'dateOfBirth', h:'Date of birth', date:true, ex:'15/04/1990'},
+    {key:'bloodGroup', h:'Blood group', help:'A+, A-, B+, B-, AB+, AB-, O+, O-', ex:'O+'},
+    {key:'mobileNumber', h:'Mobile number', ex:'+968 9123 4567'},
+    {key:'designation', h:'Designation', ex:'Foreman'},
+    {key:'trade', h:'Trade / division', req:true, help:'One of: Office Staff, Scaffolding Division, Civil Division, Rental Division, Sub Contractor', ex:'Scaffolding Division'},
+    {key:'contractor', h:'Subcontractor / company', ex:'Burhan Oil & Trade Services'},
+    {key:'dateOfJoining', h:'Date of joining', date:true, ex:'01/02/2024'},
+    {key:'status', h:'Status', help:'Active or Inactive (blank = Active)', ex:'Active'},
+    {key:'experienceGCCYears', h:'Experience in GCC (years)', ex:'6'},
+    {key:'experienceOtherYears', h:'Experience outside GCC (years)', ex:'3'},
+    {key:'emergencyContactName', h:'Emergency contact name', ex:'Sunita Kumar'},
+    {key:'emergencyContactRelation', h:'Emergency contact relation', ex:'Spouse'},
+    {key:'emergencyContactPhone', h:'Emergency contact phone', ex:'+91 98765 43210'},
+  ]},
+  vehicles:{label:'Vehicles (fleet)', noun:'vehicle', coll:'vehicles', file:'Burhan_HSE_Vehicles_template.xlsx', cols:[
+    {key:'vehicleNumber', h:'Vehicle number', req:true, help:'Plate number (used to spot duplicates)', ex:'RSA 12345'},
+    {key:'model', h:'Model', ex:'Toyota Hilux 2022'},
+    {key:'ownership', h:'Ownership', help:'Own or Rental (blank = Own)', ex:'Own'},
+  ]},
+  equipment:{label:'Plant & Equipment items', noun:'item', coll:'equipment', file:'Burhan_HSE_Equipment_template.xlsx', cols:[
+    {key:'category', h:'Category', req:true, help:'Power tools, Lifting gear, Harness, Ladders, Fire extinguishers, First aid kits, Specialized PPE', ex:'Power tools'},
+    {key:'item', h:'Item / type', req:true, help:'e.g. Grinder · Web sling · Step ladder · CO2 · Small kit · SCBA set (for harness: make/model)', ex:'Angle grinder 230mm'},
+    {key:'make', h:'Make / model', ex:'Bosch GWS 22-230'},
+    {key:'serial', h:'Serial no.', req:true, help:'Serial / ID tag (used with the category to spot duplicates)', ex:'G-1023'},
+    {key:'certNo', h:'Certificate no.', help:'TPI / inspection certificate number', ex:'TPI-55821'},
+    {key:'expiry', h:'Expiry / inspection due', req:true, date:true, help:'Date, e.g. 31/03/2027', ex:'31/03/2027'},
+    {key:'capacityKg', h:'Capacity (kg)', help:'Fire extinguishers only (required for them)', ex:''},
+    {key:'swl', h:'SWL', help:'Lifting gear only, e.g. 2 T', ex:''},
+    {key:'location', h:'Location', help:'Store, or the exact project name as it appears in Project Details (blank = Store)', ex:'Store'},
+    {key:'condition', h:'Condition', help:'In service, Out for TPI / repair, or Damaged / quarantined (blank = In service)', ex:'In service'},
+    {key:'notes', h:'Notes', ex:''},
+  ]},
+};
+let importType='workers', importResults=null, importBusy=false;
+const normHead = s => String(s==null?'':s).toLowerCase().replace(/\*/g,'').replace(/[^a-z0-9]+/g,'');
+const normKey  = s => String(s==null?'':s).toLowerCase().replace(/[^a-z0-9]+/g,'');
+function pad2(n){ return String(n).padStart(2,'0'); }
+function importDate(v){
+  if(v===''||v==null) return {ok:true, value:''};
+  const valid=(y,m,d)=>{ const dt=new Date(y,m-1,d); return y>1900 && y<2200 && dt.getFullYear()===y && dt.getMonth()===m-1 && dt.getDate()===d; };
+  if(typeof v==='number'){ const d=window.XLSX && XLSX.SSF.parse_date_code(v); if(d && valid(d.y,d.m,d.d)) return {ok:true, value:`${d.y}-${pad2(d.m)}-${pad2(d.d)}`}; return {ok:false}; }
+  const s=String(v).trim(); let m;
+  const MONTHS={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+  if((m=s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/))) { const [y,mo,d]=[+m[1],+m[2],+m[3]]; return valid(y,mo,d)?{ok:true,value:`${y}-${pad2(mo)}-${pad2(d)}`}:{ok:false}; }
+  if((m=s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})$/))) { const [d,mo,y]=[+m[1],+m[2],+m[3]]; return valid(y,mo,d)?{ok:true,value:`${y}-${pad2(mo)}-${pad2(d)}`}:{ok:false}; }   // day/month/year (GCC style)
+  if((m=s.match(/^(\d{1,2})[\s\-]+([A-Za-z]{3,})[\s\-,]+(\d{4})$/))) { const mo=MONTHS[m[2].slice(0,3).toLowerCase()]; const [d,y]=[+m[1],+m[3]]; return (mo&&valid(y,mo,d))?{ok:true,value:`${y}-${pad2(mo)}-${pad2(d)}`}:{ok:false}; }
+  return {ok:false};
+}
+function matchOption(value, options){
+  const v=String(value||'').trim(); if(!v) return '';
+  const lv=v.toLowerCase().replace('co2','co₂');
+  return options.find(o=>o.toLowerCase()===lv) || options.find(o=>o.toLowerCase().startsWith(lv) || lv.startsWith(o.toLowerCase().split(' ')[0])) || '';
+}
+function mapTrade(v){
+  const s=String(v||'').toLowerCase();
+  if(!s) return '';
+  if(s.includes('office')) return 'Office Staff';
+  if(s.includes('scaff')) return 'Scaffolding Division';
+  if(s.includes('civil')) return 'Civil Division';
+  if(s.includes('rental')) return 'Rental Division';
+  if(s.includes('sub')) return 'Sub Contractor';
+  return null;
+}
+function mapEquipCategory(v){
+  const s=String(v||'').trim().toLowerCase(); if(!s) return '';
+  for(const [k,al] of Object.entries(EQUIP_CATEGORY_ALIASES)) if(al.includes(s) || EQUIP_CATEGORIES[k].label.toLowerCase()===s) return k;
+  for(const [k,al] of Object.entries(EQUIP_CATEGORY_ALIASES)) if(al.some(a=>s.includes(a))) return k;
+  return null;
+}
+function projectByName(name){
+  const n=String(name||'').trim().toLowerCase(); if(!n || n==='store' || n==='in store') return 'store';
+  const s=activeSites().find(x=>(x.siteName||'').trim().toLowerCase()===n);
+  return s ? s.id : null;
+}
+async function downloadImportTemplate(){
+  await loadScriptOnce(XLSX_URL);
+  const T=IMPORT_TYPES[importType];
+  const wb=XLSX.utils.book_new();
+  const data=XLSX.utils.aoa_to_sheet([T.cols.map(col=>col.h+(col.req?' *':''))]);
+  data['!cols']=T.cols.map(col=>({wch:Math.max(16, col.h.length+4)}));
+  XLSX.utils.book_append_sheet(wb, data, T.label.split(' ')[0]);
+  const help=XLSX.utils.aoa_to_sheet([['Column','Required?','What to enter','Example'], ...T.cols.map(col=>[col.h, col.req?'Yes':'', col.help||'', col.ex||'']),
+    [], ['Tips:'], ['• Fill one row per '+T.noun+' on the first sheet. Keep the column headings as they are.'], ['• Dates can be typed like 31/12/2027 or picked as Excel dates.'],
+    ['• Rows that already exist in the tracker are skipped — nothing already entered is changed.']]);
+  help['!cols']=[{wch:30},{wch:10},{wch:80},{wch:26}];
+  XLSX.utils.book_append_sheet(wb, help, 'How to fill');
+  XLSX.writeFile(wb, T.file);
+}
+function validateImportRows(rows){
+  const T=IMPORT_TYPES[importType];
+  const headerKeys={}; T.cols.forEach(col=>{ headerKeys[normHead(col.h)]=col.key; headerKeys[normHead(col.key)]=col.key; });
+  const firstRow=rows[0]||{};
+  const present=new Set(Object.keys(firstRow).map(h=>headerKeys[normHead(h)]).filter(Boolean));
+  const missingCols=T.cols.filter(col=>col.req && !present.has(col.key)).map(col=>col.h);
+  if(missingCols.length) return {fileError:`The file is missing the column${missingCols.length>1?'s':''}: ${missingCols.join(', ')}. Please use the template.`};
+  const seen=new Set(), out=[];
+  const now=new Date().toISOString(), me=(auth.currentUser&&auth.currentUser.email)||'';
+  rows.forEach((raw, i)=>{
+    const r={}; for(const [h,v] of Object.entries(raw)){ const k=headerKeys[normHead(h)]; if(k) r[k]=(typeof v==='string')?v.trim():v; }
+    if(Object.values(r).every(v=>v===''||v==null)) return;   // blank line
+    const rowNo=i+2, errors=[];
+    const txt=k=>(r[k]==null?'':String(r[k]).trim());
+    for(const col of T.cols){ if(col.req && !txt(col.key)) errors.push(`${col.h} is empty`); }
+    const dates={};
+    for(const col of T.cols.filter(x=>x.date)){ const d=importDate(r[col.key]); if(!d.ok) errors.push(`${col.h} "${r[col.key]}" is not a date`); else dates[col.key]=d.value; }
+    let doc=null, label='', key='', dupKey='';
+    if(importType==='workers'){
+      const trade=mapTrade(txt('trade'));
+      if(txt('trade') && trade===null) errors.push(`Trade / division "${txt('trade')}" not recognised`);
+      label=txt('fullName'); key=txt('civilId'); dupKey=normKey(key);
+      doc={fullName:label, civilId:key, civilIdExpiry:dates.civilIdExpiry||'', nationality:txt('nationality'), dateOfBirth:dates.dateOfBirth||'', bloodGroup:txt('bloodGroup').toUpperCase(),
+        mobileNumber:txt('mobileNumber'), designation:txt('designation'), trade:trade||'', contractor:txt('contractor'), dateOfJoining:dates.dateOfJoining||'',
+        status:/^inact/i.test(txt('status'))?'inactive':'active', experienceGCCYears:txt('experienceGCCYears'), experienceOtherYears:txt('experienceOtherYears'),
+        emergencyContactName:txt('emergencyContactName'), emergencyContactRelation:txt('emergencyContactRelation'), emergencyContactPhone:txt('emergencyContactPhone'),
+        inductions:[], trainings:[], competency:[], medical:[], licenses:[], warnings:[], violations:[]};
+      if(dupKey && workers.some(w=>normKey(w.civilId)===dupKey)) return out.push({rowNo, label, key, status:'skip', msg:'Already in the tracker'+(workers.find(w=>normKey(w.civilId)===dupKey).deleted?' (in Deleted workers)':'')});
+    } else if(importType==='vehicles'){
+      label=txt('vehicleNumber'); key=label; dupKey=normKey(key);
+      doc={vehicleNumber:label, model:txt('model'), ownership:/^rent/i.test(txt('ownership'))?'Rental':'Own', documents:[], ppe:[], jackCount:0, wheelStopperCount:0, brassHammerCount:0, warningTriangleCount:0};
+      if(dupKey && vehicles.some(v=>normKey(v.vehicleNumber)===dupKey)) return out.push({rowNo, label, key, status:'skip', msg:'Already in the tracker'});
+    } else {
+      const cat=mapEquipCategory(txt('category'));
+      if(txt('category') && cat===null) errors.push(`Category "${txt('category')}" not recognised`);
+      const loc=projectByName(txt('location'));
+      if(loc===null) errors.push(`Project "${txt('location')}" not found — type the exact project name, or Store`);
+      const cond = EQUIP_CONDITIONS.find(x=>x.toLowerCase().startsWith(txt('condition').toLowerCase().slice(0,6))) || 'In service';
+      key=txt('serial'); dupKey=(cat||'')+'|'+normKey(key);
+      doc={category:cat||'', serial:key, make:txt('make'), certNo:txt('certNo'), expiry:dates.expiry||'', notes:txt('notes'), location:loc||'store', condition:txt('condition')?cond:'In service', attachment:null};
+      const item=txt('item');
+      if(cat==='powerTools' || cat==='specialPpe') doc.name=item;
+      else if(cat==='harness'){ if(!/^full body harness$/i.test(item) && !doc.make) doc.make=item; }
+      else if(cat==='liftingGear'){ doc.type=matchOption(item, EQUIP_CATEGORIES.liftingGear.fields[0].options)||'Other'; doc.swl=txt('swl'); }
+      else if(cat==='ladders'){ doc.type=matchOption(item, EQUIP_CATEGORIES.ladders.fields[0].options)||'Other'; }
+      else if(cat==='extinguishers'){ doc.extType=matchOption(item, EQUIP_CATEGORIES.extinguishers.fields[0].options)||'Other'; doc.capacityKg=txt('capacityKg'); if(!doc.capacityKg) errors.push('Capacity (kg) is needed for fire extinguishers'); }
+      else if(cat==='firstAid'){ doc.kitType=matchOption(item, EQUIP_CATEGORIES.firstAid.fields[0].options)||'Other'; }
+      if(['liftingGear','ladders','extinguishers','firstAid'].includes(cat) && (doc.type==='Other'||doc.extType==='Other'||doc.kitType==='Other') && item) doc.notes=[`Type: ${item}`, doc.notes].filter(Boolean).join(' · ');
+      label = cat ? EQUIP_CATEGORIES[cat].display(doc) : item;
+      if(cat && equipmentList.some(e=>e.category===cat && normKey(e.serial)===normKey(key))) return out.push({rowNo, label, key, status:'skip', msg:'Already in the register'});
+    }
+    if(errors.length) return out.push({rowNo, label, key, status:'error', msg:errors.join('; ')});
+    if(seen.has(dupKey)) return out.push({rowNo, label, key, status:'skip', msg:'Repeated in this file'});
+    seen.add(dupKey);
+    doc.createdAt=now; doc.createdBy=me; doc.importedAt=now;
+    if(importType==='equipment'){
+      doc.history=[{kind:'move', date:localToday(), from:null, to:doc.location, fromLabel:'—', toLabel:locLabel(doc.location), note:'Imported from Excel'}];
+      doc.displayName=EQUIP_CATEGORIES[doc.category].display(doc);
+    }
+    out.push({rowNo, label, key, status:'new', msg:'Ready to add', doc});
+  });
+  return {rows:out};
+}
+function renderImportBody(){
+  const T=IMPORT_TYPES[importType];
+  const opts=Object.entries(IMPORT_TYPES).map(([k,v])=>`<option value="${k}" ${k===importType?'selected':''}>${esc(v.label)}</option>`).join('');
+  let preview='';
+  if(importResults && importResults.fileError) preview=`<div class="notice" style="background:var(--danger-bg); color:var(--danger); border-color:var(--danger);">${esc(importResults.fileError)}</div>`;
+  else if(importResults){
+    const R=importResults.rows, n={new:0, skip:0, error:0}; R.forEach(r=>n[r.status]++);
+    const badge=r=> r.status==='new' ? '<span class="badge ok">New</span>' : r.status==='skip' ? '<span class="badge muted">Skipped</span>' : '<span class="badge danger">Error</span>';
+    preview = `<div class="import-summary"><span class="badge ok">${n.new} new</span><span class="badge muted">${n.skip} skipped</span><span class="badge danger">${n.error} with errors</span></div>
+      ${n.error?'<p class="wsub" style="margin:0 0 8px;">Rows with errors will not be imported — fix them in Excel and choose the file again, or add them by hand later.</p>':''}
+      <div class="table-wrap" style="box-shadow:none; max-height:360px; overflow:auto;"><table class="stats-table import-table">
+        <thead><tr><th>Excel row</th><th>${importType==='workers'?'Name':importType==='vehicles'?'Vehicle':'Item'}</th><th>${importType==='workers'?'Civil ID':importType==='vehicles'?'Number':'Serial no.'}</th><th>Result</th><th>Details</th></tr></thead>
+        <tbody>${R.map(r=>`<tr><td class="mono">${r.rowNo}</td><td>${esc(r.label||'—')}</td><td class="mono">${esc(r.key||'—')}</td><td>${badge(r)}</td><td>${esc(r.msg)}</td></tr>`).join('') || '<tr><td colspan="5" class="empty-state">No data rows found in the first sheet.</td></tr>'}</tbody>
+      </table></div>
+      <div class="form-actions"><button type="button" class="btn btn-primary" id="importConfirmBtn" ${n.new&&!importBusy?'':'disabled'}>${importBusy?'Importing…':`Import ${n.new} new ${n.new===1?T.noun:T.noun+'s'}`}</button></div>`;
+  }
+  document.getElementById('importBody').innerHTML = `
+    <label>What are you importing?<select id="importTypeSelect">${opts}</select></label>
+    <ol class="import-steps">
+      <li><button type="button" class="btn btn-sm" id="importTemplateBtn">⬇ Download the ${esc(T.label.toLowerCase())} template</button></li>
+      <li>Fill it in Excel — one row per ${esc(T.noun)}. Keep the column headings. The "How to fill" sheet explains each column.</li>
+      <li>Choose the filled file: <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" style="width:auto; display:inline-block;"></li>
+      <li>Check the preview below, then press Import. Only new rows are added.</li>
+    </ol>
+    ${preview}`;
+}
+function openImport(type){
+  importType=type; importResults=null; importBusy=false;
+  raiseDrawer('importOverlay','importDrawer');
+  document.getElementById('importOverlay').hidden=false; document.getElementById('importDrawer').hidden=false;
+  renderImportBody();
+}
+function closeImport(){ if(importBusy) return; document.getElementById('importOverlay').hidden=true; document.getElementById('importDrawer').hidden=true; importResults=null; }
+async function handleImportFile(file){
+  if(!file) return;
+  try{
+    await loadScriptOnce(XLSX_URL);
+    const wb=XLSX.read(await file.arrayBuffer(), {type:'array', cellDates:false});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws, {defval:'', raw:true});
+    importResults = rows.length ? validateImportRows(rows) : {fileError:'The first sheet has no rows under the headings.'};
+  }catch(e){ console.error(e); importResults={fileError:'Could not read that file. Please save it as an Excel (.xlsx) file and try again.'}; }
+  renderImportBody();
+}
+async function confirmImport(){
+  if(!importResults || !importResults.rows || importBusy) return;
+  const todo=importResults.rows.filter(r=>r.status==='new');
+  if(!todo.length) return;
+  importBusy=true; renderImportBody();
+  const coll=IMPORT_TYPES[importType].coll; let done=0, failed=0;
+  for(const r of todo){
+    try{ await db.collection(coll).add(r.doc); r.status='skip'; r.msg='Imported ✓'; done++; }
+    catch(e){ console.error(e); r.status='error'; r.msg='Could not save — '+(e.code||'error'); failed++; }
+    const btn=document.getElementById('importConfirmBtn'); if(btn) btn.textContent=`Importing… ${done+failed} / ${todo.length}`;
+  }
+  importBusy=false; renderImportBody();
+  toast(`Imported ${done} ${IMPORT_TYPES[importType].noun}${done===1?'':'s'}${failed?` · ${failed} failed`:''}`);
+}
+
+/* ---------------- worker QR codes ---------------- */
+const QR_LIB_URL='https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
+const _scriptLoads={};
+function loadScriptOnce(url){
+  if(!_scriptLoads[url]) _scriptLoads[url]=new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=url; s.onload=res; s.onerror=()=>{ delete _scriptLoads[url]; rej(new Error('Could not load '+url)); }; document.head.appendChild(s); });
+  return _scriptLoads[url];
+}
+function workerLink(id){ return location.origin + location.pathname + '?worker=' + encodeURIComponent(id); }
+async function qrCanvas(text, sizePx){
+  await loadScriptOnce(QR_LIB_URL);
+  const qr=qrcode(0,'M'); qr.addData(text); qr.make();
+  const n=qr.getModuleCount(), quiet=4, cell=Math.max(2, Math.floor(sizePx/(n+quiet*2))), px=cell*(n+quiet*2);
+  const cv=document.createElement('canvas'); cv.width=px; cv.height=px;
+  const g=cv.getContext('2d'); g.fillStyle='#ffffff'; g.fillRect(0,0,px,px); g.fillStyle='#000000';
+  for(let r=0;r<n;r++) for(let col=0;col<n;col++) if(qr.isDark(r,col)) g.fillRect((col+quiet)*cell,(r+quiet)*cell,cell,cell);
+  return cv;
+}
+function workerCardLines(w){
+  return {name:w.fullName||'—', civil:w.civilId?`Civil ID ${w.civilId}`:'', trade:[w.designation, w.trade].filter(Boolean).join(' · ')};
+}
+let qrDialogWorkerId=null;
+async function openWorkerQr(id){
+  const w=workers.find(x=>x.id===id); if(!w) return;
+  qrDialogWorkerId=id;
+  const L=workerCardLines(w);
+  document.getElementById('qrDialogName').textContent=L.name;
+  document.getElementById('qrDialogCivil').textContent=L.civil;
+  document.getElementById('qrDialogTrade').textContent=L.trade;
+  const wrap=document.getElementById('qrImageWrap'); wrap.innerHTML='<p class="wsub">Generating…</p>';
+  raiseDrawer('qrOverlay','qrDialog');
+  document.getElementById('qrOverlay').hidden=false; document.getElementById('qrDialog').hidden=false;
+  try{ const cv=await qrCanvas(workerLink(id), 480); wrap.innerHTML=''; wrap.appendChild(cv); }
+  catch(e){ console.error(e); wrap.innerHTML='<p class="wsub">Could not create the QR code — check your internet connection and try again.</p>'; }
+}
+function closeWorkerQr(){ qrDialogWorkerId=null; document.getElementById('qrOverlay').hidden=true; document.getElementById('qrDialog').hidden=true; }
+// A ready-to-print ID card image (PNG) for one worker
+async function downloadWorkerQrCard(){
+  const w=workers.find(x=>x.id===qrDialogWorkerId); if(!w) return;
+  const L=workerCardLines(w), qr=await qrCanvas(workerLink(w.id), 520);
+  const W=640, H=860, cv=document.createElement('canvas'); cv.width=W; cv.height=H; const g=cv.getContext('2d');
+  g.fillStyle='#ffffff'; g.fillRect(0,0,W,H);
+  g.fillStyle='#b3121f'; g.font='800 26px Archivo, Arial, sans-serif'; g.textAlign='center'; g.fillText('BURHAN OIL & TRADE SERVICES', W/2, 52);
+  g.drawImage(qr, (W-520)/2, 76, 520, 520);
+  g.fillStyle='#111111'; g.font='800 34px Archivo, Arial, sans-serif'; g.fillText(L.name, W/2, 650);
+  g.fillStyle='#444444'; g.font='24px "IBM Plex Mono", monospace'; g.fillText(L.civil, W/2, 694);
+  g.font='24px "IBM Plex Sans", Arial, sans-serif'; g.fillText(L.trade, W/2, 734);
+  g.fillStyle='#777777'; g.font='18px "IBM Plex Sans", Arial, sans-serif'; g.fillText('Scan to check HSE status (sign-in required)', W/2, 800);
+  const a=document.createElement('a'); a.href=cv.toDataURL('image/png');
+  a.download=(w.fullName||'worker').replace(/[^a-z0-9]+/gi,'_')+'_QR_card.png'; document.body.appendChild(a); a.click(); a.remove();
+}
+async function printQrCards(list){
+  if(!list.length){ toast('No workers to print'); return; }
+  toast(`Preparing ${list.length} QR card${list.length===1?'':'s'}…`);
+  try{
+    const cards=[];
+    for(const w of list){
+      const L=workerCardLines(w), url=(await qrCanvas(workerLink(w.id), 360)).toDataURL('image/png');
+      cards.push(`<div class="qr-card"><div class="qr-card-co">Burhan Oil &amp; Trade Services</div><img src="${url}" alt=""><div class="qr-card-name">${esc(L.name)}</div><div class="qr-card-sub">${esc(L.civil)}</div><div class="qr-card-sub">${esc(L.trade)}</div></div>`);
+    }
+    document.getElementById('printArea').innerHTML=cards.join('');
+    document.body.classList.add('printing');
+    const done=()=>{ document.body.classList.remove('printing'); window.removeEventListener('afterprint', done); };
+    window.addEventListener('afterprint', done);
+    setTimeout(()=>{ window.print(); setTimeout(done, 1500); }, 150);
+  }catch(e){ console.error(e); toast('Could not create QR codes — check your internet connection'); }
+}
+// Opening the tracker from a scanned QR code: ?worker=<id>
+let pendingWorkerOpen = new URLSearchParams(location.search).get('worker');
+function openPendingWorker(){
+  if(!pendingWorkerOpen || !auth.currentUser || !workers.length) return;
+  const id=pendingWorkerOpen; pendingWorkerOpen=null;
+  try{ history.replaceState(null, '', location.pathname); }catch(e){}
+  const w=workers.find(x=>x.id===id && !x.deleted);
+  if(!w){ toast('That worker was not found (they may have been removed)'); return; }
+  const navBtn=document.querySelector('.sidenav-btn[data-section="workforce"]'); if(navBtn) navBtn.click();
+  openDrawer(id);
+}
+
 /* ---------------- events ---------------- */
 document.addEventListener('DOMContentLoaded', ()=>{
 
@@ -3534,7 +3932,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
   document.getElementById('addWorkerForm').addEventListener('submit', async e=>{
     e.preventDefault();
-    const data={status:'active', inductions:[],trainings:[],competency:[],medical:[],licenses:[],warnings:[],violations:[], createdAt:new Date().toISOString()};
+    const data={status:'active', inductions:[],trainings:[],competency:[],medical:[],licenses:[],warnings:[],violations:[], createdAt:new Date().toISOString(), createdBy:(auth.currentUser&&auth.currentUser.email)||''};
     e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
     try{
       await db.collection('workers').add(data);
@@ -3565,6 +3963,25 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
   document.getElementById('drawerClose').addEventListener('click', closeDrawer);
   document.getElementById('downloadPdfBtn').addEventListener('click', downloadProfile);
+  document.getElementById('importWorkersBtn').addEventListener('click', ()=>openImport('workers'));
+  document.getElementById('importVehiclesBtn').addEventListener('click', ()=>openImport('vehicles'));
+  document.getElementById('importEquipBtn').addEventListener('click', ()=>openImport('equipment'));
+  document.getElementById('importClose').addEventListener('click', closeImport);
+  document.getElementById('importOverlay').addEventListener('click', closeImport);
+  document.getElementById('importBody').addEventListener('change', e=>{
+    if(e.target.id==='importTypeSelect'){ importType=e.target.value; importResults=null; renderImportBody(); }
+    if(e.target.id==='importFileInput') handleImportFile(e.target.files[0]);
+  });
+  document.getElementById('importBody').addEventListener('click', e=>{
+    if(e.target.id==='importTemplateBtn') downloadImportTemplate().catch(err=>{ console.error(err); toast('Could not create the template — check your internet connection'); });
+    if(e.target.id==='importConfirmBtn') confirmImport();
+  });
+  document.getElementById('workerQrBtn').addEventListener('click', ()=>{ if(activeWorkerId) openWorkerQr(activeWorkerId); });
+  document.getElementById('qrCloseBtn').addEventListener('click', closeWorkerQr);
+  document.getElementById('qrOverlay').addEventListener('click', closeWorkerQr);
+  document.getElementById('qrDownloadBtn').addEventListener('click', ()=>downloadWorkerQrCard().catch(e=>{ console.error(e); toast('Could not create the image'); }));
+  document.getElementById('qrPrintBtn').addEventListener('click', ()=>{ const w=workers.find(x=>x.id===qrDialogWorkerId); if(w) printQrCards([w]); });
+  document.getElementById('printQrCardsBtn').addEventListener('click', ()=>printQrCards(workers.filter(matches)));
   document.getElementById('drawerOverlay').addEventListener('click', closeDrawer);
 
   document.getElementById('trashBtn').addEventListener('click', openTrash);
@@ -3751,7 +4168,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
   document.getElementById('addVehicleForm').addEventListener('submit', async e=>{
     e.preventDefault();
-    const data={ownership:'Own', documents:[], ppe:[], jackCount:0, wheelStopperCount:0, brassHammerCount:0, warningTriangleCount:0, createdAt:new Date().toISOString()};
+    const data={ownership:'Own', documents:[], ppe:[], jackCount:0, wheelStopperCount:0, brassHammerCount:0, warningTriangleCount:0, createdAt:new Date().toISOString(), createdBy:(auth.currentUser&&auth.currentUser.email)||''};
     e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
     try{
       await db.collection('vehicles').add(data);
@@ -3919,7 +4336,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
   document.getElementById('addSiteForm').addEventListener('submit', async e=>{
     e.preventDefault();
-    const data={division:'Civil', powerTools:[], harness:[], ladders:[], otherPpe:[], createdAt:new Date().toISOString()};
+    const data={division:'Civil', powerTools:[], harness:[], ladders:[], otherPpe:[], createdAt:new Date().toISOString(), createdBy:(auth.currentUser&&auth.currentUser.email)||''};
     e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
     try{
       await db.collection('siteEquipment').add(data);
@@ -4026,7 +4443,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       if(!ids.length){ toast('Tick at least one first'); return; }
       const coll = sitePickerOpen==='team' ? 'workers' : 'vehicles';
       try{
-        for(const id of ids) await db.collection(coll).doc(id).update({projectId:s0.id, projectAssignedAt:new Date().toISOString()});
+        for(const id of ids) await db.collection(coll).doc(id).update(stamp({projectId:s0.id, projectAssignedAt:new Date().toISOString()}));
         toast(`${ids.length} ${sitePickerOpen==='team'?'worker(s)':'vehicle(s)'} assigned to ${s0.siteName||'this project'}`);
       }catch(err){ console.error(err); toast('Could not assign — '+(err.code||'error')); }
       sitePickerOpen=null; sitePickerQuery=''; renderSiteDrawerBody();
@@ -4139,7 +4556,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const data={}; e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
     const loc=data.location||'store';
     const item={...data, category:activePlantTab, location:loc, condition:data.condition||'In service', attachment:null,
-      createdAt:new Date().toISOString(),
+      createdAt:new Date().toISOString(), createdBy:(auth.currentUser&&auth.currentUser.email)||'',
       history:[{kind:'move', date:localToday(), from:null, to:loc, fromLabel:'—', toLabel:locLabel(loc), note:''}]};
     item.displayName=EQUIP_CATEGORIES[activePlantTab].display(item);
     try{
@@ -4299,10 +4716,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(!data.projectId) data.projectId=null;
     try{
       if(editingReportEntryId){
-        await db.collection('hseLogs').doc(editingReportEntryId).update(data);
+        await db.collection('hseLogs').doc(editingReportEntryId).update(stamp(data));
         toast('Entry updated');
       } else {
-        data.createdAt=new Date().toISOString();
+        data.createdAt=new Date().toISOString(); data.createdBy=(auth.currentUser&&auth.currentUser.email)||'';
         await db.collection('hseLogs').add(data);
         toast('Entry logged');
       }
