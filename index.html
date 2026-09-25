@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Burhan HSE — Workforce HSE Register</title>
+<title>Burhan HSE Tracker</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#030b18">
 <script>
@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Burhan HSE">
+<meta name="apple-mobile-web-app-title" content="HSE Tracker">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:wght@500;600;700;800&family=Rajdhani:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root{
@@ -28,6 +28,7 @@
   --accent:#23c6ff;
   --accent-ink:#03121f;
   --glow:rgba(35,190,255,.45);
+  --brand:#ff3b4e; --brand-glow:rgba(255,45,69,.45);
   --hud-line:rgba(40,190,255,.22);
   --ok:#35e08a;      --ok-bg:#0c2e25;
   --warn:#ffc93c;    --warn-bg:#302810;
@@ -69,6 +70,7 @@
   --logo-shadow:0 1px 6px rgba(16,24,40,.12);
   --accent:#0b7fb3;  --accent-ink:#ffffff;
   --glow:rgba(11,127,179,.25);
+  --brand:#d81e2c; --brand-glow:rgba(216,30,44,.25);
   --hud-line:rgba(11,127,179,.18);
 }
 *{box-sizing:border-box;}
@@ -159,7 +161,11 @@ label{display:flex; flex-direction:column; gap:4px; font-size:12.5px; color:var(
 @media (max-width:900px){.tiles{grid-template-columns:repeat(2,1fr);}}
 .tile{background:var(--surface); border:1px solid var(--line); border-top:3px solid var(--tile-accent, var(--line)); border-radius:12px; padding:12px 14px; box-shadow:var(--shadow);}
 .tile-head{display:flex; align-items:center; gap:10px; margin-bottom:6px;}
-.tile-icon{width:30px; height:30px; border-radius:9px; background:var(--tile-accent, var(--muted)); display:flex; align-items:center; justify-content:center; font-size:15px; flex:none; box-shadow:0 2px 6px rgba(0,0,0,.35);}
+.tile-icon{position:relative; overflow:hidden; width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex:none; color:#fff;
+  background:linear-gradient(160deg,#ff6b78 0%,#e11d2e 42%,#8a0a17 100%);
+  box-shadow:inset 0 0 0 1px rgba(255,150,160,.45), inset 0 -3px 6px rgba(60,0,8,.45), 0 4px 14px -4px var(--brand-glow);}
+.tile-icon::after{content:""; position:absolute; left:2px; right:2px; top:1px; height:48%; border-radius:9px 9px 14px 14px; background:linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,.06)); pointer-events:none;}
+.tile-icon .ic{width:19px; height:19px; stroke-width:1.9; position:relative; z-index:1; filter:drop-shadow(0 1px 1px rgba(60,0,8,.5));}
 .tile-label{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-muted); font-weight:600;}
 .tile-num{font-family:var(--font-num); font-size:30px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:2px;}
 .tile-num.ok{color:var(--ok);} .tile-num.warn{color:var(--warn);} .tile-num.danger{color:var(--danger);}
@@ -378,6 +384,15 @@ table.matrix-table td.mx-cell{text-align:center;}
 label.chk{flex-direction:row; align-items:center; gap:6px; color:var(--ink); font-weight:500; font-size:12.5px;}
 label.chk input{width:auto; flex:none;}
 @media (max-width:700px){ .req-row{grid-template-columns:1fr auto;} .req-divs{grid-column:1 / -1; grid-row:2;} }
+/* ---- line icons (sprite) ---- */
+.ic{width:1.15em; height:1.15em; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; vertical-align:-.2em; flex:none; overflow:visible;}
+.btn .ic, .division-tab .ic, a.link-chip .ic, .equip-group h4 .ic, .att-file-icon .ic, .notice .ic, .wsub .ic{color:var(--brand); filter:drop-shadow(0 0 3px var(--brand-glow));}
+.btn-primary .ic, .division-tab.active .ic{color:inherit; filter:none;}
+.btn{display:inline-flex; align-items:center; gap:6px;}
+.icon-btn .ic{width:15px; height:15px; color:var(--brand);}
+.icon-btn:hover .ic{filter:drop-shadow(0 0 4px var(--brand-glow));}
+.att-file-icon .ic{width:28px; height:28px; stroke-width:1.5;}
+.equip-group h4 .ic{width:15px; height:15px; margin-right:4px;}
 /* ---- Command Centre (Monthly Report) ---- */
 .cc{display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:14px; margin-bottom:18px;}
 .cc-stack{display:grid; gap:14px; align-content:start;}
@@ -399,7 +414,10 @@ label.chk input{width:auto; flex:none;}
 .cc-tile.good{--st:var(--ok);}
 .cc-tile.watch{--st:var(--warn); background:linear-gradient(90deg, var(--warn-bg), transparent); border-color:color-mix(in srgb, var(--warn) 45%, transparent);}
 .cc-tile.bad{--st:var(--danger); background:linear-gradient(90deg, var(--danger-bg), transparent); border-color:color-mix(in srgb, var(--danger) 50%, transparent);}
-.cc-ico{width:30px; height:30px; flex:none; display:grid; place-items:center; color:var(--st); border:1px solid var(--st); font-family:var(--font-display); font-weight:800; font-size:12.5px; clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%); background:var(--surface-2);}
+.cc-ico{position:relative; width:36px; height:34px; flex:none; display:grid; place-items:center; color:#fff; clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);
+  background:linear-gradient(160deg,#ff6b78 0%,#e11d2e 45%,#8a0a17 100%);}
+.cc-ico::after{content:""; position:absolute; left:0; right:0; top:0; height:50%; background:linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,.05)); pointer-events:none;}
+.cc-ico .ic{width:17px; height:17px; stroke-width:2; position:relative; z-index:1;}
 .cc-lbl{font-family:var(--font-display); font-weight:600; font-size:13px; line-height:1.15;}
 .cc-val{margin-left:auto; text-align:right; min-width:0;}
 .cc-v{font-family:var(--font-num); font-weight:700; font-size:29px; line-height:1; font-variant-numeric:tabular-nums;}
@@ -407,15 +425,20 @@ label.chk input{width:auto; flex:none;}
 .cc-p{font-size:11.5px; font-weight:600; color:var(--st); margin-top:3px; line-height:1.25;}
 .cc-orb{position:relative; width:min(230px,100%); aspect-ratio:1; display:grid; place-items:center;}
 .cc-ring{position:absolute; inset:0; border-radius:50%; border:2px solid transparent;}
-.cc-ring.r1{border-top-color:var(--accent); border-left-color:var(--accent); filter:drop-shadow(0 0 6px var(--glow)); animation:ccspin 10s linear infinite;}
-.cc-ring.r2{inset:12px; border:1px dashed var(--line); animation:ccspin 28s linear infinite reverse;}
-.cc-ring.r3{inset:26px; border-bottom-color:var(--accent); border-right-color:var(--accent); opacity:.55; animation:ccspin 15s linear infinite;}
-.cc-core{position:absolute; inset:40px; border-radius:50%; background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.28), transparent 35%), radial-gradient(circle, var(--glow), transparent 72%); box-shadow:0 0 40px var(--glow), inset 0 0 36px var(--glow);}
+.cc-orb{--cc-red:#ff2d45; --cc-red-glow:rgba(255,45,69,.5);}
+:root[data-theme="light"] .cc-orb{--cc-red:#d81e2c; --cc-red-glow:rgba(216,30,44,.3);}
+/* Burhan red and command blue rings turning in opposite directions */
+.cc-ring.r4{inset:-8px; border-width:1px; border-top-color:var(--accent); border-bottom-color:var(--accent); opacity:.8; filter:drop-shadow(0 0 5px var(--glow)); animation:ccspin 6s linear infinite reverse;}
+.cc-ring.r1{border-top-color:var(--cc-red); border-left-color:var(--cc-red); filter:drop-shadow(0 0 7px var(--cc-red-glow)); animation:ccspin 10s linear infinite;}
+.cc-ring.r2{inset:12px; border:1px dashed var(--glow); animation:ccspin 28s linear infinite reverse;}
+.cc-ring.r3{inset:26px; border-bottom-color:var(--accent); border-right-color:var(--accent); filter:drop-shadow(0 0 5px var(--glow)); animation:ccspin 15s linear infinite;}
+.cc-core{position:absolute; inset:40px; border-radius:50%; background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.28), transparent 35%), radial-gradient(circle at 40% 40%, var(--cc-red-glow), transparent 55%), radial-gradient(circle at 62% 62%, var(--glow), transparent 60%); box-shadow:0 0 34px var(--cc-red-glow), 0 0 50px var(--glow), inset 0 0 30px var(--glow);}
 @keyframes ccspin{to{transform:rotate(360deg);}}
 .cc-orb-txt{position:relative; text-align:center; padding:0 30px;}
-.cc-orb-k{font-family:var(--font-display); font-weight:600; font-size:12.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--accent);}
+.cc-orb-k{font-family:var(--font-display); font-weight:600; font-size:12.5px; letter-spacing:.06em; text-transform:uppercase; color:#ff8a98;}
+:root[data-theme="light"] .cc-orb-k{color:var(--cc-red);}
 .cc-orb-big{font-family:var(--font-num); font-weight:700; font-size:58px; line-height:.95; font-variant-numeric:tabular-nums;}
-:root:not([data-theme="light"]) .cc-orb-big{text-shadow:0 0 22px var(--glow);}
+:root:not([data-theme="light"]) .cc-orb-big{text-shadow:0 0 16px var(--cc-red-glow), 0 0 26px var(--glow);}
 .cc-orb-s{font-size:11.5px; color:var(--ink-muted); margin-top:3px; line-height:1.3;}
 .cc-chart{padding:10px 12px 8px;}
 .cc-chart svg{display:block; width:100%; height:auto;}
@@ -474,31 +497,55 @@ table.import-table tbody tr{cursor:default;}
 .toast.show{opacity:1;}
 [hidden]{display:none !important;}
 
-.auth-overlay{position:fixed; inset:0; z-index:100; background:var(--bg); display:flex; align-items:center; justify-content:center; padding:24px 16px; overflow-y:auto; overscroll-behavior:contain;}
+.auth-overlay{position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; padding:24px 16px; overflow-y:auto; overscroll-behavior:contain; color-scheme:dark;
+  background:radial-gradient(700px 480px at 50% 18%, rgba(225,29,46,.38), transparent 70%), radial-gradient(900px 600px at 50% 110%, rgba(35,120,220,.22), transparent 65%), #06070c;}
+.auth-overlay::before{content:""; position:absolute; inset:0; pointer-events:none; opacity:.4;
+  background-image:linear-gradient(rgba(255,70,90,.14) 1px, transparent 1px), linear-gradient(90deg, rgba(255,70,90,.14) 1px, transparent 1px); background-size:44px 44px;
+  -webkit-mask-image:radial-gradient(600px 420px at 50% 35%, #000 20%, transparent 75%); mask-image:radial-gradient(600px 420px at 50% 35%, #000 20%, transparent 75%);}
 @media (max-width:760px){ .auth-overlay{align-items:flex-start; padding-top:56px;} }   /* fixed spot on phones: doesn't jump when the keyboard opens */
 body.auth-open{overflow:hidden; height:100%;}
-.auth-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:30px 26px; box-shadow:var(--shadow); width:100%; max-width:360px; margin:0 auto;}
-.auth-card h2{font-size:17px; margin-bottom:4px; text-align:center;}
-.auth-card p.wsub{text-align:center; margin-bottom:18px;}
-.auth-card .form-grid{grid-template-columns:1fr; gap:10px;}
-.auth-error{color:var(--danger); font-size:12.5px; margin-top:10px; text-align:center;}
+.auth-card{position:relative; width:100%; max-width:380px; margin:0 auto; padding:30px 28px 26px; border-radius:18px; color:#f6eef0;
+  background:linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.03)); border:1px solid rgba(255,90,105,.35);
+  backdrop-filter:blur(18px) saturate(140%); -webkit-backdrop-filter:blur(18px) saturate(140%);
+  box-shadow:0 30px 70px -30px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.04) inset, 0 0 60px -20px rgba(225,29,46,.55);}
+.auth-card::before{content:""; position:absolute; left:18%; right:18%; top:-1px; height:2px; background:linear-gradient(90deg, transparent, #ff3b4e, transparent); box-shadow:0 0 14px #ff3b4e;}
+.auth-card .brand-logo-sm{box-shadow:0 0 0 1px rgba(255,255,255,.25), 0 0 28px rgba(255,45,69,.45);}
+.auth-co{text-align:center; font-family:var(--font-display); font-weight:600; font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:rgba(246,238,240,.7); margin-bottom:6px;}
+.auth-card h2{font-size:24px; font-weight:800; letter-spacing:.02em; margin-bottom:6px; text-align:center; color:#fff;}
+.auth-tag{text-align:center; font-family:var(--font-display); font-weight:700; font-size:11px; letter-spacing:.14em; white-space:nowrap; text-transform:uppercase; color:#ff5a6a; margin:0 0 22px; text-shadow:0 0 12px rgba(255,45,69,.5);}
+.auth-card .form-grid{grid-template-columns:1fr; gap:12px;}
+.auth-card label{color:rgba(246,238,240,.72);}
+.auth-card input{background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.14); color:#fff; border-radius:10px; padding:11px 12px;}
+.auth-card input:focus{outline:none; border-color:#ff3b4e; box-shadow:0 0 0 3px rgba(255,59,78,.25);}
+.btn-signin{position:relative; overflow:hidden; width:100%; margin-top:18px; padding:12px 16px; border:none; border-radius:11px; color:#fff; font-family:var(--font-display); font-weight:700; font-size:15px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer;
+  background:linear-gradient(180deg,#ff5b6b 0%,#e11d2e 48%,#a50d1c 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45), inset 0 -2px 6px rgba(80,0,10,.5), 0 10px 26px -10px rgba(255,45,69,.8); transition:transform .15s, box-shadow .2s, filter .2s;}
+.btn-signin::after{content:""; position:absolute; left:6px; right:6px; top:2px; height:45%; border-radius:9px 9px 16px 16px; background:linear-gradient(180deg, rgba(255,255,255,.4), rgba(255,255,255,0)); pointer-events:none;}
+.btn-signin:hover{filter:brightness(1.08); box-shadow:inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 6px rgba(80,0,10,.5), 0 14px 32px -10px rgba(255,45,69,.95);}
+.btn-signin:active{transform:translateY(1px);}
+.btn-signin:focus-visible{outline:2px solid #fff; outline-offset:2px;}
+.auth-foot{margin:18px 0 0; text-align:center; font-size:11.5px; color:rgba(246,238,240,.5);}
+.auth-error{color:#ff8a95; font-size:12.5px; margin-top:10px; text-align:center;}
 </style>
 </head>
 <body class="auth-open">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="16.5" cy="9" r="2.5"/><path d="M15.8 14.1c2.4-.2 4.2 1.4 4.7 4.4"/></symbol><symbol id="i-idcard" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M5.5 16c.5-1.6 1.6-2.4 3-2.4s2.5.8 3 2.4"/><path d="M14 10h4M14 13.5h4"/></symbol><symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="9" y="3" width="6" height="3" rx="1"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/></symbol><symbol id="i-cap" viewBox="0 0 24 24"><path d="M2.5 9.5 12 5l9.5 4.5L12 14z"/><path d="M6.5 11.5v4c1.5 1.5 3.4 2.2 5.5 2.2s4-.7 5.5-2.2v-4"/><path d="M21.5 9.5v5"/></symbol><symbol id="i-badge" viewBox="0 0 24 24"><path d="M12 3l2.2 1.6 2.7-.1.9 2.6 2.2 1.6-.8 2.6.8 2.6-2.2 1.6-.9 2.6-2.7-.1L12 21l-2.2-1.6-2.7.1-.9-2.6L4 15.3l.8-2.6L4 10.1l2.2-1.6.9-2.6 2.7.1z"/><path d="m8.8 12.2 2.2 2.2 4.2-4.4"/></symbol><symbol id="i-heart" viewBox="0 0 24 24"><path d="M20.2 12.3 12 20.5l-8.2-8.2A4.9 4.9 0 0 1 12 6.1a4.9 4.9 0 0 1 8.2 6.2z"/><path d="M3.8 12.5h3.7l1.6-3 2.4 6 1.8-3.5h3.2"/></symbol><symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 16.5h7"/></symbol><symbol id="i-filecheck" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="m9 14.5 2 2 4-4.2"/></symbol><symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v4.5"/><path d="M12 17.4v.1"/></symbol><symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/></symbol><symbol id="i-truck" viewBox="0 0 24 24"><path d="M2.5 6.5h11v10h-11z"/><path d="M13.5 10h4l3 3.2v3.3h-7"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></symbol><symbol id="i-vest" viewBox="0 0 24 24"><path d="M8 3.5 5 6v14h5.5v-6l1.5-2 1.5 2v6H19V6l-3-2.5-2.5 4h-3z"/><path d="M5 13h5.5M13.5 13H19"/></symbol><symbol id="i-crane" viewBox="0 0 24 24"><path d="M6 21V4l13 3.5"/><path d="M6 7.5h13"/><path d="M16.5 7.5V12"/><rect x="14.5" y="12" width="4" height="3.2" rx=".5"/><path d="M3 21h7"/><path d="m6 11.5 3-4M6 15.5l3-4"/></symbol><symbol id="i-hardhat" viewBox="0 0 24 24"><path d="M3.5 17.5h17"/><path d="M5 17.5V15a7 7 0 0 1 14 0v2.5"/><path d="M10 8.2V6h4v2.2"/><path d="M12 8v5"/></symbol><symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.2 5.2L4 17v3h3l5.5-5.5a4 4 0 0 0 5.2-5.2l-2.6 2.6-2.4-.6-.6-2.4z"/></symbol><symbol id="i-stop" viewBox="0 0 24 24"><path d="M8.2 3h7.6L21 8.2v7.6L15.8 21H8.2L3 15.8V8.2z"/><path d="m9 9 6 6M15 9l-6 6"/></symbol><symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M6.5 3h11M6.5 21h11"/><path d="M7.5 3c0 4 4.5 5.5 4.5 9s-4.5 5-4.5 9M16.5 3c0 4-4.5 5.5-4.5 9s4.5 5 4.5 9"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><path d="M12 14.5v2.5"/></symbol><symbol id="i-chain" viewBox="0 0 24 24"><path d="M9.5 14.5 14.5 9.5"/><path d="M11 6.5 12.8 4.7a3.8 3.8 0 0 1 5.4 5.4L16.4 12"/><path d="M13 17.5 11.2 19.3a3.8 3.8 0 0 1-5.4-5.4L7.6 12"/></symbol><symbol id="i-harness" viewBox="0 0 24 24"><circle cx="12" cy="4.5" r="2"/><path d="M8 9.5h8l-1 6h-6z"/><path d="m9 9.5 6 6M15 9.5l-6 6"/><path d="M9.5 15.5 9 21M14.5 15.5 15 21"/></symbol><symbol id="i-ladder" viewBox="0 0 24 24"><path d="M7 3v18M17 3v18"/><path d="M7 7h10M7 11h10M7 15h10M7 19h10"/></symbol><symbol id="i-extinguisher" viewBox="0 0 24 24"><rect x="8" y="8" width="7" height="13" rx="2.5"/><path d="M11.5 8V5.5"/><path d="M9.5 5.5h5l3-2"/><path d="M15 5.5 18 8.5"/></symbol><symbol id="i-firstaid" viewBox="0 0 24 24"><rect x="3.5" y="6.5" width="17" height="13" rx="2"/><path d="M9 6.5V4.5h6v2"/><path d="M12 10v6M9 13h6"/></symbol><symbol id="i-goggles" viewBox="0 0 24 24"><path d="M3 10.5C3 9 4 8 5.5 8h13C20 8 21 9 21 10.5v2c0 2-1.5 3.5-3.5 3.5-1.6 0-2.4-1-3.2-2.2-.6-.9-1.4-.9-2 0C11.5 15 10.7 16 9 16H6.5C4.5 16 3 14.5 3 12.5z"/></symbol><symbol id="i-books" viewBox="0 0 24 24"><rect x="4" y="4" width="4" height="16" rx="1"/><rect x="9.5" y="4" width="4" height="16" rx="1"/><path d="m15.5 5.5 3.5-1 2.5 14.5-3.5 1z"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol><symbol id="i-checkcircle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.3 12.3 2.5 2.5 5-5.2"/></symbol><symbol id="i-xcircle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m9 9 6 6M15 9l-6 6"/></symbol><symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V11M10 20V5M16 20v-7M21.5 20h-19"/></symbol><symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"/></symbol><symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"/></symbol><symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 6.5h16"/><path d="M9.5 6.5V4.5h5v2"/><path d="M6 6.5l1 13a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5l1-13"/><path d="M10 10.5v6.5M14 10.5v6.5"/></symbol><symbol id="i-printer" viewBox="0 0 24 24"><path d="M7 8V3.5h10V8"/><rect x="3.5" y="8" width="17" height="8.5" rx="1.5"/><rect x="7" y="13.5" width="10" height="7"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="6.5"/><path d="M12 2.8v2.7M12 18.5v2.7M21.2 12h-2.7M5.5 12H2.8M18.5 5.5l-1.9 1.9M7.4 16.6l-1.9 1.9M18.5 18.5l-1.9-1.9M7.4 7.4 5.5 5.5"/></symbol><symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17z"/><path d="m14.5 7.5 2 2"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol><symbol id="i-move" viewBox="0 0 24 24"><path d="M4 8h14M14.5 4.5 18 8l-3.5 3.5"/><path d="M20 16H6M9.5 12.5 6 16l3.5 3.5"/></symbol><symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol><symbol id="i-megaphone" viewBox="0 0 24 24"><path d="M3.5 10v4h3l7 4.5v-13l-7 4.5z"/><path d="M17 9a4 4 0 0 1 0 6"/><path d="M6.5 14l1.2 5h2.3l-.9-4"/></symbol><symbol id="i-clipcheck" viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="9" y="3" width="6" height="3" rx="1"/><path d="m9 13.5 2.2 2.2 4-4.3"/></symbol><symbol id="i-trend" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></symbol><symbol id="i-qr" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18.5h2M18.5 14h1.5"/></symbol><symbol id="i-prev" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol><symbol id="i-next" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol><symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s6.5-6 6.5-11a6.5 6.5 0 0 0-13 0c0 5 6.5 11 6.5 11z"/><circle cx="12" cy="10" r="2.3"/></symbol></defs></svg>
 
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card">
-    <img src="logo.png" alt="Burhan Oil & Trade Services" class="brand-logo-sm">
-    <h2>Workforce HSE Register</h2>
-    <p class="wsub">Sign in with the email and password given to you.</p>
+    <img src="logo.png" alt="Burhan Oil & Trade Services" class="brand-logo-sm" style="height:58px;">
+    <div class="auth-co">Burhan Oil &amp; Trade Services</div>
+    <h2>HSE Tracker</h2>
+    <p class="auth-tag">Think safe · Work safe · Home safe</p>
     <form id="loginForm">
       <div class="form-grid">
         <label>Email<input type="email" id="loginEmail" required autocomplete="username"></label>
         <label>Password<input type="password" id="loginPassword" required autocomplete="current-password"></label>
       </div>
       <div id="authError" class="auth-error" hidden></div>
-      <button type="submit" class="btn btn-primary" style="width:100%; margin-top:14px;">Sign in</button>
+      <button type="submit" class="btn-signin">Sign in</button>
     </form>
+    <p class="auth-foot">Authorised Burhan HSE users only</p>
   </div>
 </div>
 
@@ -527,9 +574,9 @@ body.auth-open{overflow:hidden; height:100%;}
         </div>
         <div class="topbar-actions">
           <button class="btn btn-ghost btn-sm" id="clearSampleBtn" hidden>Remove sample data</button>
-          <button class="btn btn-sm" id="printQrCardsBtn" type="button" title="Print QR ID cards for the workers currently shown">🖨 QR ID cards</button>
-          <button class="btn btn-sm import-btn" id="importWorkersBtn" type="button">⬆ Import Excel</button>
-          <button class="btn btn-sm" id="trashBtn" type="button">🗑 Deleted workers (0)</button>
+          <button class="btn btn-sm" id="printQrCardsBtn" type="button" title="Print QR ID cards for the workers currently shown"><svg class="ic" aria-hidden="true"><use href="#i-qr"/></svg> QR ID cards</button>
+          <button class="btn btn-sm import-btn" id="importWorkersBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-upload"/></svg> Import Excel</button>
+          <button class="btn btn-sm" id="trashBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg> Deleted workers (0)</button>
           <button class="btn btn-primary" id="addWorkerBtn">+ Add worker</button>
           <button class="btn btn-sm" id="signOutBtn" type="button" hidden>Sign out</button>
         </div>
@@ -592,7 +639,7 @@ body.auth-open{overflow:hidden; height:100%;}
             <h2>Training matrix</h2>
           </div>
           <div class="topbar-actions">
-            <button class="btn btn-sm" id="editReqBtn" type="button">⚙ Required trainings</button>
+            <button class="btn btn-sm" id="editReqBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-gear"/></svg> Required trainings</button>
           </div>
         </div>
         <div class="panel" id="reqPanel" hidden></div>
@@ -631,8 +678,8 @@ body.auth-open{overflow:hidden; height:100%;}
           <h2>Fleet</h2>
         </div>
         <div class="topbar-actions">
-          <button class="btn btn-sm import-btn" id="importVehiclesBtn" type="button">⬆ Import Excel</button>
-          <button class="btn btn-sm" id="vehicleTrashBtn" type="button">🗑 Deleted vehicles (0)</button>
+          <button class="btn btn-sm import-btn" id="importVehiclesBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-upload"/></svg> Import Excel</button>
+          <button class="btn btn-sm" id="vehicleTrashBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg> Deleted vehicles (0)</button>
           <button class="btn btn-primary" id="addVehicleBtn">+ Add vehicle</button>
         </div>
       </div>
@@ -686,8 +733,8 @@ body.auth-open{overflow:hidden; height:100%;}
             <div class="wsub" id="equipPaneSub" hidden></div>
           </div>
           <div class="topbar-actions">
-            <button class="btn btn-sm import-btn" id="importEquipBtn" type="button">⬆ Import Excel</button>
-            <button class="btn btn-sm" id="equipTrashBtn" type="button">🗑 Deleted items (0)</button>
+            <button class="btn btn-sm import-btn" id="importEquipBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-upload"/></svg> Import Excel</button>
+            <button class="btn btn-sm" id="equipTrashBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg> Deleted items (0)</button>
             <button class="btn btn-primary" id="addEquipBtn" type="button">+ Add</button>
           </div>
         </div>
@@ -742,7 +789,7 @@ body.auth-open{overflow:hidden; height:100%;}
           <p class="page-tagline"><span class="pt-co">Burhan Oil &amp; Trade Services</span><span class="pt-sep" aria-hidden="true"></span><span class="pt-slogan">Every site, every shift, home safe</span></p>
         </div>
         <div class="topbar-actions">
-          <button class="btn btn-sm" id="siteTrashBtn" type="button">🗑 Deleted projects (0)</button>
+          <button class="btn btn-sm" id="siteTrashBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg> Deleted projects (0)</button>
           <button class="btn btn-primary" id="addSiteBtn">+ Add project</button>
         </div>
       </div>
@@ -807,7 +854,7 @@ body.auth-open{overflow:hidden; height:100%;}
           <p class="page-tagline"><span class="pt-co">Burhan Oil &amp; Trade Services</span><span class="pt-sep" aria-hidden="true"></span><span class="pt-slogan">Think safe, work safe, home safe</span></p>
         </div>
         <div class="topbar-actions">
-          <button class="btn btn-sm" id="downloadReportPdfBtn" type="button">⬇ PDF report</button>
+          <button class="btn btn-sm" id="downloadReportPdfBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg> PDF report</button>
           <button class="btn btn-primary" id="addReportEntryBtn" type="button">+ Log an entry</button>
         </div>
       </div>
@@ -906,7 +953,7 @@ body.auth-open{overflow:hidden; height:100%;}
           <p class="page-tagline"><span class="pt-co">Burhan Oil &amp; Trade Services</span><span class="pt-sep" aria-hidden="true"></span><span class="pt-slogan">Right document, right revision, every time</span></p>
         </div>
         <div class="topbar-actions">
-          <button class="btn btn-sm" id="libTrashBtn" type="button">🗑 Deleted documents (0)</button>
+          <button class="btn btn-sm" id="libTrashBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg> Deleted documents (0)</button>
           <button class="btn btn-primary" id="addLibBtn" type="button">+ Add document</button>
         </div>
       </div>
@@ -975,8 +1022,8 @@ body.auth-open{overflow:hidden; height:100%;}
     </div>
     <div style="display:flex; gap:8px; align-items:flex-start; flex:none;">
       <button type="button" class="btn btn-sm" id="workerQrBtn">QR code</button>
-      <button type="button" class="btn btn-sm" id="downloadPdfBtn">⬇ PDF profile</button>
-      <button class="icon-btn" id="drawerClose" aria-label="Close panel">✕</button>
+      <button type="button" class="btn btn-sm" id="downloadPdfBtn"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg> PDF profile</button>
+      <button class="icon-btn" id="drawerClose" aria-label="Close panel"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
     </div>
   </div>
   <nav class="tabs" id="drawerTabs"></nav>
@@ -990,7 +1037,7 @@ body.auth-open{overflow:hidden; height:100%;}
       <h2>Deleted workers</h2>
       <div class="wsub">Restore a profile, or remove it for good. Permanent removal cannot be undone.</div>
     </div>
-    <button class="icon-btn" id="trashClose" aria-label="Close">✕</button>
+    <button class="icon-btn" id="trashClose" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
   </div>
   <div class="drawer-body" id="trashBody"></div>
 </aside>
@@ -1003,8 +1050,8 @@ body.auth-open{overflow:hidden; height:100%;}
       <div class="wsub mono" id="vehicleDrawerSub"></div>
     </div>
     <div style="display:flex; gap:8px; align-items:flex-start; flex:none;">
-      <button type="button" class="btn btn-sm" id="downloadVehiclePdfBtn">⬇ PDF profile</button>
-      <button class="icon-btn" id="vehicleDrawerClose" aria-label="Close panel">✕</button>
+      <button type="button" class="btn btn-sm" id="downloadVehiclePdfBtn"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg> PDF profile</button>
+      <button class="icon-btn" id="vehicleDrawerClose" aria-label="Close panel"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
     </div>
   </div>
   <nav class="tabs" id="vehicleDrawerTabs"></nav>
@@ -1018,7 +1065,7 @@ body.auth-open{overflow:hidden; height:100%;}
       <h2>Deleted vehicles</h2>
       <div class="wsub">Restore a vehicle, or remove it for good. Permanent removal cannot be undone.</div>
     </div>
-    <button class="icon-btn" id="vehicleTrashClose" aria-label="Close">✕</button>
+    <button class="icon-btn" id="vehicleTrashClose" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
   </div>
   <div class="drawer-body" id="vehicleTrashBody"></div>
 </aside>
@@ -1031,8 +1078,8 @@ body.auth-open{overflow:hidden; height:100%;}
       <div class="wsub mono" id="siteDrawerSub"></div>
     </div>
     <div style="display:flex; gap:8px; align-items:flex-start; flex:none;">
-      <button type="button" class="btn btn-sm" id="downloadSitePdfBtn">⬇ PDF profile</button>
-      <button class="icon-btn" id="siteDrawerClose" aria-label="Close panel">✕</button>
+      <button type="button" class="btn btn-sm" id="downloadSitePdfBtn"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg> PDF profile</button>
+      <button class="icon-btn" id="siteDrawerClose" aria-label="Close panel"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
     </div>
   </div>
   <nav class="tabs" id="siteDrawerTabs"></nav>
@@ -1046,7 +1093,7 @@ body.auth-open{overflow:hidden; height:100%;}
       <h2>Deleted projects</h2>
       <div class="wsub">Restore a project, or remove it for good. Permanent removal cannot be undone.</div>
     </div>
-    <button class="icon-btn" id="siteTrashClose" aria-label="Close">✕</button>
+    <button class="icon-btn" id="siteTrashClose" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
   </div>
   <div class="drawer-body" id="siteTrashBody"></div>
 </aside>
@@ -1058,7 +1105,7 @@ body.auth-open{overflow:hidden; height:100%;}
       <h2 id="equipDrawerName"></h2>
       <div class="wsub mono" id="equipDrawerSub"></div>
     </div>
-    <button class="icon-btn" id="equipDrawerClose" aria-label="Close panel">✕</button>
+    <button class="icon-btn" id="equipDrawerClose" aria-label="Close panel"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
   </div>
   <div class="drawer-body" id="equipDrawerBody"></div>
 </aside>
@@ -1070,7 +1117,7 @@ body.auth-open{overflow:hidden; height:100%;}
       <h2>Deleted equipment</h2>
       <div class="wsub">Restore an item, or remove it for good (this also deletes its certificate file). Permanent removal cannot be undone.</div>
     </div>
-    <button class="icon-btn" id="equipTrashClose" aria-label="Close">✕</button>
+    <button class="icon-btn" id="equipTrashClose" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
   </div>
   <div class="drawer-body" id="equipTrashBody"></div>
 </aside>
@@ -1082,7 +1129,7 @@ body.auth-open{overflow:hidden; height:100%;}
       <h2 id="libDrawerName"></h2>
       <div class="wsub mono" id="libDrawerSub"></div>
     </div>
-    <button class="icon-btn" id="libDrawerClose" aria-label="Close panel">✕</button>
+    <button class="icon-btn" id="libDrawerClose" aria-label="Close panel"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
   </div>
   <div class="drawer-body" id="libDrawerBody"></div>
 </aside>
@@ -1094,7 +1141,7 @@ body.auth-open{overflow:hidden; height:100%;}
       <h2>Deleted documents</h2>
       <div class="wsub">Restore a document, or remove it for good (this also deletes its file and all older revision files). Permanent removal cannot be undone.</div>
     </div>
-    <button class="icon-btn" id="libTrashClose" aria-label="Close">✕</button>
+    <button class="icon-btn" id="libTrashClose" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
   </div>
   <div class="drawer-body" id="libTrashBody"></div>
 </aside>
@@ -1108,7 +1155,7 @@ body.auth-open{overflow:hidden; height:100%;}
       <h2>Import from Excel</h2>
       <div class="wsub">Add many records at once. Records already in the tracker are never changed, and you can still add and edit everything by hand.</div>
     </div>
-    <button class="icon-btn" id="importClose" aria-label="Close">✕</button>
+    <button class="icon-btn" id="importClose" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
   </div>
   <div class="drawer-body" id="importBody"></div>
 </aside>
@@ -1125,8 +1172,8 @@ body.auth-open{overflow:hidden; height:100%;}
   <p class="wsub" style="text-align:center; margin:10px 0 0;">Scan to open this worker's HSE record (sign-in required).</p>
   <div class="form-actions" style="justify-content:center;">
     <button type="button" class="btn btn-sm" id="qrCloseBtn">Close</button>
-    <button type="button" class="btn btn-sm" id="qrDownloadBtn">⬇ Download image</button>
-    <button type="button" class="btn btn-primary btn-sm" id="qrPrintBtn">🖨 Print card</button>
+    <button type="button" class="btn btn-sm" id="qrDownloadBtn"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg> Download image</button>
+    <button type="button" class="btn btn-primary btn-sm" id="qrPrintBtn"><svg class="ic" aria-hidden="true"><use href="#i-printer"/></svg> Print card</button>
   </div>
 </div>
 
@@ -1163,6 +1210,8 @@ function useSessionLogin(){
 }
 useSessionLogin();   // also moves an existing "remembered" login to this-tab-only
 const db = firebase.firestore();
+// Line icons (drawn in the sprite at the top of <body>)
+function ic(name, cls){ return `<svg class="ic${cls?' '+cls:''}" aria-hidden="true"><use href="#i-${name}"/></svg>`; }
 const storage = firebase.storage();
 
 const TABS = [
@@ -1571,23 +1620,23 @@ function renderMonitorBar(){
   const iv=safeUrl(appSettings.ivmsPortalUrl), df=safeUrl(appSettings.dfmsPortalUrl);
   const warn = settingsLoadError==='rules' ? `<span class="badge warn" title="${esc(RULES_UPDATE_MSG)}">Firebase rules update needed</span>` : '';
   el.innerHTML = `<span class="monitor-bar-label">Vehicle monitoring</span>
-    ${iv ? `<a class="btn btn-sm" href="${esc(iv)}" target="_blank" rel="noopener noreferrer">IVMS portal${appSettings.ivmsProvider?' · '+esc(appSettings.ivmsProvider):''} ↗</a>` : '<span class="badge muted">IVMS link not set</span>'}
-    ${df ? `<a class="btn btn-sm" href="${esc(df)}" target="_blank" rel="noopener noreferrer">DFMS portal${appSettings.dfmsProvider?' · '+esc(appSettings.dfmsProvider):''} ↗</a>` : '<span class="badge muted">DFMS link not set</span>'}
+    ${iv ? `<a class="btn btn-sm" href="${esc(iv)}" target="_blank" rel="noopener noreferrer">IVMS portal${appSettings.ivmsProvider?' · '+esc(appSettings.ivmsProvider):''} ${ic('external')}</a>` : '<span class="badge muted">IVMS link not set</span>'}
+    ${df ? `<a class="btn btn-sm" href="${esc(df)}" target="_blank" rel="noopener noreferrer">DFMS portal${appSettings.dfmsProvider?' · '+esc(appSettings.dfmsProvider):''} ${ic('external')}</a>` : '<span class="badge muted">DFMS link not set</span>'}
     ${warn}
-    <button type="button" class="btn btn-sm btn-ghost" id="monitorEditBtn">⚙ ${iv||df?'Edit links':'Set links'}</button>`;
+    <button type="button" class="btn btn-sm btn-ghost" id="monitorEditBtn">${ic('gear')} ${iv||df?'Edit links':'Set links'}</button>`;
 }
 function vehicleMonitorCell(v){
   const l=vehicleMonitorLinks(v);
-  const iv = l.ivms ? `<a class="link-chip" href="${esc(l.ivms)}" target="_blank" rel="noopener noreferrer" title="${esc(v.ivmsUnitId?'IVMS unit '+v.ivmsUnitId:'Open IVMS')}">IVMS ↗</a>` : '';
-  const df = l.dfms ? `<a class="link-chip" href="${esc(l.dfms)}" target="_blank" rel="noopener noreferrer" title="${esc(v.dfmsUnitId?'DFMS device '+v.dfmsUnitId:'Open DFMS')}">DFMS ↗</a>` : '';
+  const iv = l.ivms ? `<a class="link-chip" href="${esc(l.ivms)}" target="_blank" rel="noopener noreferrer" title="${esc(v.ivmsUnitId?'IVMS unit '+v.ivmsUnitId:'Open IVMS')}">IVMS ${ic('external')}</a>` : '';
+  const df = l.dfms ? `<a class="link-chip" href="${esc(l.dfms)}" target="_blank" rel="noopener noreferrer" title="${esc(v.dfmsUnitId?'DFMS device '+v.dfmsUnitId:'Open DFMS')}">DFMS ${ic('external')}</a>` : '';
   return (iv||df) ? iv+df : '<span class="wsub">—</span>';
 }
 function vehicleMonitorBlock(v){
   const l=vehicleMonitorLinks(v);
   const ids=[v.ivmsUnitId?`IVMS unit <span class="mono">${esc(v.ivmsUnitId)}</span>`:'', v.dfmsUnitId?`DFMS device <span class="mono">${esc(v.dfmsUnitId)}</span>`:''].filter(Boolean).join(' · ');
   return `<div class="monitor-links">
-    ${l.ivms ? `<a class="btn btn-sm" href="${esc(l.ivms)}" target="_blank" rel="noopener noreferrer">Open IVMS ↗</a>` : ''}
-    ${l.dfms ? `<a class="btn btn-sm" href="${esc(l.dfms)}" target="_blank" rel="noopener noreferrer">Open DFMS ↗</a>` : ''}
+    ${l.ivms ? `<a class="btn btn-sm" href="${esc(l.ivms)}" target="_blank" rel="noopener noreferrer">${ic('external')} Open IVMS</a>` : ''}
+    ${l.dfms ? `<a class="btn btn-sm" href="${esc(l.dfms)}" target="_blank" rel="noopener noreferrer">${ic('external')} Open DFMS</a>` : ''}
     ${(!l.ivms && !l.dfms) ? '<span class="wsub">No IVMS / DFMS link yet — add this vehicle\'s links below, or set the company portals on the Fleet page.</span>' : ''}
     ${ids ? `<span class="wsub">${ids}</span>` : ''}
   </div>`;
@@ -1633,7 +1682,7 @@ function renderMatrix(){
   if(settingsLoadError==='rules'){ tiles.innerHTML=''; head.innerHTML=''; body.innerHTML=`<tr><td class="empty-state">${esc(RULES_UPDATE_MSG)}</td></tr>`; return; }
   if(!reqs.length){
     tiles.innerHTML=''; head.innerHTML='';
-    body.innerHTML=`<tr><td class="empty-state">${canEdit() ? 'No required trainings set yet — click “⚙ Required trainings” to choose which trainings each division needs.' : 'The HSE team has not set the required trainings yet.'}</td></tr>`;
+    body.innerHTML=`<tr><td class="empty-state">${canEdit() ? 'No required trainings set yet — click “Required trainings” to choose which trainings each division needs.' : 'The HSE team has not set the required trainings yet.'}</td></tr>`;
     return;
   }
   const cols = matrixFilters.division==='all' ? reqs : reqs.filter(t=>(t.divisions||[]).includes(matrixFilters.division));
@@ -1647,16 +1696,16 @@ function renderMatrix(){
   for(const r of rows) for(const c of r.cells){ if(!c) continue; need++; if(c.status==='valid') valid++; else if(c.status==='missing') missing++; else if(c.status==='expired') expired++; else if(c.status==='expiring'){ expiring++; valid++; } }
   const pct = need ? Math.round(valid*100/need) : 100;
   tiles.innerHTML=[
-    {label:'Compliance', num:need?pct+'%':'—', cls:need?(pct>=90?'ok':pct>=70?'warn':'danger'):'', sub:`${valid} of ${need} required trainings in date`, cat:'--cat-4', icon:'📊'},
-    {label:'Missing', num:missing, cls:missing?'danger':'ok', sub:'required but never recorded', cat:'--cat-9', icon:'❌'},
-    {label:'Expired', num:expired, cls:expired?'danger':'ok', sub:'past the valid-until date', cat:'--cat-7', icon:'⛔'},
-    {label:'Expiring soon', num:expiring, cls:expiring?'warn':'ok', sub:'within the next 30 days', cat:'--cat-2', icon:'⏳'},
+    {label:'Compliance', num:need?pct+'%':'—', cls:need?(pct>=90?'ok':pct>=70?'warn':'danger'):'', sub:`${valid} of ${need} required trainings in date`, cat:'--cat-4', icon:ic('chart')},
+    {label:'Missing', num:missing, cls:missing?'danger':'ok', sub:'required but never recorded', cat:'--cat-9', icon:ic('xcircle')},
+    {label:'Expired', num:expired, cls:expired?'danger':'ok', sub:'past the valid-until date', cat:'--cat-7', icon:ic('stop')},
+    {label:'Expiring soon', num:expiring, cls:expiring?'warn':'ok', sub:'within the next 30 days', cat:'--cat-2', icon:ic('hourglass')},
   ].map(t=>`<div class="tile" style="--tile-accent:var(${t.cat})"><div class="tile-head"><div class="tile-icon">${t.icon}</div><div class="tile-label">${t.label}</div></div><div class="tile-num ${t.cls}">${t.num}</div><div class="tile-sub">${t.sub}</div></div>`).join('');
   if(matrixFilters.gaps==='gaps') rows=rows.filter(r=>r.cells.some(c=>c && c.status!=='valid'));
   rows.sort((a,b)=>(a.w.trade||'').localeCompare(b.w.trade||'') || (a.w.fullName||'').localeCompare(b.w.fullName||''));
   head.innerHTML = `<tr><th class="mx-sticky">Worker</th>${cols.map(t=>`<th class="mx-col">${esc(t.name)}</th>`).join('')}</tr>`;
   if(!cols.length){ body.innerHTML=`<tr><td class="empty-state">No required trainings for ${esc(matrixFilters.division)} yet.</td></tr>`; return; }
-  if(!rows.length){ body.innerHTML=`<tr><td class="empty-state" colspan="${cols.length+1}">${matrixFilters.gaps==='gaps' ? '✅ No gaps — every worker shown has all required trainings in date.' : 'No active workers match.'}</td></tr>`; return; }
+  if(!rows.length){ body.innerHTML=`<tr><td class="empty-state" colspan="${cols.length+1}">${matrixFilters.gaps==='gaps' ? ic('checkcircle')+' No gaps — every worker shown has all required trainings in date.' : 'No active workers match.'}</td></tr>`; return; }
   body.innerHTML = rows.map(r=>`<tr data-mx-worker="${r.w.id}">
       <td class="mx-sticky"><div class="wname">${esc(r.w.fullName||'—')}</div><div class="wsub">${esc(r.w.trade||'No division')}</div></td>
       ${r.cells.map(c=>`<td class="mx-cell">${matrixCellHtml(c)}</td>`).join('')}
@@ -1694,7 +1743,7 @@ function renderReqPanel(){
       ${reqEditRows.map((r,i)=>`<div class="req-row">
         <input data-req-name="${i}" value="${esc(r.name)}" list="trainingNameList" placeholder="e.g. Working at Height" aria-label="Training name">
         <div class="req-divs">${TRADE_CATEGORIES.map(d=>`<label class="chk"><input type="checkbox" data-req-div="${i}" value="${esc(d)}" ${r.divisions.includes(d)?'checked':''}>${esc(d)}</label>`).join('')}</div>
-        <button type="button" class="icon-btn danger" data-req-remove="${i}" aria-label="Remove training">✕</button>
+        <button type="button" class="icon-btn danger" data-req-remove="${i}" aria-label="Remove training">${ic('close')}</button>
       </div>`).join('')}
       <datalist id="trainingNameList">${names.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist>
       <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
@@ -1792,7 +1841,7 @@ function startLibraryData(){
 }
 function renderLibraryAll(){
   renderLibTiles(); renderLibCharts(); renderLibTypeTabs(); renderLibTable();
-  document.getElementById('libTrashBtn').textContent=`🗑 Deleted documents (${deletedLibDocs().length})`;
+  document.getElementById('libTrashBtn').innerHTML=ic('trash')+` Deleted documents (${deletedLibDocs().length})`;
   if(activeLibId) renderLibDrawer();
   if(!document.getElementById('libTrashDrawer').hidden) renderLibTrashBody();
 }
@@ -1802,10 +1851,10 @@ function renderLibTiles(){
   const c={ok:0,due:0,overdue:0,none:0}; for(const d of live) c[libReview(d).key]++;
   const obsolete=list.length-live.length, noFile=live.filter(d=>!(d.file&&d.file.url)).length;
   document.getElementById('libTiles').innerHTML=[
-    {label:'Controlled documents', num:live.length, cls:'', sub:`${obsolete} obsolete · ${noFile} without a file`, cat:'--cat-1', icon:'📚'},
-    {label:'Up to date', num:c.ok, cls:c.ok?'ok':'', sub:`next revision more than ${LIB_REVIEW_LEAD_DAYS} days away`, cat:'--cat-4', icon:'✅'},
-    {label:'Revision due soon', num:c.due, cls:c.due?'warn':'ok', sub:`within the next ${LIB_REVIEW_LEAD_DAYS} days`, cat:'--cat-2', icon:'⏳'},
-    {label:'Revision overdue', num:c.overdue, cls:c.overdue?'danger':'ok', sub:'past the next revision date', cat:'--cat-9', icon:'⛔'},
+    {label:'Controlled documents', num:live.length, cls:'', sub:`${obsolete} obsolete · ${noFile} without a file`, cat:'--cat-1', icon:ic('books')},
+    {label:'Up to date', num:c.ok, cls:c.ok?'ok':'', sub:`next revision more than ${LIB_REVIEW_LEAD_DAYS} days away`, cat:'--cat-4', icon:ic('checkcircle')},
+    {label:'Revision due soon', num:c.due, cls:c.due?'warn':'ok', sub:`within the next ${LIB_REVIEW_LEAD_DAYS} days`, cat:'--cat-2', icon:ic('hourglass')},
+    {label:'Revision overdue', num:c.overdue, cls:c.overdue?'danger':'ok', sub:'past the next revision date', cat:'--cat-9', icon:ic('stop')},
   ].map(t=>`<div class="tile" style="--tile-accent:var(${t.cat})"><div class="tile-head"><div class="tile-icon">${t.icon}</div><div class="tile-label">${t.label}</div></div><div class="tile-num ${t.cls}">${t.num}</div><div class="tile-sub">${t.sub}</div></div>`).join('');
 }
 function renderLibCharts(){
@@ -1901,7 +1950,7 @@ function renderLibDrawer(){
 }
 function libFileBlockHtml(f, removable){
   if(!f || !f.url) return '<span class="att-none">No file uploaded for this revision yet</span>';
-  return `<div class="att-present"><span class="att-file-icon">📄</span><div>
+  return `<div class="att-present"><span class="att-file-icon">${ic('file')}</span><div>
       <div class="lib-file-name">${esc(f.name||'document')}</div>
       <div class="att-actions" style="margin-top:4px;">
         <a class="att-link" href="${esc(f.url)}" target="_blank" rel="noopener">View</a>
@@ -1934,7 +1983,7 @@ function libDrawerBodyHtml(d){
   <div class="loc-card">
     <div class="loc-card-top">
       <div class="loc-now">Current: <strong>Rev ${esc(d.revision||'—')}</strong> <span class="wsub" style="display:inline;">· last revised ${esc(d.lastRevDate||'—')} · next revision ${esc(d.nextRevDate||'—')}</span></div>
-      ${libRevFormOpen ? '' : '<button type="button" class="btn btn-primary btn-sm" id="libNewRevBtn">⬆ Upload new revision</button>'}
+      ${libRevFormOpen ? '' : `<button type="button" class="btn btn-primary btn-sm" id="libNewRevBtn">${ic('upload')} Upload new revision</button>`}
     </div>
     <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;"><span class="badge muted">${esc(d.docType||'Document')}</span> ${libReviewBadge(d)} ${['Under review','Draft'].includes(d.status)?`<span class="badge muted">${esc(d.status)}</span>`:''}</div>
     ${revForm}
@@ -2004,7 +2053,7 @@ function wireLibDateAuto(e){
 // Every movable item lives once in the 'equipment' collection with a category,
 // a current location ('store' or a project id), a condition and a move history.
 const EQUIP_CATEGORIES = {
-  powerTools:{ label:'Power tools & equipment', short:'Power tools', icon:'🔧', noun:'tool / equipment', emailLabel:'Power tool / equipment (TPI)',
+  powerTools:{ label:'Power tools & equipment', short:'Power tools', icon:'wrench', noun:'tool / equipment', emailLabel:'Power tool / equipment (TPI)',
     fields:[
       {key:'name', label:'Tool / equipment name', type:'text', required:true, placeholder:'e.g. Grinder, Drill, Welding machine'},
       {key:'make', label:'Make / model', type:'text', placeholder:'e.g. Bosch GWS 22-230'},
@@ -2014,7 +2063,7 @@ const EQUIP_CATEGORIES = {
       {key:'notes', label:'Notes', type:'textarea'},
     ],
     display:e=>e.name||'Tool' },
-  liftingGear:{ label:'Lifting gear', short:'Lifting gear', icon:'⛓️', noun:'lifting gear item', emailLabel:'Lifting gear (TPI)',
+  liftingGear:{ label:'Lifting gear', short:'Lifting gear', icon:'chain', noun:'lifting gear item', emailLabel:'Lifting gear (TPI)',
     fields:[
       {key:'type', label:'Type', type:'select', required:true, options:['Web sling','Wire rope sling','Chain sling','Round sling','Shackle','Chain block','Lever hoist','Eye bolt','Beam clamp','Other']},
       {key:'swl', label:'Safe working load (SWL)', type:'text', placeholder:'e.g. 2 T'},
@@ -2024,7 +2073,7 @@ const EQUIP_CATEGORIES = {
       {key:'notes', label:'Notes', type:'textarea'},
     ],
     display:e=>(e.type||'Lifting gear')+(e.swl?` · SWL ${e.swl}`:'') },
-  harness:{ label:'Full body harness', short:'Harness', icon:'🦺', noun:'harness', emailLabel:'Full body harness',
+  harness:{ label:'Full body harness', short:'Harness', icon:'harness', noun:'harness', emailLabel:'Full body harness',
     fields:[
       {key:'make', label:'Make / model', type:'text', placeholder:'e.g. 3M DBI-SALA'},
       {key:'serial', label:'Serial number', type:'text', required:true},
@@ -2033,7 +2082,7 @@ const EQUIP_CATEGORIES = {
       {key:'notes', label:'Notes', type:'textarea'},
     ],
     display:e=>e.make?`Full body harness · ${e.make}`:'Full body harness' },
-  ladders:{ label:'Ladders', short:'Ladders', icon:'🪜', noun:'ladder', emailLabel:'Ladder',
+  ladders:{ label:'Ladders', short:'Ladders', icon:'ladder', noun:'ladder', emailLabel:'Ladder',
     fields:[
       {key:'type', label:'Ladder type', type:'select', required:true, options:['Straight ladder','Extension ladder','Step ladder','Platform ladder','Other']},
       {key:'serial', label:'ID tag / serial no.', type:'text', required:true},
@@ -2041,7 +2090,7 @@ const EQUIP_CATEGORIES = {
       {key:'notes', label:'Notes', type:'textarea'},
     ],
     display:e=>e.type||'Ladder' },
-  extinguishers:{ label:'Fire extinguishers', short:'Fire extinguishers', icon:'🧯', noun:'fire extinguisher', emailLabel:'Fire extinguisher',
+  extinguishers:{ label:'Fire extinguishers', short:'Fire extinguishers', icon:'extinguisher', noun:'fire extinguisher', emailLabel:'Fire extinguisher',
     fields:[
       {key:'extType', label:'Type', type:'select', required:true, options:['DCP (dry powder)','CO₂','Foam','Water','Wet chemical','Other']},
       {key:'capacityKg', label:'Capacity (kg)', type:'number', required:true},
@@ -2050,7 +2099,7 @@ const EQUIP_CATEGORIES = {
       {key:'notes', label:'Notes', type:'textarea'},
     ],
     display:e=>`${e.extType||'Fire extinguisher'}${e.capacityKg?` · ${e.capacityKg} kg`:''}` },
-  specialPpe:{ label:'Specialized PPE', short:'Specialized PPE', icon:'🥽', noun:'PPE item', emailLabel:'Specialized PPE',
+  specialPpe:{ label:'Specialized PPE', short:'Specialized PPE', icon:'goggles', noun:'PPE item', emailLabel:'Specialized PPE',
     fields:[
       {key:'name', label:'Item', type:'text', required:true, placeholder:'e.g. SCBA set, gas detector, fall arrester'},
       {key:'make', label:'Make / model', type:'text'},
@@ -2060,7 +2109,7 @@ const EQUIP_CATEGORIES = {
       {key:'notes', label:'Notes', type:'textarea'},
     ],
     display:e=>e.name||'PPE item' },
-  firstAid:{ label:'First aid kits', short:'First aid kits', icon:'⛑️', noun:'first aid kit', emailLabel:'First aid kit',
+  firstAid:{ label:'First aid kits', short:'First aid kits', icon:'firstaid', noun:'first aid kit', emailLabel:'First aid kit',
     fields:[
       {key:'kitType', label:'Kit type', type:'select', required:true, options:['Small kit (1–10 persons)','Medium kit (11–25 persons)','Large kit (26–50 persons)','Eye wash station','Burn kit','Other']},
       {key:'serial', label:'Kit ID / serial no.', type:'text', required:true},
@@ -2529,7 +2578,7 @@ function renderAll(){
   renderTable();
   document.getElementById('clearSampleBtn').hidden = !workers.some(w=>w.isSample);
   const trashCount=deletedWorkers().length;
-  document.getElementById('trashBtn').textContent = `🗑 Deleted workers (${trashCount})`;
+  document.getElementById('trashBtn').innerHTML = ic('trash')+` Deleted workers (${trashCount})`;
   if(activeWorkerId) renderDrawer();
   if(!document.getElementById('trashDrawer').hidden) renderTrashBody();
   renderSiteAll();
@@ -2570,15 +2619,15 @@ function renderTiles(){
   for(const w of list){ for(const v of (w.violations||[])){ const d=daysUntil(v.date); if(d!==null && -d<=90){ vio90++; if(v.severity==='Critical') vioCrit++; } } }
 
   const tiles=[
-    {label:'Workforce', num:total, cls:'', sub:`${active} active`, cat:'--cat-1', icon:'👥'},
-    {label:'Civil ID', num:civExpired, cls:civExpired?'danger':(civExpiring?'warn':'ok'), sub:`${civExpiring} expiring soon`, cat:'--cat-2', icon:'🪪'},
-    {label:'Induction', num:ind.expired+ind.missing, cls:(ind.expired+ind.missing)?'danger':'ok', sub:`${ind.expiring} expiring soon · ${ind.missing} not inducted`, cat:'--cat-3', icon:'📋'},
-    {label:'Training', num:tr.expired, cls:tr.expired?'danger':'ok', sub:`${tr.expiring} expiring soon`, cat:'--cat-4', icon:'🎓'},
-    {label:'Competency', num:comp.expired, cls:comp.expired?'danger':'ok', sub:`${comp.expiring} expiring soon`, cat:'--cat-5', icon:'✅'},
-    {label:'Medical fitness', num:medUnfit+medExpired, cls:(medUnfit+medExpired)?'danger':'ok', sub:`${medUnfit} unfit · ${medExpiring} expiring soon`, cat:'--cat-6', icon:'⚕️'},
-    {label:'Licenses', num:lic.expired, cls:lic.expired?'danger':'ok', sub:`${lic.expiring} expiring soon`, cat:'--cat-7', icon:'📄'},
-    {label:'Warning letters', num:totalWarnings, cls:finalWarn?'danger':(totalWarnings?'warn':''), sub:`${finalWarn} at final warning`, cat:'--cat-8', icon:'⚠️'},
-    {label:'Violations (90d)', num:vio90, cls:vioCrit?'danger':(vio90?'warn':''), sub:`${vioCrit} critical`, cat:'--cat-9', icon:'🚫'},
+    {label:'Workforce', num:total, cls:'', sub:`${active} active`, cat:'--cat-1', icon:ic('users')},
+    {label:'Civil ID', num:civExpired, cls:civExpired?'danger':(civExpiring?'warn':'ok'), sub:`${civExpiring} expiring soon`, cat:'--cat-2', icon:ic('idcard')},
+    {label:'Induction', num:ind.expired+ind.missing, cls:(ind.expired+ind.missing)?'danger':'ok', sub:`${ind.expiring} expiring soon · ${ind.missing} not inducted`, cat:'--cat-3', icon:ic('clipboard')},
+    {label:'Training', num:tr.expired, cls:tr.expired?'danger':'ok', sub:`${tr.expiring} expiring soon`, cat:'--cat-4', icon:ic('cap')},
+    {label:'Competency', num:comp.expired, cls:comp.expired?'danger':'ok', sub:`${comp.expiring} expiring soon`, cat:'--cat-5', icon:ic('checkcircle')},
+    {label:'Medical fitness', num:medUnfit+medExpired, cls:(medUnfit+medExpired)?'danger':'ok', sub:`${medUnfit} unfit · ${medExpiring} expiring soon`, cat:'--cat-6', icon:ic('heart')},
+    {label:'Licenses', num:lic.expired, cls:lic.expired?'danger':'ok', sub:`${lic.expiring} expiring soon`, cat:'--cat-7', icon:ic('file')},
+    {label:'Warning letters', num:totalWarnings, cls:finalWarn?'danger':(totalWarnings?'warn':''), sub:`${finalWarn} at final warning`, cat:'--cat-8', icon:ic('alert')},
+    {label:'Violations (90d)', num:vio90, cls:vioCrit?'danger':(vio90?'warn':''), sub:`${vioCrit} critical`, cat:'--cat-9', icon:ic('ban')},
   ];
   document.getElementById('tiles').innerHTML = tiles.map(t=>`
     <div class="tile" style="--tile-accent:var(${t.cat})">
@@ -2637,7 +2686,7 @@ function renderVehicleAll(){
   renderVehicleTiles();
   renderVehicleTable();
   const trashCount=deletedVehicles().length;
-  document.getElementById('vehicleTrashBtn').textContent = `🗑 Deleted vehicles (${trashCount})`;
+  document.getElementById('vehicleTrashBtn').innerHTML = ic('trash')+` Deleted vehicles (${trashCount})`;
   if(activeVehicleId) renderVehicleDrawer();
   if(!document.getElementById('vehicleTrashDrawer').hidden) renderVehicleTrashBody();
   renderSiteAll();   // project Vehicles tabs & counts use vehicle data
@@ -2661,9 +2710,9 @@ function renderVehicleTiles(){
   }
   const doc=agg('documents'), ppe=agg('ppe');
   const tiles=[
-    {label:'Fleet', num:total, cls:'', sub:`${own} own · ${rental} rental`, cat:'--cat-1', icon:'🚚'},
-    {label:'Documents', num:doc.expired, cls:doc.expired?'danger':(doc.expiring?'warn':'ok'), sub:`${doc.expiring} expiring soon`, cat:'--cat-2', icon:'📄'},
-    {label:'PPE & safety kit', num:ppe.expired, cls:ppe.expired?'danger':(ppe.expiring?'warn':'ok'), sub:`${ppe.expiring} expiring soon`, cat:'--cat-6', icon:'🦺'},
+    {label:'Fleet', num:total, cls:'', sub:`${own} own · ${rental} rental`, cat:'--cat-1', icon:ic('truck')},
+    {label:'Documents', num:doc.expired, cls:doc.expired?'danger':(doc.expiring?'warn':'ok'), sub:`${doc.expiring} expiring soon`, cat:'--cat-2', icon:ic('file')},
+    {label:'PPE & safety kit', num:ppe.expired, cls:ppe.expired?'danger':(ppe.expiring?'warn':'ok'), sub:`${ppe.expiring} expiring soon`, cat:'--cat-6', icon:ic('vest')},
   ];
   document.getElementById('vehicleTiles').innerHTML = tiles.map(t=>`
     <div class="tile" style="--tile-accent:var(${t.cat})">
@@ -2706,7 +2755,7 @@ function renderSiteAll(){
   renderSiteTable();
   renderSiteSummary();
   const trashCount=deletedSites().length;
-  document.getElementById('siteTrashBtn').textContent = `🗑 Deleted projects (${trashCount})`;
+  document.getElementById('siteTrashBtn').innerHTML = ic('trash')+` Deleted projects (${trashCount})`;
   if(activeSiteId) renderSiteDrawer();
   if(!document.getElementById('siteTrashDrawer').hidden) renderSiteTrashBody();
 }
@@ -2776,10 +2825,10 @@ function renderSiteTiles(){
   }
   const inStore=activeEquipment().filter(e=>equipLoc(e)==='store').length;
   const tiles=[
-    {label:'Active projects', num:running, cls:'', sub:`${onHold} on hold · ${done} completed`, cat:'--cat-1', icon:'🏗️'},
-    {label:'People on sites', num:people, cls:peopleIssues?'warn':'', sub:`${peopleIssues} with expired or missing documents`, cat:'--cat-4', icon:'👷'},
-    {label:'Equipment on sites', num:onSite, cls:'', sub:`${inStore} more in store`, cat:'--cat-3', icon:'🔧'},
-    {label:'Expired on sites', num:expired, cls:expired?'danger':'ok', sub:`equipment + HSE documents · ${expiring} expiring soon`, cat:'--cat-9', icon:'⛔'},
+    {label:'Active projects', num:running, cls:'', sub:`${onHold} on hold · ${done} completed`, cat:'--cat-1', icon:ic('crane')},
+    {label:'People on sites', num:people, cls:peopleIssues?'warn':'', sub:`${peopleIssues} with expired or missing documents`, cat:'--cat-4', icon:ic('hardhat')},
+    {label:'Equipment on sites', num:onSite, cls:'', sub:`${inStore} more in store`, cat:'--cat-3', icon:ic('wrench')},
+    {label:'Expired on sites', num:expired, cls:expired?'danger':'ok', sub:`equipment + HSE documents · ${expiring} expiring soon`, cat:'--cat-9', icon:ic('stop')},
   ];
   document.getElementById('siteTiles').innerHTML = tiles.map(t=>`
     <div class="tile" style="--tile-accent:var(${t.cat})">
@@ -2845,7 +2894,7 @@ function renderVehicleDrawer(){
   const v=currentVehicle();
   if(!v){ closeVehicleDrawer(); return; }
   document.getElementById('vehicleDrawerName').textContent=v.vehicleNumber;
-  document.getElementById('vehicleDrawerSub').textContent=(v.model||'')+(v.ownership?' · '+v.ownership:'')+(v.projectId?' · 📍 '+locLabel(v.projectId):'');
+  document.getElementById('vehicleDrawerSub').textContent=(v.model||'')+(v.ownership?' · '+v.ownership:'')+(v.projectId?' · at '+locLabel(v.projectId):'');
   document.getElementById('vehicleDrawerTabs').innerHTML=VEHICLE_TABS.map(t=>`<button type="button" class="tab-btn ${t.key===activeVehicleTab?'active':''}" data-vtab="${t.key}">${t.label}</button>`).join('');
   renderVehicleDrawerBody();
 }
@@ -2953,7 +3002,7 @@ function siteTabCount(s, key){
   if(key==='toolboxTalks'){ const n=(s.toolboxTalks||[]).length; return n ? {n, cls:''} : null; }
   return null;
 }
-function overdueNotice(text){ return `<div class="notice" style="background:var(--danger-bg); color:var(--danger); border-color:var(--danger);">⚠ ${text}</div>`; }
+function overdueNotice(text){ return `<div class="notice" style="background:var(--danger-bg); color:var(--danger); border-color:var(--danger);">${ic('alert')} ${text}</div>`; }
 function renderSiteDrawerBody(){
   const s=currentSite(); if(!s) return;
   const body=document.getElementById('siteDrawerBody');
@@ -2970,7 +3019,7 @@ function renderSiteDrawerBody(){
     const list=s.complaints||[];
     const open=list.filter(r=>(r.status||'Open')==='Open').length, pending=list.filter(r=>r.status==='Pending').length, closed=list.filter(r=>r.status==='Closed').length;
     const overdue=list.filter(r=>complaintOverdueDays(r)).length;
-    pre = (overdue ? `<div class="notice" style="background:var(--danger-bg); color:var(--danger); border-color:var(--danger);">⚠ ${overdue} complaint${overdue===1?' is':'s are'} past the target close date and still not closed.</div>` : '')
+    pre = (overdue ? `<div class="notice" style="background:var(--danger-bg); color:var(--danger); border-color:var(--danger);">${ic('alert')} ${overdue} complaint${overdue===1?' is':'s are'} past the target close date and still not closed.</div>` : '')
         + (list.length ? `<p class="wsub" style="margin:0 0 12px;">${list.length} received · <strong>${open}</strong> open · ${pending} pending · ${closed} closed</p>` : '');
   }
   if(activeSiteTab==='actions'){
@@ -3011,7 +3060,7 @@ function siteEquipmentTabHtml(s){
     const list=items.filter(e=>e.category===cat);
     if(!list.length) return '';
     return `<div class="equip-group">
-      <h4><span>${EQUIP_CATEGORIES[cat].icon} ${esc(EQUIP_CATEGORIES[cat].label)}</span><span>${list.length}</span></h4>
+      <h4><span>${ic(EQUIP_CATEGORIES[cat].icon)} ${esc(EQUIP_CATEGORIES[cat].label)}</span><span>${list.length}</span></h4>
       ${list.map(e=>`<div class="equip-line" data-open-equip="${e.id}">
         <div class="equip-line-main"><div class="equip-line-title">${esc(equipTitle(e))}</div><div class="wsub mono">S/N ${esc(e.serial||'—')}</div></div>
         <div class="equip-line-badges">${(e.condition||'In service')!=='In service'?conditionBadge(e.condition):''}${e.expiry?badgeHtml(statusFor(e.expiry)):'<span class="badge muted">No expiry</span>'}</div>
@@ -3165,14 +3214,14 @@ function siteTeamTabHtml(s){
   const team=workersAtSite(s.id).slice().sort((a,b)=>(a.fullName||'').localeCompare(b.fullName||''));
   const withIssues=team.filter(w=>workerIssues(w).length).length;
   const head = `<div class="section-head"><h3>Team on this project (${team.length})</h3>${sitePickerOpen==='team' ? '' : '<button type="button" class="btn btn-sm" id="sitePickerOpenTeam">+ Assign workers</button>'}</div>`;
-  const note = team.length ? `<p class="wsub" style="margin:0 0 10px;">${withIssues ? `<span class="badge warn">${withIssues}</span> worker(s) have expired or missing documents — check before they start work.` : '✅ Everyone assigned here has valid induction, medical and licenses.'}</p>` : '';
+  const note = team.length ? `<p class="wsub" style="margin:0 0 10px;">${withIssues ? `<span class="badge warn">${withIssues}</span> worker(s) have expired or missing documents — check before they start work.` : ic('checkcircle')+' Everyone assigned here has valid induction, medical and licenses.'}</p>` : '';
   const picker = sitePickerOpen==='team' ? sitePickerHtml('team', s) : '';
   const list = team.length ? team.map(w=>{
     const issues=workerIssues(w);
     return `<div class="equip-line" data-open-worker="${w.id}">
       <div class="equip-line-main"><div class="equip-line-title">${esc(w.fullName||'—')}</div><div class="wsub">${esc([w.designation, w.trade].filter(Boolean).join(' · ')||'—')}</div></div>
       <div class="equip-line-badges">${issues.length ? issues.map(i=>`<span class="badge danger">${esc(i)}</span>`).join('') : '<span class="badge ok">All valid</span>'}
-        <button type="button" class="icon-btn danger" data-unassign-worker="${w.id}" title="Remove from this project" aria-label="Remove from project">✕</button></div>
+        <button type="button" class="icon-btn danger" data-unassign-worker="${w.id}" title="Remove from this project" aria-label="Remove from project">${ic('close')}</button></div>
     </div>`;
   }).join('') : '<p class="wsub">No workers assigned yet.</p>';
   return head + note + picker + list;
@@ -3187,7 +3236,7 @@ function siteVehiclesTabHtml(s){
     return `<div class="equip-line" data-open-vehicle="${v.id}">
       <div class="equip-line-main"><div class="equip-line-title mono">${esc(v.vehicleNumber||'—')}</div><div class="wsub">${esc(v.model||'—')} · ${esc(v.ownership||'Own')}</div></div>
       <div class="equip-line-badges">${issues.length ? issues.map(i=>`<span class="badge danger">${esc(i)}</span>`).join('') : '<span class="badge ok">All valid</span>'}
-        <button type="button" class="icon-btn danger" data-unassign-vehicle="${v.id}" title="Remove from this project" aria-label="Remove from project">✕</button></div>
+        <button type="button" class="icon-btn danger" data-unassign-vehicle="${v.id}" title="Remove from this project" aria-label="Remove from project">${ic('close')}</button></div>
     </div>`;
   }).join('') : '<p class="wsub">No vehicles assigned yet.</p>';
   return head + picker + list;
@@ -3226,7 +3275,7 @@ function renderSiteTrashBody(){
 /* ---------------- plant & equipment rendering ---------------- */
 function renderPlantTabs(){
   const counts={}; for(const e of activeEquipment()) counts[e.category]=(counts[e.category]||0)+1;
-  const tabs=[{key:'fleet', label:'🚚 Fleet', n:activeVehicles().length}, ...EQUIP_CATEGORY_ORDER.map(k=>({key:k, label:`${EQUIP_CATEGORIES[k].icon} ${EQUIP_CATEGORIES[k].short}`, n:counts[k]||0}))];
+  const tabs=[{key:'fleet', label:ic('truck')+' Fleet', n:activeVehicles().length}, ...EQUIP_CATEGORY_ORDER.map(k=>({key:k, label:`${ic(EQUIP_CATEGORIES[k].icon)} ${EQUIP_CATEGORIES[k].short}`, n:counts[k]||0}))];
   document.getElementById('plantTabs').innerHTML = tabs.map(t=>`<button type="button" class="division-tab ${t.key===activePlantTab?'active':''}" data-ptab="${t.key}">${t.label}<span class="tab-count">${t.n}</span></button>`).join('');
   document.getElementById('fleetPane').hidden = activePlantTab!=='fleet';
   document.getElementById('registerPane').hidden = activePlantTab==='fleet';
@@ -3234,7 +3283,7 @@ function renderPlantTabs(){
 
 function renderEquipAll(){
   renderPlantTabs();
-  document.getElementById('equipTrashBtn').textContent = `🗑 Deleted items (${deletedEquipment().length})`;
+  document.getElementById('equipTrashBtn').innerHTML = ic('trash')+` Deleted items (${deletedEquipment().length})`;
   if(activePlantTab!=='fleet'){
     const cat=EQUIP_CATEGORIES[activePlantTab];
     document.getElementById('equipPaneTitle').textContent = cat.label;
@@ -3256,10 +3305,10 @@ function renderEquipTiles(){
   const expiring=list.filter(e=>e.expiry && statusFor(e.expiry)==='expiring').length;
   const oos=list.filter(e=>(e.condition||'In service')!=='In service').length;
   const tiles=[
-    {label:'Total', num:list.length, cls:'', sub:`${inStore} in store · ${onSites} on projects`, cat:'--cat-1', icon:EQUIP_CATEGORIES[activePlantTab].icon},
-    {label:'Expired', num:expired, cls:expired?'danger':'ok', sub:'certificate / inspection overdue', cat:'--cat-9', icon:'⛔'},
-    {label:'Expiring soon', num:expiring, cls:expiring?'warn':'ok', sub:'within the next 30 days', cat:'--cat-2', icon:'⏳'},
-    {label:'Out of service', num:oos, cls:oos?'warn':'ok', sub:'out for TPI / repair or damaged', cat:'--cat-7', icon:'🔒'},
+    {label:'Total', num:list.length, cls:'', sub:`${inStore} in store · ${onSites} on projects`, cat:'--cat-1', icon:ic(EQUIP_CATEGORIES[activePlantTab].icon)},
+    {label:'Expired', num:expired, cls:expired?'danger':'ok', sub:'certificate / inspection overdue', cat:'--cat-9', icon:ic('stop')},
+    {label:'Expiring soon', num:expiring, cls:expiring?'warn':'ok', sub:'within the next 30 days', cat:'--cat-2', icon:ic('hourglass')},
+    {label:'Out of service', num:oos, cls:oos?'warn':'ok', sub:'out for TPI / repair or damaged', cat:'--cat-7', icon:ic('lock')},
   ];
   document.getElementById('equipTiles').innerHTML = tiles.map(t=>`
     <div class="tile" style="--tile-accent:var(${t.cat})">
@@ -3374,7 +3423,7 @@ function equipDrawerBodyHtml(e){
   <div class="loc-card">
     <div class="loc-card-top">
       <div class="loc-now">Currently: <strong>${esc(locLabel(loc))}</strong>${since}</div>
-      ${equipMoveOpen ? '' : `<button type="button" class="btn btn-primary btn-sm" id="equipMoveBtn">⇄ Move</button>`}
+      ${equipMoveOpen ? '' : `<button type="button" class="btn btn-primary btn-sm" id="equipMoveBtn">${ic('move')} Move</button>`}
     </div>
     <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">${conditionBadge(e.condition)} ${e.expiry?badgeHtml(statusFor(e.expiry)):'<span class="badge muted">No expiry set</span>'}</div>
     ${moveForm}
@@ -3446,9 +3495,9 @@ function periodCtlHtml(which){
       <button type="button" data-pact="month" class="${st.period==='month'?'active':''}">Monthly</button>
       <button type="button" data-pact="year" class="${st.period==='year'?'active':''}">Yearly</button>
     </div>
-    <button type="button" class="btn btn-sm" data-pact="prev" ${idAttr('prev')} aria-label="Previous">◀</button>
+    <button type="button" class="btn btn-sm" data-pact="prev" ${idAttr('prev')} aria-label="Previous">${ic('prev')}</button>
     ${st.period==='month' ? `<input type="month" class="month-input" data-pact-input ${idAttr('input')} value="${esc(st.month)}">` : `<span class="year-label">${esc(st.year)}</span>`}
-    <button type="button" class="btn btn-sm" data-pact="next" ${idAttr('next')} aria-label="Next">▶</button>
+    <button type="button" class="btn btn-sm" data-pact="next" ${idAttr('next')} aria-label="Next">${ic('next')}</button>
   </div>`;
 }
 function shiftPeriodState(st, delta){
@@ -3614,17 +3663,17 @@ function renderCommandCentre(entries, m, key){
   const ptwOpen=allPtw.filter(x=>(x.status||'Open')==='Open'), ptwStale=ptwOpen.filter(x=>permitOverdueDays(x));
   const ltif = m.manHours ? (m.lti*1000000/m.manHours) : null;
   const tilesL=[
-    {ico:'NM', label:'Near<br>miss', count:m.nearMiss, text:m.nearMiss, sub:m.nearMiss?periodWord:'none', st:m.nearMiss?'watch':'good'},
-    {ico:'FA', label:'First aid<br>case', count:m.fac, text:m.fac, sub:m.fac?periodWord:'none', st:m.fac?'watch':'good'},
-    {ico:'MT', label:'Medical<br>treatment', count:m.mti, text:m.mti, sub:m.mti?'recordable injury':'none', st:m.mti?'bad':'good'},
+    {ico:ic('alert'), label:'Near<br>miss', count:m.nearMiss, text:m.nearMiss, sub:m.nearMiss?periodWord:'none', st:m.nearMiss?'watch':'good'},
+    {ico:ic('firstaid'), label:'First aid<br>case', count:m.fac, text:m.fac, sub:m.fac?periodWord:'none', st:m.fac?'watch':'good'},
+    {ico:ic('heart'), label:'Medical<br>treatment', count:m.mti, text:m.mti, sub:m.mti?'recordable injury':'none', st:m.mti?'bad':'good'},
   ];
   const tilesR=[
-    {ico:'TB', label:'Toolbox<br>talks', count:m.tbt, text:m.tbt, sub:`${m.tbtAttendees} attendances`, st:'good'},
-    {ico:'PW', label:'Permits<br>to work', count:ptwPeriod.length, text:ptwPeriod.length, sub:`${ptwOpen.length} open · ${ptwStale.length} past validity`, st:ptwStale.length?'bad':'good'},
-    {ico:'LT', label:'LTIF', text:fmtRate(ltif), sub:m.lti?`${m.lti} LTI · ${m.ltiDaysLost} days lost`:'per million hrs', st:m.lti?'bad':'good'},
+    {ico:ic('megaphone'), label:'Toolbox<br>talks', count:m.tbt, text:m.tbt, sub:`${m.tbtAttendees} attendances`, st:'good'},
+    {ico:ic('filecheck'), label:'Permits<br>to work', count:ptwPeriod.length, text:ptwPeriod.length, sub:`${ptwOpen.length} open · ${ptwStale.length} past validity`, st:ptwStale.length?'bad':'good'},
+    {ico:ic('trend'), label:'LTIF', text:fmtRate(ltif), sub:m.lti?`${m.lti} LTI · ${m.ltiDaysLost} days lost`:'per million hrs', st:m.lti?'bad':'good'},
   ];
-  const mh={ico:'MH', label:'Man-<br>hours', count:m.manHours, text:m.manHours.toLocaleString(), sub:mhSub, st:'good'};
-  const ca={ico:'CA', label:'Open<br>actions', count:openActs.length, text:openActs.length, sub:overdueActs.length?`${overdueActs.length} overdue`:(openActs.length?'all on track':'nothing open'), st:overdueActs.length?'bad':(openActs.length?'watch':'good')};
+  const mh={ico:ic('clock'), label:'Man-<br>hours', count:m.manHours, text:m.manHours.toLocaleString(), sub:mhSub, st:'good'};
+  const ca={ico:ic('clipcheck'), label:'Open<br>actions', count:openActs.length, text:openActs.length, sub:overdueActs.length?`${overdueActs.length} overdue`:(openActs.length?'all on track':'nothing open'), st:overdueActs.length?'bad':(openActs.length?'watch':'good')};
   const streak=ccLtiStreak(division, project);
   const orbNum = streak ? streak.days : null;
   const orbSub = !streak ? 'no entries yet' : streak.lastLti ? `last LTI ${streak.lastLti} · best ${streak.best} days` : `no LTI since ${streak.since}`;
@@ -3633,7 +3682,7 @@ function renderCommandCentre(entries, m, key){
   document.getElementById('ccCluster').innerHTML = `
     <div class="cc-col">${tilesL.map(ccTile).join('')}</div>
     <div class="cc-mid">${ccTile(mh)}
-      <div class="cc-orb"><span class="cc-ring r1"></span><span class="cc-ring r2"></span><span class="cc-ring r3"></span><span class="cc-core"></span>
+      <div class="cc-orb"><span class="cc-ring r4"></span><span class="cc-ring r1"></span><span class="cc-ring r2"></span><span class="cc-ring r3"></span><span class="cc-core"></span>
         <div class="cc-orb-txt"><div class="cc-orb-k">Days without LTI</div><div class="cc-orb-big" ${orbNum!==null?`data-cc-count="${orbNum}"`:''}>${orbNum!==null?orbNum:'—'}</div><div class="cc-orb-s">${esc(orbSub)}</div></div>
       </div>${ccTile(ca)}</div>
     <div class="cc-col">${tilesR.map(ccTile).join('')}</div>`;
@@ -3655,7 +3704,7 @@ function renderCommandCentre(entries, m, key){
   }).filter(Boolean);
   document.getElementById('ccGauges').innerHTML = divRows.length
     ? divRows.map(r=>`<div class="cc-g">${ccDial(r.pct,120,10,r.d)}<div class="cc-gv" style="color:${ccStatusColor(r.pct)}">${r.pct}%</div><div class="cc-gl">${esc(r.d)}</div><div class="cc-gs">${esc(r.sub)}</div></div>`).join('')
-    : `<p class="wsub" style="grid-column:1/-1; margin:6px 4px;">${canEdit()?'Set the required trainings in <strong>Workforce → Training matrix → ⚙ Required trainings</strong> and each division\'s compliance dial appears here.':'The HSE team has not set the required trainings yet.'}</p>`;
+    : `<p class="wsub" style="grid-column:1/-1; margin:6px 4px;">${canEdit()?'Set the required trainings in <strong>Workforce → Training matrix → Required trainings</strong> and each division\'s compliance dial appears here.':'The HSE team has not set the required trainings yet.'}</p>`;
   // compliance right now (company-wide)
   const pct=(a,b)=> b ? Math.round(a*100/b) : null;
   const aw=activeWorkers().filter(w=>(w.status||'active')==='active');
@@ -3844,8 +3893,8 @@ function renderReportTable(entries){
     const fromProject = e.source==='projectToolbox' && e.sourceSiteId && activeSites().some(x=>x.id===e.sourceSiteId);
     const actions = fromProject
       ? `<button type="button" class="btn btn-sm" data-ropen-site="${esc(e.sourceSiteId)}" title="Logged in the project's Toolbox talks tab — edit it there">Open in project</button>`
-      : `<button type="button" class="icon-btn" data-redit="${e.id}" aria-label="Edit">✎</button>
-        <button type="button" class="icon-btn danger" data-rdel="${e.id}" data-armed="0" aria-label="Delete">🗑</button>`;
+      : `<button type="button" class="icon-btn" data-redit="${e.id}" aria-label="Edit">${ic('pencil')}</button>
+        <button type="button" class="icon-btn danger" data-rdel="${e.id}" data-armed="0" aria-label="Delete">${ic('trash')}</button>`;
     return `<tr data-rid="${e.id}">
       <td class="mono">${esc(e.date||'—')}</td>
       <td>${esc(e.division?divLabel(e.division):'—')}</td>
@@ -4104,7 +4153,7 @@ function renderDrawer(){
   const w=currentWorker();
   if(!w){ closeDrawer(); return; }
   document.getElementById('drawerName').textContent=w.fullName;
-  document.getElementById('drawerSub').textContent=(w.civilId||'')+(w.trade?' · '+w.trade:'')+(w.projectId?' · 📍 '+locLabel(w.projectId):'');
+  document.getElementById('drawerSub').textContent=(w.civilId||'')+(w.trade?' · '+w.trade:'')+(w.projectId?' · at '+locLabel(w.projectId):'');
   document.getElementById('drawerTabs').innerHTML=TABS.map(t=>`<button type="button" class="tab-btn ${t.key===activeTab?'active':''}" data-tab="${t.key}">${t.label}</button>`).join('');
   renderDrawerBody();
 }
@@ -4135,7 +4184,7 @@ function attachmentPreviewHtml(att, label, removeTarget){
     const isImg = (att.contentType||'').startsWith('image/');
     const thumb = isImg
       ? `<a href="${att.url}" target="_blank" rel="noopener"><img class="att-thumb" src="${att.url}" alt="${esc(label)}"></a>`
-      : `<span class="att-file-icon">📄</span>`;
+      : `<span class="att-file-icon">${ic('file')}</span>`;
     return `<div class="att-present">
       ${thumb}
       <div class="att-actions">
@@ -4377,8 +4426,8 @@ function recordTabHtml(w,key,cfg){
       <div class="record-card-top">
         <div class="record-card-title">${esc(r[titleField]||'')} ${key==='medical'?resultBadge:''} ${expiryBadge}</div>
         <div class="record-card-actions">
-          <button type="button" class="icon-btn" data-edit="${key}:${r.id}" aria-label="Edit">✎</button>
-          <button type="button" class="icon-btn danger" data-del="${key}:${r.id}" data-armed="0" aria-label="Delete">🗑</button>
+          <button type="button" class="icon-btn" data-edit="${key}:${r.id}" aria-label="Edit">${ic('pencil')}</button>
+          <button type="button" class="icon-btn danger" data-del="${key}:${r.id}" data-armed="0" aria-label="Delete">${ic('trash')}</button>
         </div>
       </div>
       <div class="record-fields">${fieldsHtml}</div>
@@ -4915,7 +4964,7 @@ function renderImportBody(){
   document.getElementById('importBody').innerHTML = `
     <label>What are you importing?<select id="importTypeSelect">${opts}</select></label>
     <ol class="import-steps">
-      <li><button type="button" class="btn btn-sm" id="importTemplateBtn">⬇ Download the ${esc(T.label.toLowerCase())} template</button></li>
+      <li><button type="button" class="btn btn-sm" id="importTemplateBtn">${ic('download')} Download the ${esc(T.label.toLowerCase())} template</button></li>
       <li>Fill it in Excel — one row per ${esc(T.noun)}. Keep the column headings. The "How to fill" sheet explains each column.</li>
       <li>Choose the filled file: <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" style="width:auto; display:inline-block;"></li>
       <li>Check the preview below, then press Import. Only new rows are added.</li>
@@ -5212,7 +5261,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const delBtn=e.target.closest('[data-del]');
     if(delBtn){
       if(delBtn.dataset.armed!=='1'){
-        delBtn.dataset.armed='1'; delBtn.textContent='✔'; setTimeout(()=>{ if(delBtn.dataset.armed==='1'){ delBtn.dataset.armed='0'; delBtn.textContent='🗑'; } },4000);
+        delBtn.dataset.armed='1'; delBtn.innerHTML=ic('check'); setTimeout(()=>{ if(delBtn.dataset.armed==='1'){ delBtn.dataset.armed='0'; delBtn.innerHTML=ic('trash'); } },4000);
         return;
       }
       const [key,rid]=delBtn.dataset.del.split(':');
@@ -5416,7 +5465,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const delBtn=e.target.closest('[data-del]');
     if(delBtn){
       if(delBtn.dataset.armed!=='1'){
-        delBtn.dataset.armed='1'; delBtn.textContent='✔'; setTimeout(()=>{ if(delBtn.dataset.armed==='1'){ delBtn.dataset.armed='0'; delBtn.textContent='🗑'; } },4000);
+        delBtn.dataset.armed='1'; delBtn.innerHTML=ic('check'); setTimeout(()=>{ if(delBtn.dataset.armed==='1'){ delBtn.dataset.armed='0'; delBtn.innerHTML=ic('trash'); } },4000);
         return;
       }
       const [key,rid]=delBtn.dataset.del.split(':');
@@ -5633,7 +5682,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const delBtn=e.target.closest('[data-del]');
     if(delBtn){
       if(delBtn.dataset.armed!=='1'){
-        delBtn.dataset.armed='1'; delBtn.textContent='✔'; setTimeout(()=>{ if(delBtn.dataset.armed==='1'){ delBtn.dataset.armed='0'; delBtn.textContent='🗑'; } },4000);
+        delBtn.dataset.armed='1'; delBtn.innerHTML=ic('check'); setTimeout(()=>{ if(delBtn.dataset.armed==='1'){ delBtn.dataset.armed='0'; delBtn.innerHTML=ic('trash'); } },4000);
         return;
       }
       const [key,rid]=delBtn.dataset.del.split(':');
@@ -5880,7 +5929,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const delBtn=e.target.closest('[data-rdel]');
     if(delBtn){
       if(delBtn.dataset.armed!=='1'){
-        delBtn.dataset.armed='1'; delBtn.textContent='✔'; setTimeout(()=>{ if(delBtn.dataset.armed==='1'){ delBtn.dataset.armed='0'; delBtn.textContent='🗑'; } },4000);
+        delBtn.dataset.armed='1'; delBtn.innerHTML=ic('check'); setTimeout(()=>{ if(delBtn.dataset.armed==='1'){ delBtn.dataset.armed='0'; delBtn.innerHTML=ic('trash'); } },4000);
         return;
       }
       try{ await db.collection('hseLogs').doc(delBtn.dataset.rdel).delete(); toast('Entry deleted'); }
