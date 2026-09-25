@@ -993,6 +993,7 @@ let workers=[];
 let activeWorkerId=null, activeTab='profile', editingRecordId=null, addFormOpen=false;
 let filters={q:'', trade:'all', status:'all'};
 let unsubscribeWorkers=null;
+let pendingWorkerOpen = new URLSearchParams(location.search).get('worker');
 
 /* ---------------- vehicle tracker ---------------- */
 const VEHICLE_TABS = [
@@ -1542,7 +1543,6 @@ auth.onAuthStateChanged(user=>{
 
 async function startData(){
   try{
-    await maybeSeed();
     unsubscribeWorkers = db.collection('workers').orderBy('fullName','asc').onSnapshot(snap=>{
       workers = snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
       document.getElementById('dbUnavailableBanner').hidden=true;
@@ -1639,36 +1639,7 @@ function startReportData(){
   }catch(e){ console.error(e); }
 }
 
-async function maybeSeed(){
-  if(!canEdit()) return;
-  try{
-    const snap = await db.collection('workers').limit(1).get();
-    if(!snap.empty) return;
-    const samples = [
-      {isSample:true, fullName:'Arjun Mehta', civilId:'784-1988-5512340-9', civilIdExpiry:'2027-03-14', nationality:'Indian', dateOfBirth:'1988-04-12', bloodGroup:'O+', mobileNumber:'+971 50 111 2233',
-        designation:'Leading Hand', trade:'Scaffolder', contractor:'Falcon MEP Contracting', dateOfJoining:'2024-02-10', status:'active',
-        experienceGCCYears:'6', experienceOtherYears:'3', priorExperienceNotes:'Qatar 2019–2023, scaffolder, Al Bidda Contracting; India 2016–2019, apprentice fitter.',
-        emergencyContactName:'Sunita Mehta', emergencyContactRelation:'Spouse', emergencyContactPhone:'+91 98765 43210',
-        inductions:[{id:genId(), site:'Marina Tower Phase 2', date:'2025-11-01', expiry:'2026-11-01', conductedBy:'S. Khalid, HSE Officer', notes:'Site + working-at-height induction'}],
-        trainings:[{id:genId(), name:'Working at Height', provider:'SafetyFirst Training Centre', date:'2025-10-15', expiry:'2027-10-15', notes:''}],
-        competency:[{id:genId(), skill:'Scaffolding erection', result:'Competent', assessor:'M. Rao', date:'2025-10-20', expiry:'2026-10-20', notes:''}],
-        licenses:[{id:genId(), type:'Labor Card / Work Permit', number:'LC-44210', issuingAuthority:'MOHRE', date:'2024-02-05', expiry:'2026-10-05', notes:''}],
-        medical:[{id:genId(), type:'PDO Medical Fitness', result:'Fit', date:'2025-09-01', expiry:'2026-09-01', clinic:'Gulf Medical Centre', doctor:'Dr. Al Farsi', notes:''}],
-        warnings:[], violations:[]},
-      {isSample:true, fullName:'Salman Iqbal', civilId:'784-1992-7788110-2', civilIdExpiry:'2026-10-01', nationality:'Pakistani', dateOfBirth:'1992-08-02', bloodGroup:'B+', mobileNumber:'+971 55 222 4455',
-        designation:'Rigger', trade:'Rigger', contractor:'Falcon MEP Contracting', dateOfJoining:'2023-06-01', status:'active',
-        experienceGCCYears:'4', experienceOtherYears:'2', priorExperienceNotes:'Pakistan 2018–2020, general labour.',
-        emergencyContactName:'Imran Iqbal', emergencyContactRelation:'Brother', emergencyContactPhone:'+92 300 1234567',
-        inductions:[{id:genId(), site:'Marina Tower Phase 2', date:'2024-01-05', expiry:'2025-01-05', conductedBy:'S. Khalid, HSE Officer', notes:''}],
-        trainings:[], competency:[],
-        licenses:[{id:genId(), type:'Driving License', number:'DL-902341', issuingAuthority:'RTA', date:'2022-05-01', expiry:'2026-10-15', notes:'Light vehicle'}],
-        medical:[{id:genId(), type:'OQ Medical Fitness', result:'Fit', date:'2025-10-05', expiry:'2026-10-05', clinic:'Al Shifa Clinic', doctor:'Dr. Hassan', notes:'Previous screening: General Medical Screening, 2024-09-01, Fit.'}],
-        warnings:[{id:genId(), level:'Written – 1st', date:'2026-06-12', reason:'Not wearing safety harness while working at height', issuedBy:'HSE Manager', notes:'Toolbox talk repeated for the crew'}],
-        violations:[{id:genId(), category:'No PPE', severity:'Major', date:'2026-06-12', description:'Found working at height without a safety harness on level 14.', actionTaken:'Stopped work, re-issued PPE, written warning issued.', reportedBy:'HSE Inspector'}]},
-    ];
-    for(const s of samples){ await db.collection('workers').add(s); }
-  }catch(e){ console.error('seed failed', e); }
-}
+// (Automatic sample workers were removed — once deleted they no longer come back.)
 
 /* ---------------- render ---------------- */
 function renderAll(){
@@ -3897,7 +3868,6 @@ async function printQrCards(list){
   }catch(e){ console.error(e); toast('Could not create QR codes — check your internet connection'); }
 }
 // Opening the tracker from a scanned QR code: ?worker=<id>
-let pendingWorkerOpen = new URLSearchParams(location.search).get('worker');
 function openPendingWorker(){
   if(!pendingWorkerOpen || !auth.currentUser || !workers.length) return;
   const id=pendingWorkerOpen; pendingWorkerOpen=null;
