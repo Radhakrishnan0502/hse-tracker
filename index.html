@@ -104,6 +104,10 @@ label{display:flex; flex-direction:column; gap:4px; font-size:12.5px; color:var(
 .topbar{display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:20px;}
 .topbar h1{font-size:22px; font-weight:800;}
 .topbar p{margin:4px 0 0; color:var(--ink-muted); font-size:13px; max-width:52ch;}
+.topbar p.page-tagline{max-width:none; margin-top:8px; display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; font-family:var(--font-display); font-size:12px; font-weight:600; letter-spacing:.18em; text-transform:uppercase;}
+.pt-co{color:var(--ink);}
+.pt-sep{width:22px; height:2px; background:var(--accent); box-shadow:0 0 8px var(--glow);}
+.pt-slogan{color:var(--accent);}
 .topbar-actions{display:flex; gap:8px; flex-wrap:wrap;}
 .brand-row{display:flex; align-items:center; gap:14px;}
 .brand-logo{height:52px; width:auto; flex:none; border-radius:10px; box-shadow:var(--logo-shadow);}
@@ -245,7 +249,9 @@ button.att-link.att-remove{color:var(--danger);}
 .danger-zone p{color:var(--ink-muted); font-size:12px; margin:0 0 8px;}
 
 /* ---- monthly report ---- */
-.division-tabs{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;}
+.division-tabs{display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:12px;}
+.division-tabs .period-ctl{flex-wrap:nowrap;}
+@media (max-width:1500px){ #reportPeriodCtl{margin-left:0 !important; width:100%;} }
 .division-tab{padding:8px 14px; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--ink-muted); font-weight:600; font-size:12.5px;}
 .division-tab:hover{color:var(--ink); border-color:var(--accent);}
 .division-tab.active{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
@@ -517,7 +523,7 @@ body.auth-open{overflow:hidden; height:100%;}
       <div class="topbar">
         <div>
           <h1>Workforce HSE Register</h1>
-          <p>One live record per worker — induction, training, competency, medical fitness, licenses, warning letters and violations, tracked in one place and always up to date for everyone who signs in.</p>
+          <p class="page-tagline"><span class="pt-co">Burhan Oil &amp; Trade Services</span><span class="pt-sep" aria-hidden="true"></span><span class="pt-slogan">Our people, our priority</span></p>
         </div>
         <div class="topbar-actions">
           <button class="btn btn-ghost btn-sm" id="clearSampleBtn" hidden>Remove sample data</button>
@@ -584,7 +590,6 @@ body.auth-open{overflow:hidden; height:100%;}
         <div class="pane-head">
           <div>
             <h2>Training matrix</h2>
-            <div class="wsub">Which trainings each division needs, and who is valid, expiring, expired or missing — built live from every worker's Training records.</div>
           </div>
           <div class="topbar-actions">
             <button class="btn btn-sm" id="editReqBtn" type="button">⚙ Required trainings</button>
@@ -614,7 +619,7 @@ body.auth-open{overflow:hidden; height:100%;}
       <div class="topbar">
         <div>
           <h1>Plant &amp; Equipment</h1>
-          <p>Your fleet, plus every power tool, lifting gear, harness, ladder, fire extinguisher and specialized PPE item in the company — each with its certificate, expiry, current location (store or project) and full movement history.</p>
+          <p class="page-tagline"><span class="pt-co">Burhan Oil &amp; Trade Services</span><span class="pt-sep" aria-hidden="true"></span><span class="pt-slogan">Safe equipment, safe operations</span></p>
         </div>
       </div>
 
@@ -624,7 +629,6 @@ body.auth-open{overflow:hidden; height:100%;}
       <div class="pane-head">
         <div>
           <h2>Fleet</h2>
-          <div class="wsub">Vehicle documents (registration, MOT, insurance, IVMS, DFMS, RAS sticker), onboard PPE &amp; safety kit, and counts for jacks, wheel stoppers, brass hammers and warning triangles.</div>
         </div>
         <div class="topbar-actions">
           <button class="btn btn-sm import-btn" id="importVehiclesBtn" type="button">⬆ Import Excel</button>
@@ -679,7 +683,7 @@ body.auth-open{overflow:hidden; height:100%;}
         <div class="pane-head">
           <div>
             <h2 id="equipPaneTitle"></h2>
-            <div class="wsub" id="equipPaneSub"></div>
+            <div class="wsub" id="equipPaneSub" hidden></div>
           </div>
           <div class="topbar-actions">
             <button class="btn btn-sm import-btn" id="importEquipBtn" type="button">⬆ Import Excel</button>
@@ -735,7 +739,7 @@ body.auth-open{overflow:hidden; height:100%;}
       <div class="topbar">
         <div>
           <h1>Project Details</h1>
-          <p>One live record per project — client, scope and duration, plus every tool, harness, ladder, extinguisher and PPE item currently on site (managed from Plant &amp; Equipment).</p>
+          <p class="page-tagline"><span class="pt-co">Burhan Oil &amp; Trade Services</span><span class="pt-sep" aria-hidden="true"></span><span class="pt-slogan">Every site, every shift, home safe</span></p>
         </div>
         <div class="topbar-actions">
           <button class="btn btn-sm" id="siteTrashBtn" type="button">🗑 Deleted projects (0)</button>
@@ -800,7 +804,7 @@ body.auth-open{overflow:hidden; height:100%;}
       <div class="topbar">
         <div>
           <h1 id="reportTitle">Monthly HSE Report</h1>
-          <p>Safe man-hours, near-misses, LTIs and incidents alongside proactive activity — training, TBTs, inductions, audits, site visits and vehicle checks — live per division or combined for all of Burhan Oil &amp; Trade Services.</p>
+          <p class="page-tagline"><span class="pt-co">Burhan Oil &amp; Trade Services</span><span class="pt-sep" aria-hidden="true"></span><span class="pt-slogan">Think safe, work safe, home safe</span></p>
         </div>
         <div class="topbar-actions">
           <button class="btn btn-sm" id="downloadReportPdfBtn" type="button">⬇ PDF report</button>
@@ -899,7 +903,7 @@ body.auth-open{overflow:hidden; height:100%;}
       <div class="topbar">
         <div>
           <h1>QHSE Management Library</h1>
-          <p>Every controlled QHSE document in one place — manuals, policies, procedures, forms and checklists — with the current file, revision number, last and next revision dates, and the full revision history.</p>
+          <p class="page-tagline"><span class="pt-co">Burhan Oil &amp; Trade Services</span><span class="pt-sep" aria-hidden="true"></span><span class="pt-slogan">Right document, right revision, every time</span></p>
         </div>
         <div class="topbar-actions">
           <button class="btn btn-sm" id="libTrashBtn" type="button">🗑 Deleted documents (0)</button>
@@ -1570,8 +1574,7 @@ function renderMonitorBar(){
     ${iv ? `<a class="btn btn-sm" href="${esc(iv)}" target="_blank" rel="noopener noreferrer">IVMS portal${appSettings.ivmsProvider?' · '+esc(appSettings.ivmsProvider):''} ↗</a>` : '<span class="badge muted">IVMS link not set</span>'}
     ${df ? `<a class="btn btn-sm" href="${esc(df)}" target="_blank" rel="noopener noreferrer">DFMS portal${appSettings.dfmsProvider?' · '+esc(appSettings.dfmsProvider):''} ↗</a>` : '<span class="badge muted">DFMS link not set</span>'}
     ${warn}
-    <button type="button" class="btn btn-sm btn-ghost" id="monitorEditBtn">⚙ ${iv||df?'Edit links':'Set links'}</button>
-    <span class="monitor-bar-hint">Opens the live tracking site in a new tab — sign in there with your IVMS / DFMS account.</span>`;
+    <button type="button" class="btn btn-sm btn-ghost" id="monitorEditBtn">⚙ ${iv||df?'Edit links':'Set links'}</button>`;
 }
 function vehicleMonitorCell(v){
   const l=vehicleMonitorLinks(v);
