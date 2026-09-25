@@ -890,6 +890,15 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
+// Stay signed in only while this tab/app window is open. Closing it (or the
+// browser) means the next visit starts at the login screen and needs the
+// Sign in button. A normal refresh (Ctrl+Shift+R) keeps you signed in.
+const SESSION_PERSISTENCE = (firebase.auth.Auth && firebase.auth.Auth.Persistence && firebase.auth.Auth.Persistence.SESSION) || 'session';
+function useSessionLogin(){
+  try{ return (auth.setPersistence ? auth.setPersistence(SESSION_PERSISTENCE) : Promise.resolve()).catch(e=>console.error('setPersistence', e)); }
+  catch(e){ console.error('setPersistence', e); return Promise.resolve(); }
+}
+useSessionLogin();   // also moves an existing "remembered" login to this-tab-only
 const db = firebase.firestore();
 const storage = firebase.storage();
 
@@ -1646,7 +1655,7 @@ function renderAll(){
   renderTiles();
   renderTradeFilter();
   renderTable();
-  document.getElementById('clearSampleBtn').hidden = !activeWorkers().some(w=>w.isSample);
+  document.getElementById('clearSampleBtn').hidden = !workers.some(w=>w.isSample);
   const trashCount=deletedWorkers().length;
   document.getElementById('trashBtn').textContent = `🗑 Deleted workers (${trashCount})`;
   if(activeWorkerId) renderDrawer();
@@ -3887,7 +3896,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const pass=document.getElementById('loginPassword').value;
     const err=document.getElementById('authError');
     err.hidden=true;
-    auth.signInWithEmailAndPassword(email, pass).catch(e=>{
+    useSessionLogin().then(()=>auth.signInWithEmailAndPassword(email, pass)).catch(e=>{
       err.textContent = 'Sign-in failed — check your email and password.';
       err.hidden=false;
     });
@@ -3921,14 +3930,16 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   document.getElementById('clearSampleBtn').addEventListener('click', async function(){
     if(this.dataset.armed!=='1'){
-      this.dataset.armed='1'; const orig=this.textContent; this.textContent='Confirm — delete sample data?';
+      this.dataset.armed='1'; const orig=this.textContent; this.textContent='Click again to confirm';
       setTimeout(()=>{ this.dataset.armed='0'; this.textContent=orig; }, 4000);
       return;
     }
     this.dataset.armed='0';
-    const samples=activeWorkers().filter(w=>w.isSample);
-    for(const s of samples){ try{ await db.collection('workers').doc(s.id).delete(); }catch(e){} }
-    toast('Sample data removed');
+    const samples=workers.filter(w=>w.isSample);   // includes any sample already in Deleted workers
+    let failed=0, lastErr='';
+    for(const s of samples){ try{ await db.collection('workers').doc(s.id).delete(); }catch(e){ failed++; lastErr=(e&&e.code)||(e&&e.message)||'error'; console.error(e); } }
+    if(failed) toast(`Could not delete ${failed} sample worker(s) — ${lastErr}. Make sure you are signed in as an editor.`);
+    else toast(`Sample data removed (${samples.length})`);
   });
 
   document.getElementById('searchInput').addEventListener('input', e=>{ filters.q=e.target.value; renderTable(); });
