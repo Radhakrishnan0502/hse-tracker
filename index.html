@@ -323,7 +323,39 @@ body.read-only [data-edit], body.read-only [data-del], body.read-only [data-redi
 body.read-only #toggleRecordForm, body.read-only .upload-btn, body.read-only .att-remove, body.read-only .danger-zone,
 body.read-only #equipMoveBtn, body.read-only #sitePickerOpenTeam, body.read-only #sitePickerOpenVehicles,
 body.read-only [data-unassign-worker], body.read-only [data-unassign-vehicle], body.read-only #siteLogEntryBtn,
-body.read-only .drawer .form-actions, body.read-only .sig-pad-wrap, body.read-only #recordForm{display:none !important;}
+body.read-only .drawer .form-actions, body.read-only .sig-pad-wrap, body.read-only #recordForm,
+body.read-only #addLibBtn, body.read-only #libTrashBtn, body.read-only #libNewRevBtn, body.read-only #monitorEditBtn,
+body.read-only #editReqBtn, body.read-only #reqPanel{display:none !important;}
+/* ---- IVMS / DFMS monitoring links ---- */
+.monitor-bar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:14px; box-shadow:var(--shadow);}
+.monitor-bar-label{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-muted); font-weight:700; margin-right:4px;}
+.monitor-bar-hint{margin-left:auto; font-size:11.5px; color:var(--ink-muted);}
+.monitor-bar form{width:100%;}
+a.btn{text-decoration:none; display:inline-flex; align-items:center; gap:6px;}
+a.link-chip{display:inline-block; font-size:11.5px; font-weight:700; color:var(--accent); border:1px solid var(--line); border-radius:999px; padding:2px 9px; text-decoration:none; margin:0 4px 2px 0; white-space:nowrap;}
+a.link-chip:hover{border-color:var(--accent);}
+.monitor-links{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:0 0 12px;}
+/* ---- record forms: full-width blocks & worker picker ---- */
+.form-grid .span-all{grid-column:1 / -1;}
+.pick-label{font-size:12.5px; color:var(--ink-muted); font-weight:500; margin-bottom:4px;}
+.pick-search{margin-bottom:6px;}
+/* ---- training matrix ---- */
+table.matrix-table{min-width:0;}
+table.matrix-table th, table.matrix-table td{padding:8px 10px; white-space:nowrap;}
+table.matrix-table thead th.mx-col{white-space:normal; min-width:92px; max-width:150px; vertical-align:bottom; text-transform:none; letter-spacing:0; font-size:11.5px; text-align:center;}
+table.matrix-table .mx-sticky{position:sticky; left:0; background:var(--surface); z-index:1; border-right:1px solid var(--line); min-width:170px;}
+table.matrix-table tbody tr:hover .mx-sticky{background:var(--surface-2);}
+table.matrix-table td.mx-cell{text-align:center;}
+.mx-na{color:var(--ink-muted);}
+.req-row{display:grid; grid-template-columns:minmax(180px,1.3fr) 3fr auto; gap:10px; align-items:center; padding:8px 0; border-bottom:1px dashed var(--line);}
+.req-divs{display:flex; gap:6px 14px; flex-wrap:wrap;}
+label.chk{flex-direction:row; align-items:center; gap:6px; color:var(--ink); font-weight:500; font-size:12.5px;}
+label.chk input{width:auto; flex:none;}
+@media (max-width:700px){ .req-row{grid-template-columns:1fr auto;} .req-divs{grid-column:1 / -1; grid-row:2;} }
+/* ---- QHSE library ---- */
+.lib-file-name{font-weight:600; font-size:13px; word-break:break-word;}
+td.lib-file{white-space:nowrap;}
+td.lib-file .att-link + .att-link{margin-left:10px;}
 .qr-dialog{position:fixed; z-index:200; left:50%; top:50%; transform:translate(-50%,-50%); width:min(360px, calc(100% - 32px)); max-height:calc(100% - 32px); overflow:auto; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:18px; box-shadow:var(--shadow);}
 .qr-card{background:#ffffff; color:#111; border:1px solid #d8d8d8; border-radius:12px; padding:14px; text-align:center;}
 .qr-card-co{font-family:var(--font-display); font-weight:800; font-size:12px; letter-spacing:.04em; text-transform:uppercase; color:#b3121f;}
@@ -387,6 +419,7 @@ body.auth-open{overflow:hidden; height:100%;}
     <button type="button" class="sidenav-btn active" data-section="workforce">Workforce</button>
     <button type="button" class="sidenav-btn" data-section="vehicles">Plant &amp; Equipment</button>
     <button type="button" class="sidenav-btn" data-section="site">Project Details</button>
+    <button type="button" class="sidenav-btn" data-section="library">QHSE Library</button>
     <div class="view-only-badge" id="viewOnlyBadge" hidden>View only — changes are made by the HSE team</div>
     <button type="button" class="theme-switch" id="themeToggle" role="switch" aria-checked="false"><span class="theme-switch-track"><span class="theme-switch-knob"></span></span><span id="themeToggleLabel">Light mode</span></button>
   </aside>
@@ -412,6 +445,12 @@ body.auth-open{overflow:hidden; height:100%;}
         </div>
       </div>
 
+      <nav class="division-tabs" id="workforceViewTabs">
+        <button type="button" class="division-tab active" data-wview="register">Register</button>
+        <button type="button" class="division-tab" data-wview="matrix">Training matrix</button>
+      </nav>
+
+      <div id="workforceRegisterPane">
       <div class="tiles" id="tiles"></div>
 
       <div class="panel" id="addWorkerPanel" hidden>
@@ -455,6 +494,36 @@ body.auth-open{overflow:hidden; height:100%;}
           </tbody>
         </table>
       </div>
+      </div><!-- /workforceRegisterPane -->
+
+      <div id="trainingMatrixPane" hidden>
+        <div class="pane-head">
+          <div>
+            <h2>Training matrix</h2>
+            <div class="wsub">Which trainings each division needs, and who is valid, expiring, expired or missing — built live from every worker's Training records.</div>
+          </div>
+          <div class="topbar-actions">
+            <button class="btn btn-sm" id="editReqBtn" type="button">⚙ Required trainings</button>
+          </div>
+        </div>
+        <div class="panel" id="reqPanel" hidden></div>
+        <div class="tiles tiles-4" id="matrixTiles"></div>
+        <div class="toolbar">
+          <input type="search" id="matrixSearch" placeholder="Search worker…">
+          <select id="matrixDivision"><option value="all">All divisions</option></select>
+          <select id="matrixGaps">
+            <option value="all">All active workers</option>
+            <option value="gaps">Only workers with gaps</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table class="matrix-table">
+            <thead id="matrixHead"></thead>
+            <tbody id="matrixRows"><tr><td class="empty-state">Sign in to load the training matrix…</td></tr></tbody>
+          </table>
+        </div>
+        <p class="wsub" style="margin-top:8px;">A training counts when the course name on the worker's Training record contains the required name — e.g. “Working at Height – Level 2” counts for “Working at Height”. Click a cell to open that worker's Training tab.</p>
+      </div>
     </main>
 
     <main class="app-main" id="vehiclesSection" hidden>
@@ -479,6 +548,8 @@ body.auth-open{overflow:hidden; height:100%;}
           <button class="btn btn-primary" id="addVehicleBtn">+ Add vehicle</button>
         </div>
       </div>
+
+      <div class="monitor-bar" id="monitorBar"></div>
 
       <div class="tiles" id="vehicleTiles"></div>
 
@@ -510,11 +581,11 @@ body.auth-open{overflow:hidden; height:100%;}
         <table>
           <thead>
             <tr>
-              <th>Vehicle number</th><th>Model</th><th>Ownership</th><th>Documents</th><th>PPE</th>
+              <th>Vehicle number</th><th>Model</th><th>Ownership</th><th>Documents</th><th>PPE</th><th>IVMS / DFMS</th>
             </tr>
           </thead>
           <tbody id="vehicleRows">
-            <tr><td colspan="5" class="empty-state">Sign in to load vehicle data…</td></tr>
+            <tr><td colspan="6" class="empty-state">Sign in to load vehicle data…</td></tr>
           </tbody>
         </table>
       </div>
@@ -724,6 +795,70 @@ body.auth-open{overflow:hidden; height:100%;}
       </div>
     </main>
 
+    <main class="app-main" id="librarySection" hidden>
+      <div class="topbar">
+        <div>
+          <h1>QHSE Management Library</h1>
+          <p>Every controlled QHSE document in one place — manuals, policies, procedures, forms and checklists — with the current file, revision number, last and next revision dates, and the full revision history.</p>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-sm" id="libTrashBtn" type="button">🗑 Deleted documents (0)</button>
+          <button class="btn btn-primary" id="addLibBtn" type="button">+ Add document</button>
+        </div>
+      </div>
+
+      <div class="tiles tiles-4" id="libTiles"></div>
+
+      <div class="report-grid">
+        <div class="chart-card">
+          <h3><span>Documents by type</span><span class="chart-total" id="libByTypeTotal"></span></h3>
+          <div id="libByType"></div>
+        </div>
+        <div class="chart-card">
+          <h3><span>Next revisions due</span><span class="chart-total" id="libUpcomingTotal"></span></h3>
+          <div id="libUpcoming"></div>
+        </div>
+      </div>
+
+      <div class="panel" id="addLibPanel" hidden>
+        <h3>Add a document</h3>
+        <form id="addLibForm">
+          <div class="form-grid" id="addLibFields"></div>
+          <label style="margin-top:10px;">Notes<textarea data-libfield="notes" placeholder="optional"></textarea></label>
+          <label style="margin-top:10px;">File — PDF, Word, Excel or image (you can also add it later)<input type="file" id="addLibFile"></label>
+          <div class="form-actions">
+            <button type="button" class="btn" id="cancelAddLib">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save document</button>
+          </div>
+        </form>
+      </div>
+
+      <nav class="division-tabs" id="libTypeTabs"></nav>
+
+      <div class="toolbar">
+        <input type="search" id="libSearch" placeholder="Search number or title…">
+        <select id="libStatusFilter">
+          <option value="all">Any review status</option>
+          <option value="ok">Up to date</option>
+          <option value="due">Review due within 30 days</option>
+          <option value="overdue">Review overdue</option>
+          <option value="obsolete">Obsolete</option>
+          <option value="nofile">No file uploaded</option>
+        </select>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Doc no.</th><th>Title</th><th>Type</th><th>Rev</th><th>Last revision</th><th>Next revision</th><th>Review status</th><th>File</th></tr>
+          </thead>
+          <tbody id="libRows">
+            <tr><td colspan="8" class="empty-state">Sign in to load the library…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
   </div>
 </div>
 
@@ -834,6 +969,30 @@ body.auth-open{overflow:hidden; height:100%;}
     <button class="icon-btn" id="equipTrashClose" aria-label="Close">✕</button>
   </div>
   <div class="drawer-body" id="equipTrashBody"></div>
+</aside>
+
+<div class="drawer-overlay" id="libDrawerOverlay" hidden></div>
+<aside class="drawer" id="libDrawer" hidden>
+  <div class="drawer-head">
+    <div>
+      <h2 id="libDrawerName"></h2>
+      <div class="wsub mono" id="libDrawerSub"></div>
+    </div>
+    <button class="icon-btn" id="libDrawerClose" aria-label="Close panel">✕</button>
+  </div>
+  <div class="drawer-body" id="libDrawerBody"></div>
+</aside>
+
+<div class="drawer-overlay" id="libTrashOverlay" hidden></div>
+<aside class="drawer" id="libTrashDrawer" hidden>
+  <div class="drawer-head">
+    <div>
+      <h2>Deleted documents</h2>
+      <div class="wsub">Restore a document, or remove it for good (this also deletes its file and all older revision files). Permanent removal cannot be undone.</div>
+    </div>
+    <button class="icon-btn" id="libTrashClose" aria-label="Close">✕</button>
+  </div>
+  <div class="drawer-body" id="libTrashBody"></div>
 </aside>
 
 <div class="toast" id="toast"></div>
@@ -1057,6 +1216,9 @@ function vehicleAggFor(v,key){
 const SITE_TABS = [
   {key:'profile', label:'Profile'},
   {key:'hseStats', label:'HSE statistics'},
+  {key:'toolboxTalks', label:'Toolbox talks'},
+  {key:'permits', label:'Permits to work'},
+  {key:'actions', label:'Corrective actions'},
   {key:'complaints', label:'Client complaints'},
   {key:'team', label:'Team'},
   {key:'vehicles', label:'Vehicles'},
@@ -1085,7 +1247,65 @@ function complaintBadges(r){
   const od=complaintOverdueDays(r);
   return `<span class="badge ${cls}">${esc(st)}</span>` + (od ? ` <span class="badge danger">Overdue ${od} day${od===1?'':'s'}</span>` : '');
 }
+const PERMIT_STATUSES = ['Open','Closed','Cancelled'];
+const PERMIT_TYPES = ['Hot work','Cold work','Confined space entry','Working at height','Lifting operation','Excavation','Electrical isolation (LOTO)','Radiography','Other'];
+function permitOverdueDays(r){
+  if((r.status||'Open')!=='Open' || !r.validTo) return null;
+  const d=daysUntil(r.validTo);
+  return (d!==null && d<0) ? -d : null;
+}
+function permitBadges(r){
+  const st=r.status||'Open';
+  const cls = st==='Closed' ? 'ok' : st==='Cancelled' ? 'muted' : 'warn';
+  const od=permitOverdueDays(r);
+  return `<span class="badge ${cls}">${esc(st)}</span>` + (r.type ? ` <span class="badge muted">${esc(r.type)}</span>` : '')
+    + (od ? ` <span class="badge danger">Past validity ${od} day${od===1?'':'s'} — not closed</span>` : '');
+}
+function tbtAttendeeCount(r){ return (r.attendeeIds||[]).length + (parseInt(r.extraAttendees,10)||0); }
 const SITE_RECORD_TYPES = {
+  toolboxTalks:{
+    title:'Toolbox talks', addLabel:'+ Log toolbox talk', hasExpiry:false, hasAttachment:true, attachLabel:'attendance sheet / photo',
+    cardBadge: r=>{ const n=tbtAttendeeCount(r); return `<span class="badge muted">${n} attendee${n===1?'':'s'}</span>`; },
+    fields:[
+      {key:'topic', label:'Topic', type:'text', required:true, placeholder:'e.g. Working at height — harness inspection'},
+      {key:'date', label:'Date', type:'date', required:true},
+      {key:'conductedBy', label:'Conducted by', type:'text', placeholder:'e.g. Site supervisor name'},
+      {key:'extraAttendees', label:'Other attendees (not in worker list)', type:'number', placeholder:'e.g. subcontractor crew'},
+      {key:'attendeeIds', label:'Attendees', type:'workers'},
+      {key:'notes', label:'Key points / notes', type:'textarea'},
+    ],
+  },
+  permits:{
+    title:'Permits to work', addLabel:'+ Log permit', hasExpiry:false, hasAttachment:true, attachLabel:'permit copy',
+    cardBadge: permitBadges,
+    fields:[
+      {key:'permitNo', label:'Permit no.', type:'text', required:true, placeholder:'e.g. PTW-2026-0142'},
+      {key:'type', label:'Permit type', type:'select', required:true, options:PERMIT_TYPES},
+      {key:'date', label:'Valid from', type:'date', required:true},
+      {key:'validTo', label:'Valid to', type:'date'},
+      {key:'workDescription', label:'Work description / location', type:'text', placeholder:'e.g. Hot work on tank T-12 roof'},
+      {key:'issuedBy', label:'Issued by (area authority)', type:'text'},
+      {key:'holder', label:'Permit holder', type:'text'},
+      {key:'status', label:'Status', type:'select', required:true, options:PERMIT_STATUSES, default:'Open'},
+      {key:'closedDate', label:'Closed on', type:'date'},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+  },
+  actions:{
+    title:'Corrective actions', addLabel:'+ Add corrective action', hasExpiry:false, hasAttachment:true, attachLabel:'close-out evidence',
+    cardBadge: complaintBadges,
+    fields:[
+      {key:'action', label:'Action required', type:'text', required:true, placeholder:'e.g. Replace damaged scaffold boards on level 3'},
+      {key:'source', label:'Raised from', type:'select', required:true, options:['Incident','Near miss','Inspection','Audit finding','Client complaint','HSE observation','Management review','Other']},
+      {key:'reference', label:'Reference', type:'text', placeholder:'e.g. incident / audit no.'},
+      {key:'date', label:'Raised on', type:'date', required:true},
+      {key:'owner', label:'Action owner', type:'text', required:true},
+      {key:'targetDate', label:'Target date', type:'date'},
+      {key:'status', label:'Status', type:'select', required:true, options:COMPLAINT_STATUSES, default:'Open'},
+      {key:'closedDate', label:'Closed on', type:'date'},
+      {key:'verification', label:'Close-out / verification notes', type:'textarea'},
+    ],
+  },
   complaints:{
     title:'Client complaints', addLabel:'+ Log complaint', hasExpiry:false, hasAttachment:true, attachLabel:'evidence / closure proof',
     cardBadge: complaintBadges,
@@ -1164,6 +1384,517 @@ function siteAggFor(s,key){
   let worst='valid';
   for(const r of recs){ const st=statusFor(r.expiry); if(RANK[st]>RANK[worst]) worst=st; }
   return {status:worst};
+}
+
+/* ---------------- toolbox talks → Monthly Report (log once) ---------------- */
+// Every toolbox talk saved in a project also exists as one Monthly Report entry
+// (fixed id, so saving again just updates it), so it counts in the division,
+// the project statistics, the PDF and the monthly email automatically.
+function tbtLogId(siteId, recId){ return `tbt_${siteId}_${recId}`; }
+async function syncToolboxToReport(site, rec){
+  try{
+    await db.collection('hseLogs').doc(tbtLogId(site.id, rec.id)).set(stamp({
+      category:'tbt', date:rec.date||'', division:site.division||'Civil', projectId:site.id,
+      topic:rec.topic||'', attendees:tbtAttendeeCount(rec), conductedBy:rec.conductedBy||'',
+      source:'projectToolbox', sourceSiteId:site.id, sourceRecId:rec.id,
+    }));
+  }catch(e){ console.error('toolbox sync failed', e); toast('Saved in the project, but the Monthly Report could not be updated — '+(e.code||'error')); }
+}
+async function removeToolboxFromReport(siteId, recId){
+  try{ await db.collection('hseLogs').doc(tbtLogId(siteId, recId)).delete(); }catch(e){ /* already gone */ }
+}
+
+/* ---------------- shared settings (portal links, training requirements) ---------------- */
+let appSettings={}, trainingReq={trainings:[]}, settingsLoadError=null, unsubscribeSettings=null;
+function startSettingsData(){
+  try{
+    unsubscribeSettings = db.collection('settings').onSnapshot(snap=>{
+      settingsLoadError=null;
+      const map={}; snap.docs.forEach(d=>{ map[d.id]=d.data()||{}; });
+      appSettings=map.app||{};
+      trainingReq=map.trainingMatrix||{trainings:[]};
+      renderMonitorBar(); renderVehicleTable(); if(activeVehicleId) renderVehicleDrawer();
+      renderMatrix();
+    }, err=>{
+      console.error(err); if(!auth.currentUser) return;
+      settingsLoadError = err && err.code==='permission-denied' ? 'rules' : 'other';
+      renderMonitorBar(); renderMatrix();
+    });
+  }catch(e){ console.error(e); }
+}
+async function saveSettings(docId, data){
+  try{ await db.collection('settings').doc(docId).set(stamp(data), {merge:true}); toast('Saved'); return true; }
+  catch(e){
+    console.error(e);
+    toast(e && e.code==='permission-denied' ? 'Could not save — the Firebase rules need the latest update (see setup steps)' : 'Could not save — '+((e&&e.code)||'error'));
+    return false;
+  }
+}
+const RULES_UPDATE_MSG = 'This needs a one-time Firebase rules update: paste the new rules into Firebase Console → Firestore Database → Rules → Publish, then refresh this page.';
+
+/* ---------------- IVMS / DFMS monitoring links ---------------- */
+// Links only open in a new tab (http/https only) — you sign in on the provider's own site.
+function safeUrl(u){
+  let x=String(u||'').trim(); if(!x) return '';
+  if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(x)) x='https://'+x;
+  try{ const url=new URL(x); return (url.protocol==='https:' || url.protocol==='http:') && url.hostname.includes('.') ? url.href : ''; }catch(e){ return ''; }
+}
+function vehicleMonitorLinks(v){
+  return {
+    ivms: safeUrl(v && v.ivmsLink) || safeUrl(appSettings.ivmsPortalUrl),
+    dfms: safeUrl(v && v.dfmsLink) || safeUrl(appSettings.dfmsPortalUrl),
+  };
+}
+let monitorEditOpen=false;
+function renderMonitorBar(){
+  const el=document.getElementById('monitorBar'); if(!el) return;
+  if(!auth.currentUser){ el.innerHTML=''; return; }
+  if(monitorEditOpen && canEdit()){
+    el.innerHTML = `<form id="monitorForm">
+      <div class="subhead" style="margin-top:0;">Company IVMS &amp; DFMS portals</div>
+      <div class="form-grid">
+        <label>IVMS portal link<input data-mfield="ivmsPortalUrl" value="${esc(appSettings.ivmsPortalUrl||'')}" placeholder="https://… (your IVMS provider's login page)"></label>
+        <label>IVMS provider<input data-mfield="ivmsProvider" value="${esc(appSettings.ivmsProvider||'')}" placeholder="optional, e.g. provider name"></label>
+        <span></span>
+        <label>DFMS portal link<input data-mfield="dfmsPortalUrl" value="${esc(appSettings.dfmsPortalUrl||'')}" placeholder="https://… (your DFMS provider's login page)"></label>
+        <label>DFMS provider<input data-mfield="dfmsProvider" value="${esc(appSettings.dfmsProvider||'')}" placeholder="optional"></label>
+      </div>
+      <p class="wsub" style="margin:8px 0 0;">These open for every vehicle. A vehicle can also have its own direct link (open the vehicle → Profile → IVMS &amp; DFMS).</p>
+      <div class="form-actions"><button type="button" class="btn btn-sm" id="monitorCancel">Cancel</button><button type="submit" class="btn btn-primary btn-sm">Save links</button></div>
+    </form>`;
+    return;
+  }
+  const iv=safeUrl(appSettings.ivmsPortalUrl), df=safeUrl(appSettings.dfmsPortalUrl);
+  const warn = settingsLoadError==='rules' ? `<span class="badge warn" title="${esc(RULES_UPDATE_MSG)}">Firebase rules update needed</span>` : '';
+  el.innerHTML = `<span class="monitor-bar-label">Vehicle monitoring</span>
+    ${iv ? `<a class="btn btn-sm" href="${esc(iv)}" target="_blank" rel="noopener noreferrer">IVMS portal${appSettings.ivmsProvider?' · '+esc(appSettings.ivmsProvider):''} ↗</a>` : '<span class="badge muted">IVMS link not set</span>'}
+    ${df ? `<a class="btn btn-sm" href="${esc(df)}" target="_blank" rel="noopener noreferrer">DFMS portal${appSettings.dfmsProvider?' · '+esc(appSettings.dfmsProvider):''} ↗</a>` : '<span class="badge muted">DFMS link not set</span>'}
+    ${warn}
+    <button type="button" class="btn btn-sm btn-ghost" id="monitorEditBtn">⚙ ${iv||df?'Edit links':'Set links'}</button>
+    <span class="monitor-bar-hint">Opens the live tracking site in a new tab — sign in there with your IVMS / DFMS account.</span>`;
+}
+function vehicleMonitorCell(v){
+  const l=vehicleMonitorLinks(v);
+  const iv = l.ivms ? `<a class="link-chip" href="${esc(l.ivms)}" target="_blank" rel="noopener noreferrer" title="${esc(v.ivmsUnitId?'IVMS unit '+v.ivmsUnitId:'Open IVMS')}">IVMS ↗</a>` : '';
+  const df = l.dfms ? `<a class="link-chip" href="${esc(l.dfms)}" target="_blank" rel="noopener noreferrer" title="${esc(v.dfmsUnitId?'DFMS device '+v.dfmsUnitId:'Open DFMS')}">DFMS ↗</a>` : '';
+  return (iv||df) ? iv+df : '<span class="wsub">—</span>';
+}
+function vehicleMonitorBlock(v){
+  const l=vehicleMonitorLinks(v);
+  const ids=[v.ivmsUnitId?`IVMS unit <span class="mono">${esc(v.ivmsUnitId)}</span>`:'', v.dfmsUnitId?`DFMS device <span class="mono">${esc(v.dfmsUnitId)}</span>`:''].filter(Boolean).join(' · ');
+  return `<div class="monitor-links">
+    ${l.ivms ? `<a class="btn btn-sm" href="${esc(l.ivms)}" target="_blank" rel="noopener noreferrer">Open IVMS ↗</a>` : ''}
+    ${l.dfms ? `<a class="btn btn-sm" href="${esc(l.dfms)}" target="_blank" rel="noopener noreferrer">Open DFMS ↗</a>` : ''}
+    ${(!l.ivms && !l.dfms) ? '<span class="wsub">No IVMS / DFMS link yet — add this vehicle\'s links below, or set the company portals on the Fleet page.</span>' : ''}
+    ${ids ? `<span class="wsub">${ids}</span>` : ''}
+  </div>`;
+}
+
+/* ---------------- training matrix (Workforce) ---------------- */
+let workforceView='register';
+let matrixFilters={q:'', division:'all', gaps:'all'};
+let reqEditRows=null;
+function normTraining(x){ return String(x||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); }
+function requiredTrainings(){ return (trainingReq.trainings||[]).filter(t=>t && String(t.name||'').trim()); }
+function trainingStatusFor(w, reqName){
+  const key=normTraining(reqName); if(!key) return {status:'na'};
+  const recs=(w.trainings||[]).filter(r=>{ const n=normTraining(r.name); return n && (n===key || (' '+n+' ').includes(' '+key+' ')); });
+  if(!recs.length) return {status:'missing'};
+  let best=null;
+  for(const r of recs){
+    const st = r.expiry ? statusFor(r.expiry) : 'valid';
+    const exp = r.expiry || '';
+    if(!best || RANK[st]<RANK[best.status] || (st===best.status && (exp||'9999')>(best.expiry||'9999'))) best={status:st, expiry:exp, name:r.name||''};
+  }
+  return best;
+}
+function matrixCellHtml(c){
+  if(!c) return '<span class="mx-na" title="Not required for this division">—</span>';
+  if(c.status==='missing') return '<span class="badge danger">Missing</span>';
+  const title = c.expiry ? `${c.name} — valid until ${c.expiry}` : `${c.name} — no expiry`;
+  if(c.status==='expired') return `<span class="badge danger" title="${esc(title)}">Expired</span>`;
+  if(c.status==='expiring') return `<span class="badge warn" title="${esc(title)}">Expiring</span>`;
+  return `<span class="badge ok" title="${esc(title)}">Valid</span>`;
+}
+function renderMatrix(){
+  const pane=document.getElementById('trainingMatrixPane');
+  if(!pane || pane.hidden || !auth.currentUser) return;
+  const divSel=document.getElementById('matrixDivision');
+  const opts=TRADE_CATEGORIES.slice();
+  for(const w of activeWorkers()) if(w.trade && !opts.includes(w.trade)) opts.push(w.trade);
+  divSel.innerHTML='<option value="all">All divisions</option>'+opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
+  divSel.value = opts.includes(matrixFilters.division) ? matrixFilters.division : 'all';
+  matrixFilters.division=divSel.value;
+  const head=document.getElementById('matrixHead'), body=document.getElementById('matrixRows'), tiles=document.getElementById('matrixTiles');
+  const reqs=requiredTrainings();
+  if(settingsLoadError==='rules'){ tiles.innerHTML=''; head.innerHTML=''; body.innerHTML=`<tr><td class="empty-state">${esc(RULES_UPDATE_MSG)}</td></tr>`; return; }
+  if(!reqs.length){
+    tiles.innerHTML=''; head.innerHTML='';
+    body.innerHTML=`<tr><td class="empty-state">${canEdit() ? 'No required trainings set yet — click “⚙ Required trainings” to choose which trainings each division needs.' : 'The HSE team has not set the required trainings yet.'}</td></tr>`;
+    return;
+  }
+  const cols = matrixFilters.division==='all' ? reqs : reqs.filter(t=>(t.divisions||[]).includes(matrixFilters.division));
+  const q=matrixFilters.q.trim().toLowerCase();
+  let rows=activeWorkers().filter(w=>(w.status||'active')==='active')
+    .filter(w=> matrixFilters.division==='all' || w.trade===matrixFilters.division)
+    .filter(w=> !q || ((w.fullName||'')+' '+(w.civilId||'')+' '+(w.designation||'')).toLowerCase().includes(q))
+    .map(w=>({w, cells:cols.map(t=> (t.divisions||[]).includes(w.trade) ? trainingStatusFor(w, t.name) : null)}));
+  // tiles cover every required slot for the workers shown (before the gaps filter)
+  let need=0, valid=0, missing=0, expired=0, expiring=0;
+  for(const r of rows) for(const c of r.cells){ if(!c) continue; need++; if(c.status==='valid') valid++; else if(c.status==='missing') missing++; else if(c.status==='expired') expired++; else if(c.status==='expiring'){ expiring++; valid++; } }
+  const pct = need ? Math.round(valid*100/need) : 100;
+  tiles.innerHTML=[
+    {label:'Compliance', num:need?pct+'%':'—', cls:need?(pct>=90?'ok':pct>=70?'warn':'danger'):'', sub:`${valid} of ${need} required trainings in date`, cat:'--cat-4', icon:'📊'},
+    {label:'Missing', num:missing, cls:missing?'danger':'ok', sub:'required but never recorded', cat:'--cat-9', icon:'❌'},
+    {label:'Expired', num:expired, cls:expired?'danger':'ok', sub:'past the valid-until date', cat:'--cat-7', icon:'⛔'},
+    {label:'Expiring soon', num:expiring, cls:expiring?'warn':'ok', sub:'within the next 30 days', cat:'--cat-2', icon:'⏳'},
+  ].map(t=>`<div class="tile" style="--tile-accent:var(${t.cat})"><div class="tile-head"><div class="tile-icon">${t.icon}</div><div class="tile-label">${t.label}</div></div><div class="tile-num ${t.cls}">${t.num}</div><div class="tile-sub">${t.sub}</div></div>`).join('');
+  if(matrixFilters.gaps==='gaps') rows=rows.filter(r=>r.cells.some(c=>c && c.status!=='valid'));
+  rows.sort((a,b)=>(a.w.trade||'').localeCompare(b.w.trade||'') || (a.w.fullName||'').localeCompare(b.w.fullName||''));
+  head.innerHTML = `<tr><th class="mx-sticky">Worker</th>${cols.map(t=>`<th class="mx-col">${esc(t.name)}</th>`).join('')}</tr>`;
+  if(!cols.length){ body.innerHTML=`<tr><td class="empty-state">No required trainings for ${esc(matrixFilters.division)} yet.</td></tr>`; return; }
+  if(!rows.length){ body.innerHTML=`<tr><td class="empty-state" colspan="${cols.length+1}">${matrixFilters.gaps==='gaps' ? '✅ No gaps — every worker shown has all required trainings in date.' : 'No active workers match.'}</td></tr>`; return; }
+  body.innerHTML = rows.map(r=>`<tr data-mx-worker="${r.w.id}">
+      <td class="mx-sticky"><div class="wname">${esc(r.w.fullName||'—')}</div><div class="wsub">${esc(r.w.trade||'No division')}</div></td>
+      ${r.cells.map(c=>`<td class="mx-cell">${matrixCellHtml(c)}</td>`).join('')}
+    </tr>`).join('');
+}
+function setWorkforceView(v){
+  workforceView=v;
+  document.querySelectorAll('#workforceViewTabs [data-wview]').forEach(b=>b.classList.toggle('active', b.dataset.wview===v));
+  document.getElementById('workforceRegisterPane').hidden = v!=='register';
+  document.getElementById('trainingMatrixPane').hidden = v!=='matrix';
+  if(v==='matrix') renderMatrix();
+}
+const COMMON_TRAININGS = [
+  {name:'HSE Induction', divisions:['Office Staff','Scaffolding Division','Civil Division','Rental Division','Sub Contractor']},
+  {name:'H2S Awareness', divisions:['Scaffolding Division','Civil Division','Rental Division','Sub Contractor']},
+  {name:'Working at Height', divisions:['Scaffolding Division','Civil Division','Sub Contractor']},
+  {name:'Fire Fighting', divisions:['Scaffolding Division','Civil Division','Rental Division']},
+  {name:'First Aid', divisions:['Scaffolding Division','Civil Division']},
+  {name:'Defensive Driving', divisions:['Rental Division']},
+];
+function readReqRows(){
+  const panel=document.getElementById('reqPanel');
+  if(!reqEditRows || panel.hidden) return;
+  reqEditRows = reqEditRows.map((r,i)=>({
+    name: (panel.querySelector(`[data-req-name="${i}"]`)||{}).value || '',
+    divisions: [...panel.querySelectorAll(`[data-req-div="${i}"]:checked`)].map(x=>x.value),
+  }));
+}
+function renderReqPanel(){
+  const panel=document.getElementById('reqPanel');
+  const names=[...new Set(activeWorkers().flatMap(w=>(w.trainings||[]).map(r=>String(r.name||'').trim())).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  panel.innerHTML = `<h3>Required trainings by division</h3>
+    <p class="wsub" style="margin:-6px 0 10px;">Add each training once and tick the divisions that need it. Workers are matched by the course name on their Training records.</p>
+    <form id="reqForm">
+      ${reqEditRows.map((r,i)=>`<div class="req-row">
+        <input data-req-name="${i}" value="${esc(r.name)}" list="trainingNameList" placeholder="e.g. Working at Height" aria-label="Training name">
+        <div class="req-divs">${TRADE_CATEGORIES.map(d=>`<label class="chk"><input type="checkbox" data-req-div="${i}" value="${esc(d)}" ${r.divisions.includes(d)?'checked':''}>${esc(d)}</label>`).join('')}</div>
+        <button type="button" class="icon-btn danger" data-req-remove="${i}" aria-label="Remove training">✕</button>
+      </div>`).join('')}
+      <datalist id="trainingNameList">${names.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist>
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+        <button type="button" class="btn btn-sm" id="reqAddRow">+ Add training</button>
+        <button type="button" class="btn btn-sm btn-ghost" id="reqAddCommon">+ Add common oil &amp; gas trainings</button>
+      </div>
+      <div class="form-actions"><button type="button" class="btn" id="reqCancel">Cancel</button><button type="submit" class="btn btn-primary">Save requirements</button></div>
+    </form>`;
+}
+function openReqEditor(){
+  reqEditRows=requiredTrainings().map(t=>({name:t.name, divisions:(t.divisions||[]).slice()}));
+  if(!reqEditRows.length) reqEditRows=[{name:'', divisions:[]}];
+  document.getElementById('reqPanel').hidden=false;
+  renderReqPanel();
+}
+function closeReqEditor(){ reqEditRows=null; const p=document.getElementById('reqPanel'); p.hidden=true; p.innerHTML=''; }
+
+/* ---------------- QHSE management library ---------------- */
+const LIB_TYPES = ['Manual','Policy','Procedure','Form','Checklist'];
+const LIB_TYPE_PLURAL = {Manual:'Manuals', Policy:'Policies', Procedure:'Procedures', Form:'Forms', Checklist:'Checklists'};
+const LIB_TYPE_COLORS = {Manual:'--cat-1', Policy:'--cat-3', Procedure:'--cat-5', Form:'--cat-4', Checklist:'--cat-2'};
+const LIB_STATUSES = ['Current','Under review','Draft','Obsolete'];
+const LIB_APPLIES = ['All divisions', ...Object.values(DIVISION_LABELS)];
+const LIB_REVIEW_LEAD_DAYS = 30;
+const LIB_MAX_FILE_MB = 25;
+const LIB_FIELDS = [
+  {key:'docType', label:'Document type', type:'select', options:LIB_TYPES, required:true},
+  {key:'docNo', label:'Document no.', type:'text', required:true, placeholder:'e.g. BOTS-HSE-PR-001', mono:true},
+  {key:'title', label:'Title', type:'text', required:true, placeholder:'e.g. Working at Height Procedure'},
+  {key:'revision', label:'Revision no.', type:'text', placeholder:'e.g. 00, 01, A'},
+  {key:'lastRevDate', label:'Last revision date', type:'date', required:true},
+  {key:'nextRevDate', label:'Next revision date', type:'date'},
+  {key:'owner', label:'Prepared / owned by', type:'text'},
+  {key:'approvedBy', label:'Approved by', type:'text'},
+  {key:'appliesTo', label:'Applies to', type:'select', options:LIB_APPLIES},
+  {key:'status', label:'Status', type:'select', options:LIB_STATUSES},
+];
+let libDocs=[], libLoadError=null, unsubscribeLib=null;
+let libFilters={type:'all', q:'', status:'all'};
+let activeLibId=null, libRevFormOpen=false, libBusy=false;
+
+function activeLibDocs(){ return libDocs.filter(d=>!d.deleted); }
+function deletedLibDocs(){ return libDocs.filter(d=>d.deleted); }
+function currentLibDoc(){ return libDocs.find(d=>d.id===activeLibId); }
+function addYears(dateStr, n){
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateStr||'')); if(!m) return '';
+  const y=+m[1], mo=+m[2], d=+m[3];
+  const dt=new Date(Date.UTC(y+n, mo-1, d));
+  if(dt.getUTCMonth()!==mo-1) dt.setUTCDate(0);   // 29 Feb → 28 Feb
+  return dt.toISOString().slice(0,10);
+}
+function nextRevisionNo(rev){
+  const x=String(rev||'').trim(); if(!x) return '01';
+  const m=x.match(/^(.*?)(\d+)$/);
+  if(m) return m[1] + String(Number(m[2])+1).padStart(m[2].length,'0');
+  if(/^[A-Ya-y]$/.test(x)) return String.fromCharCode(x.charCodeAt(0)+1);
+  return '';
+}
+function libReview(d){
+  if((d.status||'Current')==='Obsolete') return {key:'obsolete', label:'Obsolete', cls:'muted'};
+  const n=daysUntil(d.nextRevDate);
+  if(!d.nextRevDate || n===null) return {key:'none', label:'No review date', cls:'muted'};
+  if(n<0) return {key:'overdue', label:`Overdue ${-n} day${n===-1?'':'s'}`, cls:'danger'};
+  if(n<=LIB_REVIEW_LEAD_DAYS) return {key:'due', label: n===0 ? 'Due today' : `Due in ${n} day${n===1?'':'s'}`, cls:'warn'};
+  return {key:'ok', label:'Up to date', cls:'ok'};
+}
+function libReviewBadge(d){ const r=libReview(d); return `<span class="badge ${r.cls}">${esc(r.label)}</span>`; }
+function libTitle(d){ return [d.docNo, d.title].filter(Boolean).join(' — ') || 'Untitled document'; }
+function libFieldsHtml(d, attr){
+  return LIB_FIELDS.map(f=>{
+    let val;
+    if(d) val = d[f.key]||'';
+    else val = f.key==='status' ? 'Current' : f.key==='appliesTo' ? 'All divisions' : f.key==='docType' ? (libFilters.type!=='all' ? libFilters.type : '')
+             : f.key==='lastRevDate' ? localToday() : f.key==='nextRevDate' ? addYears(localToday(),1) : '';
+    const req=f.required?' *':'';
+    if(f.type==='select'){
+      const opts=f.options.slice(); if(val && !opts.includes(val)) opts.unshift(val);
+      return `<label>${esc(f.label)}${req}<select ${attr}="${f.key}" ${f.required?'required':''}>${f.required?'<option value="">Select…</option>':''}${opts.map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
+    }
+    return `<label>${esc(f.label)}${req}<input type="${f.type}" ${attr}="${f.key}" ${f.mono?'class="mono"':''} value="${esc(val)}" ${f.required?'required':''} ${f.placeholder?`placeholder="${esc(f.placeholder)}"`:''}></label>`;
+  }).join('');
+}
+function startLibraryData(){
+  try{
+    unsubscribeLib = db.collection('qhseDocs').onSnapshot(snap=>{
+      libLoadError=null;
+      libDocs=snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
+      renderLibraryAll();
+    }, err=>{
+      console.error(err); if(!auth.currentUser) return;
+      libLoadError = err && err.code==='permission-denied' ? 'rules' : 'other';
+      renderLibraryAll();
+    });
+  }catch(e){ console.error(e); }
+}
+function renderLibraryAll(){
+  renderLibTiles(); renderLibCharts(); renderLibTypeTabs(); renderLibTable();
+  document.getElementById('libTrashBtn').textContent=`🗑 Deleted documents (${deletedLibDocs().length})`;
+  if(activeLibId) renderLibDrawer();
+  if(!document.getElementById('libTrashDrawer').hidden) renderLibTrashBody();
+}
+function renderLibTiles(){
+  const list=activeLibDocs();
+  const live=list.filter(d=>(d.status||'Current')!=='Obsolete');
+  const c={ok:0,due:0,overdue:0,none:0}; for(const d of live) c[libReview(d).key]++;
+  const obsolete=list.length-live.length, noFile=live.filter(d=>!(d.file&&d.file.url)).length;
+  document.getElementById('libTiles').innerHTML=[
+    {label:'Controlled documents', num:live.length, cls:'', sub:`${obsolete} obsolete · ${noFile} without a file`, cat:'--cat-1', icon:'📚'},
+    {label:'Up to date', num:c.ok, cls:c.ok?'ok':'', sub:`next revision more than ${LIB_REVIEW_LEAD_DAYS} days away`, cat:'--cat-4', icon:'✅'},
+    {label:'Revision due soon', num:c.due, cls:c.due?'warn':'ok', sub:`within the next ${LIB_REVIEW_LEAD_DAYS} days`, cat:'--cat-2', icon:'⏳'},
+    {label:'Revision overdue', num:c.overdue, cls:c.overdue?'danger':'ok', sub:'past the next revision date', cat:'--cat-9', icon:'⛔'},
+  ].map(t=>`<div class="tile" style="--tile-accent:var(${t.cat})"><div class="tile-head"><div class="tile-icon">${t.icon}</div><div class="tile-label">${t.label}</div></div><div class="tile-num ${t.cls}">${t.num}</div><div class="tile-sub">${t.sub}</div></div>`).join('');
+}
+function renderLibCharts(){
+  const live=activeLibDocs().filter(d=>(d.status||'Current')!=='Obsolete');
+  const counts=LIB_TYPES.map(t=>({t, n:live.filter(d=>d.docType===t).length, over:live.filter(d=>d.docType===t && libReview(d).key==='overdue').length}));
+  const max=Math.max(1,...counts.map(x=>x.n));
+  document.getElementById('libByTypeTotal').textContent = `${live.length} in use`;
+  document.getElementById('libByType').innerHTML = `<div class="bar-chart">${counts.map(x=>`
+    <div class="bar-row" data-libtype-jump="${esc(x.t)}" style="cursor:pointer;" title="Show ${esc(LIB_TYPE_PLURAL[x.t].toLowerCase())}">
+      <div class="bar-row-label">${esc(LIB_TYPE_PLURAL[x.t])}${x.over?` <span class="badge danger" style="padding:1px 6px;">${x.over} overdue</span>`:''}</div>
+      <div class="bar-track">${x.n ? `<div class="bar-fill" style="width:${Math.max(3, x.n/max*100)}%; background:var(${LIB_TYPE_COLORS[x.t]});"></div>` : ''}</div>
+      <div class="bar-row-val">${x.n}</div>
+    </div>`).join('')}</div>`;
+  const upcoming=live.filter(d=>d.nextRevDate).sort((a,b)=>(a.nextRevDate||'').localeCompare(b.nextRevDate||'')).slice(0,6);
+  const dueCount=live.filter(d=>['due','overdue'].includes(libReview(d).key)).length;
+  document.getElementById('libUpcomingTotal').textContent = dueCount ? `${dueCount} need attention` : '';
+  document.getElementById('libUpcoming').innerHTML = upcoming.length ? upcoming.map(d=>`
+    <div class="equip-line" data-open-lib="${d.id}">
+      <div class="equip-line-main"><div class="equip-line-title">${esc(libTitle(d))}</div><div class="wsub">${esc(d.docType||'')} · Rev ${esc(d.revision||'—')} · next revision <span class="mono">${esc(d.nextRevDate)}</span></div></div>
+      <div class="equip-line-badges">${libReviewBadge(d)}</div>
+    </div>`).join('') : `<p class="wsub">${live.length ? 'No next revision dates set yet.' : 'No documents yet — click “+ Add document” to start the library.'}</p>`;
+}
+function renderLibTypeTabs(){
+  const list=activeLibDocs();
+  const tabs=[{key:'all', label:'All documents', n:list.length}, ...LIB_TYPES.map(t=>({key:t, label:LIB_TYPE_PLURAL[t], n:list.filter(d=>d.docType===t).length}))];
+  document.getElementById('libTypeTabs').innerHTML = tabs.map(t=>`<button type="button" class="division-tab ${t.key===libFilters.type?'active':''}" data-libtype="${esc(t.key)}">${esc(t.label)}<span class="tab-count">${t.n}</span></button>`).join('');
+}
+function libMatches(d){
+  if(d.deleted) return false;
+  if(libFilters.type!=='all' && d.docType!==libFilters.type) return false;
+  const q=libFilters.q.trim().toLowerCase();
+  if(q && !((d.docNo||'')+' '+(d.title||'')+' '+(d.owner||'')+' '+(d.approvedBy||'')).toLowerCase().includes(q)) return false;
+  const st=libFilters.status;
+  if(st==='nofile') return !(d.file && d.file.url);
+  if(st!=='all' && libReview(d).key!==st) return false;
+  return true;
+}
+function libFileCell(d){
+  const f=d.file;
+  if(!f || !f.url) return '<span class="att-none">No file</span>';
+  return `<a class="att-link" href="${esc(f.url)}" target="_blank" rel="noopener">View</a><button type="button" class="att-link" data-download-url="${esc(f.url)}" data-download-name="${esc(f.name||libTitle(d))}">Download</button>`;
+}
+function renderLibTable(){
+  const tbody=document.getElementById('libRows');
+  if(!auth.currentUser) return;
+  if(libLoadError==='rules'){ tbody.innerHTML=`<tr><td colspan="8" class="empty-state">${esc(RULES_UPDATE_MSG)}</td></tr>`; return; }
+  if(libLoadError){ tbody.innerHTML='<tr><td colspan="8" class="empty-state">Could not load the library right now — check your connection and refresh.</td></tr>'; return; }
+  if(!activeLibDocs().length){ tbody.innerHTML=`<tr><td colspan="8" class="empty-state">${canEdit()?'No documents yet — click “+ Add document” to add your first manual, policy, procedure, form or checklist.':'No documents in the library yet.'}</td></tr>`; return; }
+  const list=libDocs.filter(libMatches).sort((a,b)=> LIB_TYPES.indexOf(a.docType)-LIB_TYPES.indexOf(b.docType) || (a.docNo||'').localeCompare(b.docNo||'', undefined, {numeric:true}));
+  if(!list.length){ tbody.innerHTML='<tr><td colspan="8" class="empty-state">No documents match your filters.</td></tr>'; return; }
+  tbody.innerHTML=list.map(d=>`<tr data-id="${d.id}">
+      <td class="mono" style="white-space:nowrap;">${esc(d.docNo||'—')}</td>
+      <td><div class="wname">${esc(d.title||'—')}</div>${d.appliesTo && d.appliesTo!=='All divisions'?`<div class="wsub">${esc(d.appliesTo)}</div>`:''}</td>
+      <td>${esc(d.docType||'—')}</td>
+      <td class="mono">${esc(d.revision||'—')}</td>
+      <td class="mono">${esc(d.lastRevDate||'—')}</td>
+      <td class="mono">${esc(d.nextRevDate||'—')}</td>
+      <td>${libReviewBadge(d)}${['Under review','Draft'].includes(d.status) ? ` <span class="badge muted">${esc(d.status)}</span>` : ''}</td>
+      <td class="lib-file">${libFileCell(d)}</td>
+    </tr>`).join('');
+}
+function openAddLibForm(){
+  document.getElementById('addLibFields').innerHTML = libFieldsHtml(null, 'data-libfield');
+  document.getElementById('addLibPanel').hidden=false;
+}
+function closeAddLibForm(){
+  document.getElementById('addLibPanel').hidden=true;
+  document.getElementById('addLibForm').reset();
+}
+function checkLibFile(file){
+  if(file && file.size > LIB_MAX_FILE_MB*1024*1024){ toast(`That file is ${fmtBytes(file.size)} — the limit is ${LIB_MAX_FILE_MB} MB. Save it as a smaller PDF and try again.`); return false; }
+  return true;
+}
+function openLibDrawer(id){
+  raiseDrawer('libDrawerOverlay','libDrawer');
+  activeLibId=id; libRevFormOpen=false;
+  document.getElementById('libDrawerOverlay').hidden=false;
+  document.getElementById('libDrawer').hidden=false;
+  renderLibDrawer();
+}
+function closeLibDrawer(){
+  activeLibId=null; libRevFormOpen=false;
+  document.getElementById('libDrawerOverlay').hidden=true;
+  document.getElementById('libDrawer').hidden=true;
+}
+function renderLibDrawer(){
+  const d=currentLibDoc();
+  if(!d || d.deleted){ closeLibDrawer(); return; }
+  if(libBusy) return;   // don't wipe a half-finished form while a file is uploading
+  document.getElementById('libDrawerName').textContent = libTitle(d);
+  document.getElementById('libDrawerSub').textContent = `${d.docType||'Document'} · Rev ${d.revision||'—'}`;
+  document.getElementById('libDrawerBody').innerHTML = libDrawerBodyHtml(d);
+}
+function libFileBlockHtml(f, removable){
+  if(!f || !f.url) return '<span class="att-none">No file uploaded for this revision yet</span>';
+  return `<div class="att-present"><span class="att-file-icon">📄</span><div>
+      <div class="lib-file-name">${esc(f.name||'document')}</div>
+      <div class="att-actions" style="margin-top:4px;">
+        <a class="att-link" href="${esc(f.url)}" target="_blank" rel="noopener">View</a>
+        <button type="button" class="att-link" data-download-url="${esc(f.url)}" data-download-name="${esc(f.name||'document')}">Download</button>
+        ${removable?'<button type="button" class="att-link att-remove" data-lib-remove-file data-armed="0">Remove</button>':''}
+      </div></div></div>`;
+}
+function libDrawerBodyHtml(d){
+  const f=d.file;
+  const revForm = libRevFormOpen ? `
+    <form id="libRevForm" class="move-form">
+      <div class="form-grid">
+        <label>New revision no. *<input data-revfield="revision" required value="${esc(nextRevisionNo(d.revision))}"></label>
+        <label>Revision date *<input type="date" data-revfield="lastRevDate" required value="${localToday()}"></label>
+        <label>Next revision date<input type="date" data-revfield="nextRevDate" value="${addYears(localToday(),1)}"></label>
+      </div>
+      <label style="margin-top:8px;">What changed<input data-revfield="changeNote" placeholder="e.g. Updated emergency contacts; new client requirement"></label>
+      <label style="margin-top:8px;">New file *<input type="file" id="libRevFile" required></label>
+      <p class="wsub" style="margin:6px 0 0;">The current file (Rev ${esc(d.revision||'—')}) moves to Revision history — it is kept, not deleted.</p>
+      <div class="form-actions"><button type="button" class="btn btn-sm" id="libRevCancel">Cancel</button><button type="submit" class="btn btn-primary btn-sm">Save new revision</button></div>
+    </form>` : '';
+  const hist=(d.history||[]).slice().reverse();
+  const histHtml = hist.length ? `<ul class="history-list">${hist.map(h=>`<li>
+      <span class="history-date">${esc(h.lastRevDate||'—')}</span>
+      <div><strong>Rev ${esc(h.revision||'—')}</strong>${h.changeNote?` — ${esc(h.changeNote)}`:''}
+        <div style="margin-top:4px;">${h.file && h.file.url ? `<span class="att-actions"><a class="att-link" href="${esc(h.file.url)}" target="_blank" rel="noopener">View</a><button type="button" class="att-link" data-download-url="${esc(h.file.url)}" data-download-name="${esc(h.file.name||('Rev '+(h.revision||'')))}">Download</button></span>` : '<span class="att-none">no file</span>'}</div>
+        <div class="history-note">Superseded ${esc((h.supersededAt||'').slice(0,10)||'—')}${h.supersededBy?` by ${esc(h.supersededBy)}`:''}</div>
+      </div></li>`).join('')}</ul>` : '<p class="wsub">No earlier revisions yet — they appear here each time you upload a new revision.</p>';
+  return `
+  <div class="loc-card">
+    <div class="loc-card-top">
+      <div class="loc-now">Current: <strong>Rev ${esc(d.revision||'—')}</strong> <span class="wsub" style="display:inline;">· last revised ${esc(d.lastRevDate||'—')} · next revision ${esc(d.nextRevDate||'—')}</span></div>
+      ${libRevFormOpen ? '' : '<button type="button" class="btn btn-primary btn-sm" id="libNewRevBtn">⬆ Upload new revision</button>'}
+    </div>
+    <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;"><span class="badge muted">${esc(d.docType||'Document')}</span> ${libReviewBadge(d)} ${['Under review','Draft'].includes(d.status)?`<span class="badge muted">${esc(d.status)}</span>`:''}</div>
+    ${revForm}
+  </div>
+  ${updatedNoteHtml(d)}
+  <div class="subhead" style="margin-top:18px;">Current file</div>
+  <div class="att-block">${libFileBlockHtml(f, true)}<label class="upload-btn">${f&&f.url?'Replace file (same revision)':'Upload file'}<input type="file" hidden data-lib-file></label></div>
+  <div class="subhead">Details</div>
+  <form id="libDetailsForm">
+    <div class="form-grid">${libFieldsHtml(d, 'data-libfield')}</div>
+    <label style="margin-top:10px;">Notes<textarea data-libfield="notes">${esc(d.notes||'')}</textarea></label>
+    <div class="form-actions"><button type="submit" class="btn btn-primary btn-sm">Save changes</button></div>
+  </form>
+  <div class="subhead">Revision history (${hist.length})</div>
+  ${histHtml}
+  <div class="danger-zone">
+    <p>Deleting moves this document to Deleted documents, where it can be restored — or removed for good (with its file and all older revision files).</p>
+    <button type="button" class="btn btn-danger btn-sm" id="deleteLibBtn" data-armed="0">Delete document</button>
+  </div>`;
+}
+function openLibTrash(){ document.getElementById('libTrashOverlay').hidden=false; document.getElementById('libTrashDrawer').hidden=false; renderLibTrashBody(); }
+function closeLibTrash(){ document.getElementById('libTrashOverlay').hidden=true; document.getElementById('libTrashDrawer').hidden=true; }
+function renderLibTrashBody(){
+  const list=deletedLibDocs();
+  document.getElementById('libTrashBody').innerHTML = list.length ? list.map(d=>`
+    <div class="record-card">
+      <div class="record-card-top">
+        <div class="record-card-title">${esc(libTitle(d))}</div>
+        <div class="record-card-actions">
+          <button type="button" class="btn btn-sm" data-lrestore="${d.id}">Restore</button>
+          <button type="button" class="btn btn-danger btn-sm" data-lpurge="${d.id}" data-armed="0">Delete forever</button>
+        </div>
+      </div>
+      <div class="record-fields">
+        <div class="rf"><span class="rf-k">Type</span><span class="rf-v">${esc(d.docType||'—')}</span></div>
+        <div class="rf"><span class="rf-k">Revision</span><span class="rf-v">${esc(d.revision||'—')}</span></div>
+        <div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc((d.deletedAt||'').slice(0,10)||'—')}</span></div>
+      </div>
+    </div>`).join('') : '<p class="wsub">Nothing in the trash.</p>';
+}
+async function updateLib(id, data, quiet){
+  try{ await db.collection('qhseDocs').doc(id).update(stamp(data)); if(!quiet) toast('Saved'); return true; }
+  catch(e){ console.error(e); toast('Could not save — '+((e&&e.code)||'error')); return false; }
+}
+function readLibForm(form, attr){
+  const data={};
+  form.querySelectorAll(`[${attr}]`).forEach(el=>{ data[el.getAttribute(attr)] = el.value.trim ? el.value.trim() : el.value; });
+  return data;
+}
+function libDocNoTaken(docNo, exceptId){
+  const k=String(docNo||'').trim().toLowerCase(); if(!k) return false;
+  return activeLibDocs().some(d=>d.id!==exceptId && String(d.docNo||'').trim().toLowerCase()===k);
+}
+// When "last revision date" changes, move "next revision date" to one year later
+// (until someone types their own next date in that form).
+function wireLibDateAuto(e){
+  const t=e.target;
+  const lastKeys=['[data-libfield="lastRevDate"]','[data-revfield="lastRevDate"]'], nextKeys=['[data-libfield="nextRevDate"]','[data-revfield="nextRevDate"]'];
+  if(nextKeys.some(k=>t.matches(k))){ t.dataset.touched='1'; return; }
+  if(!lastKeys.some(k=>t.matches(k))) return;
+  const form=t.closest('form'); if(!form) return;
+  const next=form.querySelector(nextKeys.join(',')); if(!next || next.dataset.touched==='1') return;
+  const v=addYears(t.value,1); if(v) next.value=v;
 }
 
 /* ---------------- plant & equipment register config ---------------- */
@@ -1385,6 +2116,34 @@ function complaintsFor(division, periodKey, project){
   }
   return out;
 }
+// Items stored on each project (toolbox talks, permits, corrective actions…), counted by their date
+function projectRecordsFor(recKey, division, periodKey, project){
+  const out=[];
+  for(const s of siteEquipmentList){
+    if(s.deleted) continue;
+    if(division!=='all' && (s.division||'Civil')!==division) continue;
+    if(project && project!=='all' && (project==='none' || s.id!==project)) continue;
+    for(const r of (s[recKey]||[])) if((r.date||'').startsWith(periodKey)) out.push({...r, projectId:s.id});
+  }
+  return out;
+}
+function projectRegisterTilesHtml(division, key, project){
+  const periodWord = key.length===4 ? 'this year' : 'this month';
+  const act=projectRecordsFor('actions', division, key, project);
+  const aOpen=act.filter(x=>(x.status||'Open')==='Open').length, aPend=act.filter(x=>x.status==='Pending').length, aClosed=act.filter(x=>x.status==='Closed').length, aOver=act.filter(x=>complaintOverdueDays(x)).length;
+  const ptw=projectRecordsFor('permits', division, key, project);
+  const pOpen=ptw.filter(x=>(x.status||'Open')==='Open').length, pClosed=ptw.filter(x=>x.status==='Closed').length, pOver=ptw.filter(x=>permitOverdueDays(x)).length;
+  return `<div class="tile" style="--tile-accent:var(--cat-7)">
+      <div class="tile-head"><div class="tile-label">Corrective actions</div></div>
+      <div class="tile-num ${aOver?'danger':((aOpen+aPend)?'warn':'')}">${act.length}</div>
+      <div class="tile-sub">raised ${periodWord} · ${aOpen} open · ${aPend} pending · ${aClosed} closed${aOver?` · ${aOver} overdue`:''}</div>
+    </div>
+    <div class="tile" style="--tile-accent:var(--cat-8)">
+      <div class="tile-head"><div class="tile-label">Permits to work</div></div>
+      <div class="tile-num ${pOver?'danger':''}">${ptw.length}</div>
+      <div class="tile-sub">issued ${periodWord} · ${pOpen} open · ${pClosed} closed${pOver?` · ${pOver} past validity`:''}</div>
+    </div>`;
+}
 function complaintCounts(list){
   return {
     received:list.length,
@@ -1523,6 +2282,8 @@ function stopDataListeners(){
   if(unsubscribeSiteEquipment){ unsubscribeSiteEquipment(); unsubscribeSiteEquipment=null; }
   if(unsubscribeEquipment){ unsubscribeEquipment(); unsubscribeEquipment=null; }
   if(unsubscribeReportEntries){ unsubscribeReportEntries(); unsubscribeReportEntries=null; }
+  if(unsubscribeSettings){ unsubscribeSettings(); unsubscribeSettings=null; }
+  if(unsubscribeLib){ unsubscribeLib(); unsubscribeLib=null; }
 }
 auth.onAuthStateChanged(user=>{
   if(user){
@@ -1535,6 +2296,8 @@ auth.onAuthStateChanged(user=>{
     startSiteData();
     startEquipmentData();
     startReportData();
+    startSettingsData();
+    startLibraryData();
   } else {
     stopDataListeners();
     document.getElementById('dbUnavailableBanner').hidden=true;
@@ -1547,6 +2310,10 @@ auth.onAuthStateChanged(user=>{
     document.getElementById('vehicleRows').innerHTML='<tr><td colspan="5" class="empty-state">Sign in to load vehicle data…</td></tr>';
     document.getElementById('siteRows').innerHTML='<tr><td colspan="8" class="empty-state">Sign in to load project data…</td></tr>';
     document.getElementById('reportRows').innerHTML='<tr><td colspan="6" class="empty-state">Sign in to load report data…</td></tr>';
+    libDocs=[]; appSettings={}; trainingReq={trainings:[]}; libLoadError=null; settingsLoadError=null; monitorEditOpen=false;
+    closeLibDrawer(); closeReqEditor();
+    document.getElementById('libRows').innerHTML='<tr><td colspan="8" class="empty-state">Sign in to load the library…</td></tr>';
+    document.getElementById('monitorBar').innerHTML='';
   }
 });
 
@@ -1661,6 +2428,7 @@ function renderAll(){
   if(activeWorkerId) renderDrawer();
   if(!document.getElementById('trashDrawer').hidden) renderTrashBody();
   renderSiteAll();
+  renderMatrix();
   if(pendingWorkerOpen) setTimeout(openPendingWorker, 0);   // project Team tabs & counts use worker data
 }
 
@@ -1801,7 +2569,7 @@ function renderVehicleTiles(){
 function vehicleMatches(v){
   if(v.deleted) return false;
   const q=vehicleFilters.q.trim().toLowerCase();
-  if(q && !((v.vehicleNumber||'')+' '+(v.model||'')).toLowerCase().includes(q)) return false;
+  if(q && !((v.vehicleNumber||'')+' '+(v.model||'')+' '+(v.ivmsUnitId||'')+' '+(v.dfmsUnitId||'')).toLowerCase().includes(q)) return false;
   if(vehicleFilters.ownership!=='all' && (v.ownership||'Own')!==vehicleFilters.ownership) return false;
   return true;
 }
@@ -1809,9 +2577,9 @@ function vehicleMatches(v){
 function renderVehicleTable(){
   const tbody=document.getElementById('vehicleRows');
   if(!auth.currentUser) return;
-  if(activeVehicles().length===0){ tbody.innerHTML='<tr><td colspan="5" class="empty-state">No vehicles yet — click “Add vehicle” to get started.</td></tr>'; return; }
+  if(activeVehicles().length===0){ tbody.innerHTML='<tr><td colspan="6" class="empty-state">No vehicles yet — click “Add vehicle” to get started.</td></tr>'; return; }
   const list=vehicles.filter(vehicleMatches);
-  if(list.length===0){ tbody.innerHTML='<tr><td colspan="5" class="empty-state">No vehicles match your filters.</td></tr>'; return; }
+  if(list.length===0){ tbody.innerHTML='<tr><td colspan="6" class="empty-state">No vehicles match your filters.</td></tr>'; return; }
   tbody.innerHTML=list.map(v=>{
     const doc=vehicleAggFor(v,'documents'), ppe=vehicleAggFor(v,'ppe');
     return `<tr data-id="${v.id}">
@@ -1820,6 +2588,7 @@ function renderVehicleTable(){
       <td>${(v.ownership||'Own')==='Rental'?'<span class="badge warn">Rental</span>':'<span class="badge ok">Own</span>'}</td>
       <td>${badgeHtml(doc.status)}</td>
       <td>${badgeHtml(ppe.status)}</td>
+      <td>${vehicleMonitorCell(v)}</td>
     </tr>`;
   }).join('');
 }
@@ -1987,6 +2756,7 @@ function renderVehicleDrawerBody(){
 function vehicleProfileTabHtml(v){
   const countsHtml = VEHICLE_COUNT_FIELDS.map(f=>`<label>${esc(f.label)} — count<input type="number" min="0" step="1" data-vfield="${f.key}" value="${esc(v[f.key]!=null?v[f.key]:'0')}"></label>`).join('');
   return `${updatedNoteHtml(v)}
+  ${vehicleMonitorBlock(v)}
   <form id="vehicleProfileForm">
     <div class="subhead">Vehicle details</div>
     <div class="form-grid">
@@ -1994,6 +2764,15 @@ function vehicleProfileTabHtml(v){
       <label>Model<input data-vfield="model" value="${esc(v.model||'')}"></label>
       <label>Ownership<select data-vfield="ownership"><option value="Own" ${(v.ownership||'Own')==='Own'?'selected':''}>Own</option><option value="Rental" ${v.ownership==='Rental'?'selected':''}>Rental</option></select></label>
     </div>
+    <div class="subhead">IVMS &amp; DFMS monitoring</div>
+    <div class="form-grid">
+      <label>IVMS unit / device ID<input class="mono" data-vfield="ivmsUnitId" value="${esc(v.ivmsUnitId||'')}"></label>
+      <label>IVMS link for this vehicle<input data-vfield="ivmsLink" value="${esc(v.ivmsLink||'')}" placeholder="optional — direct tracking link"></label>
+      <span></span>
+      <label>DFMS device ID<input class="mono" data-vfield="dfmsUnitId" value="${esc(v.dfmsUnitId||'')}"></label>
+      <label>DFMS link for this vehicle<input data-vfield="dfmsLink" value="${esc(v.dfmsLink||'')}" placeholder="optional — direct link"></label>
+    </div>
+    <p class="wsub" style="margin:6px 0 0;">Leave the links empty to use the company IVMS / DFMS portal set on the Fleet page.</p>
     <div class="subhead">Onboard equipment counts</div>
     <div class="form-grid">${countsHtml}</div>
     <div class="form-actions" style="margin-top:16px;"><button type="submit" class="btn btn-primary">Save changes</button></div>
@@ -2052,13 +2831,22 @@ function renderSiteDrawer(){
   if(!s){ closeSiteDrawer(); return; }
   document.getElementById('siteDrawerName').textContent=s.siteName;
   document.getElementById('siteDrawerSub').textContent=divLabel(s.division||'Civil')+(s.clientName?' · '+s.clientName:'')+(s.location?' · '+s.location:'');
-  const openComplaints=(s.complaints||[]).filter(r=>(r.status||'Open')!=='Closed').length;
   document.getElementById('siteDrawerTabs').innerHTML=SITE_TABS.map(t=>{
-    const extra = (t.key==='complaints' && openComplaints) ? ` <span class="pill-count danger">${openComplaints}</span>` : '';
+    const c=siteTabCount(s, t.key);
+    const extra = c ? ` <span class="pill-count ${c.cls}">${c.n}</span>` : '';
     return `<button type="button" class="tab-btn ${t.key===activeSiteTab?'active':''}" data-stab="${t.key}">${t.label}${extra}</button>`;
   }).join('');
   renderSiteDrawerBody();
 }
+// Small count shown on a project's tab (open items, or how many talks)
+function siteTabCount(s, key){
+  if(key==='complaints'){ const n=(s.complaints||[]).filter(r=>(r.status||'Open')!=='Closed').length; return n ? {n, cls:'danger'} : null; }
+  if(key==='actions'){ const l=(s.actions||[]).filter(r=>(r.status||'Open')!=='Closed'); return l.length ? {n:l.length, cls:l.some(r=>complaintOverdueDays(r))?'danger':'warn'} : null; }
+  if(key==='permits'){ const l=(s.permits||[]).filter(r=>(r.status||'Open')==='Open'); return l.length ? {n:l.length, cls:l.some(r=>permitOverdueDays(r))?'danger':'warn'} : null; }
+  if(key==='toolboxTalks'){ const n=(s.toolboxTalks||[]).length; return n ? {n, cls:''} : null; }
+  return null;
+}
+function overdueNotice(text){ return `<div class="notice" style="background:var(--danger-bg); color:var(--danger); border-color:var(--danger);">⚠ ${text}</div>`; }
 function renderSiteDrawerBody(){
   const s=currentSite(); if(!s) return;
   const body=document.getElementById('siteDrawerBody');
@@ -2077,6 +2865,25 @@ function renderSiteDrawerBody(){
     const overdue=list.filter(r=>complaintOverdueDays(r)).length;
     pre = (overdue ? `<div class="notice" style="background:var(--danger-bg); color:var(--danger); border-color:var(--danger);">⚠ ${overdue} complaint${overdue===1?' is':'s are'} past the target close date and still not closed.</div>` : '')
         + (list.length ? `<p class="wsub" style="margin:0 0 12px;">${list.length} received · <strong>${open}</strong> open · ${pending} pending · ${closed} closed</p>` : '');
+  }
+  if(activeSiteTab==='actions'){
+    const list=s.actions||[];
+    const open=list.filter(r=>(r.status||'Open')==='Open').length, pending=list.filter(r=>r.status==='Pending').length, closed=list.filter(r=>r.status==='Closed').length;
+    const overdue=list.filter(r=>complaintOverdueDays(r)).length;
+    pre = (overdue ? overdueNotice(`${overdue} corrective action${overdue===1?' is':'s are'} past the target date and still not closed.`) : '')
+        + `<p class="wsub" style="margin:0 0 12px;">${list.length ? `${list.length} raised · <strong>${open}</strong> open · ${pending} pending · ${closed} closed` : 'Track every action raised from incidents, near misses, inspections, audits and complaints on this project — owner, target date and close-out.'}</p>`;
+  }
+  if(activeSiteTab==='permits'){
+    const list=s.permits||[];
+    const open=list.filter(r=>(r.status||'Open')==='Open').length, closed=list.filter(r=>r.status==='Closed').length;
+    const overdue=list.filter(r=>permitOverdueDays(r)).length;
+    pre = (overdue ? overdueNotice(`${overdue} permit${overdue===1?' is':'s are'} past the “valid to” date but not closed — close ${overdue===1?'it':'them'} out or extend.`) : '')
+        + `<p class="wsub" style="margin:0 0 12px;">${list.length ? `${list.length} logged · <strong>${open}</strong> open · ${closed} closed` : 'Log each permit to work issued on this project, and close it out when the job is done.'}</p>`;
+  }
+  if(activeSiteTab==='toolboxTalks'){
+    const list=s.toolboxTalks||[];
+    const people=list.reduce((n,r)=>n+tbtAttendeeCount(r),0);
+    pre = `<p class="wsub" style="margin:0 0 12px;">${list.length ? `${list.length} talk${list.length===1?'':'s'} · ${people} attendances in total. ` : ''}Each talk is counted automatically in the Monthly Report (Toolbox talks) for this project — no need to log it twice. It also shows on every attendee's Training tab.</p>`;
   }
   body.innerHTML=pre+recordTabHtml(s, activeSiteTab, cfg);
   activeTab=savedActiveTab; editingRecordId=savedEditing; addFormOpen=savedAddOpen;
@@ -2177,6 +2984,8 @@ function siteStatsTabHtml(s){
   const month=computeReportMetrics(f.all.filter(e=>entryMonth(e).startsWith(pkey)));
   const allCmp=(s.complaints||[]), perCmp=allCmp.filter(x=>(x.date||'').startsWith(pkey));
   const ccP=complaintCounts(perCmp), ccT=complaintCounts(allCmp);
+  const actT=s.actions||[], actP=actT.filter(x=>(x.date||'').startsWith(pkey));
+  const ptwT=s.permits||[], ptwP=ptwT.filter(x=>(x.date||'').startsWith(pkey));
   const cmpRow=(label,a,b,bad)=>`<tr><td>${label}</td><td class="stat-val ${bad&&a>0?'danger':''}">${a}</td><td class="stat-val ${bad&&b>0?'danger':''}">${b}</td></tr>`;
   const cell=(row,m)=>{
     const v = row.fmt ? row.fmt(m) : m[row.key];
@@ -2206,7 +3015,11 @@ function siteStatsTabHtml(s){
       <thead><tr><th></th><th>${esc(periodLabel(pkey))}</th><th>Project to date</th></tr></thead>
       <tbody>${PROJECT_STAT_ROWS.map(r=>`<tr><td>${esc(r.label)}</td>${cell(r,month)}${cell(r,f.total)}</tr>`).join('')}
         ${cmpRow('Client complaints received', ccP.received, ccT.received, false)}
-        ${cmpRow('— still open or pending', ccP.open+ccP.pending, ccT.open+ccT.pending, true)}</tbody>
+        ${cmpRow('— still open or pending', ccP.open+ccP.pending, ccT.open+ccT.pending, true)}
+        ${cmpRow('Corrective actions raised', actP.length, actT.length, false)}
+        ${cmpRow('— still open or pending', actP.filter(x=>(x.status||'Open')!=='Closed').length, actT.filter(x=>(x.status||'Open')!=='Closed').length, true)}
+        ${cmpRow('Permits to work issued', ptwP.length, ptwT.length, false)}
+        ${cmpRow('— open past validity', ptwP.filter(x=>permitOverdueDays(x)).length, ptwT.filter(x=>permitOverdueDays(x)).length, true)}</tbody>
     </table>
   </div>
   <div class="subhead">Latest entries for this project</div>
@@ -2592,6 +3405,7 @@ function renderReportAll(){
   renderReportDonut(metrics);
   renderReportBar();
   renderReportTiles(metrics, cc);
+  document.getElementById('reportTiles').insertAdjacentHTML('beforeend', projectRegisterTilesHtml(reportDivision, key, reportProject));
   const showProjects = reportProject==='all';
   document.getElementById('reportProjectsCard').hidden = !showProjects;
   if(showProjects){
@@ -2755,16 +3569,18 @@ function renderReportTable(entries){
   const list=entries.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   tbody.innerHTML=list.map(e=>{
     const cfg=REPORT_CATEGORIES[e.category];
+    const fromProject = e.source==='projectToolbox' && e.sourceSiteId && activeSites().some(x=>x.id===e.sourceSiteId);
+    const actions = fromProject
+      ? `<button type="button" class="btn btn-sm" data-ropen-site="${esc(e.sourceSiteId)}" title="Logged in the project's Toolbox talks tab — edit it there">Open in project</button>`
+      : `<button type="button" class="icon-btn" data-redit="${e.id}" aria-label="Edit">✎</button>
+        <button type="button" class="icon-btn danger" data-rdel="${e.id}" data-armed="0" aria-label="Delete">🗑</button>`;
     return `<tr data-rid="${e.id}">
       <td class="mono">${esc(e.date||'—')}</td>
       <td>${esc(e.division?divLabel(e.division):'—')}</td>
       <td>${e.projectId ? esc(projectName(e.projectId)) : '<span class="wsub">—</span>'}</td>
       <td>${esc(cfg?cfg.label:e.category)}</td>
-      <td>${esc(reportEntrySummary(e))}</td>
-      <td style="text-align:right; white-space:nowrap;">
-        <button type="button" class="icon-btn" data-redit="${e.id}" aria-label="Edit">✎</button>
-        <button type="button" class="icon-btn danger" data-rdel="${e.id}" data-armed="0" aria-label="Delete">🗑</button>
-      </td>
+      <td>${esc(reportEntrySummary(e))}${fromProject?'<div class="wsub">from the project\'s Toolbox talks register</div>':''}</td>
+      <td style="text-align:right; white-space:nowrap;">${actions}</td>
     </tr>`;
   }).join('');
 }
@@ -2826,6 +3642,8 @@ function renderReportEntryForm(category, editing, setDivision, presetProjectId){
   document.getElementById('saveReportEntryBtn').textContent = editing ? 'Save changes' : 'Save entry';
 }
 function openReportEntryForm(entryId, presetProjectId){
+  const synced = entryId && reportEntries.find(x=>x.id===entryId && x.source==='projectToolbox' && activeSites().some(s=>s.id===x.sourceSiteId));
+  if(synced){ openSiteDrawer(synced.sourceSiteId); activeSiteTab='toolboxTalks'; renderSiteDrawer(); return; }
   editingReportEntryId = entryId || null;
   const editing = entryId ? reportEntries.find(e=>e.id===entryId) : null;
   const category = editing ? editing.category : 'training';
@@ -3024,7 +3842,19 @@ function renderDrawerBody(){
   const body=document.getElementById('drawerBody');
   if(activeTab==='profile'){ body.innerHTML=profileTabHtml(w); wireSignaturePad(); return; }
   const cfg=RECORD_TYPES[activeTab];
-  body.innerHTML=recordTabHtml(w, activeTab, cfg);
+  body.innerHTML=recordTabHtml(w, activeTab, cfg) + (activeTab==='trainings' ? workerToolboxHtml(w) : '');
+}
+function toolboxTalksForWorker(wid){
+  const out=[];
+  for(const s of activeSites()) for(const r of (s.toolboxTalks||[])) if((r.attendeeIds||[]).includes(wid)) out.push({...r, siteId:s.id, siteName:s.siteName||'Project'});
+  return out.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+}
+function workerToolboxHtml(w){
+  const list=toolboxTalksForWorker(w.id);
+  const shown=list.slice(0,25);
+  return `<div class="subhead" style="margin-top:24px;">Toolbox talks attended (${list.length})</div>
+    ${list.length ? shown.map(t=>`<div class="rf"><span class="rf-k mono">${esc(t.date||'—')}</span><span class="rf-v"><strong>${esc(t.topic||'—')}</strong> · ${esc(t.siteName)}${t.conductedBy?` · by ${esc(t.conductedBy)}`:''}</span></div>`).join('') + (list.length>shown.length?`<p class="wsub">+ ${list.length-shown.length} older talks</p>`:'')
+      : '<p class="wsub">None recorded yet — talks are logged in each project\'s Toolbox talks tab.</p>'}`;
 }
 
 /* ---------------- attachments (Firebase Storage) ---------------- */
@@ -3228,13 +4058,48 @@ function profileTabHtml(w){
   </div>`;
 }
 
+// Tick-list of workers inside a record form (e.g. toolbox talk attendees).
+// New records start with everyone assigned to this project ticked.
+function workerPickFieldHtml(f, editing, site){
+  const team=new Set(site && site.id ? workersAtSite(site.id).map(x=>x.id) : []);
+  const sel=new Set(editing ? (editing[f.key]||[]) : [...team]);
+  const list=activeWorkers().slice().sort((a,b)=> (team.has(b.id)-team.has(a.id)) || (a.fullName||'').localeCompare(b.fullName||''));
+  const rows=list.map(x=>`<label class="pick-row" data-text="${esc(((x.fullName||'')+' '+(x.civilId||'')+' '+(x.trade||'')+' '+(x.designation||'')).toLowerCase())}">
+      <input type="checkbox" data-multi="${f.key}" value="${esc(x.id)}" ${sel.has(x.id)?'checked':''}>
+      <span class="pick-main"><span class="wname">${esc(x.fullName||'—')}</span><span class="wsub">${esc([x.designation,x.trade].filter(Boolean).join(' · ')||'—')}</span></span>
+      ${team.has(x.id)?'<span class="badge ok">On this project</span>':''}</label>`).join('');
+  // attendees who were later deleted from Workforce stay on the record
+  const kept=[...sel].filter(id=>!list.some(x=>x.id===id)).map(id=>`<input type="checkbox" hidden checked data-multi="${f.key}" value="${esc(id)}">`).join('');
+  return `<div class="span-all">
+    <div class="pick-label">${esc(f.label)} <span data-multi-count="${f.key}">(${sel.size} ticked)</span></div>
+    <input type="search" class="pick-search" data-pick-filter placeholder="Search workers…">
+    <div class="pick-list">${rows || '<p class="wsub" style="padding:8px 10px; margin:0;">No workers in the Workforce register yet.</p>'}</div>${kept}
+    <div style="display:flex; gap:14px; margin-top:6px;"><button type="button" class="att-link" data-pick-all="${f.key}">Tick everyone shown</button><button type="button" class="att-link" data-pick-none="${f.key}">Clear all</button></div>
+  </div>`;
+}
+// Reads a record form, including any worker tick-lists, into a plain object
+function readRecordForm(form){
+  const data={};
+  form.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
+  const multi={};
+  form.querySelectorAll('[data-multi]').forEach(el=>{ const k=el.dataset.multi; if(!multi[k]) multi[k]=[]; if(el.checked) multi[k].push(el.value); });
+  return Object.assign(data, multi);
+}
+
 function recordTabHtml(w,key,cfg){
   const recs=(w[key]||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const cards = recs.length ? recs.map(r=>{
     const titleField=cfg.fields[0].key;
     const resultBadge = r.result==='Unfit' ? `<span class="badge danger">Unfit</span>` : (r.result==='Fit with restrictions' ? `<span class="badge warn">Fit with restrictions</span>` : (r.result==='Fit' ? `<span class="badge ok">Fit</span>` : ''));
     const expiryBadge = cfg.cardBadge ? cfg.cardBadge(r) : cfg.hasExpiry ? (r.expiry? badgeHtml(statusFor(r.expiry)) : `<span class="badge muted">No expiry set</span>`) : (r.level==='Final warning' ? `<span class="badge danger">Final warning</span>` : (r.severity? `<span class="badge ${r.severity==='Critical'?'danger':r.severity==='Major'?'warn':'muted'}">${esc(r.severity)}</span>` : ''));
-    const fieldsHtml = cfg.fields.slice(1).map(f=> r[f.key] ? `<div class="rf"><span class="rf-k">${esc(f.label)}</span><span class="rf-v">${esc(r[f.key])}</span></div>` : '').join('');
+    const fieldsHtml = cfg.fields.slice(1).map(f=>{
+      if(f.type==='workers'){
+        const ids=r[f.key]||[]; if(!ids.length) return '';
+        const names=ids.map(id=>{ const x=workers.find(q=>q.id===id); return x ? (x.fullName||'—') : '(removed worker)'; });
+        return `<div class="rf"><span class="rf-k">${esc(f.label)}</span><span class="rf-v">${ids.length} — ${esc(names.join(', '))}</span></div>`;
+      }
+      return r[f.key] ? `<div class="rf"><span class="rf-k">${esc(f.label)}</span><span class="rf-v">${esc(r[f.key])}</span></div>` : '';
+    }).join('');
     const attach = cfg.hasAttachment ? attachmentBlock(w,key,r,cfg.attachLabel) : '';
     return `<div class="record-card">
       <div class="record-card-top">
@@ -3252,6 +4117,7 @@ function recordTabHtml(w,key,cfg){
   const editing = editingRecordId ? recs.find(r=>r.id===editingRecordId) : null;
   const formFields = cfg.fields.map(f=>{
     const val = editing ? (editing[f.key]||'') : (f.default||'');
+    if(f.type==='workers') return workerPickFieldHtml(f, editing, w);
     if(f.type==='textarea') return `<label>${esc(f.label)}${f.required?' *':''}<textarea data-field="${f.key}" ${f.required?'required':''}>${esc(val)}</textarea></label>`;
     if(f.type==='select') return `<label>${esc(f.label)}${f.required?' *':''}<select data-field="${f.key}" ${f.required?'required':''}><option value="">Select…</option>${f.options.map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
     return `<label>${esc(f.label)}${f.required?' *':''}<input type="${f.type}" data-field="${f.key}" value="${esc(val)}" ${f.required?'required':''} ${f.placeholder?`placeholder="${esc(f.placeholder)}"`:''}></label>`;
@@ -3494,10 +4360,13 @@ async function buildSitePdf(s){
     for(const r of recs){
       ensure(14);
       const titleVal=r[cfg.fields[0].key]||'';
-      const tag = cfg.hasExpiry ? (r.expiry? `  ·  valid until ${r.expiry} (${statusFor(r.expiry)})` : '  ·  no expiry set') : '';
+      const tag = cfg.hasExpiry ? (r.expiry? `  ·  valid until ${r.expiry} (${statusFor(r.expiry)})` : '  ·  no expiry set') : (r.status ? `  ·  ${r.status}` : '');
       doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(20,20,20);
       doc.text(`•  ${titleVal}${tag}`, marginX, y); y+=12;
-      const bits=cfg.fields.slice(1).filter(f=>f.key!=='expiry' && r[f.key]).map(f=>`${f.label}: ${r[f.key]}`).join('    ');
+      const bits=cfg.fields.slice(1).filter(f=>f.key!=='expiry' && f.key!=='status' && r[f.key] && !(Array.isArray(r[f.key]) && !r[f.key].length)).map(f=>{
+        if(f.type==='workers'){ const ids=r[f.key]||[]; return `${f.label}: ${ids.length} (${ids.map(id=>{ const x=workers.find(q=>q.id===id); return x?x.fullName:'removed worker'; }).join(', ')})`; }
+        return `${f.label}: ${r[f.key]}`;
+      }).join('    ');
       if(bits){ doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(100,105,98); const lines=doc.splitTextToSize(bits, pageW-2*marginX-12); lines.forEach(l=>{ ensure(10); doc.text(l, marginX+12, y); y+=10; }); doc.setTextColor(20,20,20); }
       y+=4;
     }
@@ -3553,6 +4422,10 @@ async function buildSitePdf(s){
   const vans=vehiclesAtSite(s.id);
   lineList(`Vehicles (${vans.length})`, vans, v=>{ const iss=vehicleIssues(v); return `${v.vehicleNumber||'—'}  ·  ${v.model||'—'}  ·  ${v.ownership||'Own'}  ·  ${iss.length?'ATTENTION: '+iss.join(', '):'documents valid'}`; });
   section('HSE documents','hseDocs',SITE_RECORD_TYPES.hseDocs);
+  section('Toolbox talks','toolboxTalks',SITE_RECORD_TYPES.toolboxTalks);
+  section('Permits to work','permits',SITE_RECORD_TYPES.permits);
+  section('Corrective actions','actions',SITE_RECORD_TYPES.actions);
+  section('Client complaints','complaints',SITE_RECORD_TYPES.complaints);
 
   // Equipment currently on site, from the Plant & Equipment register
   const onSite=equipAtSite(s.id);
@@ -4139,10 +5012,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
     btn.addEventListener('click', ()=>{
       const section=btn.dataset.section;
       document.querySelectorAll('.sidenav-btn[data-section]').forEach(b=>b.classList.toggle('active', b===btn));
-      document.getElementById('workforceSection').hidden = section!=='workforce';
-      document.getElementById('vehiclesSection').hidden = section!=='vehicles';
-      document.getElementById('siteSection').hidden = section!=='site';
-      document.getElementById('reportSection').hidden = section!=='report';
+      const SECTIONS={workforce:'workforceSection', vehicles:'vehiclesSection', site:'siteSection', report:'reportSection', library:'librarySection'};
+      for(const [k,id] of Object.entries(SECTIONS)) document.getElementById(id).hidden = section!==k;
     });
   });
 
@@ -4168,6 +5039,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('vehicleSearchInput').addEventListener('input', e=>{ vehicleFilters.q=e.target.value; renderVehicleTable(); });
   document.getElementById('vehicleOwnershipFilter').addEventListener('change', e=>{ vehicleFilters.ownership=e.target.value; renderVehicleTable(); });
   document.getElementById('vehicleRows').addEventListener('click', e=>{
+    if(e.target.closest('a')) return;   // IVMS / DFMS links open in a new tab
     const tr=e.target.closest('tr[data-id]'); if(tr) openVehicleDrawer(tr.dataset.id);
   });
 
@@ -4218,6 +5090,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
       e.target.querySelectorAll('[data-vfield]').forEach(el=>{
         data[el.dataset.vfield] = el.type==='number' ? (parseInt(el.value,10)||0) : el.value;
       });
+      for(const k of ['ivmsLink','dfmsLink']){
+        if(data[k] && !safeUrl(data[k])){ toast(`The ${k==='ivmsLink'?'IVMS':'DFMS'} link doesn't look like a web address — check it and save again`); return; }
+        data[k]=safeUrl(data[k]);
+      }
       await updateVehicle(v.id,data);
     }
     if(e.target.id==='recordForm'){
@@ -4393,25 +5269,33 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const s=currentSite(); if(!s) return;
       const data={};
       e.target.querySelectorAll('[data-sfield]').forEach(el=>{ data[el.dataset.sfield]=el.value; });
+      const divisionChanged = data.division && data.division!==(s.division||'Civil');
       await updateSite(s.id,data);
+      if(divisionChanged) for(const r of (s.toolboxTalks||[])) db.collection('hseLogs').doc(tbtLogId(s.id, r.id)).update({division:data.division}).catch(()=>{});
     }
     if(e.target.id==='recordForm'){
       e.preventDefault();
       const s=currentSite(); if(!s) return;
-      const data={}; e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
-      if(activeSiteTab==='complaints'){
-        if(data.status==='Closed' && !data.closedDate) data.closedDate=localToday();
-        if(data.status!=='Closed') data.closedDate='';
+      const key=activeSiteTab;
+      const data=readRecordForm(e.target);
+      if(['complaints','actions','permits'].includes(key)){
+        const done = data.status==='Closed' || data.status==='Cancelled';
+        if(done && !data.closedDate) data.closedDate=localToday();
+        if(!done) data.closedDate='';
       }
-      const arr=(s[activeSiteTab]||[]).slice();
+      if(key==='toolboxTalks' && !(data.attendeeIds||[]).length && !(parseInt(data.extraAttendees,10)>0)){ toast('Tick at least one attendee (or enter other attendees)'); return; }
+      const arr=(s[key]||[]).slice();
+      let saved;
       if(editingSiteRecordId){
         const idx=arr.findIndex(r=>r.id===editingSiteRecordId);
-        if(idx>-1) arr[idx]={...arr[idx], ...data};
+        if(idx>-1){ arr[idx]={...arr[idx], ...data}; saved=arr[idx]; }
       } else {
-        arr.push({id:genId(), ...data});
+        saved={id:genId(), ...data};
+        arr.push(saved);
       }
       editingSiteRecordId=null; siteAddFormOpen=false;
-      await updateSiteArray(s,activeSiteTab,arr);
+      await updateSiteArray(s,key,arr);
+      if(key==='toolboxTalks' && saved) syncToolboxToReport(s, saved);
     }
   });
 
@@ -4486,6 +5370,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const arr=(s[key]||[]).filter(r=>r.id!==rid);
       await updateSiteArray(s,key,arr);
       if(removed && removed.attachment && removed.attachment.path) deleteStorageFile(removed.attachment.path);
+      if(key==='toolboxTalks') removeToolboxFromReport(s.id, rid);
       return;
     }
     const delSiteBtn=e.target.closest('#deleteSiteBtn');
@@ -4716,6 +5601,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 
   document.getElementById('reportRows').addEventListener('click', async e=>{
+    const openSite=e.target.closest('[data-ropen-site]');
+    if(openSite){ openSiteDrawer(openSite.dataset.ropenSite); activeSiteTab='toolboxTalks'; renderSiteDrawer(); return; }
     const editBtn=e.target.closest('[data-redit]');
     if(editBtn){ openReportEntryForm(editBtn.dataset.redit); return; }
     const delBtn=e.target.closest('[data-rdel]');
@@ -4731,6 +5618,219 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 
   document.getElementById('downloadReportPdfBtn').addEventListener('click', downloadReportPdf);
+});
+
+/* ---------------- events: QHSE library, training matrix, IVMS/DFMS, worker tick-lists ---------------- */
+document.addEventListener('DOMContentLoaded', ()=>{
+  // --- worker tick-lists inside record forms (toolbox talk attendees) ---
+  document.addEventListener('input', e=>{
+    if(e.target.matches('[data-pick-filter]')){
+      const q=e.target.value.trim().toLowerCase();
+      const wrap=e.target.closest('.span-all');
+      wrap.querySelectorAll('.pick-row').forEach(r=>{ r.hidden = !!q && !r.dataset.text.includes(q); });
+    }
+    wireLibDateAuto(e);
+  });
+  function updatePickCount(key, scope){
+    const n=scope.querySelectorAll(`[data-multi="${key}"]:checked`).length;
+    const lbl=scope.querySelector(`[data-multi-count="${key}"]`); if(lbl) lbl.textContent=`(${n} ticked)`;
+  }
+  document.addEventListener('change', e=>{
+    if(e.target.matches('[data-multi]')) updatePickCount(e.target.dataset.multi, e.target.closest('form')||document);
+  });
+  document.addEventListener('click', e=>{
+    const all=e.target.closest('[data-pick-all]'), none=e.target.closest('[data-pick-none]');
+    if(!all && !none) return;
+    const key=(all||none).dataset[all?'pickAll':'pickNone'];
+    const wrap=(all||none).closest('.span-all');
+    wrap.querySelectorAll(`.pick-row input[data-multi="${key}"]`).forEach(cb=>{ if(none || !cb.closest('.pick-row').hidden) cb.checked=!!all; });
+    updatePickCount(key, wrap.closest('form')||wrap);
+  });
+
+  // --- workforce view: register / training matrix ---
+  document.getElementById('workforceViewTabs').addEventListener('click', e=>{
+    const b=e.target.closest('[data-wview]'); if(b) setWorkforceView(b.dataset.wview);
+  });
+  document.getElementById('matrixSearch').addEventListener('input', e=>{ matrixFilters.q=e.target.value; renderMatrix(); });
+  document.getElementById('matrixDivision').addEventListener('change', e=>{ matrixFilters.division=e.target.value; renderMatrix(); });
+  document.getElementById('matrixGaps').addEventListener('change', e=>{ matrixFilters.gaps=e.target.value; renderMatrix(); });
+  document.getElementById('matrixRows').addEventListener('click', e=>{
+    const tr=e.target.closest('[data-mx-worker]'); if(!tr) return;
+    openDrawer(tr.dataset.mxWorker); activeTab='trainings'; renderDrawer();
+  });
+  document.getElementById('editReqBtn').addEventListener('click', ()=>{
+    if(!document.getElementById('reqPanel').hidden){ closeReqEditor(); return; }
+    openReqEditor();
+  });
+  document.getElementById('reqPanel').addEventListener('click', e=>{
+    if(e.target.id==='reqCancel'){ closeReqEditor(); return; }
+    if(e.target.id==='reqAddRow'){ readReqRows(); reqEditRows.push({name:'', divisions:[]}); renderReqPanel(); const last=document.querySelector(`[data-req-name="${reqEditRows.length-1}"]`); if(last) last.focus(); return; }
+    if(e.target.id==='reqAddCommon'){
+      readReqRows();
+      const have=new Set(reqEditRows.map(r=>normTraining(r.name)));
+      reqEditRows=reqEditRows.filter(r=>r.name.trim() || r.divisions.length);
+      let added=0;
+      for(const t of COMMON_TRAININGS) if(!have.has(normTraining(t.name))){ reqEditRows.push({name:t.name, divisions:t.divisions.slice()}); added++; }
+      renderReqPanel();
+      toast(added ? `Added ${added} common training${added===1?'':'s'} — untick any division that doesn't need it` : 'Those are already in your list');
+      return;
+    }
+    const rm=e.target.closest('[data-req-remove]');
+    if(rm){ readReqRows(); reqEditRows.splice(Number(rm.dataset.reqRemove),1); if(!reqEditRows.length) reqEditRows.push({name:'',divisions:[]}); renderReqPanel(); }
+  });
+  document.getElementById('reqPanel').addEventListener('submit', async e=>{
+    if(e.target.id!=='reqForm') return;
+    e.preventDefault();
+    readReqRows();
+    const seen=new Set(), out=[];
+    for(const r of reqEditRows){
+      const name=r.name.trim(); if(!name) continue;
+      const k=normTraining(name); if(seen.has(k)) continue; seen.add(k);
+      if(!r.divisions.length){ toast(`Tick at least one division for “${name}”`); return; }
+      out.push({name, divisions:r.divisions});
+    }
+    if(await saveSettings('trainingMatrix', {trainings:out})) closeReqEditor();
+  });
+
+  // --- Fleet: company IVMS / DFMS portal links ---
+  document.getElementById('monitorBar').addEventListener('click', e=>{
+    if(e.target.id==='monitorEditBtn'){ monitorEditOpen=true; renderMonitorBar(); return; }
+    if(e.target.id==='monitorCancel'){ monitorEditOpen=false; renderMonitorBar(); return; }
+  });
+  document.getElementById('monitorBar').addEventListener('submit', async e=>{
+    if(e.target.id!=='monitorForm') return;
+    e.preventDefault();
+    const data={};
+    e.target.querySelectorAll('[data-mfield]').forEach(el=>{ data[el.dataset.mfield]=el.value.trim(); });
+    for(const k of ['ivmsPortalUrl','dfmsPortalUrl']){
+      if(data[k] && !safeUrl(data[k])){ toast(`The ${k.startsWith('ivms')?'IVMS':'DFMS'} link doesn't look like a web address — check it and save again`); return; }
+      data[k]=safeUrl(data[k]);
+    }
+    if(await saveSettings('app', data)){ monitorEditOpen=false; renderMonitorBar(); }
+  });
+
+  // --- QHSE library: dashboard, filters, table ---
+  document.getElementById('addLibBtn').addEventListener('click', ()=>{ const p=document.getElementById('addLibPanel'); if(p.hidden) openAddLibForm(); else closeAddLibForm(); });
+  document.getElementById('cancelAddLib').addEventListener('click', closeAddLibForm);
+  document.getElementById('libTypeTabs').addEventListener('click', e=>{
+    const b=e.target.closest('[data-libtype]'); if(!b) return;
+    libFilters.type=b.dataset.libtype; renderLibTypeTabs(); renderLibTable();
+  });
+  document.getElementById('libByType').addEventListener('click', e=>{
+    const r=e.target.closest('[data-libtype-jump]'); if(!r) return;
+    libFilters.type=r.dataset.libtypeJump; renderLibTypeTabs(); renderLibTable();
+    document.getElementById('libTypeTabs').scrollIntoView({behavior:'smooth', block:'start'});
+  });
+  document.getElementById('libUpcoming').addEventListener('click', e=>{ const r=e.target.closest('[data-open-lib]'); if(r) openLibDrawer(r.dataset.openLib); });
+  document.getElementById('libSearch').addEventListener('input', e=>{ libFilters.q=e.target.value; renderLibTable(); });
+  document.getElementById('libStatusFilter').addEventListener('change', e=>{ libFilters.status=e.target.value; renderLibTable(); });
+  document.getElementById('libRows').addEventListener('click', e=>{
+    if(e.target.closest('a,button')) return;   // View / Download
+    const tr=e.target.closest('tr[data-id]'); if(tr) openLibDrawer(tr.dataset.id);
+  });
+  document.getElementById('addLibForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    if(libBusy) return;
+    const data=readLibForm(e.target, 'data-libfield');
+    if(libDocNoTaken(data.docNo)){ toast(`Document no. ${data.docNo} is already in the library — open it and upload a new revision instead`); return; }
+    const file=document.getElementById('addLibFile').files[0];
+    if(file && !checkLibFile(file)) return;
+    libBusy=true;
+    try{
+      let att=null;
+      if(file){ toast('Uploading file…'); att=await uploadToStorage(file); }
+      const u=auth.currentUser;
+      await db.collection('qhseDocs').add(stamp({...data, file:att, history:[], createdAt:new Date().toISOString(), createdBy:(u&&u.email)||''}));
+      toast('Document added to the library');
+      closeAddLibForm();
+    }catch(err){ console.error(err); toast('Could not save — '+((err&&err.code)||'error')); }
+    finally{ libBusy=false; }
+  });
+
+  // --- QHSE library: document drawer ---
+  document.getElementById('libDrawerClose').addEventListener('click', closeLibDrawer);
+  document.getElementById('libDrawerOverlay').addEventListener('click', closeLibDrawer);
+  document.getElementById('libDrawerBody').addEventListener('click', async e=>{
+    const d=currentLibDoc(); if(!d) return;
+    if(e.target.id==='libNewRevBtn'){ libRevFormOpen=true; renderLibDrawer(); return; }
+    if(e.target.id==='libRevCancel'){ libRevFormOpen=false; renderLibDrawer(); return; }
+    const rm=e.target.closest('[data-lib-remove-file]');
+    if(rm){
+      if(rm.dataset.armed!=='1'){ rm.dataset.armed='1'; rm.textContent='Confirm?'; setTimeout(()=>{ if(rm.dataset.armed==='1'){ rm.dataset.armed='0'; rm.textContent='Remove'; } },4000); return; }
+      const old=d.file;
+      if(await updateLib(d.id, {file:null}, true)){ if(old && old.path) deleteStorageFile(old.path); toast('File removed'); }
+      return;
+    }
+    if(e.target.id==='deleteLibBtn'){
+      const b=e.target;
+      if(b.dataset.armed!=='1'){ b.dataset.armed='1'; b.textContent='Confirm delete'; setTimeout(()=>{ if(b.dataset.armed==='1'){ b.dataset.armed='0'; b.textContent='Delete document'; } },4000); return; }
+      if(await updateLib(d.id, {deleted:true, deletedAt:new Date().toISOString()}, true)){ toast('Document moved to Deleted documents'); closeLibDrawer(); }
+    }
+  });
+  document.getElementById('libDrawerBody').addEventListener('change', async e=>{
+    if(!e.target.matches('[data-lib-file]')) return;
+    const d=currentLibDoc(); const file=e.target.files[0]; if(!d || !file) return;
+    if(!checkLibFile(file)){ e.target.value=''; return; }
+    libBusy=true;
+    try{
+      toast('Uploading file…');
+      const att=await uploadToStorage(file);
+      const old=d.file;
+      libBusy=false;
+      if(await updateLib(d.id, {file:att}, true)){ if(old && old.path) deleteStorageFile(old.path); toast('File uploaded'); }
+    }catch(err){ console.error(err); toast('Could not upload — '+((err&&err.code)||'error')); }
+    finally{ libBusy=false; renderLibDrawer(); }
+  });
+  document.getElementById('libDrawerBody').addEventListener('submit', async e=>{
+    const d=currentLibDoc(); if(!d) return;
+    if(e.target.id==='libDetailsForm'){
+      e.preventDefault();
+      const data=readLibForm(e.target, 'data-libfield');
+      if(libDocNoTaken(data.docNo, d.id)){ toast(`Another document already uses no. ${data.docNo}`); return; }
+      await updateLib(d.id, data);
+      return;
+    }
+    if(e.target.id==='libRevForm'){
+      e.preventDefault();
+      if(libBusy) return;
+      const data=readLibForm(e.target, 'data-revfield');
+      const file=document.getElementById('libRevFile').files[0];
+      if(!file){ toast('Choose the file for the new revision'); return; }
+      if(!checkLibFile(file)) return;
+      libBusy=true;
+      try{
+        toast('Uploading new revision…');
+        const att=await uploadToStorage(file);
+        const u=auth.currentUser;
+        const prev={revision:d.revision||'', lastRevDate:d.lastRevDate||'', nextRevDate:d.nextRevDate||'', changeNote:d.changeNote||'', file:d.file||null, supersededAt:new Date().toISOString(), supersededBy:(u&&u.email)||''};
+        const history=(d.history||[]).concat((d.file || d.revision) ? [prev] : []);
+        libBusy=false; libRevFormOpen=false;
+        if(await updateLib(d.id, {revision:data.revision, lastRevDate:data.lastRevDate, nextRevDate:data.nextRevDate, changeNote:data.changeNote||'', file:att, history, status:'Current'}, true))
+          toast(`Rev ${data.revision} saved — Rev ${d.revision||'—'} moved to history`);
+      }catch(err){ console.error(err); toast('Could not upload — '+((err&&err.code)||'error')); }
+      finally{ libBusy=false; renderLibDrawer(); }
+    }
+  });
+
+  // --- QHSE library: trash ---
+  document.getElementById('libTrashBtn').addEventListener('click', openLibTrash);
+  document.getElementById('libTrashClose').addEventListener('click', closeLibTrash);
+  document.getElementById('libTrashOverlay').addEventListener('click', closeLibTrash);
+  document.getElementById('libTrashBody').addEventListener('click', async e=>{
+    const r=e.target.closest('[data-lrestore]');
+    if(r){ if(await updateLib(r.dataset.lrestore, {deleted:false, deletedAt:null}, true)) toast('Document restored'); return; }
+    const p=e.target.closest('[data-lpurge]');
+    if(p){
+      if(p.dataset.armed!=='1'){ p.dataset.armed='1'; p.textContent='Confirm — cannot be undone'; setTimeout(()=>{ if(p.dataset.armed==='1'){ p.dataset.armed='0'; p.textContent='Delete forever'; } },4000); return; }
+      const d=libDocs.find(x=>x.id===p.dataset.lpurge); if(!d) return;
+      try{
+        const paths=[d.file && d.file.path, ...(d.history||[]).map(h=>h.file && h.file.path)].filter(Boolean);
+        await Promise.all(paths.map(deleteStorageFile));
+        await db.collection('qhseDocs').doc(d.id).delete();
+        toast('Document and its files permanently removed');
+      }catch(err){ console.error(err); toast('Could not remove — '+((err&&err.code)||'error')); }
+    }
+  });
 });
 
 // Register the service worker so this page can be installed as an app
