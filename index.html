@@ -633,6 +633,41 @@ body.read-only #addAudBtn, body.read-only #audTrashBtn, body.read-only #audFindi
 .brief-cov{display:flex; gap:18px; align-items:center; flex-wrap:wrap; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:var(--surface-2); margin-bottom:14px;}
 .text-danger{color:var(--danger) !important;}
 body.read-only .reg-add-btn, body.read-only .reg-trash-btn, body.read-only .reg-edit-only, body.read-only [data-sedit], body.read-only [data-sdel], body.read-only #regDeleteBtn, body.read-only #kpiEditBtn, body.read-only #legalTemplateBtn{display:none !important;}
+
+/* ---- Batch 12: HIRA matrix, heat forecast, checklists, trends, client pack ---- */
+.rmx-wrap{display:flex; gap:24px; align-items:center; flex-wrap:wrap;}
+.rmx{display:grid; grid-template-columns:auto 1fr; grid-template-rows:1fr auto; gap:4px 6px; align-items:center;}
+.rmx-y{writing-mode:vertical-rl; transform:rotate(180deg); font-size:11px; color:var(--ink-muted); letter-spacing:.08em; text-transform:uppercase;}
+.rmx-x{grid-column:2; text-align:center; font-size:11px; color:var(--ink-muted); letter-spacing:.08em; text-transform:uppercase;}
+.rmx-grid{display:grid; grid-template-columns:18px repeat(5, 46px); gap:4px;}
+.rmx-lab{font-size:11px; color:var(--ink-muted); text-align:center; align-self:center;}
+.rmx-cell{height:40px; border-radius:7px; display:grid; place-items:center; font-weight:800; font-size:15px; color:#fff; border:1px solid rgba(255,255,255,.08);}
+.rmx-ok{background:rgba(34,197,94,.55);} .rmx-warn{background:rgba(245,165,36,.6);} .rmx-danger{background:rgba(239,68,68,.6);} .rmx-ext{background:rgba(190,18,60,.95);}
+.rmx-extb{background:rgba(190,18,60,.95) !important; color:#fff !important;}
+.rmx-legend{display:flex; flex-wrap:wrap; gap:6px; max-width:420px;} .rmx-legend p{margin:6px 0 0; flex-basis:100%;}
+.hf-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:12px;}
+.hf-card{border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:var(--surface-2);}
+.hf-card.hf-danger{border-color:var(--danger); box-shadow:0 0 18px -10px var(--danger);} .hf-card.hf-warn{border-color:var(--warn,#f5a524);}
+.hf-top{display:flex; justify-content:space-between; gap:8px; align-items:center;}
+.hf-nums{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:10px 0;} .hf-big{font-size:20px; font-weight:800; font-family:var(--mono, ui-monospace, monospace);}
+.hf-loc{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;} .hf-loc input{flex:1 1 150px; min-width:0;}
+.ck-list{display:flex; flex-direction:column; gap:8px;}
+.ck-item{border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--surface-2);} .ck-item.ck-no{border-color:var(--danger);} .ck-item.ck-yes{border-color:rgba(34,197,94,.6);}
+.ck-q{display:flex; gap:10px; font-weight:600; margin-bottom:8px;} .ck-n{flex:none; width:22px; height:22px; border-radius:6px; background:var(--surface); display:grid; place-items:center; font-size:11px; color:var(--ink-muted);}
+.ck-ans{display:flex; gap:6px; margin-bottom:6px;}
+.ck-opt{flex:1; position:relative;} .ck-opt input{position:absolute; opacity:0; inset:0;}
+.ck-opt span{display:block; text-align:center; padding:10px 0; border-radius:9px; border:1px solid var(--line); font-weight:700; cursor:pointer; background:var(--surface);}
+.ck-yes input:checked + span{background:#16a34a; border-color:#16a34a; color:#fff;} .ck-no input:checked + span{background:var(--danger); border-color:var(--danger); color:#fff;} .ck-na input:checked + span{background:var(--ink-muted); color:var(--bg);}
+.ck-opt input:focus-visible + span{outline:2px solid var(--accent); outline-offset:2px;}
+.ck-comment{width:100%;}
+.obs-trends{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;} .obs-trends .panel{margin:0; padding:14px;} .obs-trends h3{margin:0 0 10px; font-size:12px;}
+@media (max-width: 760px){ .obs-trends{grid-template-columns:1fr;} .rmx-grid{grid-template-columns:18px repeat(5, 40px);} }
+.tr-row{display:grid; grid-template-columns:minmax(90px,150px) 1fr 30px; gap:8px; align-items:center; margin:5px 0; font-size:12.5px;}
+.tr-l{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;} .tr-bar{height:8px; border-radius:6px; background:var(--surface-2); overflow:hidden;} .tr-bar i{display:block; height:100%; background:linear-gradient(90deg,var(--brand,#ff3b4e),#ff8a3d);} .tr-n{text-align:right; font-family:var(--mono, ui-monospace, monospace);}
+.cp-dialog{position:fixed; z-index:120; left:50%; top:50%; transform:translate(-50%,-50%); width:min(620px, calc(100vw - 24px)); max-height:calc(100vh - 40px); overflow:auto; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:20px; box-shadow:0 30px 80px rgba(0,0,0,.5);}
+.cp-dialog h2{margin:0 0 4px;}
+#cpOverlay{z-index:110;}
+body.read-only #ckTemplatesBtn{display:none !important;}
 </style>
 </head>
 <body class="auth-open">
@@ -668,11 +703,16 @@ body.read-only .reg-add-btn, body.read-only .reg-trash-btn, body.read-only .reg-
     <div class="nav-group">Safety</div>
     <button type="button" class="sidenav-btn" data-section="incidents">Incident Register</button>
     <button type="button" class="sidenav-btn" data-section="alerts">Safety Alerts</button>
+    <button type="button" class="sidenav-btn" data-section="obs">Observations</button>
+    <button type="button" class="sidenav-btn" data-section="insp">Inspections</button>
+    <button type="button" class="sidenav-btn" data-section="heat">Heat Stress</button>
     <button type="button" class="sidenav-btn" data-section="actions">Action Tracker</button>
     <div class="nav-group">Assurance</div>
     <button type="button" class="sidenav-btn" data-section="objectives">Objectives &amp; KPIs</button>
     <button type="button" class="sidenav-btn" data-section="assurance">Assurance Plan</button>
     <button type="button" class="sidenav-btn" data-section="audits">Audits</button>
+    <button type="button" class="sidenav-btn" data-section="hira">Risk Register</button>
+    <button type="button" class="sidenav-btn" data-section="moc">Change (MOC)</button>
     <button type="button" class="sidenav-btn" data-section="legal">Legal Register</button>
     <button type="button" class="sidenav-btn" data-section="meetings">Meetings</button>
     <div class="nav-group">Documents</div>
@@ -975,6 +1015,7 @@ body.read-only .reg-add-btn, body.read-only .reg-trash-btn, body.read-only .reg-
           <p class="page-tagline"><span class="pt-co">Burhan Oil &amp; Trade Services</span><span class="pt-sep" aria-hidden="true"></span><span class="pt-slogan">Think safe, work safe, home safe</span></p>
         </div>
         <div class="topbar-actions">
+          <button class="btn btn-sm" id="clientPackBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-file"/></svg> Client report pack</button>
           <button class="btn btn-sm" id="downloadReportPdfBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg> PDF report</button>
           <button class="btn btn-primary" id="addReportEntryBtn" type="button">+ Log an entry</button>
         </div>
@@ -1401,6 +1442,26 @@ body.read-only .reg-add-btn, body.read-only .reg-trash-btn, body.read-only .reg-
   <div class="drawer-body" id="audTrashBody"></div>
 </aside>
 
+<div class="drawer-overlay" id="ckOverlay" hidden></div>
+<aside class="drawer" id="ckDrawer" hidden>
+  <div class="drawer-head"><div><h2>My checklists</h2><div class="wsub">Build your own inspection checklists — one question per line.</div></div><button class="icon-btn" id="ckClose" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+  <div class="drawer-body" id="ckBody"></div>
+</aside>
+<div class="drawer-overlay" id="cpOverlay" hidden></div>
+<div class="cp-dialog" id="cpDialog" hidden role="dialog" aria-labelledby="cpTitle">
+  <h2 id="cpTitle">Client monthly report pack</h2>
+  <p class="wsub">A ready-to-send PDF: cover, statistics (month &amp; year to date), proactive activities, KPIs, incidents &amp; lessons, audits &amp; inspections, heat stress, actions, highlights and next month’s plan.</p>
+  <form id="cpForm"><div class="form-grid">
+    <label>Client<input id="cpClient" placeholder="e.g. PDO"></label>
+    <label>Contract no.<input id="cpContract"></label>
+    <label>Month<input type="month" id="cpMonth" required></label>
+    <label>Scope<select id="cpProject"></select></label>
+    <label class="span-all">Prepared by<input id="cpPrepared" placeholder="name — HSE Officer"></label>
+    <label class="span-all">Highlights &amp; concerns this month<textarea id="cpHighlights" rows="3"></textarea></label>
+    <label class="span-all">Plan for next month<textarea id="cpPlan" rows="3"></textarea></label>
+  </div><div class="form-actions"><button type="button" class="btn" id="cpCancel">Cancel</button><button type="submit" class="btn btn-primary">Download PDF</button></div></form>
+</div>
+
 <div class="drawer-overlay" id="regDrawerOverlay" hidden></div>
 <aside class="drawer drawer-wide" id="regDrawer" hidden>
   <div class="drawer-head">
@@ -1517,11 +1578,11 @@ function ic(name, cls){ return `<svg class="ic${cls?' '+cls:''}" aria-hidden="tr
 const storage = firebase.storage();
 
 /* ---------------- change history: every add / update / set / delete is written to activityLog ---------------- */
-const LOG_COLLECTION_LABELS = {workers:'Workforce', vehicles:'Fleet', siteEquipment:'Projects', equipment:'Plant & Equipment', hseLogs:'Monthly Report', qhseDocs:'QHSE Library', settings:'Settings', incidents:'Incident Register', audits:'Audits', objectives:'Objectives', safetyAlerts:'Safety Alerts', legalReqs:'Legal Register', meetings:'Meetings', subcontractors:'Subcontractors'};
+const LOG_COLLECTION_LABELS = {workers:'Workforce', vehicles:'Fleet', siteEquipment:'Projects', equipment:'Plant & Equipment', hseLogs:'Monthly Report', qhseDocs:'QHSE Library', settings:'Settings', incidents:'Incident Register', audits:'Audits', objectives:'Objectives', safetyAlerts:'Safety Alerts', legalReqs:'Legal Register', meetings:'Meetings', subcontractors:'Subcontractors', hira:'Risk Register', moc:'Management of Change', observations:'Observations', heatLogs:'Heat Stress', inspections:'Inspections'};
 const LOG_IGNORE_KEYS = new Set(['updatedAt','updatedBy','createdAt','createdBy']);
 function logCacheFind(col, id){
   try{
-    if(col==='settings'){ const sm={app:()=>appSettings, trainingMatrix:()=>trainingReq, targets:()=>appTargets, assurance:()=>appAssurance}; return sm[id] ? sm[id]() : null; }
+    if(col==='settings'){ const sm={app:()=>appSettings, trainingMatrix:()=>trainingReq, targets:()=>appTargets, assurance:()=>appAssurance, checklists:()=>({items:customChecklists})}; return sm[id] ? sm[id]() : null; }
     const map={workers:()=>workers, vehicles:()=>vehicles, siteEquipment:()=>siteEquipmentList, equipment:()=>equipmentList, hseLogs:()=>reportEntries, qhseDocs:()=>libDocs, incidents:()=>incidentList, audits:()=>auditList};
     if(map[col]) return map[col]().find(x=>x.id===id) || null;
     const rk=Object.keys(REG).find(k=>REG[k].collection===col); if(rk) return regState[rk].list.find(x=>x.id===id) || null;
@@ -1552,7 +1613,7 @@ function logChanges(before, data){
 function writeActivity(col, id, action, data, before){
   try{
     if(col==='activityLog') return;
-    if(col==='hseLogs' && /^(tbt|inc|aud)_/.test(id||'')) return;      // automatic copies of other records
+    if(col==='hseLogs' && /^(tbt|inc|aud|obs)_/.test(id||'')) return;      // automatic copies of other records
     const u=auth.currentUser; if(!u || !canEdit()) return;
     let act=action, changes=[];
     if(action==='updated' || action==='set'){
@@ -1954,6 +2015,7 @@ function startSettingsData(){
       trainingReq=map.trainingMatrix||{trainings:[]};
       appTargets=map.targets||{};
       appAssurance=map.assurance||{};
+      customChecklists=(map.checklists&&map.checklists.items)||[];
       renderMonitorBar(); renderVehicleTable(); if(activeVehicleId) renderVehicleDrawer();
       renderMatrix(); renderReportAll(); renderAssuranceAll();
     }, err=>{
@@ -2930,6 +2992,8 @@ const TARGET_DEFS = [
   {key:'alertBriefing', kind:'leading', label:'Safety alerts briefed to projects', type:'min', unit:'%', def:100},
   {key:'committee', kind:'leading', label:'HSE committee meetings held (year)', type:'min', annual:true, def:12},
   {key:'subconScore', kind:'leading', label:'Average subcontractor HSE score', type:'min', unit:'%', def:75},
+  {key:'checklists', kind:'leading', label:'Checklist inspections per month (average)', type:'min', dec:1, def:20},
+  {key:'heatCases', kind:'lagging', label:'Heat illness cases', type:'max', def:0},
 ];
 let targetsEditOpen=false;
 function targetsFor(year){ const t=(appTargets||{})[year]; return t || null; }
@@ -3240,14 +3304,19 @@ const ASSURANCE_AUTO = {
   'legal:eval':{label:'Legal compliance evaluations (Legal Register)'},
   'subcon:eval':{label:'Subcontractor evaluations (Subcontractors)'},
   'alert:issued':{label:'Safety alerts issued (Safety Alerts)'},
+  'inspection:done':{label:'Checklist inspections (Inspections)'},
+  'heat:logged':{label:'Heat stress checks (Heat Stress)'},
+  'hira:reviewed':{label:'Risk register reviews (HIRA)'},
 };
 const ASSURANCE_TEMPLATE = [
   {activity:'HSE policy & objectives review', clause:'5.2 / 6.2', owner:'Management', months:[1], auto:''},
   {activity:'Hazard identification & risk assessment review', clause:'6.1.2', owner:'HSE', months:[1,7], auto:'library:ra'},
+  {activity:'Heat stress management checks (summer)', clause:'8.1', owner:'Supervisors', months:[5,6,7,8,9], auto:'heat:logged'},
   {activity:'Evaluation of legal & other requirements', clause:'9.1.2', owner:'HSE', months:[6,12], auto:'legal:eval'},
   {activity:'HSE committee / worker consultation meeting', clause:'5.4', owner:'HSE', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:'meeting:committee'},
   {activity:'Management site visit / safety walk', clause:'5.1', owner:'Management', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:'report:siteVisit'},
   {activity:'Site HSE inspections & observations', clause:'9.1.1', owner:'HSE', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:'report:hseObservation'},
+  {activity:'Equipment & site checklist inspections', clause:'9.1.1', owner:'Supervisors', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:'inspection:done'},
   {activity:'Vehicle inspections', clause:'8.1', owner:'Fleet', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:'report:vehicleInspection'},
   {activity:'Toolbox talks', clause:'7.4', owner:'Supervisors', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:'report:tbt'},
   {activity:'HSE training programme', clause:'7.2', owner:'HSE', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:'report:training'},
@@ -3274,6 +3343,9 @@ function assuranceEvidence(item, y, m){
   if(item.auto==='meeting:mgmt') return regActive('meetings').filter(r=>r.type===MEETING_TYPES[1] && r.status!=='Scheduled' && String(r.date||'').startsWith(key)).length;
   if(item.auto==='legal:eval') return regActive('legal').reduce((n,r)=>n+(r.evaluations||[]).filter(x=>String(x.date||'').startsWith(key)).length,0);
   if(item.auto==='subcon:eval') return regActive('subcons').reduce((n,r)=>n+(r.evaluations||[]).filter(x=>String(x.date||'').startsWith(key)).length,0);
+  if(item.auto==='inspection:done') return regActive('insp').filter(r=>String(r.date||'').startsWith(key)).length;
+  if(item.auto==='heat:logged') return regActive('heat').filter(r=>String(r.date||'').startsWith(key)).length;
+  if(item.auto==='hira:reviewed') return regActive('hira').filter(r=>String(r.updatedAt||r.createdAt||'').startsWith(key)).length;
   if(item.auto==='alert:issued') return regActive('alerts').filter(r=>r.status!=='Draft' && String(r.issueDate||'').startsWith(key)).length;
   return 0;
 }
@@ -3485,7 +3557,7 @@ function openRegAdd(key){
 /* ---- drawer ---- */
 function openRegDrawer(key, id, tab){
   const nav=document.querySelector(`.sidenav-btn[data-section="${REG[key].navKey||key}"]`); if(nav && !nav.classList.contains('active')) nav.click();
-  raiseDrawer('regDrawerOverlay','regDrawer'); activeReg=key; activeRegId=id; activeRegTab=tab||'main'; regSubOpen=null; regSubEdit=null;
+  raiseDrawer('regDrawerOverlay','regDrawer'); activeReg=key; activeRegId=id; activeRegTab=tab||REG[key].tabs[0].key; regSubOpen=null; regSubEdit=null;
   document.getElementById('regDrawerOverlay').hidden=false; document.getElementById('regDrawer').hidden=false; renderRegDrawer();
 }
 function closeRegDrawer(){ activeRegId=null; document.getElementById('regDrawerOverlay').hidden=true; document.getElementById('regDrawer').hidden=true; }
@@ -3507,10 +3579,10 @@ function renderRegDrawer(){
   if(t.key==='history') loadRegHistory(cfg.collection, r.id);
 }
 function regFormTabHtml(cfg, r, t){
-  const head = t.key===cfg.tabs[0].key ? `${cfg.badgesOf?`<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">${cfg.badgesOf(r)}</div>`:''}${updatedNoteHtml(r)}` : '';
+  const head = t.key==='main' ? `${cfg.badgesOf?`<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">${cfg.badgesOf(r)}</div>`:''}${updatedNoteHtml(r)}` : '';
   return `${head}${t.intro?`<p class="wsub" style="margin:0 0 12px;">${t.intro}</p>`:''}${t.pre?t.pre(r):''}<form data-reg-form="${t.key}">${(t.groups||[{fields:t.fields}]).map(g=>`${g.title?`<div class="subhead">${esc(g.title)}</div>`:''}<div class="form-grid">${g.fields.map(f=>regFieldHtml(f, r[f.key])).join('')}</div>`).join('')}
     <div class="form-actions"><button type="submit" class="btn btn-primary">Save</button></div></form>
-    ${t.key===cfg.tabs[0].key?`<div class="danger-zone"><p>Deleting moves this ${esc(cfg.singular.toLowerCase())} to the trash. It can be restored.</p><button type="button" class="btn btn-danger btn-sm" id="regDeleteBtn" data-armed="0">Delete ${esc(cfg.singular.toLowerCase())}</button></div>`:''}`;
+    ${t.key==='main'?`<div class="danger-zone"><p>Deleting moves this ${esc(cfg.singular.toLowerCase())} to the trash. It can be restored.</p><button type="button" class="btn btn-danger btn-sm" id="regDeleteBtn" data-armed="0">Delete ${esc(cfg.singular.toLowerCase())}</button></div>`:''}`;
 }
 function regSubHtml(cfg, r, subKey, t){
   const sc=cfg.subs[subKey], list=(r[subKey]||[]).slice(), editing=regSubEdit?list.find(x=>x.id===regSubEdit):null, open=regSubOpen===subKey;
@@ -3933,6 +4005,8 @@ let kpiEditOpen=false, kpiYear=String(new Date().getFullYear());
 function kpiMonthMetrics(year){ const out=[]; for(let m=1;m<=12;m++) out.push(computeReportMetrics(reportEntriesFor('all', `${year}-${String(m).padStart(2,'0')}`, 'all'))); return out; }
 const KPI_MONTH = {   // monthly value for the scorecard grid (count-type KPIs)
   lti:m=>m.lti, mti:m=>m.mti, fac:m=>m.fac, vehicleInc:m=>m.vehicleIncident, incidents:m=>m.incident, daysLost:m=>m.ltiDaysLost,
+  checklists:(m,y,mo)=>regActive('insp').filter(r=>String(r.date||'').startsWith(`${y}-${String(mo).padStart(2,'0')}`)).length,
+  heatCases:(m,y,mo)=>regActive('heat').filter(r=>String(r.date||'').startsWith(`${y}-${String(mo).padStart(2,'0')}`)).reduce((n,r)=>n+(Number(r.cases)||0),0),
   tbtPerMonth:m=>m.tbt, inspPerMonth:m=>m.siteVisit+m.internalAudit+m.vehicleInspection, obsPerMonth:m=>m.hseObservation, nearMiss:m=>m.nearMiss, drills:m=>m.mockDrill, mgmtVisits:m=>m.siteVisit,
 };
 function renderKpiPanel(){
@@ -3950,7 +4024,7 @@ function renderKpiPanel(){
     body=`<p class="wsub" style="margin:6px 0;">${canEdit()?`No KPI targets set for ${esc(kpiYear)} yet — click <strong>Set KPI targets</strong>. Suggested values are filled in for you.`:`No KPI targets set for ${esc(kpiYear)} yet.`}</p>`;
   } else {
     const row=d=>{ const act=a[d.key], tgt=t[d.key], st=targetStatus(d, act, tgt===''||tgt===undefined?null:Number(tgt), a._months); const mf=KPI_MONTH[d.key];
-      const cells=MONTHS_SHORT.map((_,n)=>{ if(!mf || n+1>lastM) return '<td class="kpi-m"></td>'; const v=mf(mm[n]); const bad = d.type==='max' ? v>0 && (d.key==='lti'||d.key==='mti'||d.key==='vehicleInc') : (!d.annual && tgt!==undefined && tgt!=='' && v<Number(tgt)); return `<td class="kpi-m ${v?'':'kpi-zero'} ${bad?'kpi-bad':''}">${v}</td>`; }).join('');
+      const cells=MONTHS_SHORT.map((_,n)=>{ if(!mf || n+1>lastM) return '<td class="kpi-m"></td>'; const v=mf(mm[n], kpiYear, n+1); const bad = d.type==='max' ? v>0 && (d.key==='lti'||d.key==='mti'||d.key==='vehicleInc'||d.key==='heatCases') : (!d.annual && tgt!==undefined && tgt!=='' && v<Number(tgt)); return `<td class="kpi-m ${v?'':'kpi-zero'} ${bad?'kpi-bad':''}">${v}</td>`; }).join('');
       return `<tr><td><div class="wname">${esc(d.label)}</div></td><td class="mono">${d.type==='max'?'≤':'≥'} ${fmtTarget(d, tgt)}</td>${cells}<td class="mono"><strong>${fmtTarget(d, act)}</strong></td><td><span class="badge ${st.cls}">${st.t}</span></td></tr>`; };
     body=`<div class="table-wrap"><table class="kpi-table"><thead><tr><th>KPI</th><th>Target</th>${MONTHS_SHORT.map(m=>`<th class="kpi-m">${m}</th>`).join('')}<th>YTD</th><th>Status</th></tr></thead><tbody>
       <tr class="kpi-group"><td colspan="16">Lagging KPIs — outcomes</td></tr>${TARGET_DEFS.filter(d=>d.kind==='lagging').map(row).join('')}
@@ -3979,7 +4053,7 @@ function downloadKpiPdf(){
         if(idx%2){ doc.setFillColor(242,244,247); doc.rect(M,y-10,W-2*M,14,'F'); }
         const st=targetStatus(d, a[d.key], t[d.key]===''||t[d.key]===undefined?null:Number(t[d.key]), a._months);
         doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.text(doc.splitTextToSize(d.label, colK-8)[0], M+4, y); doc.text(`${d.type==='max'?'<=':'>='} ${fmtTarget(d,t[d.key])}`, M+colK+4, y);
-        const mf=KPI_MONTH[d.key]; if(mf) for(let n=0;n<lastM;n++) doc.text(String(mf(mm[n])), M+colK+colT+n*mw+mw/2, y, {align:'center'});
+        const mf=KPI_MONTH[d.key]; if(mf) for(let n=0;n<lastM;n++) doc.text(String(mf(mm[n], kpiYear, n+1)), M+colK+colT+n*mw+mw/2, y, {align:'center'});
         doc.setFont('helvetica','bold'); doc.text(fmtTarget(d,a[d.key]), W-M-100, y);
         const col=st.cls==='ok'?[22,150,90]:st.cls==='warn'?[200,130,0]:st.cls==='danger'?[210,30,45]:[120,120,120]; doc.setTextColor(...col); doc.text(st.t, W-M-60, y); doc.setTextColor(20); y+=14; });
       y+=4;
@@ -4005,12 +4079,14 @@ function extraKpiActuals(year, m){
     alertBriefing: cov.length ? Math.round(cov.reduce((n,c)=>n+c.pct,0)/cov.length) : null,
     committee: regState.meetings ? regActive('meetings').filter(r=>r.type===MEETING_TYPES[0] && inY(r.date) && r.status!=='Scheduled').length : 0,
     subconScore: subs.length ? Math.round(subs.reduce((a,b)=>a+b,0)/subs.length) : null,
+    checklists: regState.insp && months ? regActive('insp').filter(r=>inY(r.date)).length/months : null,
+    heatCases: regState.heat ? regActive('heat').filter(r=>inY(r.date)).reduce((n,r)=>n+(Number(r.cases)||0),0) : 0,
   };
 }
 
 /* =============================== ACTION TRACKER =============================== */
 let actFilters={src:'all', status:'open', owner:'all', q:''};
-const ACT_SOURCES=[{key:'incident',label:'Incidents'},{key:'audit',label:'Audit findings'},{key:'project',label:'Project actions'},{key:'complaint',label:'Client complaints'},{key:'meeting',label:'Meetings'},{key:'legal',label:'Legal gaps'},{key:'alert',label:'Safety alerts'},{key:'objective',label:'Objectives'}];
+const ACT_SOURCES=[{key:'incident',label:'Incidents'},{key:'audit',label:'Audit findings'},{key:'project',label:'Project actions'},{key:'complaint',label:'Client complaints'},{key:'meeting',label:'Meetings'},{key:'legal',label:'Legal gaps'},{key:'alert',label:'Safety alerts'},{key:'objective',label:'Objectives'},{key:'obs',label:'Observations'},{key:'insp',label:'Inspections'},{key:'hira',label:'Risk register'},{key:'moc',label:'Change (MOC)'},{key:'heat',label:'Heat stress'}];
 function collectAllActions(){
   const out=[];
   for(const i of activeIncidents()) for(const a of (i.capa||[])) out.push({src:'incident', ref:i.incNo||'Incident', where:i.projectId?projectName(i.projectId):(i.location||''), text:a.action, owner:a.owner, targetDate:a.targetDate, status:a.status||'Open', closedDate:a.closedDate, open:()=>{ document.querySelector('.sidenav-btn[data-section="incidents"]').click(); openIncDrawer(i.id,'actions'); }});
@@ -4019,7 +4095,8 @@ function collectAllActions(){
     for(const a of (s.actions||[])) out.push({src:'project', ref:s.siteName||'Project', where:a.source||'', text:a.action, owner:a.owner, targetDate:a.targetDate, status:a.status||'Open', closedDate:a.closedDate, open:()=>{ document.querySelector('.sidenav-btn[data-section="site"]').click(); openSiteDrawer(s.id); activeSiteTab='actions'; renderSiteDrawer(); }});
     for(const c of (s.complaints||[])) out.push({src:'complaint', ref:s.siteName||'Project', where:c.raisedBy||'', text:c.correctiveAction||c.issue, owner:c.actionOwner, targetDate:c.targetDate, status:c.status||'Open', closedDate:c.closedDate, tag:c.category, open:()=>{ document.querySelector('.sidenav-btn[data-section="site"]').click(); openSiteDrawer(s.id); activeSiteTab='complaints'; renderSiteDrawer(); }});
   }
-  const regSrc={meetings:'meeting', legal:'legal', alerts:'alert', objectives:'objective'};
+  const regSrc={meetings:'meeting', legal:'legal', alerts:'alert', objectives:'objective', obs:'obs', insp:'insp', hira:'hira', moc:'moc', heat:'heat'};
+  if(REG.obs) for(const r of regActive('obs')) if(r.obsType!=='Positive' && (r.owner||r.targetDate)) out.push({src:'obs', ref:r.obsNo||'Observation', where:[r.category, r.projectId?projectName(r.projectId):r.location].filter(Boolean).join(' · '), text:r.description, owner:r.owner, targetDate:r.targetDate, status:r.status||'Open', closedDate:r.closedDate, tag:r.obsType, open:()=>openRegDrawer('obs', r.id)});
   for(const [k,src] of Object.entries(regSrc)){ const cfg=REG[k]; if(!cfg) continue;
     for(const r of regActive(k)) for(const [sk,sc] of Object.entries(cfg.subs||{})) if(sc.isAction) for(const x of (r[sk]||[])) out.push({src, ref:r[cfg.noField]||cfg.singular, where:cfg.titleOf(r), text:x.action, owner:x.owner, targetDate:x.targetDate, status:x.status||'Open', closedDate:x.closedDate, open:()=>openRegDrawer(k, r.id, 'sub:'+sk)}); }
   return out;
@@ -4143,6 +4220,506 @@ async function downloadAlertPdf(r){
     }
     doc.save(`${(r.alertNo||'alert').replace(/[^a-z0-9-]+/gi,'_')}_safety_alert.pdf`); toast('Safety alert PDF downloaded');
   }catch(e){ console.error(e); toast('Could not generate the PDF'); }
+}
+
+/* =====================================================================
+   BATCH 12 — HIRA, MOC, Heat stress, Observations, Inspections
+   ===================================================================== */
+const SEV_OPTS=['1 · Negligible','2 · Minor','3 · Moderate','4 · Major','5 · Catastrophic'];
+const LIK_OPTS=['1 · Rare','2 · Unlikely','3 · Possible','4 · Likely','5 · Almost certain'];
+function rScore(s,l){ const a=sevNum(s), b=sevNum(l); return a&&b ? a*b : null; }
+function rBadge(s,l){ const sc=rScore(s,l), b=riskBand(sc); return b?`<span class="badge ${b.cls}">${sc} · ${b.t}</span>`:'<span class="wsub">—</span>'; }
+
+/* =============================== HIRA =============================== */
+const HAZARD_CATS=['Working at height','Lifting & rigging','Mechanical / moving parts','Electrical','Hot work / fire','Confined space','Excavation','Vehicles & driving','Manual handling / ergonomics','Hazardous substances','Noise & vibration','Heat stress','Slips, trips & falls','Pressure systems','Environmental','Security / psychosocial','Other'];
+const CONTROL_TYPES=['Elimination','Substitution','Engineering','Administrative','PPE'];
+regDefine({
+  key:'hira', collection:'hira', singular:'Hazard', title:'Hazard & Risk Register (HIRA)', tagline:'Identify · Assess · Control · Review',
+  addLabel:'+ Add hazard', noField:'hiraNo', noPrefix:'HZ', noYear:false, dateField:'reviewDate', statuses:['Current','Under review','Obsolete'], statusOf:r=>r.status||'Current',
+  searchPlaceholder:'Search activity, hazard, control…', emptyEditor:'No hazards yet — add each activity’s hazards with the risk before and after controls.',
+  titleOf:r=>r.hazard||'Hazard', subOf:r=>[r.activity, r.projectId?projectName(r.projectId):(r.division||'')].filter(Boolean).join(' · '),
+  badgesOf:r=>`<span class="wsub" style="display:inline;">Initial</span> ${rBadge(r.severity,r.likelihood)} <span class="wsub" style="display:inline;">→ Residual</span> ${rBadge(r.resSeverity,r.resLikelihood)}`,
+  searchText:r=>[r.hiraNo,r.activity,r.task,r.hazard,r.hazardCategory,r.controls,r.additionalControls].join(' '),
+  sort:(a,b)=>String(a.activity||'').localeCompare(String(b.activity||''))||String(a.hiraNo||'').localeCompare(String(b.hiraNo||'')),
+  addFields:['activity','hazard','hazardCategory','severity','likelihood','projectId'], addDefaults:{status:'Current'},
+  segs:[{key:'hi', label:'High / extreme residual', match:r=>(rScore(r.resSeverity,r.resLikelihood)||0)>=10},{key:'rev', label:'Review overdue', match:r=>r.reviewDate&&daysUntil(r.reviewDate)<0}], segAllLabel:'All hazards',
+  tabs:[{key:'main', label:'Hazard', groups:[
+    {fields:[
+      {key:'hiraNo', label:'Ref no.', required:true},
+      {key:'status', label:'Status', type:'select', options:['Current','Under review','Obsolete']},
+      {key:'activity', label:'Activity / process', required:true, placeholder:'e.g. Scaffold erection'},
+      {key:'task', label:'Task step'},
+      {key:'projectId', label:'Project (optional)', type:'project'},
+      {key:'division', label:'Division', type:'select', options:divisionOptions},
+      {key:'hazardCategory', label:'Hazard category', type:'select', options:HAZARD_CATS},
+      {key:'hazard', label:'Hazard', required:true, wide:true, placeholder:'e.g. Fall of person from height while installing boards'},
+      {key:'consequence', label:'Possible harm / who is affected', type:'textarea', wide:true},
+      {key:'routine', label:'Routine / non-routine', type:'select', options:['Routine','Non-routine','Emergency']},
+    ]},
+    {title:'Initial risk (with existing controls)', fields:[
+      {key:'controls', label:'Existing controls', type:'textarea', wide:true},
+      {key:'severity', label:'Severity', type:'select', options:SEV_OPTS, required:true},
+      {key:'likelihood', label:'Likelihood', type:'select', options:LIK_OPTS, required:true},
+    ]},
+    {title:'Additional controls & residual risk', fields:[
+      {key:'controlTypes', label:'Hierarchy of controls applied', type:'checks', options:CONTROL_TYPES},
+      {key:'additionalControls', label:'Additional controls', type:'textarea', wide:true},
+      {key:'resSeverity', label:'Residual severity', type:'select', options:SEV_OPTS},
+      {key:'resLikelihood', label:'Residual likelihood', type:'select', options:LIK_OPTS},
+      {key:'alarp', label:'Risk ALARP / acceptable?', type:'select', options:['Yes','No — more controls needed']},
+      {key:'owner', label:'Risk owner'},
+      {key:'reviewDate', label:'Next review', type:'date'},
+      {key:'docId', label:'Linked RA / JSA (QHSE Library)', type:'pick', options:()=>activeLibDocs().filter(d=>['Risk assessment','JSA','Method statement'].includes(d.docType)).map(d=>({value:d.id, label:`${d.docNo||''} ${d.title||''}`.trim()})), empty:'— None —'},
+    ]}]},
+    {key:'sub:actions', label:'Actions', sub:'actions'}],
+  subs:{actions:actionSub('Actions to implement controls')},
+  columns:[
+    {label:'Ref', cls:'mono', html:r=>`<strong>${esc(r.hiraNo||'—')}</strong>`},
+    {label:'Activity / hazard', html:r=>`<div class="wname">${esc(r.hazard||'—')}</div><div class="wsub">${esc(r.activity||'')}${r.task?' · '+esc(r.task):''}${r.hazardCategory?' · '+esc(r.hazardCategory):''}</div>`},
+    {label:'Where', html:r=>esc(r.projectId?projectName(r.projectId):(r.division||'All sites'))},
+    {label:'Initial', html:r=>rBadge(r.severity,r.likelihood)},
+    {label:'Residual', html:r=>rBadge(r.resSeverity,r.resLikelihood)},
+    {label:'Review', html:r=>`<span class="mono ${r.reviewDate&&daysUntil(r.reviewDate)<0?'text-danger':''}">${esc(r.reviewDate||'—')}</span>`},
+  ],
+  tiles:list=>{ const cur=list.filter(r=>(r.status||'Current')!=='Obsolete'); const hi=r=>(rScore(r.severity,r.likelihood)||0)>=10, rhi=r=>(rScore(r.resSeverity,r.resLikelihood)||0)>=10;
+    return [{label:'Hazards assessed', num:cur.length, sub:`${new Set(cur.map(r=>r.activity)).size} activities`, icon:'alert'},
+      {label:'High / extreme — initial', num:cur.filter(hi).length, cls:cur.some(hi)?'warn':'ok', sub:'before additional controls', icon:'siren'},
+      {label:'High / extreme — residual', num:cur.filter(rhi).length, cls:cur.some(rhi)?'danger':'ok', sub:'still high after controls', icon:'target'},
+      {label:'Review overdue', num:cur.filter(r=>r.reviewDate&&daysUntil(r.reviewDate)<0).length, cls:cur.some(r=>r.reviewDate&&daysUntil(r.reviewDate)<0)?'danger':'ok', sub:`${cur.filter(r=>!r.resSeverity).length} without residual rating`, icon:'clock'}]; },
+  topPanel:()=>renderHiraMatrix(),
+});
+function renderHiraMatrix(){
+  const el=document.getElementById('hiraTop'); if(!el) return;
+  const list=regActive('hira').filter(r=>(r.status||'Current')!=='Obsolete'), mode=el.dataset.mode||'res';
+  const cnt={}; for(const r of list){ const s=sevNum(mode==='res'?(r.resSeverity||r.severity):r.severity), l=sevNum(mode==='res'?(r.resLikelihood||r.likelihood):r.likelihood); if(s&&l) cnt[s+':'+l]=(cnt[s+':'+l]||0)+1; }
+  let g='<div class="rmx"><div class="rmx-y">Severity</div><div class="rmx-grid">';
+  for(let s=5;s>=1;s--){ g+=`<div class="rmx-lab">${s}</div>`; for(let l=1;l<=5;l++){ const b=riskBand(s*l), n=cnt[s+':'+l]||0; g+=`<div class="rmx-cell rmx-${b.cls==='danger'&&s*l>=15?'ext':b.cls}" title="Severity ${s} × likelihood ${l} = ${s*l} (${b.t})">${n||''}</div>`; } }
+  g+='<div></div>'+[1,2,3,4,5].map(l=>`<div class="rmx-lab">${l}</div>`).join('')+'</div><div class="rmx-x">Likelihood</div></div>';
+  el.innerHTML=`<div class="panel"><div class="section-head"><h3>RISK MATRIX</h3><div class="seg-tabs" style="margin:0;"><button type="button" class="seg-btn ${mode==='init'?'active':''}" data-hmode="init">Initial risk</button><button type="button" class="seg-btn ${mode==='res'?'active':''}" data-hmode="res">Residual risk</button></div></div>
+    <div class="rmx-wrap">${g}<div class="rmx-legend"><span class="badge ok">1–4 Low</span><span class="badge warn">5–9 Medium</span><span class="badge danger">10–14 High</span><span class="badge danger rmx-extb">15–25 Extreme</span><p class="wsub">Numbers show how many hazards sit in each cell. Aim to move every hazard to the green / amber area with additional controls.</p></div></div></div>`;
+}
+
+/* =============================== MOC =============================== */
+const MOC_TYPES=['People / organisation','Equipment / plant','Process / method','Materials / chemicals','Site / facility','Procedure / document','Software / systems','Other'];
+const MOC_STATUSES=['Requested','Under review','Approved','Rejected','Implemented','Closed'];
+const MOC_IMPACTS=['HSE risk / new hazards','Legal & permits','Training & competence','Procedures & documents','Equipment & maintenance','Emergency response','Environment','Client approval needed','Subcontractors'];
+function mocBadge(r){ const s=r.status||'Requested'; const c=s==='Closed'||s==='Implemented'?'ok':s==='Approved'?'ok':s==='Rejected'?'danger':'warn'; const exp=r.permanence==='Temporary'&&r.tempEnd&&daysUntil(r.tempEnd)<0&&!['Closed','Rejected'].includes(s); return `<span class="badge ${c}">${esc(s)}</span>${exp?' <span class="badge danger">Temporary change expired</span>':''}`; }
+regDefine({
+  key:'moc', collection:'moc', singular:'Change', title:'Management of Change', tagline:'Plan · Assess · Approve · Review',
+  addLabel:'+ Request change', noField:'mocNo', noPrefix:'MOC', noYear:true, dateField:'requestDate', yearFilter:true, statuses:MOC_STATUSES, statusOf:r=>r.status||'Requested',
+  searchPlaceholder:'Search change, requester…', emptyEditor:'No changes yet — raise a change request before changing people, equipment, methods, materials or sites.',
+  titleOf:r=>r.title||'Change', subOf:r=>[r.changeType, r.permanence, r.requestedBy?'by '+r.requestedBy:''].filter(Boolean).join(' · '), badgesOf:r=>mocBadge(r),
+  searchText:r=>[r.mocNo,r.title,r.description,r.requestedBy,r.changeType].join(' '),
+  addFields:['title','changeType','permanence','requestDate','requestedBy','projectId'], addDefaults:{status:'Requested', permanence:'Permanent'},
+  tabs:[{key:'main', label:'Change request', groups:[{fields:[
+      {key:'mocNo', label:'MOC no.', required:true},
+      {key:'status', label:'Status', type:'select', options:MOC_STATUSES},
+      {key:'title', label:'Change title', required:true, wide:true},
+      {key:'changeType', label:'Type of change', type:'select', options:MOC_TYPES, required:true},
+      {key:'permanence', label:'Permanent / temporary', type:'select', options:['Permanent','Temporary']},
+      {key:'tempEnd', label:'Temporary change ends', type:'date'},
+      {key:'projectId', label:'Project (optional)', type:'project'},
+      {key:'requestedBy', label:'Requested by', required:true},
+      {key:'requestDate', label:'Request date', type:'date', required:true},
+      {key:'description', label:'Description of the change', type:'textarea', wide:true},
+      {key:'reason', label:'Reason / justification', type:'textarea', wide:true},
+    ]}]},
+    {key:'assess', label:'Risk & impact', fields:[
+      {key:'impacts', label:'Areas affected', type:'checks', options:MOC_IMPACTS},
+      {key:'riskAssessment', label:'Hazards introduced & controls', type:'textarea', wide:true},
+      {key:'severity', label:'Risk severity', type:'select', options:SEV_OPTS},
+      {key:'likelihood', label:'Risk likelihood', type:'select', options:LIK_OPTS},
+      {key:'hiraRef', label:'HIRA / RA reference'},
+      {key:'trainingNeeded', label:'Training / communication needed', type:'textarea', wide:true},
+    ], pre:r=>`<p style="margin:0 0 10px;">Risk with controls: ${rBadge(r.severity,r.likelihood)}</p>`},
+    {key:'approve', label:'Approval', fields:[
+      {key:'hseApprover', label:'HSE review by'}, {key:'hseDate', label:'HSE review date', type:'date'}, {key:'hseDecision', label:'HSE decision', type:'select', options:['Approved','Approved with conditions','Rejected']},
+      {key:'mgrApprover', label:'Manager approval by'}, {key:'mgrDate', label:'Approval date', type:'date'}, {key:'mgrDecision', label:'Manager decision', type:'select', options:['Approved','Approved with conditions','Rejected']},
+      {key:'clientApproval', label:'Client approval', type:'select', options:['Not required','Requested','Approved','Rejected']}, {key:'clientRef', label:'Client approval reference'},
+      {key:'conditions', label:'Conditions of approval', type:'textarea', wide:true},
+      {key:'implementedDate', label:'Implemented on', type:'date'},
+    ]},
+    {key:'sub:tasks', label:'Tasks', sub:'tasks'},
+    {key:'review', label:'Post-change review', intro:'Check that the change works as intended and no new risks appeared, then close it.', fields:[
+      {key:'reviewDate', label:'Review date', type:'date'}, {key:'reviewBy', label:'Reviewed by'},
+      {key:'effective', label:'Change effective & safe?', type:'select', options:['Yes','Partly','No']},
+      {key:'reviewNotes', label:'Review notes / lessons', type:'textarea', wide:true},
+    ]}],
+  subs:{tasks:actionSub('Tasks before / after the change', {addLabel:'Add task', empty:'Add what must be done — update procedures, train people, inspect equipment, inform the client…'})},
+  files:[{key:'requestFile', label:'Signed MOC form'},{key:'raFile', label:'Risk assessment'}],
+  columns:[
+    {label:'No.', cls:'mono', html:r=>`<strong>${esc(r.mocNo||'—')}</strong><div class="wsub">${esc(r.requestDate||'')}</div>`},
+    {label:'Change', html:r=>`<div class="wname">${esc(r.title||'—')}</div><div class="wsub">${esc(r.changeType||'')}${r.permanence==='Temporary'?' · temporary until '+esc(r.tempEnd||'?'):''}</div>`},
+    {label:'Risk', html:r=>rBadge(r.severity,r.likelihood)},
+    {label:'Requested by', html:r=>esc(r.requestedBy||'—')},
+    {label:'Tasks', html:r=>{ const l=r.tasks||[], o=l.filter(a=>(a.status||'Open')!=='Closed').length; return l.length?`${o} open / ${l.length}`:'<span class="wsub">—</span>'; }},
+    {label:'Status', html:r=>mocBadge(r)},
+  ],
+  tiles:list=>{ const open=list.filter(r=>!['Closed','Rejected'].includes(r.status||'Requested'));
+    return [{label:'Changes in progress', num:open.length, sub:`${list.length} in total`, icon:'move'},
+      {label:'Awaiting approval', num:list.filter(r=>['Requested','Under review'].includes(r.status||'Requested')).length, cls:'warn', sub:'requested / under review', icon:'hourglass'},
+      {label:'Temporary changes expired', num:list.filter(r=>r.permanence==='Temporary'&&r.tempEnd&&daysUntil(r.tempEnd)<0&&!['Closed','Rejected'].includes(r.status)).length, sub:'must be removed or made permanent', icon:'clock'},
+      {label:'Post-change review due', num:list.filter(r=>r.status==='Implemented'&&!r.reviewDate).length, sub:'implemented, not yet reviewed', icon:'clipcheck'}]; },
+});
+
+/* =============================== OBSERVATIONS =============================== */
+const OBS_TYPES=['Unsafe act','Unsafe condition','Positive','Environmental'];
+const OBS_CATS=['PPE','Housekeeping','Working at height','Lifting & rigging','Electrical','Hot work','Excavation','Tools & equipment','Driving & vehicles','Chemicals','Fire & emergency','Permit to work','Heat stress','Ergonomics','Behaviour','Other'];
+function obsBadge(r){ const t=r.obsType||''; return `<span class="badge ${t==='Positive'?'ok':t==='Unsafe act'?'danger':t==='Unsafe condition'?'warn':'muted'}">${esc(t||'—')}</span>`; }
+async function syncObsToReport(r){
+  const id='obs_'+r.id;
+  if(r.deleted || !r.date){ try{ await db.collection('hseLogs').doc(id).delete(); }catch(e){} return; }
+  const site=siteEquipmentList.find(s=>s.id===r.projectId);
+  const type = r.obsType==='Positive' ? 'Positive' : r.obsType==='Unsafe act' ? 'Unsafe act' : 'Unsafe condition';
+  try{ await db.collection('hseLogs').doc(id).set(stamp({category:'hseObservation', date:r.date, division:(site&&site.division)||'Office staff', projectId:r.projectId||null, type, description:`${r.obsNo||''} ${r.category?'['+r.category+'] ':''}${r.description||''}`.trim(), actionTaken:r.immediateAction||'', source:'observation', sourceObsId:r.id})); }catch(e){ console.error('observation sync', e); }
+}
+regDefine({
+  key:'obs', collection:'observations', singular:'Observation', title:'HSE Observations', tagline:'See it · Say it · Fix it',
+  addLabel:'+ New observation', noField:'obsNo', noPrefix:'OBS', noYear:true, dateField:'date', yearFilter:true, statuses:['Open','Closed'], statusOf:r=>r.status||'Open',
+  searchPlaceholder:'Search observation, location, observer…', emptyEditor:'No observations yet — record unsafe acts, unsafe conditions and good practice. Each one also counts in the Monthly Report.',
+  titleOf:r=>`${r.obsType||'Observation'}${r.category?' — '+r.category:''}`, subOf:r=>[r.date, r.projectId?projectName(r.projectId):r.location, r.observedBy?'by '+r.observedBy:''].filter(Boolean).join(' · '),
+  badgesOf:r=>`${obsBadge(r)} ${complaintBadges({status:r.status||'Open', targetDate:r.targetDate})}${r.stopWork==='Yes'?' <span class="badge danger">Stop work applied</span>':''}`,
+  searchText:r=>[r.obsNo,r.description,r.location,r.observedBy,r.category].join(' '),
+  addFields:['obsType','category','date','projectId','location','description','immediateAction','observedBy'], addDefaults:{status:'Open', obsType:'Unsafe condition'},
+  segs:OBS_TYPES.map(t=>({key:t, label:t, match:r=>r.obsType===t})), segAllLabel:'All',
+  tabs:[{key:'main', label:'Observation', groups:[{fields:[
+      {key:'obsNo', label:'Observation no.', required:true},
+      {key:'obsType', label:'Type', type:'select', options:OBS_TYPES, required:true},
+      {key:'category', label:'Category', type:'select', options:OBS_CATS, required:true},
+      {key:'date', label:'Date', type:'date', required:true}, {key:'time', label:'Time', type:'time'},
+      {key:'projectId', label:'Project', type:'project'}, {key:'location', label:'Exact location'},
+      {key:'description', label:'What was observed', type:'textarea', required:true, wide:true},
+      {key:'immediateAction', label:'Immediate action / intervention', type:'textarea', wide:true},
+      {key:'stopWork', label:'Stop work authority used', type:'select', options:['No','Yes']},
+      {key:'risk', label:'Potential severity', type:'select', options:['Low','Medium','High']},
+      {key:'personInvolved', label:'Person / company involved (optional)'},
+      {key:'observedBy', label:'Observed by', required:true},
+      {key:'owner', label:'Close-out owner'}, {key:'targetDate', label:'Close by', type:'date'},
+      {key:'status', label:'Status', type:'select', options:['Open','Closed']}, {key:'closedDate', label:'Closed on', type:'date'},
+      {key:'closeOut', label:'Close-out notes', type:'textarea', wide:true},
+    ]}]},
+    {key:'sub:actions', label:'Actions', sub:'actions'}],
+  subs:{actions:actionSub('Follow-up actions')},
+  multiFiles:{key:'photos', label:'Photos (before / after)', accept:'image/*', hint:'Add a photo of the problem, and one after it is fixed.'},
+  columns:[
+    {label:'No.', cls:'mono', html:r=>`<strong>${esc(r.obsNo||'—')}</strong><div class="wsub">${esc(r.date||'')}</div>`},
+    {label:'Type', html:r=>`${obsBadge(r)}<div class="wsub">${esc(r.category||'')}</div>`},
+    {label:'Observation', html:r=>`<div>${esc(String(r.description||'').slice(0,130))}</div>${(r.photos||[]).length?`<div class="wsub">${ic('camera')} ${(r.photos||[]).length} photo(s)</div>`:''}`},
+    {label:'Where', html:r=>`${esc(r.projectId?projectName(r.projectId):'—')}<div class="wsub">${esc(r.location||'')}</div>`},
+    {label:'By', html:r=>esc(r.observedBy||'—')},
+    {label:'Status', html:r=>r.obsType==='Positive'&&!(r.actions||[]).length?'<span class="badge ok">Recognised</span>':complaintBadges({status:r.status||'Open', targetDate:r.targetDate})},
+  ],
+  tiles:list=>{ const y=String(new Date().getFullYear()), mo=localToday().slice(0,7), cur=list.filter(r=>String(r.date||'').startsWith(y)), m=list.filter(r=>String(r.date||'').startsWith(mo));
+    const neg=cur.filter(r=>r.obsType==='Unsafe act'||r.obsType==='Unsafe condition'), open=list.filter(r=>r.obsType!=='Positive'&&(r.status||'Open')!=='Closed');
+    return [{label:'This month', num:m.length, sub:`${cur.length} this year`, icon:'search'},
+      {label:'Unsafe act : condition', num:`${cur.filter(r=>r.obsType==='Unsafe act').length} : ${cur.filter(r=>r.obsType==='Unsafe condition').length}`, sub:'this year', icon:'alert'},
+      {label:'Positive', num:cur.length?Math.round(cur.filter(r=>r.obsType==='Positive').length*100/cur.length)+'%':'—', cls:'ok', sub:'share of good-practice cards', icon:'checkcircle'},
+      {label:'Open', num:open.length, cls:open.some(r=>complaintOverdueDays({status:r.status, targetDate:r.targetDate}))?'danger':(open.length?'warn':'ok'), sub:`${neg.filter(r=>r.stopWork==='Yes').length} stop-work interventions this year`, icon:'clipcheck'}]; },
+  topPanel:()=>renderObsTrends(),
+  afterSave:r=>syncObsToReport(r),
+});
+function renderObsTrends(){
+  const el=document.getElementById('obsTop'); if(!el) return;
+  const since=new Date(); since.setDate(since.getDate()-90); const s=since.toISOString().slice(0,10);
+  const list=regActive('obs').filter(r=>String(r.date||'')>=s && r.obsType!=='Positive');
+  if(!list.length){ el.innerHTML=''; return; }
+  const by=(f)=>{ const m={}; list.forEach(r=>{ const k=f(r)||'—'; m[k]=(m[k]||0)+1; }); return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,6); };
+  const bars=(rows)=>{ const max=Math.max(...rows.map(x=>x[1])); return rows.map(([k,n])=>`<div class="tr-row"><div class="tr-l">${esc(k)}</div><div class="tr-bar"><i style="width:${Math.round(n*100/max)}%"></i></div><div class="tr-n">${n}</div></div>`).join(''); };
+  el.innerHTML=`<div class="obs-trends"><div class="panel"><h3>TOP CATEGORIES · LAST 90 DAYS</h3>${bars(by(r=>r.category))}</div><div class="panel"><h3>BY PROJECT · LAST 90 DAYS</h3>${bars(by(r=>r.projectId?projectName(r.projectId):'No project'))}</div></div>`;
+}
+
+/* =============================== HEAT STRESS =============================== */
+const HEAT_CHECKS=['Midday break observed (12:30–15:30, Jun–Aug)','Cool drinking water available','Shaded rest area available','Work / rest cycle applied','Buddy system in place','Workers briefed on heat illness signs','Acclimatisation for new workers','ORS / electrolytes available'];
+function heatIndexC(t, rh){ if(t===''||t==null||rh===''||rh==null) return null; t=Number(t); rh=Number(rh); if(isNaN(t)||isNaN(rh)) return null; const F=t*9/5+32; if(F<80) return Math.round(t*10)/10;
+  let HI=-42.379+2.04901523*F+10.14333127*rh-.22475541*F*rh-.00683783*F*F-.05481717*rh*rh+.00122874*F*F*rh+.00085282*F*rh*rh-.00000199*F*F*rh*rh;
+  if(rh<13 && F<=112) HI-=((13-rh)/4)*Math.sqrt((17-Math.abs(F-95))/17); else if(rh>85 && F<=87) HI+=((rh-85)/10)*((87-F)/5);
+  return Math.round((HI-32)*5/9*10)/10; }
+function hiBand(c){ if(c===null||c===undefined) return null; return c>=54?{t:'Extreme danger',cls:'danger'}:c>=41?{t:'Danger',cls:'danger'}:c>=32?{t:'Extreme caution',cls:'warn'}:c>=27?{t:'Caution',cls:'warn'}:{t:'Lower risk',cls:'ok'}; }
+function wbgtBand(w){ if(w===''||w==null||isNaN(Number(w))) return null; w=Number(w); return w>=32?{t:'Extreme — stop non-essential work',cls:'danger'}:w>=30?{t:'High — 50/50 work-rest',cls:'danger'}:w>=28?{t:'Moderate — extra breaks & water',cls:'warn'}:{t:'Low — normal precautions',cls:'ok'}; }
+function heatRisk(r){ const rs=r.readings||[]; const w=rs.map(x=>Number(x.wbgt)).filter(n=>!isNaN(n)&&n>0); if(w.length){ const b=wbgtBand(Math.max(...w)); return {...b, basis:'WBGT '+Math.max(...w)+'°C'}; }
+  const his=rs.map(x=>heatIndexC(x.temp,x.rh)).filter(x=>x!==null); const hi=his.length?Math.max(...his):(r.fcHeatIndex!==undefined&&r.fcHeatIndex!==''?Number(r.fcHeatIndex):null); const b=hiBand(hi); return b?{...b, basis:'Heat index '+hi+'°C'}:null; }
+function middayBanActive(d){ const md=String(d||localToday()).slice(5,10); return md>='06-01' && md<='08-31'; }
+let heatForecast={}, heatFcLoading=false;
+async function fetchSiteForecast(s){
+  const lat=Number(s.lat), lng=Number(s.lng); if(isNaN(lat)||isNaN(lng)) return null;
+  const key=s.id+':'+localToday(); if(heatForecast[key]) return heatForecast[key];
+  const res=await fetch(`https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat.toFixed(4)}&lon=${lng.toFixed(4)}`);
+  if(!res.ok) throw new Error('forecast '+res.status);
+  const js=await res.json(); const today=localToday();
+  const pts=((js.properties||{}).timeseries||[]).map(t=>({time:t.time, local:new Date(t.time), d:(t.data||{}).instant?t.data.instant.details:{}})).filter(p=>{ const l=p.local; const ds=`${l.getFullYear()}-${String(l.getMonth()+1).padStart(2,'0')}-${String(l.getDate()).padStart(2,'0')}`; return ds===today; });
+  if(!pts.length) return null;
+  let best=null; for(const p of pts){ const hi=heatIndexC(p.d.air_temperature, p.d.relative_humidity); if(best===null || (hi||-99)>(best.hi||-99)) best={hi, t:p.d.air_temperature, rh:p.d.relative_humidity, at:p.local}; }
+  const out={maxTemp:Math.max(...pts.map(p=>Number(p.d.air_temperature)).filter(n=>!isNaN(n))), peakHi:best.hi, peakTemp:best.t, peakRh:best.rh, peakAt:best.at.toTimeString().slice(0,5), fetchedAt:new Date().toISOString()};
+  heatForecast[key]=out; return out;
+}
+async function loadHeatForecasts(force){
+  const el=document.getElementById('heatTop'); if(!el || heatFcLoading) return;
+  if(force) heatForecast={};
+  heatFcLoading=true; renderHeatForecast();
+  for(const s of activeSites().filter(x=>x.lat&&x.lng)){ try{ await fetchSiteForecast(s); }catch(e){ console.warn('forecast failed', s.siteName, e); heatForecast[s.id+':'+localToday()]={error:true}; } }
+  heatFcLoading=false; renderHeatForecast();
+}
+function renderHeatForecast(){
+  const el=document.getElementById('heatTop'); if(!el) return;
+  const sites=activeSites().filter(s=>(s.status||'Active')!=='Completed'), today=localToday(), logged=new Set(regActive('heat').filter(r=>r.date===today).map(r=>r.projectId));
+  const cards=sites.map(s=>{ const f=heatForecast[s.id+':'+today];
+    if(!(s.lat&&s.lng)) return `<div class="hf-card"><div class="wname">${esc(s.siteName||'Project')}</div><p class="wsub">No location set — the forecast needs the site’s position.</p>${canEdit()?`<div class="hf-loc"><input type="text" placeholder="lat, lng  e.g. 22.36, 56.52" data-hf-coords="${s.id}"><button type="button" class="btn btn-sm" data-hf-save="${s.id}">Save</button><button type="button" class="btn btn-sm" data-hf-gps="${s.id}">${ic('pin')} Use my location</button></div>`:''}</div>`;
+    const b=f&&!f.error?hiBand(f.peakHi):null;
+    return `<div class="hf-card ${b?'hf-'+b.cls:''}"><div class="hf-top"><div class="wname">${esc(s.siteName||'Project')}</div>${logged.has(s.id)?'<span class="badge ok">Logged today</span>':''}</div>
+      ${f&&!f.error?`<div class="hf-nums"><div><div class="hf-big">${Math.round(f.maxTemp)}°C</div><div class="wsub">max temperature</div></div><div><div class="hf-big">${f.peakHi}°C</div><div class="wsub">peak heat index (${esc(f.peakAt)})</div></div><div><div class="hf-big">${Math.round(f.peakRh)}%</div><div class="wsub">humidity at peak</div></div></div><span class="badge ${b.cls}">${b.t}</span>`
+        : f&&f.error?'<p class="wsub">Forecast not available right now.</p>':`<p class="wsub">${heatFcLoading?'Loading forecast…':'Forecast not loaded.'}</p>`}
+      ${canEdit()?`<div style="margin-top:10px;"><button type="button" class="btn btn-sm btn-primary reg-edit-only" data-hf-log="${s.id}">${logged.has(s.id)?'Open today’s log':'Log today’s heat check'}</button></div>`:''}</div>`; }).join('');
+  el.innerHTML=`<div class="panel"><div class="section-head"><h3>TODAY’S HEAT FORECAST · ${esc(today)}</h3><div style="display:flex; gap:8px; align-items:center;">${middayBanActive(today)?'<span class="badge danger">Midday work ban in force 12:30–15:30</span>':''}<button type="button" class="btn btn-sm" id="hfRefresh">Refresh</button></div></div>
+    ${sites.length?`<div class="hf-grid">${cards}</div>`:'<p class="wsub">Add active projects in Project Details to see their forecast.</p>'}
+    <p class="wsub" style="margin:10px 0 0;">Forecast: MET Norway (api.met.no), CC BY 4.0. Heat index bands follow the US NWS scale; WBGT bands are general guidance — follow your company / client heat stress procedure.</p></div>`;
+}
+async function openHeatLogFor(siteId){
+  const today=localToday(), ex=regActive('heat').find(r=>r.date===today && r.projectId===siteId);
+  if(ex){ openRegDrawer('heat', ex.id); return; }
+  const f=heatForecast[siteId+':'+today]||{};
+  await regCreate('heat', {date:today, projectId:siteId, fcMaxTemp:f.maxTemp!==undefined?f.maxTemp:'', fcHeatIndex:f.peakHi!==undefined?f.peakHi:'', fcHumidity:f.peakRh!==undefined?Math.round(f.peakRh):'', checks:[], readings:[], actions:[], cases:0, recordedBy:(auth.currentUser&&auth.currentUser.email)||''}, 'sub:readings');
+}
+regDefine({
+  key:'heat', collection:'heatLogs', singular:'Heat check', title:'Heat Stress', tagline:'Hydrate · Shade · Rest',
+  addLabel:'+ Heat check', noField:'heatNo', noPrefix:'HS', noYear:true, dateField:'date', yearFilter:true,
+  searchPlaceholder:'Search project, notes…', emptyEditor:'No heat checks yet — use the forecast cards above, or “+ Heat check”, to log each site’s daily heat controls.',
+  titleOf:r=>`${r.projectId?projectName(r.projectId):'Heat check'} · ${r.date||''}`, subOf:r=>[r.heatNo, r.recordedBy].filter(Boolean).join(' · '),
+  badgesOf:r=>{ const h=heatRisk(r); return `${h?`<span class="badge ${h.cls}">${esc(h.t)}</span> <span class="wsub" style="display:inline;">${esc(h.basis)}</span>`:''}${Number(r.cases)>0?` <span class="badge danger">${r.cases} heat illness case(s)</span>`:''}`; },
+  searchText:r=>[r.heatNo, r.projectId?projectName(r.projectId):'', r.notes].join(' '),
+  addFields:['date','projectId','fcMaxTemp','fcHeatIndex'], addDefaults:{checks:[], cases:0},
+  tabs:[{key:'main', label:'Daily check', groups:[{fields:[
+      {key:'heatNo', label:'Ref', required:true}, {key:'date', label:'Date', type:'date', required:true}, {key:'projectId', label:'Project', type:'project'},
+      {key:'fcMaxTemp', label:'Forecast max temperature (°C)', type:'number'}, {key:'fcHeatIndex', label:'Forecast peak heat index (°C)', type:'number'}, {key:'fcHumidity', label:'Forecast humidity at peak (%)', type:'number'},
+      {key:'checks', label:'Controls in place today', type:'checks', options:HEAT_CHECKS},
+      {key:'workersOnSite', label:'Workers on site', type:'number', min:0},
+      {key:'cases', label:'Heat illness cases today', type:'number', min:0},
+      {key:'caseDetails', label:'Case details (symptoms, treatment, name)', type:'textarea', wide:true},
+      {key:'recordedBy', label:'Recorded by'},
+      {key:'notes', label:'Notes', type:'textarea', wide:true},
+    ]}]},
+    {key:'sub:readings', label:'Readings', sub:'readings', pre:r=>{ const h=heatRisk(r); return h?`<div class="brief-cov"><div><div class="wsub">Heat risk now</div><div style="font-size:18px; font-weight:800; margin-top:2px;"><span class="badge ${h.cls}" style="font-size:13px;">${esc(h.t)}</span></div><div class="wsub">${esc(h.basis)}</div></div></div>`:''; }},
+    {key:'sub:actions', label:'Actions', sub:'actions'}],
+  subs:{readings:{label:'Site readings', addLabel:'Add reading', fields:[
+      {key:'time', label:'Time', type:'time', required:true}, {key:'temp', label:'Temperature °C', type:'number'}, {key:'rh', label:'Humidity %', type:'number', min:0, max:100},
+      {key:'wbgt', label:'WBGT °C (if measured)', type:'number'}, {key:'by', label:'Taken by'}], defaults:()=>({time:new Date().toTimeString().slice(0,5)}),
+      sort:(a,b)=>String(a.time||'').localeCompare(String(b.time||'')),
+      title:x=>{ const hi=heatIndexC(x.temp,x.rh), b=x.wbgt?wbgtBand(x.wbgt):hiBand(hi); return `<span class="mono">${esc(x.time||'')}</span> ${x.temp!==''&&x.temp!==undefined?`${esc(String(x.temp))}°C / ${esc(String(x.rh||'—'))}%`:''}${hi!==null?` · HI ${hi}°C`:''}${x.wbgt?` · WBGT ${esc(String(x.wbgt))}°C`:''} ${b?`<span class="badge ${b.cls}">${esc(b.t)}</span>`:''}`; },
+      hideInCard:['time','temp','rh','wbgt'], empty:'Add readings taken on site (e.g. 10:00, 12:00, 14:00). Heat index is calculated from temperature and humidity; WBGT is used when measured.'},
+    actions:actionSub('Actions')},
+  columns:[
+    {label:'Date', cls:'mono', html:r=>`<strong>${esc(r.date||'—')}</strong><div class="wsub">${esc(r.heatNo||'')}</div>`},
+    {label:'Project', html:r=>esc(r.projectId?projectName(r.projectId):'—')},
+    {label:'Forecast', html:r=>r.fcMaxTemp!==''&&r.fcMaxTemp!==undefined?`${esc(String(Math.round(Number(r.fcMaxTemp))))}°C<div class="wsub">HI ${esc(String(r.fcHeatIndex||'—'))}°C</div>`:'<span class="wsub">—</span>'},
+    {label:'Risk', html:r=>{ const h=heatRisk(r); return h?`<span class="badge ${h.cls}">${esc(h.t)}</span><div class="wsub">${esc(h.basis)}</div>`:'<span class="wsub">—</span>'; }},
+    {label:'Controls', html:r=>`${(r.checks||[]).length}/${HEAT_CHECKS.length}${middayBanActive(r.date)&&!(r.checks||[]).includes(HEAT_CHECKS[0])?' <span class="badge danger">Midday ban not confirmed</span>':''}`},
+    {label:'Cases', html:r=>Number(r.cases)>0?`<span class="badge danger">${r.cases}</span>`:'0'},
+  ],
+  tiles:list=>{ const y=String(new Date().getFullYear()), cur=list.filter(r=>String(r.date||'').startsWith(y)); const cases=cur.reduce((n,r)=>n+(Number(r.cases)||0),0);
+    const ban=cur.filter(r=>middayBanActive(r.date)); const banOk=ban.filter(r=>(r.checks||[]).includes(HEAT_CHECKS[0])).length; const hot=cur.filter(r=>{ const h=heatRisk(r); return h&&h.cls==='danger'; }).length;
+    return [{label:`Heat checks ${y}`, num:cur.length, sub:`${list.filter(r=>r.date===localToday()).length} logged today`, icon:'clipcheck'},
+      {label:'High-risk days', num:hot, cls:hot?'warn':'', sub:'danger / extreme heat logged', icon:'alert'},
+      {label:'Midday ban compliance', num:ban.length?Math.round(banOk*100/ban.length)+'%':'—', cls:ban.length?(banOk===ban.length?'ok':'danger'):'', sub:'Jun–Aug checks confirming the break', icon:'clock'},
+      {label:'Heat illness cases', num:cases, cls:cases?'danger':'ok', sub:'this year', icon:'firstaid'}]; },
+  topPanel:()=>{ renderHeatForecast(); },
+});
+
+/* =============================== INSPECTION CHECKLISTS =============================== */
+const BUILTIN_CHECKLISTS=[
+  {key:'scaffold', group:'Scaffold & fall protection', name:'Scaffold inspection (tag check)', subjectLabel:'Scaffold no. / location', items:['Scaffold tag present, current and signed (green)','Base plates / sole boards on firm level ground','Standards plumb, ledgers & transoms secure','Bracing in place and undamaged','Working platform fully boarded, boards secured','Guardrails (top & mid) and toe boards fitted','Safe access ladder secured, extends 1 m above platform','Ties / anchors in place as per design','No overloading of materials on platform','Gaps to structure ≤ 300 mm or protected','Weekly / after-weather inspection recorded']},
+  {key:'harness', group:'Scaffold & fall protection', name:'Full body harness & lanyard', subjectLabel:'Harness serial no.', items:['Webbing free of cuts, burns, fraying or chemical damage','Stitching intact','D-rings and buckles free of cracks, rust or distortion','Lanyard / shock absorber pack intact and not deployed','Snap hooks and karabiners lock properly','Label / serial number legible and within service life','Six-monthly inspection by competent person current']},
+  {key:'ladder', group:'Scaffold & fall protection', name:'Ladder inspection', subjectLabel:'Ladder no. / type', items:['Stiles straight and undamaged','Rungs / steps secure, clean and undamaged','Anti-slip feet present','Locking bars / spreaders work (step ladders)','Correct type and height for the task','Inspection tag current']},
+  {key:'extinguisher', group:'Fire & emergency', name:'Fire extinguisher monthly check', subjectLabel:'Extinguisher no. / location', items:['In its designated place, visible and accessible','Pressure gauge in the green zone','Safety pin and tamper seal intact','Hose / nozzle undamaged and clear','No corrosion or physical damage','Service tag current (annual)','Correct type for the area','Signage in place']},
+  {key:'firstaid', group:'Fire & emergency', name:'First aid box', subjectLabel:'Box location', items:['Box clean, sealed and accessible','Contents match the checklist','No expired items','First aider name & phone displayed','Eye wash available where needed']},
+  {key:'emergency', group:'Fire & emergency', name:'Emergency exits & assembly point', subjectLabel:'Area / building', items:['Emergency exits clear and unlocked','Exit signs and emergency lighting working','Assembly point signed and unobstructed','Emergency contact numbers displayed','Fire alarm / call points working','Evacuation plan displayed']},
+  {key:'lifting', group:'Lifting & equipment', name:'Lifting gear (slings, shackles, hooks)', subjectLabel:'Item / ID no.', items:['Colour code for the current period applied','SWL / WLL marked and legible','Slings free of cuts, broken wires, kinks or crushing','Shackles and pins correct, not bent or worn','Hooks have working safety latch, no deformation','Third-party certificate (TPI) valid','Stored correctly off the ground']},
+  {key:'tools', group:'Lifting & equipment', name:'Power tools & electrical', subjectLabel:'Tool / ID no.', items:['Casing and guards in place and undamaged','Cable and plug undamaged, no taped joints','Colour code / PAT inspection current','RCD / ELCB used and tested','Correct disc / blade, within expiry, rated for speed','Dead-man switch / trigger works','Operator trained and wearing correct PPE']},
+  {key:'crane', group:'Lifting & equipment', name:'Crane / HIAB pre-use check', subjectLabel:'Crane / vehicle no.', items:['Operator & rigger certificates valid','Crane TPI certificate valid','Load chart available in the cab','Outriggers and pads in good condition, fully extended','Limit switches / LMI working','Hooks, wire rope and sheaves in good condition','No hydraulic leaks','Lift plan / PTW in place for the lift','Exclusion zone set up with barriers']},
+  {key:'housekeeping', group:'Site & vehicle', name:'Daily site housekeeping walk', subjectLabel:'Area', items:['Walkways and access routes clear','Materials stacked safely','Waste segregated and removed','No slip / trip hazards','Hazardous substances stored and labelled with SDS available','Barricades and signs in place','Lighting adequate','PPE worn by everyone in the area','Permits displayed at work locations']},
+  {key:'vehicle', group:'Site & vehicle', name:'Vehicle pre-trip check', subjectLabel:'Vehicle no.', items:['Tyres (incl. spare) — pressure and tread OK','Lights, indicators and horn working','Brakes working','Seat belts working','Mirrors and windscreen clean, no cracks','Fluids — no leaks','First aid kit, fire extinguisher, warning triangle on board','IVMS working and driver logged in','Registration, insurance and permits valid','Driver licence and defensive driving valid']},
+  {key:'welfare', group:'Site & vehicle', name:'Welfare facilities (water, shade, rest)', subjectLabel:'Site / camp', items:['Cool drinking water available','Shaded rest area with seating','Toilets clean and sufficient','Hand washing facilities with soap','Eating area clean and separate from work area','Waste bins available and emptied','First aid facilities available']},
+];
+let customChecklists=[];
+function allChecklists(){ return BUILTIN_CHECKLISTS.concat(customChecklists.map(c=>({...c, group:'Custom checklists', custom:true}))); }
+function checklistOf(r){ return allChecklists().find(c=>c.key===r.template) || (r.itemsSnapshot?{key:r.template, name:r.templateName||'Checklist', items:r.itemsSnapshot}:null); }
+function inspCounts(r){ const a=r.answers||{}, v=Object.values(a); return {yes:v.filter(x=>x==='Yes').length, no:v.filter(x=>x==='No').length, na:v.filter(x=>x==='N/A').length, done:v.length}; }
+function inspResultBadge(r){ const cl=checklistOf(r), c=inspCounts(r), total=cl?cl.items.length:0; if(!c.done) return '<span class="badge muted">Not started</span>'; if(c.done<total) return `<span class="badge warn">In progress ${c.done}/${total}</span>`; return c.no?`<span class="badge danger">${c.no} defect${c.no===1?'':'s'}</span>`:'<span class="badge ok">Pass</span>'; }
+function inspChecklistHtml(r){
+  const cl=checklistOf(r); if(!cl) return '<p class="wsub">This checklist template no longer exists.</p>';
+  const a=r.answers||{}, cm=r.comments||{}, ed=canEdit();
+  return `<form data-reg-custom="checklist"><p class="wsub" style="margin:0 0 10px;">${esc(cl.name)} — tap Yes, No or N/A for each item. Every “No” creates an action to fix it.</p>
+    <div class="ck-list">${cl.items.map((it,n)=>`<div class="ck-item ${a[n]==='No'?'ck-no':a[n]==='Yes'?'ck-yes':''}"><div class="ck-q"><span class="ck-n">${n+1}</span>${esc(it)}</div>
+      <div class="ck-ans">${['Yes','No','N/A'].map(v=>`<label class="ck-opt ck-${v==='N/A'?'na':v.toLowerCase()}"><input type="radio" name="ck${n}" value="${v}" ${a[n]===v?'checked':''} ${ed?'':'disabled'}><span>${v}</span></label>`).join('')}</div>
+      <input type="text" class="ck-comment" data-ck-comment="${n}" value="${esc(cm[n]||'')}" placeholder="Comment / defect details" ${ed?'':'disabled'}></div>`).join('')}</div>
+    <div class="form-actions"><button type="submit" class="btn btn-primary">Save checklist</button></div></form>`;
+}
+function inspTemplateOptions(){ return allChecklists().map(c=>({value:c.key, label:`${c.group} · ${c.name}`})); }
+regDefine({
+  key:'insp', collection:'inspections', singular:'Inspection', title:'Inspection Checklists', tagline:'Check · Record · Fix',
+  addLabel:'+ New inspection', noField:'inspNo', noPrefix:'INS', noYear:true, dateField:'date', yearFilter:true,
+  headerButtons:'<button class="btn btn-sm reg-edit-only" type="button" id="ckTemplatesBtn">My checklists</button>',
+  searchPlaceholder:'Search checklist, item inspected, inspector…', emptyEditor:'No inspections yet — click “+ New inspection”, choose a checklist, then tick each item on your phone.',
+  titleOf:r=>{ const c=checklistOf(r); return `${c?c.name:'Inspection'}${r.subject?' — '+r.subject:''}`; }, subOf:r=>[r.date, r.projectId?projectName(r.projectId):'', r.inspector?'by '+r.inspector:''].filter(Boolean).join(' · '),
+  badgesOf:r=>inspResultBadge(r), searchText:r=>{ const c=checklistOf(r); return [r.inspNo, c&&c.name, r.subject, r.inspector].join(' '); },
+  addFields:['template','subject','date','projectId','inspector'], addDefaults:{answers:{}, comments:{}},
+  segs:[{key:'fail', label:'With defects', match:r=>inspCounts(r).no>0},{key:'pass', label:'Passed', match:r=>{ const c=checklistOf(r); return c && inspCounts(r).done===c.items.length && !inspCounts(r).no; }},{key:'inc', label:'Not finished', match:r=>{ const c=checklistOf(r); return c && inspCounts(r).done<c.items.length; }}], segAllLabel:'All',
+  tabs:[{key:'checklist', label:'Checklist', html:r=>inspChecklistHtml(r)},
+    {key:'main', label:'Details', groups:[{fields:[
+      {key:'inspNo', label:'Inspection no.', required:true},
+      {key:'template', label:'Checklist', type:'pick', options:inspTemplateOptions, required:true},
+      {key:'subject', label:'Item / area inspected', placeholder:'e.g. Scaffold S-12, Extinguisher FE-07, Vehicle A 1234'},
+      {key:'date', label:'Date', type:'date', required:true}, {key:'projectId', label:'Project', type:'project'},
+      {key:'inspector', label:'Inspected by', required:true}, {key:'notes', label:'General remarks', type:'textarea', wide:true},
+    ]}]},
+    {key:'sub:actions', label:'Defect actions', sub:'actions'}],
+  subs:{actions:actionSub('Actions to fix defects')},
+  multiFiles:{key:'photos', label:'Photos', accept:'image/*'},
+  columns:[
+    {label:'No.', cls:'mono', html:r=>`<strong>${esc(r.inspNo||'—')}</strong><div class="wsub">${esc(r.date||'')}</div>`},
+    {label:'Checklist', html:r=>{ const c=checklistOf(r); return `<div class="wname">${esc(c?c.name:'—')}</div><div class="wsub">${esc(r.subject||'')}</div>`; }},
+    {label:'Project', html:r=>esc(r.projectId?projectName(r.projectId):'—')},
+    {label:'Inspector', html:r=>esc(r.inspector||'—')},
+    {label:'Result', html:r=>inspResultBadge(r)},
+    {label:'Actions', html:r=>{ const l=r.actions||[], o=l.filter(a=>(a.status||'Open')!=='Closed').length; return l.length?(o?`<span class="badge warn">${o} open</span>`:'<span class="badge ok">All closed</span>'):'<span class="wsub">—</span>'; }},
+  ],
+  tiles:list=>{ const mo=localToday().slice(0,7), m=list.filter(r=>String(r.date||'').startsWith(mo)); const withNo=m.filter(r=>inspCounts(r).no>0).length; const open=list.reduce((n,r)=>n+(r.actions||[]).filter(a=>(a.status||'Open')!=='Closed').length,0);
+    return [{label:'Inspections this month', num:m.length, sub:`${list.length} in total`, icon:'clipcheck'},
+      {label:'Pass rate this month', num:m.length?Math.round((m.length-withNo)*100/m.length)+'%':'—', cls:withNo?'warn':'ok', sub:`${withNo} with defects`, icon:'checkcircle'},
+      {label:'Open defect actions', num:open, cls:open?'warn':'ok', sub:`${list.reduce((n,r)=>n+(r.actions||[]).filter(a=>complaintOverdueDays(a)).length,0)} overdue`, icon:'wrench'},
+      {label:'Checklists available', num:allChecklists().length, sub:`${customChecklists.length} custom`, icon:'clipboard'}]; },
+});
+
+/* ---- inspections: save the checklist, raise an action for every "No" ---- */
+REG.insp.customSubmit = {
+  checklist: async (r, form)=>{
+    const cl=checklistOf(r); if(!cl) return;
+    const answers={}, comments={};
+    cl.items.forEach((_,n)=>{ const v=form.querySelector(`input[name="ck${n}"]:checked`); if(v) answers[n]=v.value; const c=form.querySelector(`[data-ck-comment="${n}"]`); if(c && c.value.trim()) comments[n]=c.value.trim(); });
+    const actions=(r.actions||[]).slice(), due=new Date(Date.now()+3*86400000).toISOString().slice(0,10); let added=0;
+    cl.items.forEach((it,n)=>{ if(answers[n]==='No' && !actions.some(a=>a.fromItem===n)){ actions.push({id:'a'+Date.now().toString(36)+n, fromItem:n, action:`Fix: ${it}${comments[n]?' — '+comments[n]:''}${r.subject?' ('+r.subject+')':''}`, owner:r.inspector||'Site supervisor', targetDate:due, status:'Open'}); added++; } });
+    if(await regUpdate('insp', r.id, {answers, comments, actions, itemsSnapshot:cl.items, templateName:cl.name}, true)) toast(added?`Checklist saved — ${added} defect action${added===1?'':'s'} raised`:'Checklist saved');
+  },
+};
+/* ---- custom checklist templates (settings/checklists) ---- */
+let ckEditIdx=null;
+function openCkDrawer(){ ckEditIdx=null; raiseDrawer('ckOverlay','ckDrawer'); document.getElementById('ckOverlay').hidden=false; document.getElementById('ckDrawer').hidden=false; renderCkDrawer(); }
+function closeCkDrawer(){ document.getElementById('ckOverlay').hidden=true; document.getElementById('ckDrawer').hidden=true; }
+function renderCkDrawer(){
+  const b=document.getElementById('ckBody'); if(!b) return;
+  const ed=ckEditIdx!==null ? (ckEditIdx===-1?{name:'', subjectLabel:'', items:[]}:customChecklists[ckEditIdx]) : null;
+  b.innerHTML = ed ? `<form id="ckForm"><div class="form-grid"><label class="span-all">Checklist name *<input id="ckName" required value="${esc(ed.name||'')}"></label><label class="span-all">What is inspected (label)<input id="ckSubj" value="${esc(ed.subjectLabel||'')}" placeholder="e.g. Generator no."></label>
+      <label class="span-all">Items — one question per line *<textarea id="ckItems" rows="12" required placeholder="Guard in place\nEmergency stop works\nInspection tag current">${esc((ed.items||[]).join('\n'))}</textarea></label></div>
+      <div class="form-actions"><button type="button" class="btn" id="ckCancel">Cancel</button><button type="submit" class="btn btn-primary">Save checklist</button></div></form>`
+    : `<div class="section-head"><h3>Your checklists (${customChecklists.length})</h3><button type="button" class="btn btn-sm btn-primary" id="ckNew">+ New checklist</button></div>
+      ${customChecklists.length?customChecklists.map((c,n)=>`<div class="record-card"><div class="record-card-top"><div class="record-card-title">${esc(c.name)} <span class="badge muted">${(c.items||[]).length} items</span></div><div class="record-card-actions"><button type="button" class="icon-btn" data-ckedit="${n}" aria-label="Edit">${ic('pencil')}</button><button type="button" class="icon-btn danger" data-ckdel="${n}" data-armed="0" aria-label="Delete">${ic('trash')}</button></div></div></div>`).join(''):'<p class="wsub">No custom checklists yet. The 12 built-in checklists are always available.</p>'}
+      <div class="subhead">Built-in checklists</div>${BUILTIN_CHECKLISTS.map(c=>`<div class="wsub" style="margin:3px 0;">${esc(c.group)} · <strong>${esc(c.name)}</strong> (${c.items.length} items)</div>`).join('')}`;
+}
+async function saveCustomChecklists(list){ const ok=await saveSettings('checklists', {items:list}); if(ok){ customChecklists=list; renderCkDrawer(); renderRegAll('insp'); } return ok; }
+
+/* ---- action tracker: extra sources ---- */
+const B12_ACT_SOURCES=[{key:'obs',label:'Observations'},{key:'insp',label:'Inspections'},{key:'hira',label:'Risk register'},{key:'moc',label:'Change (MOC)'},{key:'heat',label:'Heat stress'}];
+
+/* ---- CLIENT MONTHLY REPORT PACK ---- */
+function openClientPack(){
+  const d=document.getElementById('cpDialog'); if(!d) return;
+  const saved=(appSettings&&appSettings.clientPack)||{};
+  document.getElementById('cpClient').value=saved.client||''; document.getElementById('cpContract').value=saved.contract||'';
+  document.getElementById('cpPrepared').value=saved.prepared||''; document.getElementById('cpMonth').value=reportMonth;
+  const ps=document.getElementById('cpProject'); ps.innerHTML='<option value="all">All projects (company)</option>'+activeSites().map(s=>`<option value="${s.id}">${esc(s.siteName||'Project')}</option>`).join('');
+  ps.value = reportProject!=='all'&&reportProject!=='none' ? reportProject : 'all';
+  document.getElementById('cpHighlights').value=''; document.getElementById('cpPlan').value='';
+  document.getElementById('cpOverlay').hidden=false; d.hidden=false;
+}
+function closeClientPack(){ document.getElementById('cpOverlay').hidden=true; document.getElementById('cpDialog').hidden=true; }
+async function buildClientPack(opts){
+  const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'pt', format:'a4'}); const M=40, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
+  const month=opts.month, year=month.slice(0,4), proj=opts.project||'all', projLabel=proj==='all'?'All projects':projectName(proj);
+  const monthName=new Date(month+'-01T00:00:00').toLocaleDateString('en-GB',{month:'long', year:'numeric'});
+  const inProj=x=>proj==='all' || x.projectId===proj;
+  const mE=reportEntriesFor('all', month, proj), m=computeReportMetrics(mE);
+  const yE=reportEntries.filter(e=>entryMonth(e).startsWith(year) && entryMonth(e)<=month && reportProjectMatch(e, proj)), y=computeReportMetrics(yE);
+  const rate=(n,h)=>h?(n*1e6/h).toFixed(2):'—';
+  const logo=await fetchImageDataUrl('logo.png').catch(()=>null);
+  let pg=1; let yy;
+  const footer=()=>{ doc.setDrawColor(200); doc.line(M, H-34, W-M, H-34); doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(120); doc.text(`Burhan Oil & Trade Services · HSE Monthly Report · ${monthName}`, M, H-22); doc.text(`Page ${pg}`, W-M, H-22, {align:'right'}); doc.setTextColor(20); };
+  const newPage=()=>{ footer(); doc.addPage(); pg++; yy=50; };
+  const ensure=h=>{ if(yy+h>H-50) newPage(); };
+  const h2=t=>{ ensure(34); yy+=8; doc.setFillColor(200,16,46); doc.rect(M, yy-12, 4, 16, 'F'); doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.text(t.toUpperCase(), M+12, yy+1); yy+=18; };
+  const table=(head, rows, widths, opt)=>{ opt=opt||{}; ensure(20+Math.min(rows.length,3)*14);
+    const hdr=()=>{ doc.setFillColor(20,30,48); doc.rect(M, yy-11, W-2*M, 16, 'F'); doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(8.5); let x=M+6; head.forEach((h,i)=>{ doc.text(String(h), i&&opt.right?x+widths[i]-12:x, yy, i&&opt.right?{align:'right'}:undefined); x+=widths[i]; }); doc.setTextColor(20); yy+=16; };
+    hdr();
+    rows.forEach((r,idx)=>{ const cells=r.map((c,i)=>doc.splitTextToSize(String(c==null||c===''?'—':c), widths[i]-10)); const h=Math.max(...cells.map(c=>c.length))*11+4; if(yy+h>H-50){ newPage(); hdr(); }
+      if(idx%2){ doc.setFillColor(243,245,248); doc.rect(M, yy-10, W-2*M, h, 'F'); }
+      doc.setFont('helvetica', opt.boldFirst?'bold':'normal'); doc.setFontSize(9); let x=M+6; cells.forEach((c,i)=>{ if(i) doc.setFont('helvetica','normal'); c.forEach((l,n)=>doc.text(l, i&&opt.right?x+widths[i]-12:x, yy+n*11, i&&opt.right?{align:'right'}:undefined)); x+=widths[i]; }); yy+=h; });
+    yy+=6; };
+  const para=t=>{ doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.splitTextToSize(String(t||'—'), W-2*M-8).forEach(l=>{ ensure(13); doc.text(l, M+4, yy); yy+=13; }); yy+=4; };
+  // ---- cover ----
+  doc.setFillColor(3,11,24); doc.rect(0,0,W,H,'F'); doc.setFillColor(200,16,46); doc.rect(0,H*0.62,W,6,'F');
+  if(logo){ try{ doc.setFillColor(255,255,255); doc.rect(M,60,74,96,'F'); doc.addImage(logo,'PNG',M+7,66,60,84); }catch(e){} }
+  doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.text('BURHAN OIL & TRADE SERVICES', M, 200);
+  doc.setFontSize(30); doc.text('HSE MONTHLY REPORT', M, 250); doc.setFontSize(20); doc.setTextColor(35,198,255); doc.text(monthName.toUpperCase(), M, 282);
+  doc.setTextColor(255); doc.setFont('helvetica','normal'); doc.setFontSize(11);
+  [['Client', opts.client||'—'],['Contract no.', opts.contract||'—'],['Scope', projLabel],['Prepared by', opts.prepared||'—'],['Date issued', localToday()]].forEach(([k,v],n)=>{ doc.setTextColor(150,170,190); doc.text(k, M, 340+n*22); doc.setTextColor(255); doc.text(String(v), M+110, 340+n*22); });
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(255); doc.text('THINK SAFE, WORK SAFE, HOME SAFE', M, H*0.62+40);
+  doc.addPage(); pg++; yy=50; doc.setTextColor(20);
+  // ---- 1 statistics ----
+  const lastLti=reportEntries.filter(e=>e.category==='lti' && reportProjectMatch(e, proj)).map(e=>e.date).sort().pop();
+  const daysSince=lastLti?Math.max(0,Math.round((new Date(month+'-28')-new Date(lastLti))/86400000)):null;
+  h2('1. HSE statistics');
+  table(['Indicator', monthName, `Year to date ${year}`], [
+    ['Man-hours worked', m.manHours.toLocaleString(), y.manHours.toLocaleString()],
+    ['Fatalities', 0, 0],
+    ['Lost time injuries (LTI)', m.lti, y.lti], ['Days lost', m.ltiDaysLost, y.ltiDaysLost],
+    ['Medical treatment injuries (MTI)', m.mti, y.mti], ['First aid cases (FAC)', m.fac, y.fac],
+    ['Near misses reported', m.nearMiss, y.nearMiss], ['Property damage / other incidents', m.incident, y.incident], ['Vehicle incidents', m.vehicleIncident, y.vehicleIncident],
+    ['LTIF (per 1,000,000 man-hours)', rate(m.lti, m.manHours), rate(y.lti, y.manHours)],
+    ['TRCF (per 1,000,000 man-hours)', rate(m.lti+m.mti, m.manHours), rate(y.lti+y.mti, y.manHours)],
+    ['Days since last LTI', '', daysSince===null?'No LTI recorded':daysSince],
+  ], [270, 110, 135], {right:true});
+  // ---- 2 proactive ----
+  const obsM=regActive('obs').filter(r=>String(r.date||'').startsWith(month) && inProj(r)), inspM=regActive('insp').filter(r=>String(r.date||'').startsWith(month) && inProj(r));
+  const inspY=regActive('insp').filter(r=>String(r.date||'').startsWith(year) && String(r.date)<=month+'-31' && inProj(r));
+  h2('2. Proactive HSE activities');
+  table(['Activity', monthName, `Year to date ${year}`], [
+    ['Toolbox talks', m.tbt, y.tbt], ['Training sessions', m.training, y.training], ['Inductions', m.induction, y.induction],
+    ['Management site visits', m.siteVisit, y.siteVisit], ['Internal audits', m.internalAudit, y.internalAudit], ['Vehicle inspections', m.vehicleInspection, y.vehicleInspection],
+    ['Checklist inspections', inspM.length, inspY.length], ['HSE observations', m.hseObservation, y.hseObservation], ['Emergency drills', m.mockDrill, y.mockDrill],
+  ], [270, 110, 135], {right:true});
+  if(obsM.length){ const t={}; obsM.forEach(r=>{ t[r.obsType]=(t[r.obsType]||0)+1; }); para(`Observations this month: ${Object.entries(t).map(([k,v])=>`${v} ${k.toLowerCase()}`).join(', ')}. Stop-work interventions: ${obsM.filter(r=>r.stopWork==='Yes').length}.`); }
+  // ---- 3 KPIs ----
+  const t=targetsFor(year);
+  if(t){ const a=targetActuals(year); h2('3. KPI performance (year to date)');
+    table(['KPI', 'Target', 'Actual', 'Status'], TARGET_DEFS.filter(d=>t[d.key]!==undefined && t[d.key]!=='').map(d=>{ const st=targetStatus(d, a[d.key], Number(t[d.key]), a._months); return [d.label, `${d.type==='max'?'≤':'≥'} ${fmtTarget(d,t[d.key])}`, fmtTarget(d,a[d.key]), st.t]; }), [255, 85, 85, 90]); }
+  // ---- 4 incidents ----
+  const incs=activeIncidents().filter(i=>String(i.date||'').startsWith(month) && inProj(i));
+  h2(`${t?4:3}. Incidents & lessons learned`);
+  if(!incs.length) para('No incidents recorded this month.');
+  else table(['No.', 'Date', 'Type / classification', 'Description', 'Status'], incs.map(i=>[i.incNo, i.date, [i.type, i.injuryClass&&!/^Not applicable/.test(i.injuryClass)?i.injuryClass:''].filter(Boolean).join(' · '), String(i.description||'').slice(0,160), i.status||'Reported']), [70, 60, 110, 190, 85]);
+  const alertsM=regActive('alerts').filter(r=>String(r.issueDate||'').startsWith(month) && r.status!=='Draft');
+  if(alertsM.length){ doc.setFont('helvetica','bold'); doc.setFontSize(10); ensure(16); doc.text('Safety alerts issued', M+4, yy); yy+=14; alertsM.forEach(r=>para(`${r.alertNo} — ${r.title}. Key lessons: ${String(r.keyLessons||'').split(/\n+/).filter(Boolean).join('; ')||'—'}`)); }
+  let sec=t?5:4;
+  // ---- audits / inspections ----
+  const audM=activeAudits().filter(a=>String(a.startDate||'').startsWith(month) && a.status!=='Planned' && (proj==='all'||a.projectId===proj));
+  h2(`${sec++}. Audits & inspections`);
+  if(audM.length) table(['Audit', 'Type', 'Conducted by', 'Score', 'Findings'], audM.map(a=>{ const c=findingCounts(a), r=auditRating(a.score); return [a.auditNo, a.auditType, a.auditingBody||a.leadAuditor, r?`${a.score}% ${r.t}`:'—', `${c.major} major, ${c.minor} minor, ${c.obs} obs`]; }), [70, 140, 110, 90, 105]);
+  else para('No audits this month.');
+  if(inspM.length){ const byT={}; inspM.forEach(r=>{ const c=checklistOf(r), k=c?c.name:'Other'; byT[k]=byT[k]||{n:0,def:0}; byT[k].n++; byT[k].def+=inspCounts(r).no; });
+    table(['Checklist', 'Inspections', 'Defects found'], Object.entries(byT).map(([k,v])=>[k, v.n, v.def]), [300, 100, 115], {right:true}); }
+  // ---- heat stress (summer) ----
+  const heatM=regActive('heat').filter(r=>String(r.date||'').startsWith(month) && inProj(r));
+  if(heatM.length){ h2(`${sec++}. Heat stress management`); const hot=heatM.filter(r=>{ const h=heatRisk(r); return h&&h.cls==='danger'; }).length, cases=heatM.reduce((n,r)=>n+(Number(r.cases)||0),0);
+    const ban=heatM.filter(r=>middayBanActive(r.date)), banOk=ban.filter(r=>(r.checks||[]).includes(HEAT_CHECKS[0])).length;
+    para(`${heatM.length} daily heat checks recorded; ${hot} high-risk day(s); heat illness cases: ${cases}.${ban.length?` Midday work ban confirmed on ${banOk} of ${ban.length} checks (${Math.round(banOk*100/ban.length)}%).`:''}`); }
+  // ---- actions ----
+  const acts=collectAllActions().filter(a=>a.status!=='Closed'); const od=acts.filter(a=>complaintOverdueDays(a));
+  h2(`${sec++}. Corrective actions`);
+  para(`Open actions: ${acts.length} · overdue: ${od.length}.`);
+  if(od.length) table(['Reference', 'Action', 'Owner', 'Target'], od.slice(0,25).map(a=>[a.ref, String(a.text||'').slice(0,120), a.owner||'—', a.targetDate]), [100, 250, 100, 65]);
+  // ---- highlights & plan ----
+  h2(`${sec++}. Highlights & concerns`); para(opts.highlights||'—');
+  h2(`${sec++}. Plan for next month`); para(opts.plan||'—');
+  ensure(70); yy+=30; doc.setDrawColor(150); doc.line(M, yy, M+190, yy); doc.line(W-M-190, yy, W-M, yy); doc.setFontSize(8.5); doc.setTextColor(100); doc.text('HSE Manager / Officer', M, yy+12); doc.text('Project / Operations Manager', W-M-190, yy+12); doc.setTextColor(20);
+  footer();
+  return doc;
 }
 
 /* build the register pages (they are generated from the configs above) */
@@ -6130,7 +6707,10 @@ function renderReportTable(entries){
     const fromProject = e.source==='projectToolbox' && e.sourceSiteId && activeSites().some(x=>x.id===e.sourceSiteId);
     const fromIncident = e.source==='incident' && e.sourceIncidentId && activeIncidents().some(x=>x.id===e.sourceIncidentId);
     const fromAudit = e.source==='audit' && e.sourceAuditId && activeAudits().some(x=>x.id===e.sourceAuditId);
-    const actions = fromAudit
+    const fromObs = e.source==='observation' && e.sourceObsId && regState.obs && regActive('obs').some(x=>x.id===e.sourceObsId);
+    const actions = fromObs
+      ? `<button type="button" class="btn btn-sm" data-ropen-obs="${esc(e.sourceObsId)}" title="Recorded in HSE Observations — edit it there">Open observation</button>`
+      : fromAudit
       ? `<button type="button" class="btn btn-sm" data-ropen-aud="${esc(e.sourceAuditId)}" title="Recorded in the Audits register — edit it there">Open audit</button>`
       : fromIncident
       ? `<button type="button" class="btn btn-sm" data-ropen-inc="${esc(e.sourceIncidentId)}" title="Recorded in the Incident Register — edit it there">Open incident</button>`
@@ -6212,6 +6792,8 @@ function openReportEntryForm(entryId, presetProjectId){
   if(incSynced){ openIncDrawer(incSynced.sourceIncidentId); return; }
   const audSynced = entryId && reportEntries.find(x=>x.id===entryId && x.source==='audit' && activeAudits().some(a=>a.id===x.sourceAuditId));
   if(audSynced){ openAudDrawer(audSynced.sourceAuditId); return; }
+  const obsSynced = entryId && regState.obs && reportEntries.find(x=>x.id===entryId && x.source==='observation' && regActive('obs').some(o=>o.id===x.sourceObsId));
+  if(obsSynced){ openRegDrawer('obs', obsSynced.sourceObsId); return; }
   editingReportEntryId = entryId || null;
   const editing = entryId ? reportEntries.find(e=>e.id===entryId) : null;
   const category = editing ? editing.category : 'training';
@@ -8188,6 +8770,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 
   document.getElementById('reportRows').addEventListener('click', async e=>{
+    const openObs=e.target.closest('[data-ropen-obs]');
+    if(openObs){ openRegDrawer('obs', openObs.dataset.ropenObs); return; }
     const openAud=e.target.closest('[data-ropen-aud]');
     if(openAud){ document.querySelector('.sidenav-btn[data-section="audits"]').click(); openAudDrawer(openAud.dataset.ropenAud); return; }
     const openInc=e.target.closest('[data-ropen-inc]');
@@ -8732,6 +9316,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   const body=$('regDrawerBody');
   body.addEventListener('submit', async e=>{
     e.preventDefault(); const r=regCurrent(), cfg=REG[activeReg]; if(!r || !canEdit()) return; const f=e.target;
+    if(f.dataset.regCustom){ const fn=(cfg.customSubmit||{})[f.dataset.regCustom]; if(fn) await fn(r, f); return; }
     if(f.dataset.regForm){
       const tab=cfg.tabs.find(t=>t.key===f.dataset.regForm); const fields=(tab.groups||[{fields:tab.fields}]).flatMap(g=>g.fields);
       const d=regReadForm(f, fields);
@@ -8810,6 +9395,54 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.querySelectorAll('.sidenav-btn[data-section]').forEach(btn=>btn.addEventListener('click', ()=>{ if(window.innerWidth<=760){ try{ btn.scrollIntoView({inline:'center', block:'nearest', behavior:'smooth'}); }catch(e){} } }));
   document.querySelector('.sidenav-btn[data-section="activity"]').addEventListener('click', loadActivityLog);
   document.querySelector('.sidenav-btn[data-section="actions"]').addEventListener('click', renderActionTracker);
+});
+
+/* ---------------- Batch 12 events ---------------- */
+document.addEventListener('DOMContentLoaded', ()=>{
+  const $=id=>document.getElementById(id);
+  if(!$('hiraTop')) return;
+  $('hiraTop').addEventListener('click', e=>{ const b=e.target.closest('[data-hmode]'); if(!b) return; $('hiraTop').dataset.mode=b.dataset.hmode; renderHiraMatrix(); });
+  // heat forecast
+  $('heatTop').addEventListener('click', async e=>{
+    const t=e.target.closest('button'); if(!t) return;
+    if(t.id==='hfRefresh'){ loadHeatForecasts(true); return; }
+    if(t.dataset.hfLog){ if(canEdit()) openHeatLogFor(t.dataset.hfLog); return; }
+    const saveCoords=async(id, lat, lng)=>{ if(isNaN(lat)||isNaN(lng)||Math.abs(lat)>90||Math.abs(lng)>180){ toast('Enter the location as: latitude, longitude'); return; }
+      try{ await db.collection('siteEquipment').doc(id).update(stamp({lat:Math.round(lat*1e5)/1e5, lng:Math.round(lng*1e5)/1e5})); toast('Site location saved'); setTimeout(()=>loadHeatForecasts(), 300); }catch(err){ console.error(err); toast('Could not save location'); } };
+    if(t.dataset.hfSave){ const v=(document.querySelector(`[data-hf-coords="${t.dataset.hfSave}"]`)||{}).value||''; const [a,b]=v.split(/[,\s]+/).filter(Boolean).map(Number); await saveCoords(t.dataset.hfSave, a, b); return; }
+    if(t.dataset.hfGps){ if(!navigator.geolocation){ toast('Location is not available on this device'); return; } toast('Getting your location…');
+      navigator.geolocation.getCurrentPosition(p=>saveCoords(t.dataset.hfGps, p.coords.latitude, p.coords.longitude), ()=>toast('Could not get your location — type it instead'), {enableHighAccuracy:true, timeout:15000}); return; }
+  });
+  document.querySelector('.sidenav-btn[data-section="heat"]').addEventListener('click', ()=>loadHeatForecasts());
+  // custom checklists
+  $('ckTemplatesBtn').addEventListener('click', openCkDrawer);
+  $('ckClose').addEventListener('click', closeCkDrawer); $('ckOverlay').addEventListener('click', closeCkDrawer);
+  $('ckBody').addEventListener('click', async e=>{
+    const t=e.target.closest('button'); if(!t) return;
+    if(t.id==='ckNew'){ ckEditIdx=-1; renderCkDrawer(); return; }
+    if(t.id==='ckCancel'){ ckEditIdx=null; renderCkDrawer(); return; }
+    if(t.dataset.ckedit){ ckEditIdx=Number(t.dataset.ckedit); renderCkDrawer(); return; }
+    if(t.dataset.ckdel){ if(t.dataset.armed!=='1'){ t.dataset.armed='1'; t.classList.add('armed'); toast('Click again to delete this checklist (old inspections keep their items)'); setTimeout(()=>{ t.dataset.armed='0'; t.classList.remove('armed'); },3000); return; }
+      const l=customChecklists.slice(); l.splice(Number(t.dataset.ckdel),1); await saveCustomChecklists(l); return; }
+  });
+  $('ckBody').addEventListener('submit', async e=>{
+    e.preventDefault(); if(e.target.id!=='ckForm') return;
+    const items=$('ckItems').value.split('\n').map(s=>s.trim()).filter(Boolean); if(!items.length){ toast('Add at least one item'); return; }
+    const l=customChecklists.slice(), rec={name:$('ckName').value.trim(), subjectLabel:$('ckSubj').value.trim(), items};
+    if(ckEditIdx===-1) l.push({key:'c'+Date.now().toString(36), ...rec}); else l[ckEditIdx]={...l[ckEditIdx], ...rec};
+    ckEditIdx=null; await saveCustomChecklists(l);
+  });
+  // client pack
+  $('clientPackBtn').addEventListener('click', openClientPack);
+  $('cpCancel').addEventListener('click', closeClientPack); $('cpOverlay').addEventListener('click', closeClientPack);
+  $('cpForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
+    const opts={client:$('cpClient').value.trim(), contract:$('cpContract').value.trim(), prepared:$('cpPrepared').value.trim(), month:$('cpMonth').value||reportMonth, project:$('cpProject').value, highlights:$('cpHighlights').value.trim(), plan:$('cpPlan').value.trim()};
+    if(canEdit()) saveSettings('app', {clientPack:{client:opts.client, contract:opts.contract, prepared:opts.prepared}}).catch(()=>{});
+    try{ toast('Building the report…'); const doc=await buildClientPack(opts); doc.save(`HSE_Monthly_Report_${opts.month}${opts.client?'_'+opts.client.replace(/[^a-z0-9]+/gi,'_'):''}.pdf`); toast('Client report downloaded'); closeClientPack(); }
+    catch(err){ console.error(err); toast('Could not generate the report'); }
+  });
 });
 
 // Register the service worker so this page can be installed as an app
