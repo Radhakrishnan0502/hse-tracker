@@ -503,6 +503,16 @@ label.chk input{width:auto; flex:none;}
 .tg-v{font-family:var(--font-num); font-size:15px; white-space:nowrap; font-variant-numeric:tabular-nums;}
 .cc-targets-form{padding:12px 14px 14px;}
 @media (max-width:640px){ .tg-row{grid-template-columns:1fr auto; } .tg-bar{grid-column:1 / -1; grid-row:2;} }
+/* ---- segmented group tabs ---- */
+.seg-tabs{display:inline-flex; flex-wrap:wrap; border:1px solid var(--line); border-radius:10px; overflow:hidden; margin:0 0 10px; background:var(--surface);}
+.seg-btn{border:none; background:transparent; color:var(--ink-muted); font-family:var(--font-display); font-weight:700; font-size:12.5px; letter-spacing:.06em; text-transform:uppercase; padding:9px 16px;}
+.seg-btn + .seg-btn{border-left:1px solid var(--line);}
+.seg-btn.active{background:var(--accent); color:var(--accent-ink); box-shadow:0 0 14px -4px var(--glow);}
+/* ---- capital-letter page, panel and menu titles ---- */
+.topbar h1{text-transform:uppercase; letter-spacing:.05em;}
+.cc-title, .chart-card h3, .pane-head h2, .panel > h3, .sidenav-btn{text-transform:uppercase; letter-spacing:.05em;}
+.sidenav-btn{font-size:12.5px;}
+.cc-title small, .chart-card h3 .chart-total, .chart-card h3 small{text-transform:none; letter-spacing:0;}
 /* ---- project emergency tab ---- */
 .em-card{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:0 0 6px;}
 .em-row{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:9px; background:var(--surface-2); font-size:13px;}
@@ -574,6 +584,26 @@ body.auth-open{overflow:hidden; height:100%;}
 .btn-signin:focus-visible{outline:2px solid #fff; outline-offset:2px;}
 .auth-foot{margin:18px 0 0; text-align:center; font-size:11.5px; color:rgba(246,238,240,.5);}
 .auth-error{color:#ff8a95; font-size:12.5px; margin-top:10px; text-align:center;}
+
+/* ---- Batch 10: audits & assurance plan ---- */
+.find-sum{display:flex; flex-wrap:wrap; gap:6px; margin:0 0 14px;}
+.score-card{display:flex; align-items:center; gap:18px; padding:14px; border:1px solid var(--line); border-radius:12px; background:var(--surface-2); margin-bottom:16px;}
+.score-ring{position:relative; width:110px; height:110px; flex:none;} .score-ring svg{width:110px; height:110px;}
+.score-val{position:absolute; inset:0; display:grid; place-items:center; font-weight:800; font-size:22px; font-family:var(--mono, ui-monospace, monospace);}
+.as-panel{padding:10px;} .as-table{min-width:980px;} .as-table th, .as-table td{padding:6px 6px;} .as-table th.as-m{text-align:center; width:44px;}
+.as-sticky{position:sticky; left:0; background:var(--surface); z-index:1; min-width:220px;}
+.as-cell{text-align:center;}
+.as-c{display:inline-grid; place-items:center; width:30px; height:26px; border-radius:7px; border:1px solid var(--line); background:transparent; color:var(--ink-muted); font-weight:700; font-size:11px; font-style:normal; cursor:pointer; padding:0;}
+.as-c:disabled{cursor:default;} .as-c .ic{width:14px; height:14px;}
+.as-c.as-planned{border-color:var(--accent); color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, transparent);}
+.as-c.as-due{border-color:var(--warn, #f5a524); color:var(--warn, #f5a524); background:color-mix(in srgb, var(--warn, #f5a524) 15%, transparent);}
+.as-c.as-done{border-color:var(--ok, #22c55e); color:#fff; background:var(--ok, #22c55e);}
+.as-c.as-extra{border-color:var(--ok, #22c55e); color:var(--ok, #22c55e); background:color-mix(in srgb, var(--ok, #22c55e) 14%, transparent);}
+.as-c.as-overdue{border-color:var(--danger); color:#fff; background:var(--danger);}
+th.as-now{color:var(--accent);} .as-c.as-now:not(.as-done):not(.as-overdue){box-shadow:0 0 0 2px var(--accent) inset;}
+.as-legend{display:flex; flex-wrap:wrap; gap:14px; align-items:center; margin-top:12px; font-size:12px; color:var(--ink-muted);} .as-legend span{display:inline-flex; align-items:center; gap:6px;} .as-legend .as-c{width:22px; height:20px; cursor:default;}
+.as-edit input, .as-edit select{width:100%;}
+body.read-only #addAudBtn, body.read-only #audTrashBtn, body.read-only #audFindingToggle, body.read-only [data-fedit], body.read-only [data-fdel], body.read-only #deleteAudBtn, body.read-only #asEditBtn, body.read-only [data-aud-file], body.read-only .upload-btn:has([data-aud-file]){display:none !important;}
 </style>
 </head>
 <body class="auth-open">
@@ -606,6 +636,8 @@ body.auth-open{overflow:hidden; height:100%;}
     <button type="button" class="sidenav-btn" data-section="site">Project Details</button>
     <button type="button" class="sidenav-btn" data-section="incidents">Incident Register</button>
     <button type="button" class="sidenav-btn" data-section="library">QHSE Library</button>
+    <button type="button" class="sidenav-btn" data-section="audits">Audits</button>
+    <button type="button" class="sidenav-btn" data-section="assurance">Assurance Plan</button>
     <div class="view-only-badge" id="viewOnlyBadge" hidden>View only — changes are made by the HSE team</div>
     <button type="button" class="theme-switch" id="themeToggle" role="switch" aria-checked="false"><span class="theme-switch-track"><span class="theme-switch-knob"></span></span><span id="themeToggleLabel">Light mode</span></button>
   </aside>
@@ -1033,6 +1065,55 @@ body.auth-open{overflow:hidden; height:100%;}
       </div>
     </main>
 
+    <main class="app-main" id="auditsSection" hidden>
+      <div class="topbar">
+        <div>
+          <h1>Audits</h1>
+          <p class="page-tagline"><span class="pt-co">Burhan Oil &amp; Trade Services</span><span class="pt-sep" aria-hidden="true"></span><span class="pt-slogan">Plan · Audit · Correct · Improve</span></p>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-sm" id="audTrashBtn" type="button">Deleted audits (0)</button>
+          <button class="btn btn-primary" id="addAudBtn" type="button">+ Add audit</button>
+        </div>
+      </div>
+      <div class="tiles tiles-4" id="audTiles"></div>
+      <div class="panel" id="addAudPanel" hidden>
+        <h3>New audit</h3>
+        <form id="addAudForm">
+          <div class="form-grid" id="addAudFields"></div>
+          <div class="form-actions"><button type="button" class="btn" id="cancelAddAud">Cancel</button><button type="submit" class="btn btn-primary">Save &amp; open audit</button></div>
+        </form>
+      </div>
+      <div class="seg-tabs" id="audPartyTabs"></div>
+      <div class="toolbar">
+        <input type="search" id="audSearch" placeholder="Search no., title, auditor, organisation…">
+        <select id="audYearFilter"></select>
+        <select id="audStatusFilter"><option value="all">Any status</option><option>Planned</option><option>In progress</option><option>Report issued</option><option>Findings open</option><option>Closed</option></select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Audit no.</th><th>Date</th><th>Audit / type</th><th>Standards</th><th>Conducted by</th><th>Score</th><th>Findings</th><th>Status</th></tr></thead>
+          <tbody id="audRows"><tr><td colspan="8" class="empty-state">Sign in to load audits…</td></tr></tbody>
+        </table>
+      </div>
+    </main>
+
+    <main class="app-main" id="assuranceSection" hidden>
+      <div class="topbar">
+        <div>
+          <h1>HSE Assurance Plan</h1>
+          <p class="page-tagline"><span class="pt-co">Burhan Oil &amp; Trade Services</span><span class="pt-sep" aria-hidden="true"></span><span class="pt-slogan">Plan · Do · Check · Act</span></p>
+        </div>
+        <div class="topbar-actions">
+          <select id="asYear" aria-label="Plan year"></select>
+          <button class="btn btn-sm" id="asPrintBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg> Plan PDF</button>
+          <button class="btn btn-primary" id="asEditBtn" type="button" hidden>Edit activities</button>
+        </div>
+      </div>
+      <div class="tiles tiles-4" id="asTiles"></div>
+      <div class="panel as-panel"><div id="asGrid"><p class="wsub">Sign in to load the plan…</p></div></div>
+    </main>
+
     <main class="app-main" id="librarySection" hidden>
       <div class="topbar">
         <div>
@@ -1071,6 +1152,7 @@ body.auth-open{overflow:hidden; height:100%;}
         </form>
       </div>
 
+      <div class="seg-tabs" id="libGroupTabs" role="tablist" aria-label="Document group"></div>
       <nav class="division-tabs" id="libTypeTabs"></nav>
 
       <div class="toolbar">
@@ -1232,6 +1314,31 @@ body.auth-open{overflow:hidden; height:100%;}
     <button class="icon-btn" id="incTrashClose" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
   </div>
   <div class="drawer-body" id="incTrashBody"></div>
+</aside>
+
+<div class="drawer-overlay" id="audDrawerOverlay" hidden></div>
+<aside class="drawer drawer-wide" id="audDrawer" hidden>
+  <div class="drawer-head">
+    <div>
+      <h2 id="audDrawerName"></h2>
+      <div class="wsub" id="audDrawerSub"></div>
+    </div>
+    <div style="display:flex; gap:8px; align-items:flex-start; flex:none;">
+      <button type="button" class="btn btn-sm" id="audPdfBtn"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg> Audit report PDF</button>
+      <button class="icon-btn" id="audDrawerClose" aria-label="Close panel"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
+    </div>
+  </div>
+  <nav class="tabs" id="audDrawerTabs"></nav>
+  <div class="drawer-body" id="audDrawerBody"></div>
+</aside>
+
+<div class="drawer-overlay" id="audTrashOverlay" hidden></div>
+<aside class="drawer" id="audTrashDrawer" hidden>
+  <div class="drawer-head">
+    <div><h2>Deleted audits</h2></div>
+    <button class="icon-btn" id="audTrashClose" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
+  </div>
+  <div class="drawer-body" id="audTrashBody"></div>
 </aside>
 
 <div class="drawer-overlay" id="libDrawerOverlay" hidden></div>
@@ -1694,8 +1801,9 @@ function startSettingsData(){
       appSettings=map.app||{};
       trainingReq=map.trainingMatrix||{trainings:[]};
       appTargets=map.targets||{};
+      appAssurance=map.assurance||{};
       renderMonitorBar(); renderVehicleTable(); if(activeVehicleId) renderVehicleDrawer();
-      renderMatrix(); renderReportAll();
+      renderMatrix(); renderReportAll(); renderAssuranceAll();
     }, err=>{
       console.error(err); if(!auth.currentUser) return;
       settingsLoadError = err && err.code==='permission-denied' ? 'rules' : 'other';
@@ -1890,9 +1998,18 @@ function openReqEditor(){
 function closeReqEditor(){ reqEditRows=null; const p=document.getElementById('reqPanel'); p.hidden=true; p.innerHTML=''; }
 
 /* ---------------- QHSE management library ---------------- */
-const LIB_TYPES = ['Manual','Policy','Procedure','Form','Checklist'];
-const LIB_TYPE_PLURAL = {Manual:'Manuals', Policy:'Policies', Procedure:'Procedures', Form:'Forms', Checklist:'Checklists'};
-const LIB_TYPE_COLORS = {Manual:'--cat-1', Policy:'--cat-3', Procedure:'--cat-5', Form:'--cat-4', Checklist:'--cat-2'};
+// Two groups: the IMS system itself, and the operational HSE documents used on site
+const LIB_GROUPS = [
+  {key:'ims', label:'IMS system documents', types:['Manual','Policy','Procedure','Form','Checklist']},
+  {key:'ops', label:'Operational HSE documents', types:['Risk assessment','JSA','Method statement','Work instruction','SOP','PTW','HSE checklist']},
+];
+const LIB_TYPES = LIB_GROUPS.flatMap(g=>g.types);
+const LIB_TYPE_PLURAL = {Manual:'Manuals', Policy:'Policies', Procedure:'Procedures', Form:'Forms', Checklist:'Checklists',
+  'Risk assessment':'Risk assessments', JSA:'JSAs', 'Method statement':'Method statements', 'Work instruction':'Work instructions', SOP:'SOPs', PTW:'PTW forms', 'HSE checklist':'HSE checklists'};
+const LIB_TYPE_COLORS = {Manual:'--cat-1', Policy:'--cat-3', Procedure:'--cat-5', Form:'--cat-4', Checklist:'--cat-2',
+  'Risk assessment':'--cat-9', JSA:'--cat-7', 'Method statement':'--cat-5', 'Work instruction':'--cat-8', SOP:'--cat-3', PTW:'--cat-2', 'HSE checklist':'--cat-4'};
+function libGroupOf(type){ const g=LIB_GROUPS.find(x=>x.types.includes(type)); return g ? g.key : 'ims'; }
+function libGroupTypes(){ const g=LIB_GROUPS.find(x=>x.key===libFilters.group); return g ? g.types : LIB_TYPES; }
 const LIB_STATUSES = ['Current','Under review','Draft','Obsolete'];
 const LIB_APPLIES = ['All divisions', ...Object.values(DIVISION_LABELS)];
 const LIB_REVIEW_LEAD_DAYS = 30;
@@ -1907,10 +2024,12 @@ const LIB_FIELDS = [
   {key:'owner', label:'Prepared / owned by', type:'text'},
   {key:'approvedBy', label:'Approved by', type:'text'},
   {key:'appliesTo', label:'Applies to', type:'select', options:LIB_APPLIES},
+  {key:'projectId', label:'Project (optional)', type:'project'},
+  {key:'activity', label:'Activity / task covered', type:'text', placeholder:'e.g. scaffold erection at height'},
   {key:'status', label:'Status', type:'select', options:LIB_STATUSES},
 ];
 let libDocs=[], libLoadError=null, unsubscribeLib=null;
-let libFilters={type:'all', q:'', status:'all'};
+let libFilters={group:'all', type:'all', q:'', status:'all'};
 let activeLibId=null, libRevFormOpen=false, libBusy=false;
 
 function activeLibDocs(){ return libDocs.filter(d=>!d.deleted); }
@@ -1947,8 +2066,9 @@ function libFieldsHtml(d, attr){
     else val = f.key==='status' ? 'Current' : f.key==='appliesTo' ? 'All divisions' : f.key==='docType' ? (libFilters.type!=='all' ? libFilters.type : '')
              : f.key==='lastRevDate' ? localToday() : f.key==='nextRevDate' ? addYears(localToday(),1) : '';
     const req=f.required?' *':'';
+    if(f.type==='project') return `<label>${esc(f.label)}<select ${attr}="${f.key}"><option value="">— Company-wide —</option>${activeSites().map(x=>`<option value="${x.id}" ${x.id===val?'selected':''}>${esc(x.siteName||'Project')}</option>`).join('')}</select></label>`;
     if(f.type==='select'){
-      const opts=f.options.slice(); if(val && !opts.includes(val)) opts.unshift(val);
+      const opts = f.key==='docType' ? (d ? LIB_TYPES.slice() : libGroupTypes().slice()) : f.options.slice(); if(val && !opts.includes(val)) opts.unshift(val);
       return `<label>${esc(f.label)}${req}<select ${attr}="${f.key}" ${f.required?'required':''}>${f.required?'<option value="">Select…</option>':''}${opts.map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
     }
     return `<label>${esc(f.label)}${req}<input type="${f.type}" ${attr}="${f.key}" ${f.mono?'class="mono"':''} value="${esc(val)}" ${f.required?'required':''} ${f.placeholder?`placeholder="${esc(f.placeholder)}"`:''}></label>`;
@@ -1987,7 +2107,7 @@ function renderLibTiles(){
 }
 function renderLibCharts(){
   const live=activeLibDocs().filter(d=>(d.status||'Current')!=='Obsolete');
-  const counts=LIB_TYPES.map(t=>({t, n:live.filter(d=>d.docType===t).length, over:live.filter(d=>d.docType===t && libReview(d).key==='overdue').length}));
+  const counts=libGroupTypes().map(t=>({t, n:live.filter(d=>d.docType===t).length, over:live.filter(d=>d.docType===t && libReview(d).key==='overdue').length}));
   const max=Math.max(1,...counts.map(x=>x.n));
   document.getElementById('libByTypeTotal').textContent = `${live.length} in use`;
   document.getElementById('libByType').innerHTML = `<div class="bar-chart">${counts.map(x=>`
@@ -2007,11 +2127,15 @@ function renderLibCharts(){
 }
 function renderLibTypeTabs(){
   const list=activeLibDocs();
-  const tabs=[{key:'all', label:'All documents', n:list.length}, ...LIB_TYPES.map(t=>({key:t, label:LIB_TYPE_PLURAL[t], n:list.filter(d=>d.docType===t).length}))];
+  const inGroup=list.filter(d=>libFilters.group==='all' || libGroupOf(d.docType)===libFilters.group);
+  document.getElementById('libGroupTabs').innerHTML = [{key:'all', label:'All documents', n:list.length}, ...LIB_GROUPS.map(g=>({key:g.key, label:g.label, n:list.filter(d=>libGroupOf(d.docType)===g.key).length}))]
+    .map(g=>`<button type="button" class="seg-btn ${g.key===libFilters.group?'active':''}" data-libgroup="${g.key}">${esc(g.label)}<span class="tab-count">${g.n}</span></button>`).join('');
+  const tabs=[{key:'all', label:'All types', n:inGroup.length}, ...libGroupTypes().map(t=>({key:t, label:LIB_TYPE_PLURAL[t], n:list.filter(d=>d.docType===t).length}))];
   document.getElementById('libTypeTabs').innerHTML = tabs.map(t=>`<button type="button" class="division-tab ${t.key===libFilters.type?'active':''}" data-libtype="${esc(t.key)}">${esc(t.label)}<span class="tab-count">${t.n}</span></button>`).join('');
 }
 function libMatches(d){
   if(d.deleted) return false;
+  if(libFilters.group!=='all' && libGroupOf(d.docType)!==libFilters.group) return false;
   if(libFilters.type!=='all' && d.docType!==libFilters.type) return false;
   const q=libFilters.q.trim().toLowerCase();
   if(q && !((d.docNo||'')+' '+(d.title||'')+' '+(d.owner||'')+' '+(d.approvedBy||'')).toLowerCase().includes(q)) return false;
@@ -2035,7 +2159,7 @@ function renderLibTable(){
   if(!list.length){ tbody.innerHTML='<tr><td colspan="8" class="empty-state">No documents match your filters.</td></tr>'; return; }
   tbody.innerHTML=list.map(d=>`<tr data-id="${d.id}">
       <td class="mono" style="white-space:nowrap;">${esc(d.docNo||'—')}</td>
-      <td><div class="wname">${esc(d.title||'—')}</div>${d.appliesTo && d.appliesTo!=='All divisions'?`<div class="wsub">${esc(d.appliesTo)}</div>`:''}</td>
+      <td><div class="wname">${esc(d.title||'—')}</div>${[d.projectId?projectName(d.projectId):'', d.appliesTo && d.appliesTo!=='All divisions'?d.appliesTo:'', d.activity||''].filter(Boolean).length?`<div class="wsub">${esc([d.projectId?projectName(d.projectId):'', d.appliesTo && d.appliesTo!=='All divisions'?d.appliesTo:'', d.activity||''].filter(Boolean).join(' · '))}</div>`:''}</td>
       <td>${esc(d.docType||'—')}</td>
       <td class="mono">${esc(d.revision||'—')}</td>
       <td class="mono">${esc(d.lastRevDate||'—')}</td>
@@ -2699,6 +2823,357 @@ function renderTargetsPanel(){
   const b=document.getElementById('ccTargetsEdit'); if(b) b.hidden = !canEdit() || targetsEditOpen;
 }
 
+/* =====================================================================
+   AUDITS — internal (1st party), client / 2nd party, certification &
+   surveillance (3rd party), regulatory. Fields follow ISO 19011:
+   programme → plan & team → criteria & scope → findings (NC register)
+   → score & conclusion → corrective action & verification.
+   ===================================================================== */
+const AUDIT_TYPES = ['Internal audit (1st party)','Client audit (2nd party)','Subcontractor / supplier audit (2nd party)','Certification audit (3rd party)','Surveillance audit (3rd party)','Recertification audit (3rd party)','Regulatory inspection'];
+const AUDIT_STANDARDS = ['ISO 45001:2018','ISO 14001:2015','ISO 9001:2015','Client HSE requirements','Legal & regulatory','Company IMS procedures'];
+const AUDIT_STATUSES = ['Planned','In progress','Report issued','Findings open','Closed'];
+const AUDIT_RESULTS = ['Conforming','Conforming with findings','Not conforming — re-audit required','Certificate recommended','Certificate maintained','Certificate suspended / withdrawn'];
+const FINDING_CATS = ['Major NC','Minor NC','Observation','OFI (opportunity for improvement)','Positive finding'];
+const AUDIT_PARTIES = [{key:'internal', label:'Internal (1st party)'},{key:'second', label:'Client & 2nd party'},{key:'third', label:'3rd party / surveillance'},{key:'regulatory', label:'Regulatory'}];
+let auditList=[], auditLoadError=null, unsubscribeAudits=null;
+let audFilters={year:String(new Date().getFullYear()), party:'all', status:'all', q:''};
+let activeAudId=null, activeAudTab='plan', audEditFinding=null, audFindingFormOpen=false, audBusy=false;
+function activeAudits(){ return auditList.filter(a=>!a.deleted); }
+function deletedAudits(){ return auditList.filter(a=>a.deleted); }
+function currentAud(){ return auditList.find(a=>a.id===activeAudId); }
+function auditParty(t){ t=String(t||''); return t.startsWith('Internal')?'internal': t.includes('2nd')?'second': t.includes('3rd')?'third':'regulatory'; }
+function auditYear(a){ return String(a.startDate||'').slice(0,4); }
+function auditRating(score){ const n=Number(score); if(score===''||score==null||isNaN(n)) return null; return n>=90?{t:'Excellent',cls:'ok'}: n>=75?{t:'Good',cls:'ok'}: n>=60?{t:'Needs improvement',cls:'warn'}:{t:'Poor',cls:'danger'}; }
+function findingCounts(a){ const f=a.findings||[]; const c=k=>f.filter(x=>x.category===k).length; return {major:c('Major NC'), minor:c('Minor NC'), obs:c('Observation'), ofi:c('OFI (opportunity for improvement)'), pos:c('Positive finding'), open:f.filter(x=>isActionFinding(x) && (x.status||'Open')!=='Closed').length, overdue:f.filter(x=>isActionFinding(x) && complaintOverdueDays(x)).length}; }
+function isActionFinding(f){ return ['Major NC','Minor NC'].includes(f.category) || !!f.targetDate; }
+function auditStatusBadge(a){ const st=a.status||'Planned'; const cls=st==='Closed'?'ok': st==='Planned'?'muted': st==='Findings open'?'danger':'warn'; return `<span class="badge ${cls}">${esc(st)}</span>`; }
+function nextAuditNo(dateStr){ const y=(dateStr||localToday()).slice(0,4); let max=0; for(const a of auditList){ const m=/^AUD-(\d{4})-(\d+)$/.exec(a.auditNo||''); if(m && m[1]===y) max=Math.max(max,Number(m[2])); } return `AUD-${y}-${String(max+1).padStart(3,'0')}`; }
+async function syncAuditToReport(a){
+  const id='aud_'+a.id;
+  if(a.deleted || auditParty(a.auditType)!=='internal' || !a.startDate || a.status==='Planned'){ try{ await db.collection('hseLogs').doc(id).delete(); }catch(e){} return; }
+  const site=siteEquipmentList.find(s=>s.id===a.projectId), fc=findingCounts(a);
+  try{ await db.collection('hseLogs').doc(id).set(stamp({category:'internalAudit', date:a.startDate, division:(site&&site.division)||'Office staff', projectId:a.projectId||null,
+    area:`${a.auditNo||''} — ${a.title||'Internal audit'}`, findings:fc.major+fc.minor+fc.obs, conductedBy:a.leadAuditor||'', source:'audit', sourceAuditId:a.id})); }
+  catch(e){ console.error('audit sync failed', e); }
+}
+async function updateAud(id, data, quiet){
+  try{ await db.collection('audits').doc(id).update(stamp(data)); if(!quiet) toast('Saved'); syncAuditToReport({...(auditList.find(x=>x.id===id)||{}), ...data, id}); return true; }
+  catch(e){ console.error(e); toast('Could not save — '+((e&&e.code)||'error')); return false; }
+}
+function startAuditData(){
+  try{
+    unsubscribeAudits = db.collection('audits').onSnapshot(snap=>{ auditLoadError=null; auditList=snap.docs.map(d=>({id:d.id, ...(d.data()||{})})); renderAuditAll(); renderAssuranceAll(); renderReportAll(); },
+      err=>{ console.error(err); if(!auth.currentUser) return; auditLoadError = err&&err.code==='permission-denied'?'rules':'other'; renderAuditAll(); });
+  }catch(e){ console.error(e); }
+}
+function renderAuditAll(){
+  if(!document.getElementById('audRows')) return;
+  renderAudTiles(); renderAudFilters(); renderAudTable();
+  document.getElementById('audTrashBtn').innerHTML = ic('trash')+` Deleted audits (${deletedAudits().length})`;
+  if(activeAudId) renderAudDrawer();
+  if(!document.getElementById('audTrashDrawer').hidden) renderAudTrashBody();
+}
+function renderAudTiles(){
+  const y=audFilters.year, list=activeAudits().filter(a=>y==='all'||auditYear(a)===y);
+  const by=k=>list.filter(a=>auditParty(a.auditType)===k).length;
+  const scored=list.filter(a=>a.score!==''&&a.score!=null&&!isNaN(Number(a.score)));
+  const avg=scored.length ? Math.round(scored.reduce((n,a)=>n+Number(a.score),0)/scored.length) : null;
+  let major=0, open=0, over=0; for(const a of activeAudits()){ const c=findingCounts(a); open+=c.open; over+=c.overdue; major+=(a.findings||[]).filter(f=>f.category==='Major NC' && (f.status||'Open')!=='Closed').length; }
+  const upcoming=activeAudits().map(a=>({a, d: a.status==='Planned' ? a.startDate : a.nextAuditDue})).filter(x=>x.d && daysUntil(x.d)!==null && daysUntil(x.d)>=0).sort((p,q)=>p.d.localeCompare(q.d))[0];
+  const certSoon=activeAudits().filter(a=>a.certificateExpiry && daysUntil(a.certificateExpiry)!==null && daysUntil(a.certificateExpiry)<=90);
+  const r=auditRating(avg);
+  document.getElementById('audTiles').innerHTML=[
+    {label:`Audits ${y==='all'?'(all years)':y}`, num:list.length, cls:'', sub:`${by('internal')} internal · ${by('second')} client/2nd · ${by('third')} 3rd party`, icon:'clipcheck'},
+    {label:'Average score', num:avg===null?'—':avg+'%', cls:r?r.cls:'', sub:r?`${r.t} · ${scored.length} scored audit${scored.length===1?'':'s'}`:'no scores recorded yet', icon:'chart'},
+    {label:'Open findings', num:open, cls:over||major?'danger':(open?'warn':'ok'), sub:`${major} major NC open · ${over} overdue`, icon:'alert'},
+    {label:'Next audit', num:upcoming?`${daysUntil(upcoming.d)}d`:'—', cls:'', sub:upcoming?`${upcoming.d} · ${upcoming.a.auditType.replace(/ \(.*\)/,'')}`:(certSoon.length?`${certSoon.length} certificate(s) expiring ≤ 90 days`:'nothing scheduled'), icon:'clock'},
+  ].map(t=>`<div class="tile"><div class="tile-head"><div class="tile-icon">${ic(t.icon)}</div><div class="tile-label">${esc(t.label)}</div></div><div class="tile-num ${t.cls}">${esc(String(t.num))}</div><div class="tile-sub">${esc(t.sub)}</div></div>`).join('');
+}
+function renderAudFilters(){
+  const ys=new Set([String(new Date().getFullYear())]); for(const a of activeAudits()) if(auditYear(a)) ys.add(auditYear(a));
+  const s=document.getElementById('audYearFilter'); s.innerHTML=[...ys].sort().reverse().map(y=>`<option value="${y}">${y}</option>`).join('')+'<option value="all">All years</option>'; s.value=audFilters.year;
+  document.getElementById('audPartyTabs').innerHTML=[{key:'all',label:'All audits'},...AUDIT_PARTIES].map(p=>`<button type="button" class="seg-btn ${p.key===audFilters.party?'active':''}" data-audparty="${p.key}">${esc(p.label)}<span class="tab-count">${activeAudits().filter(a=>(audFilters.year==='all'||auditYear(a)===audFilters.year) && (p.key==='all'||auditParty(a.auditType)===p.key)).length}</span></button>`).join('');
+}
+function audMatches(a){
+  if(a.deleted) return false;
+  if(audFilters.year!=='all' && auditYear(a)!==audFilters.year) return false;
+  if(audFilters.party!=='all' && auditParty(a.auditType)!==audFilters.party) return false;
+  if(audFilters.status!=='all' && (a.status||'Planned')!==audFilters.status) return false;
+  const q=audFilters.q.trim().toLowerCase(); if(q && !((a.auditNo||'')+' '+(a.title||'')+' '+(a.auditingBody||'')+' '+(a.leadAuditor||'')).toLowerCase().includes(q)) return false;
+  return true;
+}
+function renderAudTable(){
+  const tb=document.getElementById('audRows'); if(!auth.currentUser) return;
+  if(auditLoadError==='rules'){ tb.innerHTML=`<tr><td colspan="8" class="empty-state">${esc(RULES_UPDATE_MSG)}</td></tr>`; return; }
+  if(!activeAudits().length){ tb.innerHTML=`<tr><td colspan="8" class="empty-state">${canEdit()?'No audits yet — click “+ Add audit” to record a planned or completed audit.':'No audits recorded.'}</td></tr>`; return; }
+  const list=auditList.filter(audMatches).sort((a,b)=>(b.startDate||'').localeCompare(a.startDate||''));
+  if(!list.length){ tb.innerHTML='<tr><td colspan="8" class="empty-state">No audits match your filters.</td></tr>'; return; }
+  tb.innerHTML=list.map(a=>{ const c=findingCounts(a), r=auditRating(a.score);
+    return `<tr data-id="${a.id}">
+      <td class="mono" style="white-space:nowrap;"><strong>${esc(a.auditNo||'—')}</strong></td>
+      <td class="mono" style="white-space:nowrap;">${esc(a.startDate||'—')}${a.endDate&&a.endDate!==a.startDate?`<div class="wsub">to ${esc(a.endDate)}</div>`:''}</td>
+      <td><div class="wname">${esc(a.title||'—')}</div><div class="wsub">${esc(a.auditType||'')}${a.projectId?' · '+esc(projectName(a.projectId)):''}</div></td>
+      <td><div class="wsub" style="margin:0;">${esc((a.standards||[]).join(', ')||'—')}</div></td>
+      <td>${esc(a.auditingBody||'—')}<div class="wsub">${esc(a.leadAuditor||'')}</div></td>
+      <td>${r?`<span class="badge ${r.cls}">${esc(String(a.score))}% · ${r.t}</span>`:'<span class="wsub">—</span>'}</td>
+      <td style="white-space:nowrap;">${(a.findings||[]).length?`<span class="badge ${c.major?'danger':'muted'}">${c.major} Maj</span> <span class="badge ${c.minor?'warn':'muted'}">${c.minor} Min</span> <span class="badge muted">${c.obs} Obs</span>`:'<span class="wsub">—</span>'}${c.overdue?`<div class="wsub" style="color:var(--danger);">${c.overdue} overdue</div>`:''}</td>
+      <td>${auditStatusBadge(a)}</td></tr>`; }).join('');
+}
+const AUD_PLAN_FIELDS=[
+  {key:'auditNo', label:'Audit no.', required:true},
+  {key:'auditType', label:'Audit type', type:'select', options:AUDIT_TYPES, required:true},
+  {key:'status', label:'Status', type:'select', options:AUDIT_STATUSES, required:true},
+  {key:'title', label:'Audit title / scope', required:true, wide:true, placeholder:'e.g. IMS internal audit — Scaffolding operations, Fahud'},
+  {key:'objectives', label:'Audit objectives', type:'textarea', wide:true, placeholder:'e.g. verify conformity with ISO 45001 and client HSE requirements; evaluate effectiveness of controls'},
+  {key:'criteria', label:'Audit criteria (references)', type:'textarea', wide:true, placeholder:'e.g. ISO 45001:2018 cl. 4–10, PDO CP-122, company procedures BOTS-HSE-PR-001…'},
+  {key:'areas', label:'Departments / processes audited', type:'text', wide:true},
+  {key:'location', label:'Location / site'},
+  {key:'startDate', label:'Start date', type:'date', required:true},
+  {key:'endDate', label:'End date', type:'date'},
+  {key:'openingMeeting', label:'Opening meeting', type:'date'},
+  {key:'closingMeeting', label:'Closing meeting', type:'date'},
+  {key:'auditingBody', label:'Auditing organisation', placeholder:'e.g. Internal / PDO / Bureau Veritas'},
+  {key:'leadAuditor', label:'Lead auditor', required:true},
+  {key:'auditTeam', label:'Audit team members', type:'textarea', placeholder:'name — role (auditor, technical expert, observer)'},
+  {key:'auditeeRep', label:'Auditee representative (management rep)'},
+  {key:'interviewed', label:'Personnel interviewed', type:'textarea'},
+];
+const FINDING_FIELDS=[
+  {key:'category', label:'Category', type:'select', options:FINDING_CATS, required:true},
+  {key:'standard', label:'Standard', type:'select', options:AUDIT_STANDARDS},
+  {key:'clause', label:'Clause / requirement ref.', placeholder:'e.g. 45001 cl. 8.1.2'},
+  {key:'description', label:'Finding (statement of nonconformity)', type:'textarea', required:true, wide:true},
+  {key:'evidence', label:'Objective evidence', type:'textarea', wide:true},
+  {key:'rootCause', label:'Root cause', type:'textarea', wide:true},
+  {key:'correction', label:'Correction (immediate fix)', type:'text', wide:true},
+  {key:'correctiveAction', label:'Corrective action (prevent recurrence)', type:'textarea', wide:true},
+  {key:'owner', label:'Action owner'},
+  {key:'targetDate', label:'Target date', type:'date'},
+  {key:'status', label:'Status', type:'select', options:COMPLAINT_STATUSES, required:true},
+  {key:'closedDate', label:'Closed on', type:'date'},
+  {key:'verifiedBy', label:'Verified by'},
+  {key:'verificationDate', label:'Verification date', type:'date'},
+  {key:'effective', label:'Action effective', type:'select', options:['Yes','No','Pending']},
+];
+function openAddAudForm(){
+  document.getElementById('addAudFields').innerHTML = AUD_PLAN_FIELDS.filter(f=>['auditType','title','startDate','endDate','auditingBody','leadAuditor','status'].includes(f.key)).map(f=>incFieldHtml(f, f.key==='status'?'Planned':f.key==='startDate'?localToday():'', 'data-afield')).join('')
+    + `<label>Project (optional)<select data-afield="projectId">${projectOptionsHtml('')}</select></label>`
+    + `<div class="span-all"><div class="pick-label">Standards / criteria</div><div class="cause-list">${AUDIT_STANDARDS.map(x=>`<label class="chk"><input type="checkbox" data-astd value="${esc(x)}" ${x==='ISO 45001:2018'?'checked':''}>${esc(x)}</label>`).join('')}</div></div>`;
+  document.getElementById('addAudPanel').hidden=false;
+}
+function closeAddAudForm(){ document.getElementById('addAudPanel').hidden=true; document.getElementById('addAudForm').reset(); }
+const AUD_TABS=[{key:'plan',label:'Plan & team'},{key:'findings',label:'Findings'},{key:'results',label:'Score & results'},{key:'files',label:'Files'}];
+function openAudDrawer(id, tab){ raiseDrawer('audDrawerOverlay','audDrawer'); activeAudId=id; activeAudTab=tab||'plan'; audEditFinding=null; audFindingFormOpen=false; document.getElementById('audDrawerOverlay').hidden=false; document.getElementById('audDrawer').hidden=false; renderAudDrawer(); }
+function closeAudDrawer(){ activeAudId=null; document.getElementById('audDrawerOverlay').hidden=true; document.getElementById('audDrawer').hidden=true; }
+function renderAudDrawer(){
+  const a=currentAud(); if(!a || a.deleted){ closeAudDrawer(); return; } if(audBusy) return;
+  document.getElementById('audDrawerName').textContent=a.auditNo||'Audit';
+  document.getElementById('audDrawerSub').textContent=[a.auditType, a.startDate, a.auditingBody].filter(Boolean).join(' · ');
+  const c=findingCounts(a);
+  document.getElementById('audDrawerTabs').innerHTML=AUD_TABS.map(t=>{ let x=''; if(t.key==='findings'&&(a.findings||[]).length) x=` <span class="pill-count ${c.overdue?'danger':c.open?'warn':''}">${(a.findings||[]).length}</span>`; return `<button type="button" class="tab-btn ${t.key===activeAudTab?'active':''}" data-atab="${t.key}">${t.label}${x}</button>`; }).join('');
+  const b=document.getElementById('audDrawerBody');
+  b.innerHTML = activeAudTab==='findings' ? audFindingsHtml(a) : activeAudTab==='results' ? audResultsHtml(a) : activeAudTab==='files' ? audFilesHtml(a) : audPlanHtml(a);
+}
+function audPlanHtml(a){
+  const sel=new Set(a.standards||[]);
+  return `<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">${auditStatusBadge(a)} <span class="badge muted">${esc(AUDIT_PARTIES.find(p=>p.key===auditParty(a.auditType)).label)}</span></div>${updatedNoteHtml(a)}
+  <form id="audPlanForm"><div class="form-grid">${AUD_PLAN_FIELDS.map(f=>incFieldHtml(f, a[f.key], 'data-afield')).join('')}
+    <label>Project (optional)<select data-afield="projectId">${projectOptionsHtml(a.projectId)}</select></label></div>
+    <div class="subhead">Standards / criteria</div><div class="cause-list">${AUDIT_STANDARDS.map(x=>`<label class="chk"><input type="checkbox" data-astd value="${esc(x)}" ${sel.has(x)?'checked':''}>${esc(x)}</label>`).join('')}</div>
+    <div class="form-actions"><button type="submit" class="btn btn-primary">Save plan &amp; team</button></div></form>
+  <div class="danger-zone"><p>Deleting moves this audit to Deleted audits. It can be restored.</p><button type="button" class="btn btn-danger btn-sm" id="deleteAudBtn" data-armed="0">Delete audit</button></div>`;
+}
+function audFindingsHtml(a){
+  const list=(a.findings||[]).slice(), editing=audEditFinding?list.find(f=>f.id===audEditFinding):null, c=findingCounts(a);
+  const order=k=>FINDING_CATS.indexOf(k);
+  const summary=`<div class="find-sum"><span class="badge danger">${c.major} Major NC</span><span class="badge warn">${c.minor} Minor NC</span><span class="badge muted">${c.obs} Observation</span><span class="badge muted">${c.ofi} OFI</span><span class="badge ok">${c.pos} Positive</span>${c.overdue?`<span class="badge danger">${c.overdue} overdue</span>`:''}</div>`;
+  const form=audFindingFormOpen?`<form id="audFindingForm" style="margin-bottom:16px;"><div class="form-grid">${FINDING_FIELDS.map(f=>incFieldHtml(f, editing?editing[f.key]:(f.key==='status'?'Open':f.key==='standard'?((a.standards||[])[0]||''):''), 'data-ffield')).join('')}</div>
+    <div class="form-actions"><button type="submit" class="btn btn-primary btn-sm">${editing?'Save finding':'Add finding'}</button></div></form>`:'';
+  const cards=list.length?list.sort((p,q)=>order(p.category)-order(q.category)||(p.no||'').localeCompare(q.no||'')).map(f=>{
+    const cls=f.category==='Major NC'?'danger':f.category==='Minor NC'?'warn':f.category==='Positive finding'?'ok':'muted';
+    return `<div class="record-card"><div class="record-card-top"><div class="record-card-title"><span class="mono">${esc(f.no||'')}</span> <span class="badge ${cls}">${esc(f.category)}</span>${f.clause?` <span class="badge muted">${esc(f.clause)}</span>`:''} ${isActionFinding(f)?complaintBadges(f):''}</div>
+      <div class="record-card-actions"><button type="button" class="icon-btn" data-fedit="${f.id}" aria-label="Edit">${ic('pencil')}</button><button type="button" class="icon-btn danger" data-fdel="${f.id}" data-armed="0" aria-label="Delete">${ic('trash')}</button></div></div>
+      <div class="rf-v" style="margin:6px 0;">${esc(f.description||'')}</div>
+      <div class="record-fields">${['evidence','rootCause','correction','correctiveAction','owner','targetDate','closedDate','verifiedBy','verificationDate','effective'].filter(k=>f[k]).map(k=>`<div class="rf"><span class="rf-k">${esc(FINDING_FIELDS.find(x=>x.key===k).label)}</span><span class="rf-v">${esc(f[k])}</span></div>`).join('')}</div></div>`; }).join('')
+    : '<p class="wsub">No findings recorded. Add each nonconformity, observation and opportunity for improvement from the audit report.</p>';
+  return `<div class="section-head"><h3>Findings register (${list.length})</h3><button type="button" class="btn btn-sm" id="audFindingToggle">${audFindingFormOpen?'Cancel':'+ Add finding'}</button></div>${summary}${form}${cards}`;
+}
+function audResultsHtml(a){
+  const r=auditRating(a.score);
+  const third=auditParty(a.auditType)==='third';
+  return `<div class="score-card"><div class="score-ring">${ccDial(r?Math.max(0,Math.min(100,Number(a.score))):null, 110, 10, 'Audit score')}<div class="score-val">${r?esc(String(a.score))+'%':'—'}</div></div>
+      <div><div class="wsub">Audit score</div><div style="font-size:18px; font-weight:700; margin:2px 0;">${r?`<span class="badge ${r.cls}" style="font-size:13px;">${r.t}</span>`:'Not scored yet'}</div><div class="wsub">≥90 Excellent · 75–89 Good · 60–74 Needs improvement · &lt;60 Poor</div></div></div>
+  <form id="audResultForm"><div class="form-grid">
+    ${incFieldHtml({key:'score', label:'Score (%)', type:'number'}, a.score===0?'0':a.score, 'data-afield')}
+    ${incFieldHtml({key:'result', label:'Audit result / recommendation', type:'select', options:AUDIT_RESULTS}, a.result, 'data-afield')}
+    ${incFieldHtml({key:'reportDate', label:'Report issued on', type:'date'}, a.reportDate, 'data-afield')}
+    ${incFieldHtml({key:'strengths', label:'Strengths / positive practices', type:'textarea', wide:true}, a.strengths, 'data-afield')}
+    ${incFieldHtml({key:'conclusion', label:'Audit conclusion', type:'textarea', wide:true}, a.conclusion, 'data-afield')}
+    ${third?incFieldHtml({key:'certificateNo', label:'Certificate no.'}, a.certificateNo, 'data-afield')+incFieldHtml({key:'certificateExpiry', label:'Certificate valid until', type:'date'}, a.certificateExpiry, 'data-afield'):''}
+    ${incFieldHtml({key:'nextAuditDue', label:'Next audit due', type:'date'}, a.nextAuditDue, 'data-afield')}
+  </div><div class="form-actions"><button type="submit" class="btn btn-primary">Save results</button></div></form>`;
+}
+function audFileBlock(a, key, label){ const f=a[key]; return `<div class="subhead">${esc(label)}</div><div class="att-block">${f&&f.url?libFileBlockHtml(f,false):'<span class="att-none">Not uploaded</span>'}<label class="upload-btn">${f&&f.url?'Replace':'Upload'} ${esc(label.toLowerCase())}<input type="file" hidden data-aud-file="${key}"></label></div>`; }
+function audFilesHtml(a){ return audFileBlock(a,'planFile','Audit plan') + audFileBlock(a,'reportFile','Audit report') + audFileBlock(a,'checklistFile','Audit checklist / notes') + (auditParty(a.auditType)==='third'?audFileBlock(a,'certificateFile','Certificate'):''); }
+function openAudTrash(){ document.getElementById('audTrashOverlay').hidden=false; document.getElementById('audTrashDrawer').hidden=false; renderAudTrashBody(); }
+function closeAudTrash(){ document.getElementById('audTrashOverlay').hidden=true; document.getElementById('audTrashDrawer').hidden=true; }
+function renderAudTrashBody(){ const list=deletedAudits(); document.getElementById('audTrashBody').innerHTML = list.length?list.map(a=>`<div class="record-card"><div class="record-card-top"><div class="record-card-title">${esc((a.auditNo||'')+' · '+(a.title||''))}</div><div class="record-card-actions"><button type="button" class="btn btn-sm" data-arestore="${a.id}">Restore</button><button type="button" class="btn btn-danger btn-sm" data-apurge="${a.id}" data-armed="0">Delete forever</button></div></div></div>`).join(''):'<p class="wsub">Nothing in the trash.</p>'; }
+function buildAuditPdf(a){
+  const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'pt', format:'a4'});
+  const M=40, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight(); let y=48;
+  const ensure=h=>{ if(y+h>H-40){ doc.addPage(); y=48; } };
+  const h2=t=>{ ensure(28); y+=6; doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(200,16,46); doc.text(t.toUpperCase(), M, y); y+=5; doc.setDrawColor(215); doc.line(M,y,W-M,y); y+=14; doc.setTextColor(20,20,20); };
+  const kv=(k,v)=>{ const lines=doc.splitTextToSize(String(v==null||v===''?'—':v), W-2*M-150); ensure(12*lines.length+4); doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(100,105,110); doc.text(String(k), M, y); doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(20,20,20); lines.forEach((l,n)=>doc.text(l, M+150, y+n*12)); y+=12*lines.length+3; };
+  const para=t=>{ doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.splitTextToSize(String(t||'—'), W-2*M-10).forEach(l=>{ ensure(12); doc.text(l, M+10, y); y+=12; }); y+=3; };
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Burhan Oil & Trade Services', M, 36); doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(120); doc.text('Audit Report Summary', M, 47); doc.setTextColor(20);
+  y=76; doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.text(`${a.auditNo||'Audit'} — ${a.auditType||''}`, M, y); y+=16;
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(90); doc.text(`${a.title||''}`, M, y); doc.setTextColor(20); y+=8;
+  const r=auditRating(a.score), c=findingCounts(a);
+  h2('1. Audit details'); kv('Standards / criteria', (a.standards||[]).join(', ')); kv('Criteria references', a.criteria); kv('Objectives', a.objectives); kv('Areas audited', a.areas); kv('Project / location', [a.projectId?projectName(a.projectId):'', a.location].filter(Boolean).join(' · '));
+  kv('Dates', `${a.startDate||'—'}${a.endDate?' to '+a.endDate:''}`); kv('Opening / closing meeting', `${a.openingMeeting||'—'} / ${a.closingMeeting||'—'}`); kv('Status', a.status);
+  h2('2. Audit team'); kv('Auditing organisation', a.auditingBody); kv('Lead auditor', a.leadAuditor); kv('Team members', a.auditTeam); kv('Auditee representative', a.auditeeRep); kv('Personnel interviewed', a.interviewed);
+  h2('3. Result'); kv('Score', r?`${a.score}% (${r.t})`:'—'); kv('Result', a.result); kv('Report issued', a.reportDate); kv('Findings', `${c.major} major NC · ${c.minor} minor NC · ${c.obs} observations · ${c.ofi} OFI · ${c.pos} positive`);
+  if(a.certificateNo || a.certificateExpiry) kv('Certificate', `${a.certificateNo||'—'} valid until ${a.certificateExpiry||'—'}`); kv('Next audit due', a.nextAuditDue); kv('Strengths', a.strengths); kv('Conclusion', a.conclusion);
+  h2(`4. Findings register (${(a.findings||[]).length})`);
+  if(!(a.findings||[]).length) para('No findings recorded.');
+  for(const f of (a.findings||[])){ ensure(16); doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.text(`${f.no||''}  ${f.category||''}${f.clause?'  ·  '+f.clause:''}${f.standard?'  ·  '+f.standard:''}  ·  ${f.status||'Open'}`, M, y); y+=12;
+    para(f.description); if(f.evidence) para('Evidence: '+f.evidence); if(f.rootCause) para('Root cause: '+f.rootCause); if(f.correctiveAction) para(`Corrective action: ${f.correctiveAction} — owner ${f.owner||'—'}, target ${f.targetDate||'—'}${f.closedDate?', closed '+f.closedDate:''}${f.verifiedBy?', verified by '+f.verifiedBy:''}`); }
+  ensure(60); y+=24; doc.setDrawColor(150); doc.line(M, y, M+180, y); doc.line(W-M-180, y, W-M, y); doc.setFontSize(8.5); doc.setTextColor(100); doc.text('Lead auditor', M, y+12); doc.text('Management representative', W-M-180, y+12);
+  const pages=doc.internal.getNumberOfPages?doc.internal.getNumberOfPages():1; for(let n=1;n<=pages;n++){ if(doc.setPage) doc.setPage(n); doc.setFontSize(7.5); doc.setTextColor(140); doc.text(`${a.auditNo||''} · page ${n} of ${pages} · printed ${localToday()}`, W-M, H-20, {align:'right'}); }
+  return doc;
+}
+function downloadAuditPdf(){ const a=currentAud(); if(!a) return; if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; } try{ buildAuditPdf(a).save(`${(a.auditNo||'audit').replace(/[^a-z0-9-]+/gi,'_')}_report.pdf`); toast('Audit report downloaded'); }catch(e){ console.error(e); toast('Could not generate the PDF'); } }
+
+/* =====================================================================
+   HSE ASSURANCE PLAN — yearly calendar of assurance activities
+   (ISO 45001 cl. 5–10). Months turn "done" automatically from what is
+   logged in the tracker; any month can also be ticked by hand.
+   ===================================================================== */
+const MONTHS_SHORT=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const ASSURANCE_AUTO = {
+  '':{label:'Tick by hand'},
+  'report:siteVisit':{label:'Site visits (Monthly Report)', cat:'siteVisit'},
+  'report:vehicleInspection':{label:'Vehicle inspections (Monthly Report)', cat:'vehicleInspection'},
+  'report:tbt':{label:'Toolbox talks (Monthly Report)', cat:'tbt'},
+  'report:training':{label:'Internal training (Monthly Report)', cat:'training'},
+  'report:mockDrill':{label:'Mock drills (Monthly Report)', cat:'mockDrill'},
+  'report:hseObservation':{label:'HSE observations (Monthly Report)', cat:'hseObservation'},
+  'report:induction':{label:'Inductions (Monthly Report)', cat:'induction'},
+  'audit:internal':{label:'Internal audits (Audits)'},
+  'audit:external':{label:'Client / 3rd-party audits (Audits)'},
+  'library:ra':{label:'RA / JSA revised (QHSE Library)'},
+  'incident:closed':{label:'Incidents closed (Incident Register)'},
+};
+const ASSURANCE_TEMPLATE = [
+  {activity:'HSE policy & objectives review', clause:'5.2 / 6.2', owner:'Management', months:[1], auto:''},
+  {activity:'Hazard identification & risk assessment review', clause:'6.1.2', owner:'HSE', months:[1,7], auto:'library:ra'},
+  {activity:'Evaluation of legal & other requirements', clause:'9.1.2', owner:'HSE', months:[6,12], auto:''},
+  {activity:'HSE committee / worker consultation meeting', clause:'5.4', owner:'HSE', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:''},
+  {activity:'Management site visit / safety walk', clause:'5.1', owner:'Management', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:'report:siteVisit'},
+  {activity:'Site HSE inspections & observations', clause:'9.1.1', owner:'HSE', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:'report:hseObservation'},
+  {activity:'Vehicle inspections', clause:'8.1', owner:'Fleet', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:'report:vehicleInspection'},
+  {activity:'Toolbox talks', clause:'7.4', owner:'Supervisors', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:'report:tbt'},
+  {activity:'HSE training programme', clause:'7.2', owner:'HSE', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:'report:training'},
+  {activity:'Emergency mock drill', clause:'8.2', owner:'HSE', months:[3,6,9,12], auto:'report:mockDrill'},
+  {activity:'Equipment & lifting gear TPI review', clause:'8.1', owner:'Maintenance', months:[3,6,9,12], auto:''},
+  {activity:'Internal IMS audit', clause:'9.2', owner:'HSE / QA', months:[4,10], auto:'audit:internal'},
+  {activity:'Client / external audit (as scheduled)', clause:'9.2', owner:'HSE', months:[], auto:'audit:external'},
+  {activity:'Subcontractor HSE performance evaluation', clause:'8.1.4', owner:'HSE', months:[6,12], auto:''},
+  {activity:'Health surveillance / medical fitness review', clause:'8.1', owner:'HSE', months:[1], auto:''},
+  {activity:'Incident & corrective action review', clause:'10.2', owner:'HSE', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:'incident:closed'},
+  {activity:'HSE performance report to management', clause:'9.1', owner:'HSE', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:''},
+  {activity:'Management review meeting', clause:'9.3', owner:'Top management', months:[6,12], auto:''},
+];
+let appAssurance={}, assuranceYear=String(new Date().getFullYear()), assuranceEditOpen=false, assuranceRows=null;
+function assurancePlanFor(y){ return (appAssurance[y] && appAssurance[y].items) || null; }
+function assuranceEvidence(item, y, m){
+  const key=`${y}-${String(m).padStart(2,'0')}`, a=ASSURANCE_AUTO[item.auto||'']; if(!item.auto || !a) return 0;
+  if(a.cat) return reportEntries.filter(e=>e.category===a.cat && entryMonth(e)===key).length;
+  if(item.auto==='audit:internal') return activeAudits().filter(x=>auditParty(x.auditType)==='internal' && x.status!=='Planned' && String(x.startDate||'').startsWith(key)).length;
+  if(item.auto==='audit:external') return activeAudits().filter(x=>auditParty(x.auditType)!=='internal' && x.status!=='Planned' && String(x.startDate||'').startsWith(key)).length;
+  if(item.auto==='library:ra') return activeLibDocs().filter(d=>['Risk assessment','JSA'].includes(d.docType) && String(d.lastRevDate||'').startsWith(key)).length;
+  if(item.auto==='incident:closed') return activeIncidents().filter(i=>i.status==='Closed' && String(i.closedDate||'').startsWith(key)).length;
+  return 0;
+}
+function assuranceCell(item, y, m){
+  const now=new Date(), cy=now.getFullYear(), cm=now.getMonth()+1, Y=Number(y);
+  const planned=(item.months||[]).includes(m), ev=assuranceEvidence(item,y,m), manual=!!(item.done||{})[m], done=manual||ev>0;
+  const past = Y<cy || (Y===cy && m<cm), current = Y===cy && m===cm;
+  let st = done ? (planned?'done':'extra') : planned ? (past?'overdue': current?'due':'planned') : 'none';
+  return {st, planned, done, ev, manual, past, current};
+}
+function assuranceStats(items, y){
+  let planned=0, due=0, doneDue=0, overdue=0, done=0;
+  for(const it of items) for(let m=1;m<=12;m++){ const c=assuranceCell(it,y,m); if(c.planned){ planned++; if(c.past){ due++; if(c.done) doneDue++; else overdue++; } if(c.done) done++; } }
+  return {planned, due, doneDue, overdue, done, pct: due?Math.round(doneDue*100/due):null};
+}
+function renderAssuranceAll(){
+  const grid=document.getElementById('asGrid'); if(!grid || !auth.currentUser) return;
+  const ysel=document.getElementById('asYear'); const cy=new Date().getFullYear();
+  const years=new Set([String(cy-1), String(cy), String(cy+1), ...Object.keys(appAssurance)]); ysel.innerHTML=[...years].sort().map(y=>`<option value="${y}">${y}</option>`).join(''); ysel.value=assuranceYear;
+  const items=assurancePlanFor(assuranceYear);
+  document.getElementById('asEditBtn').hidden=!canEdit() || assuranceEditOpen || !items;
+  const tiles=document.getElementById('asTiles');
+  if(settingsLoadError==='rules'){ tiles.innerHTML=''; grid.innerHTML=`<p class="wsub">${esc(RULES_UPDATE_MSG)}</p>`; return; }
+  if(!items){
+    tiles.innerHTML='';
+    const prev=assurancePlanFor(String(Number(assuranceYear)-1));
+    grid.innerHTML = `<div class="empty-state" style="border:1px dashed var(--line); border-radius:12px;">${canEdit() ? `No assurance plan for ${esc(assuranceYear)} yet.<div style="margin-top:12px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;"><button type="button" class="btn btn-primary" id="asLoadTemplate">Load standard ISO 45001 plan</button>${prev?`<button type="button" class="btn" id="asCopyPrev">Copy ${Number(assuranceYear)-1} plan</button>`:''}</div>` : `No assurance plan for ${esc(assuranceYear)} yet.`}</div>`;
+    return;
+  }
+  const st=assuranceStats(items, assuranceYear);
+  tiles.innerHTML=[
+    {label:'Planned activities', num:st.planned, sub:`${items.length} activities in the ${assuranceYear} plan`, icon:'clipboard', cls:''},
+    {label:'Completed', num:st.done, sub:`${st.doneDue} of ${st.due} due so far`, icon:'checkcircle', cls:st.done?'ok':''},
+    {label:'Overdue', num:st.overdue, sub:'planned in a past month, not done', icon:'alert', cls:st.overdue?'danger':'ok'},
+    {label:'Plan compliance', num:st.pct===null?'—':st.pct+'%', sub:'done ÷ planned up to last month', icon:'target', cls:st.pct===null?'':st.pct>=90?'ok':st.pct>=75?'warn':'danger'},
+  ].map(t=>`<div class="tile"><div class="tile-head"><div class="tile-icon">${ic(t.icon)}</div><div class="tile-label">${esc(t.label)}</div></div><div class="tile-num ${t.cls}">${esc(String(t.num))}</div><div class="tile-sub">${esc(t.sub)}</div></div>`).join('');
+  if(assuranceEditOpen && canEdit()){ renderAssuranceEditor(); return; }
+  const cm=new Date().getMonth()+1, isCy=Number(assuranceYear)===new Date().getFullYear();
+  grid.innerHTML = `<div class="table-wrap"><table class="as-table"><thead><tr><th class="as-sticky">Activity</th><th>Clause</th><th>Owner</th>${MONTHS_SHORT.map((m,n)=>`<th class="as-m ${isCy&&n+1===cm?'as-now':''}">${m}</th>`).join('')}<th>Done</th></tr></thead><tbody>
+    ${items.map((it,idx)=>{ let pl=0, dn=0; const cells=MONTHS_SHORT.map((_,n)=>{ const c=assuranceCell(it, assuranceYear, n+1); if(c.planned){ pl++; if(c.done) dn++; }
+        const title=`${MONTHS_SHORT[n]} — ${c.st==='done'?'done':c.st==='extra'?'done (not planned)':c.st==='overdue'?'planned, not done':c.st==='due'?'planned this month':c.st==='planned'?'planned':'not planned'}${c.ev?` · ${c.ev} record(s) found`:''}${c.manual?' · ticked by hand':''}`;
+        const mark=c.st==='done'||c.st==='extra'?ic('check'):c.st==='overdue'?ic('close'):c.planned?'P':'';
+        return `<td class="as-cell"><button type="button" class="as-c as-${c.st} ${isCy&&n+1===cm?'as-now':''}" data-as="${idx}:${n+1}" title="${esc(title)}" aria-label="${esc(it.activity+' '+title)}" ${canEdit()?'':'disabled'}>${mark}</button></td>`; }).join('');
+      return `<tr><td class="as-sticky"><div class="wname">${esc(it.activity)}</div>${it.auto?`<div class="wsub">auto: ${esc((ASSURANCE_AUTO[it.auto]||{}).label||'')}</div>`:''}</td><td class="mono">${esc(it.clause||'')}</td><td>${esc(it.owner||'')}</td>${cells}<td class="mono">${dn}/${pl}</td></tr>`; }).join('')}
+    </tbody></table></div>
+    <div class="as-legend"><span><i class="as-c as-planned">P</i> planned</span><span><i class="as-c as-due">P</i> due this month</span><span><i class="as-c as-done">${ic('check')}</i> done</span><span><i class="as-c as-overdue">${ic('close')}</i> overdue</span><span><i class="as-c as-extra">${ic('check')}</i> done, not planned</span>${canEdit()?'<span class="wsub">Click a month: plan → done → clear.</span>':''}</div>`;
+}
+function renderAssuranceEditor(){
+  const rows=assuranceRows;
+  document.getElementById('asGrid').innerHTML = `<form id="asEditForm"><div class="table-wrap"><table class="as-table as-edit"><thead><tr><th>Activity</th><th>Clause</th><th>Owner</th><th>Tracks automatically from</th><th></th></tr></thead><tbody>
+    ${rows.map((r,i)=>`<tr><td><input data-asr="${i}:activity" value="${esc(r.activity)}" required></td><td><input data-asr="${i}:clause" value="${esc(r.clause||'')}" style="max-width:90px;"></td><td><input data-asr="${i}:owner" value="${esc(r.owner||'')}"></td>
+      <td><select data-asr="${i}:auto">${Object.entries(ASSURANCE_AUTO).map(([k,v])=>`<option value="${esc(k)}" ${k===(r.auto||'')?'selected':''}>${esc(v.label)}</option>`).join('')}</select></td>
+      <td><button type="button" class="icon-btn danger" data-asdel="${i}" aria-label="Remove activity">${ic('close')}</button></td></tr>`).join('')}
+    </tbody></table></div>
+    <div style="margin-top:10px;"><button type="button" class="btn btn-sm" id="asAddRow">+ Add activity</button></div>
+    <div class="form-actions"><button type="button" class="btn" id="asEditCancel">Cancel</button><button type="submit" class="btn btn-primary">Save plan</button></div></form>`;
+}
+function readAssuranceRows(){ const f=document.getElementById('asEditForm'); if(!f||!assuranceRows) return; f.querySelectorAll('[data-asr]').forEach(el=>{ const [i,k]=el.dataset.asr.split(':'); if(assuranceRows[i]) assuranceRows[i][k]=el.value; }); }
+function downloadAssurancePdf(){
+  const items=assurancePlanFor(assuranceYear); if(!items){ toast('No plan for this year yet'); return; }
+  if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
+  try{
+    const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'pt', format:'a4', orientation:'landscape'});
+    const M=30, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
+    const colA=210, colC=50, colO=80, mw=(W-2*M-colA-colC-colO-40)/12; let y=40;
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Burhan Oil & Trade Services', M, y); doc.setFontSize(15); doc.text(`HSE Assurance Plan ${assuranceYear}`, M, y+20);
+    const st=assuranceStats(items, assuranceYear); doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(100); doc.text(`Planned ${st.planned} · Completed ${st.done} · Overdue ${st.overdue} · Compliance ${st.pct===null?'—':st.pct+'%'} · printed ${localToday()}   (P = planned, X = done, ! = overdue, + = done not planned)`, M, y+34); doc.setTextColor(20);
+    y+=52; const head=()=>{ doc.setFillColor(20,30,48); doc.rect(M,y-11,W-2*M,16,'F'); doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.text('Activity',M+4,y); doc.text('Clause',M+colA+4,y); doc.text('Owner',M+colA+colC+4,y); MONTHS_SHORT.forEach((m,n)=>doc.text(m, M+colA+colC+colO+n*mw+mw/2, y, {align:'center'})); doc.text('Done', W-M-20, y, {align:'center'}); doc.setTextColor(20); y+=16; };
+    head();
+    items.forEach((it,idx)=>{ const lines=doc.splitTextToSize(it.activity, colA-8); const h=Math.max(16, lines.length*10+6); if(y+h>H-30){ doc.addPage(); y=40; head(); }
+      if(idx%2){ doc.setFillColor(242,244,247); doc.rect(M,y-11,W-2*M,h,'F'); }
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); lines.forEach((l,n)=>doc.text(l, M+4, y+n*10)); doc.text(String(it.clause||''), M+colA+4, y); doc.text(doc.splitTextToSize(String(it.owner||''), colO-6)[0]||'', M+colA+colC+4, y);
+      let pl=0, dn=0;
+      for(let m=1;m<=12;m++){ const c=assuranceCell(it, assuranceYear, m); if(c.planned){ pl++; if(c.done) dn++; } const x=M+colA+colC+colO+(m-1)*mw+mw/2;
+        const mark=c.st==='done'?'X':c.st==='extra'?'+':c.st==='overdue'?'!':c.planned?'P':''; if(!mark) continue;
+        const col=c.st==='done'||c.st==='extra'?[22,150,90]:c.st==='overdue'?[210,30,45]:[40,110,190]; doc.setTextColor(...col); doc.setFont('helvetica','bold'); doc.text(mark, x, y, {align:'center'}); doc.setTextColor(20); }
+      doc.setFont('helvetica','normal'); doc.text(`${dn}/${pl}`, W-M-20, y, {align:'center'}); y+=h; });
+    doc.save(`HSE_Assurance_Plan_${assuranceYear}.pdf`); toast('Assurance plan downloaded');
+  }catch(e){ console.error(e); toast('Could not generate the PDF'); }
+}
+async function saveAssurance(items){ const ok=await saveSettings('assurance', {[assuranceYear]:{items}}); if(ok) appAssurance={...appAssurance, [assuranceYear]:{items}}; return ok; }
+
 /* ---------------- plant & equipment register config ---------------- */
 // Every movable item lives once in the 'equipment' collection with a category,
 // a current location ('store' or a project id), a condition and a move history.
@@ -3100,6 +3575,7 @@ function stopDataListeners(){
   if(unsubscribeSettings){ unsubscribeSettings(); unsubscribeSettings=null; }
   if(unsubscribeLib){ unsubscribeLib(); unsubscribeLib=null; }
   if(unsubscribeIncidents){ unsubscribeIncidents(); unsubscribeIncidents=null; }
+  if(unsubscribeAudits){ unsubscribeAudits(); unsubscribeAudits=null; }
 }
 auth.onAuthStateChanged(user=>{
   if(user){
@@ -3115,6 +3591,7 @@ auth.onAuthStateChanged(user=>{
     startSettingsData();
     startLibraryData();
     startIncidentData();
+    startAuditData();
   } else {
     stopDataListeners();
     document.getElementById('dbUnavailableBanner').hidden=true;
@@ -3790,6 +4267,13 @@ function renderSiteDrawerBody(){
     pre = (overdue ? overdueNotice(`${overdue} permit${overdue===1?' is':'s are'} past the “valid to” date but not closed — close ${overdue===1?'it':'them'} out or extend.`) : '')
         + `<p class="wsub" style="margin:0 0 12px;">${list.length ? `${list.length} logged · <strong>${open}</strong> open · ${closed} closed` : 'Log each permit to work issued on this project, and close it out when the job is done.'}</p>`;
   }
+  if(activeSiteTab==='hseDocs'){
+    const linked=activeLibDocs().filter(d=>d.projectId===s.id).sort((a,b)=>LIB_TYPES.indexOf(a.docType)-LIB_TYPES.indexOf(b.docType));
+    pre = `<div class="section-head"><h3>From QHSE Library (${linked.length})</h3></div>`
+      + (linked.length ? linked.map(d=>`<div class="equip-line" data-open-lib="${d.id}"><div class="equip-line-main"><div class="equip-line-title">${esc(libTitle(d))}</div><div class="wsub">${esc(d.docType)} · Rev ${esc(d.revision||'—')}${d.activity?' · '+esc(d.activity):''}</div></div><div class="equip-line-badges">${libReviewBadge(d)}</div></div>`).join('')
+        : '<p class="wsub">No library documents linked yet — in QHSE Library, pick this project on a risk assessment, JSA, method statement, work instruction, SOP, PTW or checklist.</p>')
+      + '<div style="height:14px"></div>';
+  }
   if(activeSiteTab==='toolboxTalks'){
     const list=s.toolboxTalks||[];
     const people=list.reduce((n,r)=>n+tbtAttendeeCount(r),0);
@@ -4413,7 +4897,7 @@ function renderCommandCentre(entries, m, key){
   const prevName = key.length===4 ? prevKey : ccMonthLabel(prevKey);
   let mhSub = prev.manHours ? `${m.manHours>=prev.manHours?'▲':'▼'} ${Math.abs((m.manHours-prev.manHours)/prev.manHours*100).toFixed(1)}% on ${prevName}` : `${periodWord}`;
   // corrective actions & permits (open now, for the projects in view)
-  const incActs=activeIncidents().filter(i=>{ const site=siteEquipmentList.find(s=>s.id===i.projectId); const div=(site&&site.division)||i.division||''; return (division==='all' || div===division) && (project==='all' || (project==='none' ? !i.projectId : i.projectId===project)); }).flatMap(i=>i.capa||[]);
+  const incActs=activeIncidents().filter(i=>{ const site=siteEquipmentList.find(s=>s.id===i.projectId); const div=(site&&site.division)||i.division||''; return (division==='all' || div===division) && (project==='all' || (project==='none' ? !i.projectId : i.projectId===project)); }).flatMap(i=>i.capa||[]).concat(division==='all' && project==='all' ? activeAudits().flatMap(a=>(a.findings||[]).filter(isActionFinding)) : activeAudits().filter(a=>{ const site=siteEquipmentList.find(s=>s.id===a.projectId); return (division==='all' || (site&&site.division)===division) && (project==='all' || (project==='none' ? !a.projectId : a.projectId===project)); }).flatMap(a=>(a.findings||[]).filter(isActionFinding)));
   const allActs=projectRecordsFor('actions', division, '', project).concat(incActs), openActs=allActs.filter(x=>(x.status||'Open')!=='Closed'), overdueActs=openActs.filter(x=>complaintOverdueDays(x));
   const allPtw=projectRecordsFor('permits', division, '', project), ptwPeriod=allPtw.filter(x=>(x.date||'').startsWith(key));
   const ptwOpen=allPtw.filter(x=>(x.status||'Open')==='Open'), ptwStale=ptwOpen.filter(x=>permitOverdueDays(x));
@@ -4649,7 +5133,10 @@ function renderReportTable(entries){
     const cfg=REPORT_CATEGORIES[e.category];
     const fromProject = e.source==='projectToolbox' && e.sourceSiteId && activeSites().some(x=>x.id===e.sourceSiteId);
     const fromIncident = e.source==='incident' && e.sourceIncidentId && activeIncidents().some(x=>x.id===e.sourceIncidentId);
-    const actions = fromIncident
+    const fromAudit = e.source==='audit' && e.sourceAuditId && activeAudits().some(x=>x.id===e.sourceAuditId);
+    const actions = fromAudit
+      ? `<button type="button" class="btn btn-sm" data-ropen-aud="${esc(e.sourceAuditId)}" title="Recorded in the Audits register — edit it there">Open audit</button>`
+      : fromIncident
       ? `<button type="button" class="btn btn-sm" data-ropen-inc="${esc(e.sourceIncidentId)}" title="Recorded in the Incident Register — edit it there">Open incident</button>`
       : fromProject
       ? `<button type="button" class="btn btn-sm" data-ropen-site="${esc(e.sourceSiteId)}" title="Logged in the project's Toolbox talks tab — edit it there">Open in project</button>`
@@ -4727,6 +5214,8 @@ function openReportEntryForm(entryId, presetProjectId){
   if(synced){ openSiteDrawer(synced.sourceSiteId); activeSiteTab='toolboxTalks'; renderSiteDrawer(); return; }
   const incSynced = entryId && reportEntries.find(x=>x.id===entryId && x.source==='incident' && activeIncidents().some(i=>i.id===x.sourceIncidentId));
   if(incSynced){ openIncDrawer(incSynced.sourceIncidentId); return; }
+  const audSynced = entryId && reportEntries.find(x=>x.id===entryId && x.source==='audit' && activeAudits().some(a=>a.id===x.sourceAuditId));
+  if(audSynced){ openAudDrawer(audSynced.sourceAuditId); return; }
   editingReportEntryId = entryId || null;
   const editing = entryId ? reportEntries.find(e=>e.id===entryId) : null;
   const category = editing ? editing.category : 'training';
@@ -6095,7 +6584,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     btn.addEventListener('click', ()=>{
       const section=btn.dataset.section;
       document.querySelectorAll('.sidenav-btn[data-section]').forEach(b=>b.classList.toggle('active', b===btn));
-      const SECTIONS={workforce:'workforceSection', vehicles:'vehiclesSection', site:'siteSection', report:'reportSection', incidents:'incidentsSection', library:'librarySection'};
+      const SECTIONS={workforce:'workforceSection', vehicles:'vehiclesSection', site:'siteSection', report:'reportSection', incidents:'incidentsSection', library:'librarySection', audits:'auditsSection', assurance:'assuranceSection'};
       for(const [k,id] of Object.entries(SECTIONS)) document.getElementById(id).hidden = section!==k;
     });
   });
@@ -6431,6 +6920,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(openV){ openVehicleDrawer(openV.dataset.openVehicle); return; }
     const openEq=e.target.closest('[data-open-equip]');
     if(openEq){ openEquipDrawer(openEq.dataset.openEquip); return; }
+    const openLib=e.target.closest('[data-open-lib]');
+    if(openLib){ openLibDrawer(openLib.dataset.openLib); return; }
     if(e.target.id==='toggleRecordForm'){
       siteAddFormOpen = !siteAddFormOpen;
       editingSiteRecordId = null;
@@ -6701,6 +7192,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 
   document.getElementById('reportRows').addEventListener('click', async e=>{
+    const openAud=e.target.closest('[data-ropen-aud]');
+    if(openAud){ document.querySelector('.sidenav-btn[data-section="audits"]').click(); openAudDrawer(openAud.dataset.ropenAud); return; }
     const openInc=e.target.closest('[data-ropen-inc]');
     if(openInc){ openIncDrawer(openInc.dataset.ropenInc); return; }
     const openSite=e.target.closest('[data-ropen-site]');
@@ -6814,13 +7307,17 @@ document.addEventListener('DOMContentLoaded', ()=>{
   // --- QHSE library: dashboard, filters, table ---
   document.getElementById('addLibBtn').addEventListener('click', ()=>{ const p=document.getElementById('addLibPanel'); if(p.hidden) openAddLibForm(); else closeAddLibForm(); });
   document.getElementById('cancelAddLib').addEventListener('click', closeAddLibForm);
+  document.getElementById('libGroupTabs').addEventListener('click', e=>{
+    const b=e.target.closest('[data-libgroup]'); if(!b) return;
+    libFilters.group=b.dataset.libgroup; libFilters.type='all'; renderLibraryAll();
+  });
   document.getElementById('libTypeTabs').addEventListener('click', e=>{
     const b=e.target.closest('[data-libtype]'); if(!b) return;
     libFilters.type=b.dataset.libtype; renderLibTypeTabs(); renderLibTable();
   });
   document.getElementById('libByType').addEventListener('click', e=>{
     const r=e.target.closest('[data-libtype-jump]'); if(!r) return;
-    libFilters.type=r.dataset.libtypeJump; renderLibTypeTabs(); renderLibTable();
+    libFilters.type=r.dataset.libtypeJump; libFilters.group=libGroupOf(libFilters.type); renderLibraryAll();
     document.getElementById('libTypeTabs').scrollIntoView({behavior:'smooth', block:'start'});
   });
   document.getElementById('libUpcoming').addEventListener('click', e=>{ const r=e.target.closest('[data-open-lib]'); if(r) openLibDrawer(r.dataset.openLib); });
@@ -7096,6 +7593,109 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const vals={}; e.target.querySelectorAll('[data-tfield]').forEach(el=>{ vals[el.dataset.tfield] = el.value==='' ? '' : Number(el.value); });
     if(await saveSettings('targets', {[year]:vals})){ targetsEditOpen=false; appTargets={...appTargets, [year]:vals}; renderTargetsPanel(); }
   });
+});
+
+/* ---------------- Batch 10: audits & assurance plan events ---------------- */
+document.addEventListener('DOMContentLoaded', ()=>{
+  const $=id=>document.getElementById(id);
+  if(!$('audRows')) return;
+  $('addAudBtn').addEventListener('click', openAddAudForm);
+  $('cancelAddAud').addEventListener('click', closeAddAudForm);
+  $('addAudForm').addEventListener('submit', async e=>{
+    e.preventDefault(); if(!canEdit()) return;
+    const d={findings:[], deleted:false, createdAt:new Date().toISOString(), createdBy:(auth.currentUser&&auth.currentUser.email)||''};
+    e.target.querySelectorAll('[data-afield]').forEach(el=>{ d[el.dataset.afield]=el.value; });
+    d.standards=[...e.target.querySelectorAll('[data-astd]:checked')].map(x=>x.value);
+    d.auditNo=nextAuditNo(d.startDate);
+    try{ const ref=await db.collection('audits').add(stamp(d)); toast(`Audit ${d.auditNo} saved`); closeAddAudForm(); syncAuditToReport({...d, id:ref.id}); openAudDrawer(ref.id,'plan'); }
+    catch(err){ console.error(err); toast(err&&err.code==='permission-denied'?RULES_UPDATE_MSG:'Could not save audit'); }
+  });
+  $('audSearch').addEventListener('input', e=>{ audFilters.q=e.target.value; renderAudTable(); });
+  $('audYearFilter').addEventListener('change', e=>{ audFilters.year=e.target.value; renderAuditAll(); });
+  $('audStatusFilter').addEventListener('change', e=>{ audFilters.status=e.target.value; renderAudTable(); });
+  $('audPartyTabs').addEventListener('click', e=>{ const b=e.target.closest('[data-audparty]'); if(!b) return; audFilters.party=b.dataset.audparty; renderAudFilters(); renderAudTable(); });
+  $('audRows').addEventListener('click', e=>{ const tr=e.target.closest('tr[data-id]'); if(tr) openAudDrawer(tr.dataset.id); });
+  $('audDrawerClose').addEventListener('click', closeAudDrawer);
+  $('audDrawerOverlay').addEventListener('click', closeAudDrawer);
+  $('audPdfBtn').addEventListener('click', downloadAuditPdf);
+  $('audDrawerTabs').addEventListener('click', e=>{ const b=e.target.closest('[data-atab]'); if(!b) return; activeAudTab=b.dataset.atab; audFindingFormOpen=false; audEditFinding=null; renderAudDrawer(); });
+  const body=$('audDrawerBody');
+  body.addEventListener('submit', async e=>{
+    e.preventDefault(); const a=currentAud(); if(!a || !canEdit()) return; const f=e.target;
+    if(f.id==='audPlanForm' || f.id==='audResultForm'){
+      const d={}; f.querySelectorAll('[data-afield]').forEach(el=>{ d[el.dataset.afield]=el.value; });
+      if(f.id==='audPlanForm') d.standards=[...f.querySelectorAll('[data-astd]:checked')].map(x=>x.value);
+      if('score' in d){ if(d.score==='') d.score=''; else { const n=Number(d.score); if(isNaN(n)||n<0||n>100){ toast('Score must be between 0 and 100'); return; } d.score=n; } }
+      if(d.auditNo && d.auditNo!==a.auditNo && activeAudits().some(x=>x.id!==a.id && x.auditNo===d.auditNo)){ toast('That audit number is already used'); return; }
+      if(f.id==='audResultForm' && a.status==='Planned' && d.score!=='' ) d.status = findingCounts(a).open ? 'Findings open' : 'Report issued';
+      await updateAud(a.id, d);
+    } else if(f.id==='audFindingForm'){
+      const d={}; f.querySelectorAll('[data-ffield]').forEach(el=>{ d[el.dataset.ffield]=el.value; });
+      if(d.status==='Closed' && !d.closedDate) d.closedDate=localToday();
+      let list=(a.findings||[]).slice();
+      if(audEditFinding) list=list.map(x=>x.id===audEditFinding?{...x, ...d}:x);
+      else { const pre={'Major NC':'MAJ','Minor NC':'MIN','Observation':'OBS','OFI (opportunity for improvement)':'OFI','Positive finding':'POS'}[d.category]||'F';
+             const n=list.filter(x=>x.category===d.category).length+1; list.push({id:'f'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), no:`${pre}-${String(n).padStart(2,'0')}`, ...d}); }
+      const upd={findings:list};
+      const open=list.filter(x=>isActionFinding(x)&&(x.status||'Open')!=='Closed').length;
+      if(open && ['Report issued','Closed','In progress'].includes(a.status)) upd.status='Findings open';
+      if(!open && a.status==='Findings open') upd.status='Report issued';
+      audFindingFormOpen=false; audEditFinding=null;
+      await updateAud(a.id, upd);
+    }
+  });
+  body.addEventListener('click', async e=>{
+    const a=currentAud(); if(!a) return; const t=e.target.closest('button'); if(!t) return;
+    if(t.id==='audFindingToggle'){ audFindingFormOpen=!audFindingFormOpen; audEditFinding=null; renderAudDrawer(); return; }
+    if(t.dataset.fedit){ audEditFinding=t.dataset.fedit; audFindingFormOpen=true; renderAudDrawer(); return; }
+    if(t.dataset.fdel){ if(t.dataset.armed!=='1'){ t.dataset.armed='1'; t.classList.add('armed'); toast('Click again to delete this finding'); setTimeout(()=>{ t.dataset.armed='0'; t.classList.remove('armed'); },3000); return; }
+      await updateAud(a.id, {findings:(a.findings||[]).filter(x=>x.id!==t.dataset.fdel)}); return; }
+    if(t.id==='deleteAudBtn'){ if(t.dataset.armed!=='1'){ t.dataset.armed='1'; t.textContent='Click again to confirm'; setTimeout(()=>{ t.dataset.armed='0'; t.textContent='Delete audit'; },3000); return; }
+      const ok=await updateAud(a.id, {deleted:true, deletedAt:new Date().toISOString()}, true); if(ok){ toast('Audit moved to Deleted audits'); syncAuditToReport({...a, deleted:true}); closeAudDrawer(); } return; }
+  });
+  body.addEventListener('change', async e=>{
+    const inp=e.target; if(!inp.matches('[data-aud-file]')) return; const a=currentAud(); if(!a || !inp.files[0]) return;
+    const key=inp.dataset.audFile, old=a[key]; audBusy=true; toast('Uploading…');
+    try{ const up=await uploadToStorage(inp.files[0]); audBusy=false; if(await updateAud(a.id, {[key]:up}, true)){ toast('File uploaded'); if(old&&old.path) deleteStorageFile(old.path); } }
+    catch(err){ console.error(err); toast('Upload failed'); } finally{ audBusy=false; renderAudDrawer(); }
+  });
+  $('audTrashBtn').addEventListener('click', openAudTrash);
+  $('audTrashClose').addEventListener('click', closeAudTrash);
+  $('audTrashOverlay').addEventListener('click', closeAudTrash);
+  $('audTrashBody').addEventListener('click', async e=>{
+    const r=e.target.closest('[data-arestore]'); if(r){ const ok=await updateAud(r.dataset.arestore, {deleted:false}, true); if(ok){ toast('Audit restored'); } return; }
+    const p=e.target.closest('[data-apurge]'); if(!p) return;
+    if(p.dataset.armed!=='1'){ p.dataset.armed='1'; p.textContent='Click again — permanent'; setTimeout(()=>{ p.dataset.armed='0'; p.textContent='Delete forever'; },3000); return; }
+    const a=auditList.find(x=>x.id===p.dataset.apurge); if(!a) return;
+    try{ for(const k of ['planFile','reportFile','checklistFile','certificateFile']) if(a[k]&&a[k].path) deleteStorageFile(a[k].path);
+      await db.collection('audits').doc(a.id).delete(); try{ await db.collection('hseLogs').doc('aud_'+a.id).delete(); }catch(_){} toast('Audit deleted permanently'); }
+    catch(err){ console.error(err); toast('Could not delete'); }
+  });
+
+  /* assurance plan */
+  $('asYear').addEventListener('change', e=>{ assuranceYear=e.target.value; assuranceEditOpen=false; renderAssuranceAll(); });
+  $('asEditBtn').addEventListener('click', ()=>{ const items=assurancePlanFor(assuranceYear)||[]; assuranceRows=items.map(x=>({...x})); assuranceEditOpen=true; renderAssuranceAll(); });
+  $('asGrid').addEventListener('click', async e=>{
+    const t=e.target.closest('button'); if(!t || !canEdit()) return;
+    if(t.id==='asLoadTemplate'){ const now=new Date(), from = Number(assuranceYear)===now.getFullYear() ? now.getMonth()+1 : 1; await saveAssurance(ASSURANCE_TEMPLATE.map(x=>({...x, months:x.months.filter(m=>m>=from), done:{}}))); if(from>1) toast(`Plan starts from ${MONTHS_SHORT[from-1]} — click any earlier month to add it`); renderAssuranceAll(); return; }
+    if(t.id==='asCopyPrev'){ const prev=assurancePlanFor(String(Number(assuranceYear)-1))||[]; await saveAssurance(prev.map(x=>({...x, months:(x.months||[]).slice(), done:{}}))); renderAssuranceAll(); return; }
+    if(t.dataset.as){ const [i,m]=t.dataset.as.split(':').map(Number); const items=(assurancePlanFor(assuranceYear)||[]).map(x=>({...x, months:(x.months||[]).slice(), done:{...(x.done||{})}})); const it=items[i]; if(!it) return;
+      const c=assuranceCell(it, assuranceYear, m);
+      // cycle: not planned → planned → done (manual) → cleared
+      if(!c.planned && !c.manual){ it.months.push(m); it.months.sort((a,b)=>a-b); }
+      else if(c.planned && !c.manual){ it.done[m]=true; }
+      else { delete it.done[m]; it.months=it.months.filter(x=>x!==m); }
+      await saveAssurance(items); renderAssuranceAll(); return; }
+    if(t.id==='asAddRow'){ readAssuranceRows(); assuranceRows.push({activity:'', clause:'', owner:'', auto:'', months:[], done:{}}); renderAssuranceEditor(); return; }
+    if(t.dataset.asdel!==undefined){ readAssuranceRows(); assuranceRows.splice(Number(t.dataset.asdel),1); renderAssuranceEditor(); return; }
+    if(t.id==='asEditCancel'){ assuranceEditOpen=false; assuranceRows=null; renderAssuranceAll(); return; }
+  });
+  $('asGrid').addEventListener('submit', async e=>{
+    e.preventDefault(); if(e.target.id!=='asEditForm') return; readAssuranceRows();
+    const items=assuranceRows.filter(r=>String(r.activity||'').trim()).map(r=>({activity:r.activity.trim(), clause:r.clause||'', owner:r.owner||'', auto:r.auto||'', months:r.months||[], done:r.done||{}}));
+    if(await saveAssurance(items)){ assuranceEditOpen=false; assuranceRows=null; renderAssuranceAll(); }
+  });
+  $('asPrintBtn').addEventListener('click', downloadAssurancePdf);
 });
 
 // Register the service worker so this page can be installed as an app
