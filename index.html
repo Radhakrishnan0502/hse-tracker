@@ -668,6 +668,17 @@ body.read-only .reg-add-btn, body.read-only .reg-trash-btn, body.read-only .reg-
 .cp-dialog h2{margin:0 0 4px;}
 #cpOverlay{z-index:110;}
 body.read-only #ckTemplatesBtn{display:none !important;}
+
+/* ---- Batch 14: workers by division ---- */
+.auth-card h2{margin-bottom:18px; letter-spacing:.08em;}
+.div-strip{display:flex; flex-wrap:wrap; gap:8px; margin:-4px 0 16px;}
+.div-chip{display:inline-flex; align-items:baseline; gap:8px; padding:8px 14px; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--ink); font-weight:700; font-size:12.5px; cursor:pointer;}
+.div-chip:hover{border-color:var(--accent);}
+.div-chip.active{background:var(--accent); border-color:var(--accent); color:var(--accent-ink,#03121f);}
+.div-chip-l{text-transform:uppercase; letter-spacing:.05em;}
+.div-chip-n{font-family:var(--mono, ui-monospace, monospace); font-size:15px; font-weight:800;}
+.div-chip-s{font-size:11px; font-weight:600; opacity:.75;}
+.div-chip-warn{border-color:var(--warn,#f5a524); color:var(--warn,#f5a524); cursor:default;}
 </style>
 </head>
 <body class="auth-open">
@@ -676,9 +687,7 @@ body.read-only #ckTemplatesBtn{display:none !important;}
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card">
     <img src="logo.png" alt="Burhan Oil & Trade Services" class="brand-logo-sm" style="height:58px;">
-    <div class="auth-co">Burhan Oil &amp; Trade Services</div>
-    <h2>HSE Tracker</h2>
-    <p class="auth-tag">Think safe · Work safe · Home safe</p>
+    <h2>HSE TRACKER</h2>
     <form id="loginForm">
       <div class="form-grid">
         <label>Email<input type="email" id="loginEmail" required autocomplete="username"></label>
@@ -687,7 +696,7 @@ body.read-only #ckTemplatesBtn{display:none !important;}
       <div id="authError" class="auth-error" hidden></div>
       <button type="submit" class="btn-signin">Sign in</button>
     </form>
-    <p class="auth-foot">Authorised Burhan HSE users only</p>
+    <p class="auth-foot">Authorised Burhan staff only</p>
   </div>
 </div>
 
@@ -750,6 +759,7 @@ body.read-only #ckTemplatesBtn{display:none !important;}
 
       <div id="workforceRegisterPane">
       <div class="tiles" id="tiles"></div>
+      <div class="div-strip" id="divStrip" aria-label="Workers by division"></div>
 
       <div class="panel" id="addWorkerPanel" hidden>
         <h3>Add a worker</h3>
@@ -5439,7 +5449,7 @@ function renderTiles(){
   for(const w of list){ for(const v of (w.violations||[])){ const d=daysUntil(v.date); if(d!==null && -d<=90){ vio90++; if(v.severity==='Critical') vioCrit++; } } }
 
   const tiles=[
-    {label:'Workforce', num:total, cls:'', sub:`${active} active`, cat:'--cat-1', icon:ic('users')},
+    {label:'Workforce', num:total, cls:'', sub:`${active} active${total-active?` · ${total-active} inactive`:''}`, cat:'--cat-1', icon:ic('users')},
     {label:'Civil ID', num:civExpired, cls:civExpired?'danger':(civExpiring?'warn':'ok'), sub:`${civExpiring} expiring soon`, cat:'--cat-2', icon:ic('idcard')},
     {label:'Induction', num:ind.expired+ind.missing, cls:(ind.expired+ind.missing)?'danger':'ok', sub:`${ind.expiring} expiring soon · ${ind.missing} not inducted`, cat:'--cat-3', icon:ic('clipboard')},
     {label:'Training', num:tr.expired, cls:tr.expired?'danger':'ok', sub:`${tr.expiring} expiring soon`, cat:'--cat-4', icon:ic('cap')},
@@ -5449,6 +5459,7 @@ function renderTiles(){
     {label:'Warning letters', num:totalWarnings, cls:finalWarn?'danger':(totalWarnings?'warn':''), sub:`${finalWarn} at final warning`, cat:'--cat-8', icon:ic('alert')},
     {label:'Violations (90d)', num:vio90, cls:vioCrit?'danger':(vio90?'warn':''), sub:`${vioCrit} critical`, cat:'--cat-9', icon:ic('ban')},
   ];
+  renderDivisionStrip(list);
   document.getElementById('tiles').innerHTML = tiles.map(t=>`
     <div class="tile" style="--tile-accent:var(${t.cat})">
       <div class="tile-head"><div class="tile-icon">${t.icon}</div><div class="tile-label">${t.label}</div></div>
@@ -5457,6 +5468,17 @@ function renderTiles(){
   `).join('');
 }
 
+// Head-count per division (e.g. Civil 10 · Scaffolding 8 …) — tap a division to show only its workers
+function renderDivisionStrip(list){
+  const el=document.getElementById('divStrip'); if(!el) return;
+  const legacy=[...new Set(list.map(w=>w.trade).filter(t=>t && !TRADE_CATEGORIES.includes(t)))].sort();
+  const cats=[...TRADE_CATEGORIES, ...legacy];
+  const noDiv=list.filter(w=>!w.trade).length;
+  const cur=(typeof filters!=='undefined' && filters.trade) || 'all';
+  const short=t=>t.replace(/ Division$/,'');
+  const chip=(val,label,n,inact)=>`<button type="button" class="div-chip ${cur===val?'active':''}" data-divchip="${esc(val)}"><span class="div-chip-l">${esc(label)}</span><span class="div-chip-n">${n}</span>${inact?`<span class="div-chip-s">${inact} inactive</span>`:''}</button>`;
+  el.innerHTML = chip('all','All divisions', list.length, 0) + cats.map(t=>{ const ws=list.filter(w=>w.trade===t); const inact=ws.filter(w=>(w.status||'active')==='inactive').length; return chip(t, short(t), ws.length, inact); }).join('') + (noDiv?`<span class="div-chip div-chip-warn" title="Open these workers and choose their division">${noDiv} without a division</span>`:'');
+}
 function renderTradeFilter(){
   const sel=document.getElementById('tradeFilter');
   // Fixed division list first, then any older free-text trades still on file (so those workers can still be filtered)
@@ -8074,7 +8096,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 
   document.getElementById('searchInput').addEventListener('input', e=>{ filters.q=e.target.value; renderTable(); });
-  document.getElementById('tradeFilter').addEventListener('change', e=>{ filters.trade=e.target.value; renderTable(); });
+  document.getElementById('tradeFilter').addEventListener('change', e=>{ filters.trade=e.target.value; renderTable(); renderDivisionStrip(activeWorkers()); });
+  document.getElementById('divStrip').addEventListener('click', e=>{ const b=e.target.closest('[data-divchip]'); if(!b) return; const v=b.dataset.divchip; filters.trade = (filters.trade===v && v!=='all') ? 'all' : v; const sel=document.getElementById('tradeFilter'); if(sel) sel.value=filters.trade; renderTable(); renderDivisionStrip(activeWorkers()); });
   document.getElementById('statusFilter').addEventListener('change', e=>{ filters.status=e.target.value; renderTable(); });
 
   document.getElementById('workerRows').addEventListener('click', e=>{
