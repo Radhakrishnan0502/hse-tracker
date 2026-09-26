@@ -1577,6 +1577,73 @@ const db = firebase.firestore();
 function ic(name, cls){ return `<svg class="ic${cls?' '+cls:''}" aria-hidden="true"><use href="#i-${name}"/></svg>`; }
 const storage = firebase.storage();
 
+
+
+/* ---------------- PDF helper ----------------
+   jsPDF's built-in fonts can't draw some symbols (≤ ≥ → CO₂ …) — they come out as junk. pdfDoc() swaps them for
+   plain equivalents, and shortens any single line that would run off the right edge of the page (with "…"). */
+const PDF_CHAR_MAP={'≤':'<=','≥':'>=','→':'->','←':'<-','↔':'<->','₂':'2','₃':'3','²':'2','³':'3','−':'-','✓':'v','✔':'v','✗':'x','✘':'x','⚠':'!','≈':'~','≠':'!=','\u00a0':' ','\u2009':' ','\u202f':' '};
+function pdfSafe(t){ if(Array.isArray(t)) return t.map(pdfSafe); if(typeof t!=='string') return t; return t.replace(/[≤≥→←↔₂₃²³−✓✔✗✘⚠≈≠\u00a0\u2009\u202f]/g, c=>PDF_CHAR_MAP[c]||c); }
+function pdfDoc(opts){
+  const d=new window.jspdf.jsPDF(opts);
+  const text=d.text.bind(d), split=d.splitTextToSize.bind(d);
+  d.splitTextToSize=(t,...a)=>split(pdfSafe(t),...a);
+  d.text=(t,x,y,o,...rest)=>{
+    t=pdfSafe(t);
+    try{
+      if(typeof t==='string' && typeof x==='number' && !(o && (o.align || o.maxWidth || o.angle)) && typeof d.getTextWidth==='function'){
+        const W=d.internal.pageSize.getWidth(), maxW=W-x-24;
+        if(maxW>40 && d.getTextWidth(t)>maxW){ let s=t; while(s.length>1 && d.getTextWidth(s+'…')>maxW) s=s.slice(0,-1); t=s.trimEnd()+'…'; }
+      }
+    }catch(e){}
+    return text(t,x,y,o,...rest);
+  };
+  return d;
+}
+
+/* ---------------- protect unsaved typing ----------------
+   Live updates (the other editor saving, a file finishing upload) redraw open panels. While a form inside
+   a panel has unsaved changes, that redraw is skipped; it resumes as soon as you save, cancel, switch tab or close. */
+function formDirtyIn(containerId){ return !!document.querySelector(`#${containerId} form[data-dirty="1"]`); }
+function clearDirtyForms(){ document.querySelectorAll('form[data-dirty]').forEach(f=>{ delete f.dataset.dirty; }); }
+(function(){
+  const mark=e=>{ const t=e.target; if(!t || !t.closest) return; if(t.type==='file' || t.type==='search') return; const f=t.closest('form'); if(f && f.id!=='loginForm') f.dataset.dirty='1'; };
+  document.addEventListener('input', mark, true);
+  document.addEventListener('change', mark, true);
+  document.addEventListener('submit', ()=>clearDirtyForms(), true);
+  document.addEventListener('click', e=>{ const b=e.target && e.target.closest && e.target.closest('button'); if(b && b.type!=='submit') clearDirtyForms(); }, true);
+})();
+
+
+/* ---------------- safe list saves ----------------
+   Lists inside a record (trainings, actions, findings, files…) used to be saved as a whole copy, so two editors
+   adding items at the same moment could overwrite each other. When exactly one item is added or removed, the save
+   now sends only that change (Firestore arrayUnion / arrayRemove), which merges safely with the other editor's save. */
+function fsFieldValue(){ try{ return (window.firebase && firebase.firestore && firebase.firestore.FieldValue) || null; }catch(e){ return null; } }
+function sameItem(a,b){ return a===b || JSON.stringify(a)===JSON.stringify(b); }
+function arrayDelta(oldArr, newArr){
+  if(!Array.isArray(oldArr) || !Array.isArray(newArr)) return null;
+  if(newArr.length===oldArr.length+1 && oldArr.every((x,i)=>sameItem(x, newArr[i]))) return {add:newArr[newArr.length-1]};
+  if(newArr.length===oldArr.length-1){
+    let skip=-1;
+    for(let i=0;i<oldArr.length;i++){ const j = skip<0 ? i : i-1; if(skip<0 && !sameItem(oldArr[i], newArr[i])){ skip=i; continue; } if(skip>=0 && !sameItem(oldArr[i], newArr[j])) return null; }
+    if(skip<0) skip=oldArr.length-1;
+    return {remove:oldArr[skip]};
+  }
+  return null;
+}
+function deltaize(current, data){
+  const FV=fsFieldValue(); if(!FV || !current) return data;
+  const out={...data};
+  for(const [k,v] of Object.entries(data)){
+    if(!Array.isArray(v) || !Array.isArray(current[k])) continue;
+    const d=arrayDelta(current[k], v);
+    if(d && d.add!==undefined) out[k]=FV.arrayUnion(d.add);
+    else if(d && d.remove!==undefined) out[k]=FV.arrayRemove(d.remove);
+  }
+  return out;
+}
+
 /* ---------------- change history: every add / update / set / delete is written to activityLog ---------------- */
 const LOG_COLLECTION_LABELS = {workers:'Workforce', vehicles:'Fleet', siteEquipment:'Projects', equipment:'Plant & Equipment', hseLogs:'Monthly Report', qhseDocs:'QHSE Library', settings:'Settings', incidents:'Incident Register', audits:'Audits', objectives:'Objectives', safetyAlerts:'Safety Alerts', legalReqs:'Legal Register', meetings:'Meetings', subcontractors:'Subcontractors', hira:'Risk Register', moc:'Management of Change', observations:'Observations', heatLogs:'Heat Stress', inspections:'Inspections'};
 const LOG_IGNORE_KEYS = new Set(['updatedAt','updatedBy','createdAt','createdBy']);
@@ -1603,7 +1670,10 @@ function logChanges(before, data){
     if(LOG_IGNORE_KEYS.has(k)) continue;
     const o=before?before[k]:undefined;
     if(JSON.stringify(o)===JSON.stringify(v)) continue;
-    if(Array.isArray(v) || Array.isArray(o)){ const a=(o||[]).length, b=(v||[]).length; out.push(a===b?`${k}: edited`:`${k}: ${a} → ${b} items`); }
+    const fvName = v && typeof v==='object' && !Array.isArray(v) ? String(v._methodName || (v._delegate&&v._delegate._methodName) || '') : '';
+    if(/arrayUnion/.test(fvName)) out.push(`${k}: item added`);
+    else if(/arrayRemove/.test(fvName)) out.push(`${k}: item removed`);
+    else if(Array.isArray(v) || Array.isArray(o)){ const a=(o||[]).length, b=(v||[]).length; out.push(a===b?`${k}: edited`:`${k}: ${a} → ${b} items`); }
     else if(v && typeof v==='object') out.push(`${k}: ${v.url||v.name?'file updated':'updated'}`);
     else out.push(`${k}: ${logShort(o)} → ${logShort(v)}`);
     if(out.length>=15) break;
@@ -1972,7 +2042,7 @@ let siteEquipmentList=[];
 let activeSiteId=null, activeSiteTab='profile', editingSiteRecordId=null, siteAddFormOpen=false;
 let siteFilters={q:'', division:'all', status:'all'};
 let sitePickerOpen=null, sitePickerQuery='';
-let siteStatsMonth=new Date().toISOString().slice(0,7);   // 'team' | 'vehicles' | null
+let siteStatsMonth=localToday().slice(0,7);   // 'team' | 'vehicles' | null
 let unsubscribeSiteEquipment=null;
 
 function activeSites(){ return siteEquipmentList.filter(s=>!s.deleted); }
@@ -2410,6 +2480,7 @@ function renderLibDrawer(){
   const d=currentLibDoc();
   if(!d || d.deleted){ closeLibDrawer(); return; }
   if(libBusy) return;   // don't wipe a half-finished form while a file is uploading
+  if(formDirtyIn('libDrawerBody')) return;
   document.getElementById('libDrawerName').textContent = libTitle(d);
   document.getElementById('libDrawerSub').textContent = `${d.docType||'Document'} · Rev ${d.revision||'—'}`;
   document.getElementById('libDrawerBody').innerHTML = libDrawerBodyHtml(d);
@@ -2491,7 +2562,7 @@ function renderLibTrashBody(){
     </div>`).join('') : '<p class="wsub">Nothing in the trash.</p>';
 }
 async function updateLib(id, data, quiet){
-  try{ await db.collection('qhseDocs').doc(id).update(stamp(data)); if(!quiet) toast('Saved'); return true; }
+  try{ await db.collection('qhseDocs').doc(id).update(stamp(deltaize(libDocs.find(x=>x.id===id), data))); if(!quiet) toast('Saved'); return true; }
   catch(e){ console.error(e); toast('Could not save — '+((e&&e.code)||'error')); return false; }
 }
 function readLibForm(form, attr){
@@ -2581,7 +2652,7 @@ async function syncIncidentToReport(i){
   const site=siteEquipmentList.find(s=>s.id===i.projectId);
   const cat=incReportCategory(i), sev=sevNum(i.actualSeverity)||1;
   const text=`${i.incNo||''} — ${String(i.description||'').slice(0,140)}`;
-  const data={category:cat, date:i.date||'', division:(site && site.division) || i.division || 'Civil', projectId:i.projectId||null,
+  const data={category:cat, date:i.date||'', division:(site && site.division) || i.division || 'Office staff', projectId:i.projectId||null,
     description:text, actionTaken:i.immediateActions||'', source:'incident', sourceIncidentId:i.id};
   if(cat==='lti') data.daysLost=incDaysLost(i);
   if(cat==='incident' || cat==='vehicleIncident') data.severity = sev>=4?'Critical':sev>=3?'Major':'Minor';
@@ -2594,7 +2665,7 @@ async function syncIncidentToReport(i){
 async function removeIncidentFromReport(id){ try{ await db.collection('hseLogs').doc('inc_'+id).delete(); }catch(e){} }
 async function updateInc(id, data, quiet){
   try{
-    await db.collection('incidents').doc(id).update(stamp(data));
+    await db.collection('incidents').doc(id).update(stamp(deltaize(incidentList.find(x=>x.id===id), data)));
     if(!quiet) toast('Saved');
     const merged={...(incidentList.find(x=>x.id===id)||{}), ...data, id};
     if(!merged.deleted) syncIncidentToReport(merged);
@@ -2716,7 +2787,7 @@ function openIncDrawer(id, tab){
 function closeIncDrawer(){ activeIncId=null; document.getElementById('incDrawerOverlay').hidden=true; document.getElementById('incDrawer').hidden=true; }
 function renderIncDrawer(){
   const i=currentInc(); if(!i || i.deleted){ closeIncDrawer(); return; }
-  if(incBusy) return;
+  if(incBusy || formDirtyIn('incDrawerBody')) return;
   document.getElementById('incDrawerName').textContent=i.incNo||'Incident';
   document.getElementById('incDrawerSub').textContent=[i.type, i.date, i.projectId?projectName(i.projectId):'no project'].filter(Boolean).join(' · ');
   document.getElementById('incDrawerTabs').innerHTML=INC_TABS.map(t=>{
@@ -2924,7 +2995,7 @@ function renderIncTrashBody(){
 
 /* ---------- incident report PDF ---------- */
 function buildIncidentPdf(i){
-  const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'pt', format:'a4'});
+  const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4'});
   const M=40, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight(); let y=48;
   const ensure=h=>{ if(y+h>H-40){ doc.addPage(); y=48; } };
   const h2=t=>{ ensure(28); y+=6; doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(200,16,46); doc.text(t.toUpperCase(), M, y); y+=5; doc.setDrawColor(215); doc.line(M,y,W-M,y); y+=14; doc.setTextColor(20,20,20); };
@@ -3012,18 +3083,30 @@ function trainingCompliancePct(){
   for(const w of activeWorkers().filter(w=>(w.status||'active')==='active')) for(const t of reqs){ if(!(t.divisions||[]).includes(w.trade)) continue; need++; const st=trainingStatusFor(w,t.name).status; if(st==='valid'||st==='expiring') ok++; }
   return need ? Math.round(ok*100/need) : null;
 }
-function targetActuals(year){
-  const m=computeReportMetrics(reportEntriesFor('all', year, 'all'));
-  const now=new Date(), months = Number(year)===now.getFullYear() ? now.getMonth()+1 : (Number(year)<now.getFullYear()?12:0);
-  const per=n=>months ? n/months : null;
-  const acts=allCorrectiveActions().filter(a=>a.targetDate && String(a.targetDate).startsWith(year));
+// How much of the year has passed (for averages and pro-rata targets). The month in progress counts only
+// for the days elapsed, so early in a month the figures aren't unfairly "behind". upto = 'YYYY-MM' to stop at a month.
+function kpiMonthsElapsed(year, upto){
+  const now=new Date(), cy=now.getFullYear(), Y=Number(year);
+  if(Y>cy) return 0;
+  const curKey=`${cy}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  if(upto && upto<curKey) return Number(upto.slice(5,7));
+  if(Y<cy) return 12;
+  const dim=new Date(cy, now.getMonth()+1, 0).getDate();
+  return now.getMonth() + now.getDate()/dim;
+}
+function targetActuals(year, upto){
+  const m=computeReportMetrics(reportEntriesFor('all', year, 'all').filter(e=>!upto || entryMonth(e)<=upto));
+  const months=kpiMonthsElapsed(year, upto);
+  const per=n=>months ? n/Math.max(1, months) : null;
+  const uptoEnd = upto ? upto+'-31' : '9999';
+  const acts=allCorrectiveActions().filter(a=>a.targetDate && String(a.targetDate).startsWith(year) && a.targetDate<=uptoEnd);
   const closedOnTime=acts.filter(a=>a.status==='Closed' && a.closedDate && a.closedDate<=a.targetDate).length;
   const judged=acts.filter(a=>a.status==='Closed' || daysUntil(a.targetDate)<0).length;
   return {
     lti:m.lti, ltif: m.manHours ? m.lti*1e6/m.manHours : null, trcf: m.manHours ? (m.lti+m.mti)*1e6/m.manHours : null,
     training:trainingCompliancePct(), tbtPerMonth:per(m.tbt), inspPerMonth:per(m.siteVisit+m.internalAudit+m.vehicleInspection),
     nearMiss:m.nearMiss, drills:m.mockDrill, capaOnTime: judged ? Math.round(closedOnTime*100/judged) : null, _months:months,
-    ...extraKpiActuals(year, m),
+    ...extraKpiActuals(year, m, upto),
   };
 }
 function targetStatus(def, actual, target, months){
@@ -3053,6 +3136,7 @@ function targetsPanelHtml(year){
 }
 function renderTargetsPanel(){
   const el=document.getElementById('ccTargets'); if(!el) return;
+  if(formDirtyIn('ccTargets')) return;
   const year = reportPeriod==='year' ? reportYear : String(reportMonth).slice(0,4);
   document.getElementById('ccTargetsYear').textContent = `${year} · company-wide, year to date`;
   el.innerHTML = targetsPanelHtml(year);
@@ -3093,7 +3177,7 @@ async function syncAuditToReport(a){
   catch(e){ console.error('audit sync failed', e); }
 }
 async function updateAud(id, data, quiet){
-  try{ await db.collection('audits').doc(id).update(stamp(data)); if(!quiet) toast('Saved'); syncAuditToReport({...(auditList.find(x=>x.id===id)||{}), ...data, id}); return true; }
+  try{ await db.collection('audits').doc(id).update(stamp(deltaize(auditList.find(x=>x.id===id), data))); if(!quiet) toast('Saved'); syncAuditToReport({...(auditList.find(x=>x.id===id)||{}), ...data, id}); return true; }
   catch(e){ console.error(e); toast('Could not save — '+((e&&e.code)||'error')); return false; }
 }
 function startAuditData(){
@@ -3202,7 +3286,7 @@ const AUD_TABS=[{key:'plan',label:'Plan & team'},{key:'findings',label:'Findings
 function openAudDrawer(id, tab){ raiseDrawer('audDrawerOverlay','audDrawer'); activeAudId=id; activeAudTab=tab||'plan'; audEditFinding=null; audFindingFormOpen=false; document.getElementById('audDrawerOverlay').hidden=false; document.getElementById('audDrawer').hidden=false; renderAudDrawer(); }
 function closeAudDrawer(){ activeAudId=null; document.getElementById('audDrawerOverlay').hidden=true; document.getElementById('audDrawer').hidden=true; }
 function renderAudDrawer(){
-  const a=currentAud(); if(!a || a.deleted){ closeAudDrawer(); return; } if(audBusy) return;
+  const a=currentAud(); if(!a || a.deleted){ closeAudDrawer(); return; } if(audBusy || formDirtyIn('audDrawerBody')) return;
   document.getElementById('audDrawerName').textContent=a.auditNo||'Audit';
   document.getElementById('audDrawerSub').textContent=[a.auditType, a.startDate, a.auditingBody].filter(Boolean).join(' · ');
   const c=findingCounts(a);
@@ -3255,7 +3339,7 @@ function openAudTrash(){ document.getElementById('audTrashOverlay').hidden=false
 function closeAudTrash(){ document.getElementById('audTrashOverlay').hidden=true; document.getElementById('audTrashDrawer').hidden=true; }
 function renderAudTrashBody(){ const list=deletedAudits(); document.getElementById('audTrashBody').innerHTML = list.length?list.map(a=>`<div class="record-card"><div class="record-card-top"><div class="record-card-title">${esc((a.auditNo||'')+' · '+(a.title||''))}</div><div class="record-card-actions"><button type="button" class="btn btn-sm" data-arestore="${a.id}">Restore</button><button type="button" class="btn btn-danger btn-sm" data-apurge="${a.id}" data-armed="0">Delete forever</button></div></div></div>`).join(''):'<p class="wsub">Nothing in the trash.</p>'; }
 function buildAuditPdf(a){
-  const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'pt', format:'a4'});
+  const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4'});
   const M=40, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight(); let y=48;
   const ensure=h=>{ if(y+h>H-40){ doc.addPage(); y=48; } };
   const h2=t=>{ ensure(28); y+=6; doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(200,16,46); doc.text(t.toUpperCase(), M, y); y+=5; doc.setDrawColor(215); doc.line(M,y,W-M,y); y+=14; doc.setTextColor(20,20,20); };
@@ -3345,7 +3429,7 @@ function assuranceEvidence(item, y, m){
   if(item.auto==='subcon:eval') return regActive('subcons').reduce((n,r)=>n+(r.evaluations||[]).filter(x=>String(x.date||'').startsWith(key)).length,0);
   if(item.auto==='inspection:done') return regActive('insp').filter(r=>String(r.date||'').startsWith(key)).length;
   if(item.auto==='heat:logged') return regActive('heat').filter(r=>String(r.date||'').startsWith(key)).length;
-  if(item.auto==='hira:reviewed') return regActive('hira').filter(r=>String(r.updatedAt||r.createdAt||'').startsWith(key)).length;
+  if(item.auto==='hira:reviewed') return regActive('hira').filter(r=>isoToLocalDate(r.updatedAt||r.createdAt||'').startsWith(key)).length;
   if(item.auto==='alert:issued') return regActive('alerts').filter(r=>r.status!=='Draft' && String(r.issueDate||'').startsWith(key)).length;
   return 0;
 }
@@ -3364,7 +3448,7 @@ function assuranceStats(items, y){
 function renderAssuranceAll(){
   const grid=document.getElementById('asGrid'); if(!grid || !auth.currentUser) return;
   const ysel=document.getElementById('asYear'); const cy=new Date().getFullYear();
-  const years=new Set([String(cy-1), String(cy), String(cy+1), ...Object.keys(appAssurance)]); ysel.innerHTML=[...years].sort().map(y=>`<option value="${y}">${y}</option>`).join(''); ysel.value=assuranceYear;
+  const years=new Set([String(cy-1), String(cy), String(cy+1), ...Object.keys(appAssurance).filter(k=>/^\d{4}$/.test(k))]); ysel.innerHTML=[...years].sort().map(y=>`<option value="${y}">${y}</option>`).join(''); ysel.value=assuranceYear;
   const items=assurancePlanFor(assuranceYear);
   document.getElementById('asEditBtn').hidden=!canEdit() || assuranceEditOpen || !items;
   const tiles=document.getElementById('asTiles');
@@ -3394,6 +3478,7 @@ function renderAssuranceAll(){
     <div class="as-legend"><span><i class="as-c as-planned">P</i> planned</span><span><i class="as-c as-due">P</i> due this month</span><span><i class="as-c as-done">${ic('check')}</i> done</span><span><i class="as-c as-overdue">${ic('close')}</i> overdue</span><span><i class="as-c as-extra">${ic('check')}</i> done, not planned</span>${canEdit()?'<span class="wsub">Click a month: plan → done → clear.</span>':''}</div>`;
 }
 function renderAssuranceEditor(){
+  if(formDirtyIn('asGrid')) return;
   const rows=assuranceRows;
   document.getElementById('asGrid').innerHTML = `<form id="asEditForm"><div class="table-wrap"><table class="as-table as-edit"><thead><tr><th>Activity</th><th>Clause</th><th>Owner</th><th>Tracks automatically from</th><th></th></tr></thead><tbody>
     ${rows.map((r,i)=>`<tr><td><input data-asr="${i}:activity" value="${esc(r.activity)}" required></td><td><input data-asr="${i}:clause" value="${esc(r.clause||'')}" style="max-width:90px;"></td><td><input data-asr="${i}:owner" value="${esc(r.owner||'')}"></td>
@@ -3408,7 +3493,7 @@ function downloadAssurancePdf(){
   const items=assurancePlanFor(assuranceYear); if(!items){ toast('No plan for this year yet'); return; }
   if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
   try{
-    const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'pt', format:'a4', orientation:'landscape'});
+    const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4', orientation:'landscape'});
     const M=30, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
     const colA=210, colC=50, colO=80, mw=(W-2*M-colA-colC-colO-40)/12; let y=40;
     doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Burhan Oil & Trade Services', M, y); doc.setFontSize(15); doc.text(`HSE Assurance Plan ${assuranceYear}`, M, y+20);
@@ -3489,7 +3574,7 @@ function startRegData(){
 }
 function stopRegData(){ for(const key of Object.keys(regState)){ const st=regState[key]; if(st.unsub){ st.unsub(); st.unsub=null; } st.list=[]; } }
 async function regUpdate(key, id, data, quiet){
-  try{ await db.collection(REG[key].collection).doc(id).update(stamp(data)); if(!quiet) toast('Saved'); if(REG[key].afterSave) REG[key].afterSave({...(regState[key].list.find(x=>x.id===id)||{}), ...data, id}); return true; }
+  try{ await db.collection(REG[key].collection).doc(id).update(stamp(deltaize(regState[key].list.find(x=>x.id===id), data))); if(!quiet) toast('Saved'); if(REG[key].afterSave) REG[key].afterSave({...(regState[key].list.find(x=>x.id===id)||{}), ...data, id}); return true; }
   catch(e){ console.error(e); toast(e&&e.code==='permission-denied'?RULES_UPDATE_MSG:'Could not save — '+((e&&e.code)||'error')); return false; }
 }
 async function regCreate(key, data, openTab){
@@ -3497,6 +3582,7 @@ async function regCreate(key, data, openTab){
   const d={deleted:false, createdAt:new Date().toISOString(), createdBy:(u&&u.email)||'', ...data};
   for(const s of Object.keys(cfg.subs||{})) if(!d[s]) d[s]=[];
   if(cfg.noField && !d[cfg.noField]) d[cfg.noField]=regNextNo(key, d[cfg.dateField||'date']);
+  if(cfg.beforeCreate) cfg.beforeCreate(d);
   try{ const ref=await db.collection(cfg.collection).add(stamp(d)); toast(`${d[cfg.noField]||cfg.singular} saved`); if(cfg.afterSave) cfg.afterSave({...d, id:ref.id}); openRegDrawer(key, ref.id, openTab); return ref.id; }
   catch(e){ console.error(e); toast(e&&e.code==='permission-denied'?RULES_UPDATE_MSG:'Could not save'); return null; }
 }
@@ -3563,7 +3649,7 @@ function openRegDrawer(key, id, tab){
 function closeRegDrawer(){ activeRegId=null; document.getElementById('regDrawerOverlay').hidden=true; document.getElementById('regDrawer').hidden=true; }
 function regTabsFor(cfg, r){ return cfg.tabs.filter(t=>!t.showIf || t.showIf(r)).concat(cfg.files||cfg.multiFiles?[{key:'files', label:'Files'}]:[]).concat([{key:'history', label:'History'}]); }
 function renderRegDrawer(){
-  const r=regCurrent(), cfg=REG[activeReg]; if(!r || r.deleted){ closeRegDrawer(); return; } if(regBusy) return;
+  const r=regCurrent(), cfg=REG[activeReg]; if(!r || r.deleted){ closeRegDrawer(); return; } if(regBusy || formDirtyIn('regDrawerBody')) return;
   document.getElementById('regDrawerName').textContent = r[cfg.noField] ? `${r[cfg.noField]} — ${cfg.titleOf(r)}` : cfg.titleOf(r);
   document.getElementById('regDrawerSub').textContent = cfg.subOf(r);
   const pdf=document.getElementById('regPdfBtn'); pdf.hidden=!cfg.pdf; if(cfg.pdf) pdf.innerHTML=ic('download')+' '+esc(cfg.pdfLabel||'PDF');
@@ -3640,7 +3726,6 @@ const actionSub = (label, extra)=>({label:label||'Actions', addLabel:'Add action
   title:x=>`<span>${esc(x.action||'')}</span> ${complaintBadges(x)}`, empty:'No actions yet.', ...(extra||{})});
 function divisionOptions(){ return DIVISIONS.map(d=>divLabel(d)); }
 function incidentPickOptions(){ return activeIncidents().slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).map(i=>({value:i.id, label:`${i.incNo||'Incident'} · ${i.date||''} · ${i.type||''}`})); }
-function sevNum(s){ const n=parseInt(String(s||''),10); return isNaN(n)?0:n; }
 function ratingOf(score){ return auditRating(score); }
 function yearOptions(){ const y=new Date().getFullYear(); return [String(y-1), String(y), String(y+1)]; }
 function kpiPickOptions(){ return TARGET_DEFS.map(d=>({value:d.key, label:`${d.kind==='lagging'?'Lagging':'Leading'} · ${d.label}`})); }
@@ -3805,7 +3890,7 @@ const LEGAL_STATUSES=['Compliant','Partially compliant','Non-compliant','Not eva
 const LEGAL_CATEGORIES=['Oman law / Royal Decree','Ministerial decision / regulation','Authority permit / licence','Client requirement (PDO / OQ / other)','ISO / international standard','Company requirement','Other'];
 const LEGAL_FREQ={'Monthly':1,'Quarterly':3,'6-monthly':6,'Yearly':12,'Every 2 years':24};
 function legalStatusBadge(r){ const s=r.status||'Not evaluated'; const c=s==='Compliant'?'ok':s==='Partially compliant'?'warn':s==='Non-compliant'?'danger':'muted'; const od=r.nextEvaluation && daysUntil(r.nextEvaluation)<0 && s!=='Not applicable'; return `<span class="badge ${c}">${esc(s)}</span>${od?' <span class="badge danger">Evaluation overdue</span>':''}`; }
-function addMonths(dateStr, n){ const d=new Date(String(dateStr||'').slice(0,10)+'T00:00:00Z'); if(isNaN(d)) return ''; d.setUTCMonth(d.getUTCMonth()+n); return d.toISOString().slice(0,10); }
+function addMonths(dateStr, n){ const d=new Date(String(dateStr||'').slice(0,10)+'T00:00:00Z'); if(isNaN(d)) return ''; const day=d.getUTCDate(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth()+n); const last=new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth()+1, 0)).getUTCDate(); d.setUTCDate(Math.min(day, last)); return d.toISOString().slice(0,10); }
 function legalCompliancePct(list){ const ev=(list||regActive('legal')).filter(r=>['Compliant','Partially compliant','Non-compliant'].includes(r.status)); return ev.length?Math.round(ev.filter(r=>r.status==='Compliant').length*100/ev.length):null; }
 const LEGAL_TEMPLATE=[
   {title:'Labour Law', category:LEGAL_CATEGORIES[0], authority:'Ministry of Labour', reference:'Royal Decree 53/2023', requirement:'Employment conditions, working hours, rest periods, employer duties for worker health & safety.', frequency:'Yearly'},
@@ -4011,6 +4096,7 @@ const KPI_MONTH = {   // monthly value for the scorecard grid (count-type KPIs)
 };
 function renderKpiPanel(){
   const el=document.getElementById('objectivesTop'); if(!el || !auth.currentUser) return;
+  if(formDirtyIn('objectivesTop')) return;
   const t=targetsFor(kpiYear), a=targetActuals(kpiYear), mm=kpiMonthMetrics(kpiYear);
   const now=new Date(), lastM = Number(kpiYear)===now.getFullYear() ? now.getMonth()+1 : Number(kpiYear)<now.getFullYear()?12:0;
   const years=[String(now.getFullYear()-1), String(now.getFullYear()), String(now.getFullYear()+1)];
@@ -4024,7 +4110,7 @@ function renderKpiPanel(){
     body=`<p class="wsub" style="margin:6px 0;">${canEdit()?`No KPI targets set for ${esc(kpiYear)} yet — click <strong>Set KPI targets</strong>. Suggested values are filled in for you.`:`No KPI targets set for ${esc(kpiYear)} yet.`}</p>`;
   } else {
     const row=d=>{ const act=a[d.key], tgt=t[d.key], st=targetStatus(d, act, tgt===''||tgt===undefined?null:Number(tgt), a._months); const mf=KPI_MONTH[d.key];
-      const cells=MONTHS_SHORT.map((_,n)=>{ if(!mf || n+1>lastM) return '<td class="kpi-m"></td>'; const v=mf(mm[n], kpiYear, n+1); const bad = d.type==='max' ? v>0 && (d.key==='lti'||d.key==='mti'||d.key==='vehicleInc'||d.key==='heatCases') : (!d.annual && tgt!==undefined && tgt!=='' && v<Number(tgt)); return `<td class="kpi-m ${v?'':'kpi-zero'} ${bad?'kpi-bad':''}">${v}</td>`; }).join('');
+      const cells=MONTHS_SHORT.map((_,n)=>{ if(!mf || n+1>lastM) return '<td class="kpi-m"></td>'; const v=mf(mm[n], kpiYear, n+1); const inProgress = Number(kpiYear)===new Date().getFullYear() && n===new Date().getMonth(); const bad = inProgress && d.type!=='max' ? false : d.type==='max' ? v>0 && (d.key==='lti'||d.key==='mti'||d.key==='vehicleInc'||d.key==='heatCases') : (!d.annual && tgt!==undefined && tgt!=='' && v<Number(tgt)); return `<td class="kpi-m ${v?'':'kpi-zero'} ${bad?'kpi-bad':''}">${v}</td>`; }).join('');
       return `<tr><td><div class="wname">${esc(d.label)}</div></td><td class="mono">${d.type==='max'?'≤':'≥'} ${fmtTarget(d, tgt)}</td>${cells}<td class="mono"><strong>${fmtTarget(d, act)}</strong></td><td><span class="badge ${st.cls}">${st.t}</span></td></tr>`; };
     body=`<div class="table-wrap"><table class="kpi-table"><thead><tr><th>KPI</th><th>Target</th>${MONTHS_SHORT.map(m=>`<th class="kpi-m">${m}</th>`).join('')}<th>YTD</th><th>Status</th></tr></thead><tbody>
       <tr class="kpi-group"><td colspan="16">Lagging KPIs — outcomes</td></tr>${TARGET_DEFS.filter(d=>d.kind==='lagging').map(row).join('')}
@@ -4040,7 +4126,7 @@ function downloadKpiPdf(){
   const t=targetsFor(kpiYear); if(!t){ toast('Set KPI targets first'); return; }
   if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
   try{
-    const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'pt', format:'a4', orientation:'landscape'}); const M=30, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
+    const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4', orientation:'landscape'}); const M=30, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
     const a=targetActuals(kpiYear), mm=kpiMonthMetrics(kpiYear), now=new Date(), lastM=Number(kpiYear)===now.getFullYear()?now.getMonth()+1:Number(kpiYear)<now.getFullYear()?12:0;
     doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Burhan Oil & Trade Services', M, 36); doc.setFontSize(15); doc.text(`HSE KPI Scorecard ${kpiYear}`, M, 56);
     doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(110); doc.text(`Year to date · printed ${localToday()}`, M, 70); doc.setTextColor(20);
@@ -4061,17 +4147,17 @@ function downloadKpiPdf(){
     doc.save(`HSE_KPI_Scorecard_${kpiYear}.pdf`); toast('KPI scorecard downloaded');
   }catch(e){ console.error(e); toast('Could not generate the PDF'); }
 }
-function extraKpiActuals(year, m){
-  const now=new Date(), months = Number(year)===now.getFullYear() ? now.getMonth()+1 : (Number(year)<now.getFullYear()?12:0);
-  const inY=d=>String(d||'').startsWith(year);
+function extraKpiActuals(year, m, upto){
+  const months=kpiMonthsElapsed(year, upto);
+  const inY=d=>String(d||'').startsWith(year) && (!upto || String(d).slice(0,7)<=upto);
   const scored=activeAudits().filter(a=>inY(a.startDate) && a.score!=='' && a.score!=null && !isNaN(Number(a.score)));
   const st = assurancePlanFor(year) ? assuranceStats(assurancePlanFor(year), year) : null;
   const cov = (typeof regActive==='function' && regState.alerts) ? regActive('alerts').filter(r=>inY(r.issueDate) && r.status!=='Draft').map(alertCoverage).filter(c=>c.pct!==null) : [];
   const subs = regState.subcons ? regActive('subcons').map(subLatestEval).filter(Boolean).map(subEvalScore).filter(x=>x!==null) : [];
   return {
     mti:m.mti, fac:m.fac, vehicleInc:m.vehicleIncident, incidents:m.incident, daysLost:m.ltiDaysLost,
-    complaints: complaintsFor('all', year, 'all').length,
-    obsPerMonth: months ? m.hseObservation/months : null, mgmtVisits:m.siteVisit,
+    complaints: complaintsFor('all', year, 'all').filter(c=>!upto || String(c.date||'').slice(0,7)<=upto).length,
+    obsPerMonth: months ? m.hseObservation/Math.max(1, months) : null, mgmtVisits:m.siteVisit,
     auditScore: scored.length ? Math.round(scored.reduce((n,a)=>n+Number(a.score),0)/scored.length) : null,
     internalAudits: activeAudits().filter(a=>inY(a.startDate) && auditParty(a.auditType)==='internal' && a.status!=='Planned').length,
     assurance: st ? st.pct : null,
@@ -4079,7 +4165,7 @@ function extraKpiActuals(year, m){
     alertBriefing: cov.length ? Math.round(cov.reduce((n,c)=>n+c.pct,0)/cov.length) : null,
     committee: regState.meetings ? regActive('meetings').filter(r=>r.type===MEETING_TYPES[0] && inY(r.date) && r.status!=='Scheduled').length : 0,
     subconScore: subs.length ? Math.round(subs.reduce((a,b)=>a+b,0)/subs.length) : null,
-    checklists: regState.insp && months ? regActive('insp').filter(r=>inY(r.date)).length/months : null,
+    checklists: regState.insp && months ? regActive('insp').filter(r=>inY(r.date)).length/Math.max(1, months) : null,
     heatCases: regState.heat ? regActive('heat').filter(r=>inY(r.date)).reduce((n,r)=>n+(Number(r.cases)||0),0) : 0,
   };
 }
@@ -4089,16 +4175,16 @@ let actFilters={src:'all', status:'open', owner:'all', q:''};
 const ACT_SOURCES=[{key:'incident',label:'Incidents'},{key:'audit',label:'Audit findings'},{key:'project',label:'Project actions'},{key:'complaint',label:'Client complaints'},{key:'meeting',label:'Meetings'},{key:'legal',label:'Legal gaps'},{key:'alert',label:'Safety alerts'},{key:'objective',label:'Objectives'},{key:'obs',label:'Observations'},{key:'insp',label:'Inspections'},{key:'hira',label:'Risk register'},{key:'moc',label:'Change (MOC)'},{key:'heat',label:'Heat stress'}];
 function collectAllActions(){
   const out=[];
-  for(const i of activeIncidents()) for(const a of (i.capa||[])) out.push({src:'incident', ref:i.incNo||'Incident', where:i.projectId?projectName(i.projectId):(i.location||''), text:a.action, owner:a.owner, targetDate:a.targetDate, status:a.status||'Open', closedDate:a.closedDate, open:()=>{ document.querySelector('.sidenav-btn[data-section="incidents"]').click(); openIncDrawer(i.id,'actions'); }});
-  for(const au of activeAudits()) for(const f of (au.findings||[])) if(isActionFinding(f)) out.push({src:'audit', ref:`${au.auditNo||'Audit'} ${f.no||''}`, where:au.auditingBody||'', text:f.correctiveAction||f.description, owner:f.owner, targetDate:f.targetDate, status:f.status||'Open', closedDate:f.closedDate, tag:f.category, open:()=>{ document.querySelector('.sidenav-btn[data-section="audits"]').click(); openAudDrawer(au.id,'findings'); }});
+  for(const i of activeIncidents()) for(const a of (i.capa||[])) out.push({src:'incident', projectId:i.projectId||'', ref:i.incNo||'Incident', where:i.projectId?projectName(i.projectId):(i.location||''), text:a.action, owner:a.owner, targetDate:a.targetDate, status:a.status||'Open', closedDate:a.closedDate, open:()=>{ document.querySelector('.sidenav-btn[data-section="incidents"]').click(); openIncDrawer(i.id,'actions'); }});
+  for(const au of activeAudits()) for(const f of (au.findings||[])) if(isActionFinding(f)) out.push({src:'audit', projectId:au.projectId||'', ref:`${au.auditNo||'Audit'} ${f.no||''}`, where:au.auditingBody||'', text:f.correctiveAction||f.description, owner:f.owner, targetDate:f.targetDate, status:f.status||'Open', closedDate:f.closedDate, tag:f.category, open:()=>{ document.querySelector('.sidenav-btn[data-section="audits"]').click(); openAudDrawer(au.id,'findings'); }});
   for(const s of activeSites()){
-    for(const a of (s.actions||[])) out.push({src:'project', ref:s.siteName||'Project', where:a.source||'', text:a.action, owner:a.owner, targetDate:a.targetDate, status:a.status||'Open', closedDate:a.closedDate, open:()=>{ document.querySelector('.sidenav-btn[data-section="site"]').click(); openSiteDrawer(s.id); activeSiteTab='actions'; renderSiteDrawer(); }});
-    for(const c of (s.complaints||[])) out.push({src:'complaint', ref:s.siteName||'Project', where:c.raisedBy||'', text:c.correctiveAction||c.issue, owner:c.actionOwner, targetDate:c.targetDate, status:c.status||'Open', closedDate:c.closedDate, tag:c.category, open:()=>{ document.querySelector('.sidenav-btn[data-section="site"]').click(); openSiteDrawer(s.id); activeSiteTab='complaints'; renderSiteDrawer(); }});
+    for(const a of (s.actions||[])) out.push({src:'project', projectId:s.id, ref:s.siteName||'Project', where:a.source||'', text:a.action, owner:a.owner, targetDate:a.targetDate, status:a.status||'Open', closedDate:a.closedDate, open:()=>{ document.querySelector('.sidenav-btn[data-section="site"]').click(); openSiteDrawer(s.id); activeSiteTab='actions'; renderSiteDrawer(); }});
+    for(const c of (s.complaints||[])) out.push({src:'complaint', projectId:s.id, ref:s.siteName||'Project', where:c.raisedBy||'', text:c.correctiveAction||c.issue, owner:c.actionOwner, targetDate:c.targetDate, status:c.status||'Open', closedDate:c.closedDate, tag:c.category, open:()=>{ document.querySelector('.sidenav-btn[data-section="site"]').click(); openSiteDrawer(s.id); activeSiteTab='complaints'; renderSiteDrawer(); }});
   }
   const regSrc={meetings:'meeting', legal:'legal', alerts:'alert', objectives:'objective', obs:'obs', insp:'insp', hira:'hira', moc:'moc', heat:'heat'};
-  if(REG.obs) for(const r of regActive('obs')) if(r.obsType!=='Positive' && (r.owner||r.targetDate)) out.push({src:'obs', ref:r.obsNo||'Observation', where:[r.category, r.projectId?projectName(r.projectId):r.location].filter(Boolean).join(' · '), text:r.description, owner:r.owner, targetDate:r.targetDate, status:r.status||'Open', closedDate:r.closedDate, tag:r.obsType, open:()=>openRegDrawer('obs', r.id)});
+  if(REG.obs) for(const r of regActive('obs')) if(r.obsType!=='Positive' && (r.owner||r.targetDate)) out.push({src:'obs', projectId:r.projectId||'', ref:r.obsNo||'Observation', where:[r.category, r.projectId?projectName(r.projectId):r.location].filter(Boolean).join(' · '), text:r.description, owner:r.owner, targetDate:r.targetDate, status:r.status||'Open', closedDate:r.closedDate, tag:r.obsType, open:()=>openRegDrawer('obs', r.id)});
   for(const [k,src] of Object.entries(regSrc)){ const cfg=REG[k]; if(!cfg) continue;
-    for(const r of regActive(k)) for(const [sk,sc] of Object.entries(cfg.subs||{})) if(sc.isAction) for(const x of (r[sk]||[])) out.push({src, ref:r[cfg.noField]||cfg.singular, where:cfg.titleOf(r), text:x.action, owner:x.owner, targetDate:x.targetDate, status:x.status||'Open', closedDate:x.closedDate, open:()=>openRegDrawer(k, r.id, 'sub:'+sk)}); }
+    for(const r of regActive(k)) for(const [sk,sc] of Object.entries(cfg.subs||{})) if(sc.isAction) for(const x of (r[sk]||[])) out.push({src, projectId:r.projectId||'', ref:r[cfg.noField]||cfg.singular, where:cfg.titleOf(r), text:x.action, owner:x.owner, targetDate:x.targetDate, status:x.status||'Open', closedDate:x.closedDate, open:()=>openRegDrawer(k, r.id, 'sub:'+sk)}); }
   return out;
 }
 function actMatches(a){
@@ -4141,7 +4227,7 @@ function downloadActionsPdf(){
   if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
   const list=actCache.filter(actMatches).sort((a,b)=>String(a.targetDate||'9999').localeCompare(String(b.targetDate||'9999')));
   try{
-    const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'pt', format:'a4', orientation:'landscape'}); const M=30, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
+    const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4', orientation:'landscape'}); const M=30, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
     doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Burhan Oil & Trade Services', M, 36); doc.setFontSize(15); doc.text('HSE Action Tracker', M, 56);
     doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(110); doc.text(`${list.length} actions · filter: ${actFilters.status}${actFilters.src!=='all'?' · '+actFilters.src:''} · printed ${localToday()}`, M, 70); doc.setTextColor(20);
     const cols=[{t:'Source',w:70},{t:'Reference',w:120},{t:'Action',w:300},{t:'Owner',w:100},{t:'Target',w:60},{t:'Status',w:W-2*M-650}]; let y=92;
@@ -4180,7 +4266,7 @@ async function downloadAlertPdf(r){
   if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
   try{
     toast('Preparing the alert…');
-    const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'pt', format:'a4'}); const M=34, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
+    const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4'}); const M=34, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
     const lines=t=>String(t||'').split(/\n+/).map(x=>x.replace(/^[-•*\s]+/,'').trim()).filter(Boolean);
     const logo=await fetchImageDataUrl('logo.png').catch(()=>null);
     const photos=[]; for(const p of (r.photos||[]).filter(f=>/^image\//.test(f.contentType||'')).slice(0,2)){ const d=await fetchImageDataUrl(p.url).catch(()=>null); if(d) photos.push(d); }
@@ -4420,7 +4506,7 @@ regDefine({
 });
 function renderObsTrends(){
   const el=document.getElementById('obsTop'); if(!el) return;
-  const since=new Date(); since.setDate(since.getDate()-90); const s=since.toISOString().slice(0,10);
+  const s=localDatePlus(-90);
   const list=regActive('obs').filter(r=>String(r.date||'')>=s && r.obsType!=='Positive');
   if(!list.length){ el.innerHTML=''; return; }
   const by=(f)=>{ const m={}; list.forEach(r=>{ const k=f(r)||'—'; m[k]=(m[k]||0)+1; }); return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,6); };
@@ -4540,7 +4626,8 @@ const BUILTIN_CHECKLISTS=[
 ];
 let customChecklists=[];
 function allChecklists(){ return BUILTIN_CHECKLISTS.concat(customChecklists.map(c=>({...c, group:'Custom checklists', custom:true}))); }
-function checklistOf(r){ return allChecklists().find(c=>c.key===r.template) || (r.itemsSnapshot?{key:r.template, name:r.templateName||'Checklist', items:r.itemsSnapshot}:null); }
+// An inspection keeps its own copy of the questions (itemsSnapshot), so later edits to a custom checklist never shift old answers.
+function checklistOf(r){ if(r.itemsSnapshot && r.itemsSnapshot.length) return {key:r.template, name:r.templateName||'Checklist', items:r.itemsSnapshot}; return allChecklists().find(c=>c.key===r.template) || null; }
 function inspCounts(r){ const a=r.answers||{}, v=Object.values(a); return {yes:v.filter(x=>x==='Yes').length, no:v.filter(x=>x==='No').length, na:v.filter(x=>x==='N/A').length, done:v.length}; }
 function inspResultBadge(r){ const cl=checklistOf(r), c=inspCounts(r), total=cl?cl.items.length:0; if(!c.done) return '<span class="badge muted">Not started</span>'; if(c.done<total) return `<span class="badge warn">In progress ${c.done}/${total}</span>`; return c.no?`<span class="badge danger">${c.no} defect${c.no===1?'':'s'}</span>`:'<span class="badge ok">Pass</span>'; }
 function inspChecklistHtml(r){
@@ -4589,14 +4676,15 @@ regDefine({
 });
 
 /* ---- inspections: save the checklist, raise an action for every "No" ---- */
+REG.insp.beforeCreate = d=>{ const c=allChecklists().find(x=>x.key===d.template); if(c){ d.itemsSnapshot=c.items.slice(); d.templateName=c.name; } };
 REG.insp.customSubmit = {
   checklist: async (r, form)=>{
     const cl=checklistOf(r); if(!cl) return;
     const answers={}, comments={};
     cl.items.forEach((_,n)=>{ const v=form.querySelector(`input[name="ck${n}"]:checked`); if(v) answers[n]=v.value; const c=form.querySelector(`[data-ck-comment="${n}"]`); if(c && c.value.trim()) comments[n]=c.value.trim(); });
-    const actions=(r.actions||[]).slice(), due=new Date(Date.now()+3*86400000).toISOString().slice(0,10); let added=0;
+    const actions=(r.actions||[]).slice(), due=localDatePlus(3); let added=0;
     cl.items.forEach((it,n)=>{ if(answers[n]==='No' && !actions.some(a=>a.fromItem===n)){ actions.push({id:'a'+Date.now().toString(36)+n, fromItem:n, action:`Fix: ${it}${comments[n]?' — '+comments[n]:''}${r.subject?' ('+r.subject+')':''}`, owner:r.inspector||'Site supervisor', targetDate:due, status:'Open'}); added++; } });
-    if(await regUpdate('insp', r.id, {answers, comments, actions, itemsSnapshot:cl.items, templateName:cl.name}, true)) toast(added?`Checklist saved — ${added} defect action${added===1?'':'s'} raised`:'Checklist saved');
+    if(await regUpdate('insp', r.id, {answers, comments, actions, ...(r.itemsSnapshot&&r.itemsSnapshot.length?{}:{itemsSnapshot:cl.items, templateName:cl.name})}, true)) toast(added?`Checklist saved — ${added} defect action${added===1?'':'s'} raised`:'Checklist saved');
   },
 };
 /* ---- custom checklist templates (settings/checklists) ---- */
@@ -4631,7 +4719,7 @@ function openClientPack(){
 }
 function closeClientPack(){ document.getElementById('cpOverlay').hidden=true; document.getElementById('cpDialog').hidden=true; }
 async function buildClientPack(opts){
-  const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'pt', format:'a4'}); const M=40, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
+  const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4'}); const M=40, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
   const month=opts.month, year=month.slice(0,4), proj=opts.project||'all', projLabel=proj==='all'?'All projects':projectName(proj);
   const monthName=new Date(month+'-01T00:00:00').toLocaleDateString('en-GB',{month:'long', year:'numeric'});
   const inProj=x=>proj==='all' || x.projectId===proj;
@@ -4662,18 +4750,23 @@ async function buildClientPack(opts){
   doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(255); doc.text('THINK SAFE, WORK SAFE, HOME SAFE', M, H*0.62+40);
   doc.addPage(); pg++; yy=50; doc.setTextColor(20);
   // ---- 1 statistics ----
-  const lastLti=reportEntries.filter(e=>e.category==='lti' && reportProjectMatch(e, proj)).map(e=>e.date).sort().pop();
-  const daysSince=lastLti?Math.max(0,Math.round((new Date(month+'-28')-new Date(lastLti))/86400000)):null;
+  const monthEnd=new Date(Number(year), Number(month.slice(5,7)), 0), monthEndKey=`${month}-${String(monthEnd.getDate()).padStart(2,'0')}`;
+  const refDay = monthEndKey<localToday() ? monthEndKey : localToday();
+  const lastLti=reportEntries.filter(e=>e.category==='lti' && reportProjectMatch(e, proj) && String(e.date||'')<=refDay).map(e=>e.date).sort().pop();
+  const daysSince=lastLti?Math.max(0,Math.round((new Date(refDay+'T00:00:00Z')-new Date(String(lastLti).slice(0,10)+'T00:00:00Z'))/86400000)):null;
+  const fatal=i=>i.injuryClass==='Fatality' && inProj(i) && !i.deleted;
+  const fatM=activeIncidents().filter(i=>fatal(i) && String(i.date||'').startsWith(month)).reduce((n,i)=>n+Math.max(1,(i.persons||[]).filter(p=>/fatal/i.test(p.treatment||p.injuryNature||'')).length||1),0);
+  const fatY=activeIncidents().filter(i=>fatal(i) && String(i.date||'').startsWith(year) && String(i.date)<=monthEndKey).reduce((n,i)=>n+Math.max(1,(i.persons||[]).filter(p=>/fatal/i.test(p.treatment||p.injuryNature||'')).length||1),0);
   h2('1. HSE statistics');
   table(['Indicator', monthName, `Year to date ${year}`], [
     ['Man-hours worked', m.manHours.toLocaleString(), y.manHours.toLocaleString()],
-    ['Fatalities', 0, 0],
+    ['Fatalities', fatM, fatY],
     ['Lost time injuries (LTI)', m.lti, y.lti], ['Days lost', m.ltiDaysLost, y.ltiDaysLost],
     ['Medical treatment injuries (MTI)', m.mti, y.mti], ['First aid cases (FAC)', m.fac, y.fac],
     ['Near misses reported', m.nearMiss, y.nearMiss], ['Property damage / other incidents', m.incident, y.incident], ['Vehicle incidents', m.vehicleIncident, y.vehicleIncident],
     ['LTIF (per 1,000,000 man-hours)', rate(m.lti, m.manHours), rate(y.lti, y.manHours)],
     ['TRCF (per 1,000,000 man-hours)', rate(m.lti+m.mti, m.manHours), rate(y.lti+y.mti, y.manHours)],
-    ['Days since last LTI', '', daysSince===null?'No LTI recorded':daysSince],
+    ['Days since last LTI (at month end)', '', daysSince===null?'No LTI recorded':daysSince],
   ], [270, 110, 135], {right:true});
   // ---- 2 proactive ----
   const obsM=regActive('obs').filter(r=>String(r.date||'').startsWith(month) && inProj(r)), inspM=regActive('insp').filter(r=>String(r.date||'').startsWith(month) && inProj(r));
@@ -4687,8 +4780,8 @@ async function buildClientPack(opts){
   if(obsM.length){ const t={}; obsM.forEach(r=>{ t[r.obsType]=(t[r.obsType]||0)+1; }); para(`Observations this month: ${Object.entries(t).map(([k,v])=>`${v} ${k.toLowerCase()}`).join(', ')}. Stop-work interventions: ${obsM.filter(r=>r.stopWork==='Yes').length}.`); }
   // ---- 3 KPIs ----
   const t=targetsFor(year);
-  if(t){ const a=targetActuals(year); h2('3. KPI performance (year to date)');
-    table(['KPI', 'Target', 'Actual', 'Status'], TARGET_DEFS.filter(d=>t[d.key]!==undefined && t[d.key]!=='').map(d=>{ const st=targetStatus(d, a[d.key], Number(t[d.key]), a._months); return [d.label, `${d.type==='max'?'≤':'≥'} ${fmtTarget(d,t[d.key])}`, fmtTarget(d,a[d.key]), st.t]; }), [255, 85, 85, 90]); }
+  if(t){ const a=targetActuals(year, month); h2('3. KPI performance (year to date, company-wide)');
+    table(['KPI', 'Target', 'Actual', 'Status'], TARGET_DEFS.filter(d=>t[d.key]!==undefined && t[d.key]!=='').map(d=>{ const st=targetStatus(d, a[d.key], Number(t[d.key]), a._months); return [d.label, `${d.type==='max'?'<=':'>='} ${fmtTarget(d,t[d.key])}`, fmtTarget(d,a[d.key]), st.t]; }), [255, 85, 85, 90]); }
   // ---- 4 incidents ----
   const incs=activeIncidents().filter(i=>String(i.date||'').startsWith(month) && inProj(i));
   h2(`${t?4:3}. Incidents & lessons learned`);
@@ -4710,9 +4803,9 @@ async function buildClientPack(opts){
     const ban=heatM.filter(r=>middayBanActive(r.date)), banOk=ban.filter(r=>(r.checks||[]).includes(HEAT_CHECKS[0])).length;
     para(`${heatM.length} daily heat checks recorded; ${hot} high-risk day(s); heat illness cases: ${cases}.${ban.length?` Midday work ban confirmed on ${banOk} of ${ban.length} checks (${Math.round(banOk*100/ban.length)}%).`:''}`); }
   // ---- actions ----
-  const acts=collectAllActions().filter(a=>a.status!=='Closed'); const od=acts.filter(a=>complaintOverdueDays(a));
+  const acts=collectAllActions().filter(a=>a.status!=='Closed' && (proj==='all' || a.projectId===proj)); const od=acts.filter(a=>complaintOverdueDays(a));
   h2(`${sec++}. Corrective actions`);
-  para(`Open actions: ${acts.length} · overdue: ${od.length}.`);
+  para(`Status on ${localToday()}${proj==='all'?'':' for '+projLabel}: open actions ${acts.length} · overdue ${od.length}.`);
   if(od.length) table(['Reference', 'Action', 'Owner', 'Target'], od.slice(0,25).map(a=>[a.ref, String(a.text||'').slice(0,120), a.owner||'—', a.targetDate]), [100, 250, 100, 65]);
   // ---- highlights & plan ----
   h2(`${sec++}. Highlights & concerns`); para(opts.highlights||'—');
@@ -4867,6 +4960,9 @@ function expiryCell(e){
   return `${badgeHtml(statusFor(e.expiry))} <span class="wsub mono" style="display:inline;">${esc(e.expiry)}</span>`;
 }
 function localToday(){ const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); }
+// Oman-time helpers (the device's local time) — never use UTC toISOString() for a calendar date
+function localDatePlus(days){ const d=new Date(); d.setDate(d.getDate()+days); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); }
+function isoToLocalDate(iso){ const d=new Date(iso); if(isNaN(d)) return ''; d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); }
 function equipFieldsHtml(cat, item, attr){
   // attr = the data-* attribute the submit handler reads ('data-field' or 'data-efield')
   return EQUIP_CATEGORIES[cat].fields.map(f=>{
@@ -4934,7 +5030,7 @@ let ccLastSig='';   // Command Centre: animate only when the view changes
 let unsubscribeReportEntries=null;
 let reportDivision='all';
 let reportProject='all';   // 'all' | 'none' | a project id
-let reportMonth=new Date().toISOString().slice(0,7);
+let reportMonth=localToday().slice(0,7);
 let reportPeriod='month', reportYear=String(new Date().getFullYear());        // Monthly / Yearly switch
 let siteSumPeriod='month', siteSumMonth=reportMonth, siteSumYear=reportYear;  // Project Details summary card
 let siteStatsPeriod='month', siteStatsYear=reportYear;                         // project drawer › HSE statistics
@@ -5023,13 +5119,13 @@ function computeReportMetrics(entries){
   const m={};
   for(const key of Object.keys(REPORT_CATEGORIES)) m[key]=0;
   m.trainingAttendees=0; m.tbtAttendees=0; m.ltiDaysLost=0; m.internalAuditFindings=0;
-  m.mockDrillParticipants=0; m.ppeIssuanceQty=0;
+  m.mockDrillParticipants=0; m.ppeIssuanceQty=0; m.inductionSessions=0;
   for(const e of entries){
     const cat=e.category;
     if(!REPORT_CATEGORIES[cat]) continue;
     if(cat==='manHours') m.manHours += Number(e.hours)||0;
     else if(cat==='vehicleKm') m.vehicleKm += Number(e.km)||0;
-    else if(cat==='induction') m.induction += Number(e.count)||0;
+    else if(cat==='induction'){ m.induction += Number(e.count)||0; m.inductionSessions += 1; }   // headcount for the tile, sessions for activity totals
     else {
       m[cat] += 1;
       if(cat==='training') m.trainingAttendees += Number(e.attendees)||0;
@@ -5040,7 +5136,7 @@ function computeReportMetrics(entries){
       if(cat==='ppeIssuance') m.ppeIssuanceQty += Number(e.quantity)||0;
     }
   }
-  m.proactiveTotal = ACTIVITY_DONUT_KEYS.reduce((n,k)=>n+m[k],0);
+  m.proactiveTotal = ACTIVITY_DONUT_KEYS.reduce((n,k)=>n+(k==='induction'?m.inductionSessions:m[k]),0);
   m.safetyEventsTotal = m.nearMiss + m.lti + m.incident + m.vehicleIncident;
   return m;
 }
@@ -5111,6 +5207,8 @@ function computeFlags(w){
    who signs in (e.g. the MD) gets a view-only tracker. The SAME list must be in
    the Firestore + Storage rules, which is what actually enforces it. */
 const EDITOR_EMAILS = ['burhanhse0502@gmail.com', 'hse@burhanservices.com'];
+// View-only users (e.g. the MD). Keep this list the same as the viewer list in firestore.rules and storage.rules.
+const VIEWER_EMAILS = ['sayed@burhanservices.com'];
 function canEdit(){ const u=auth.currentUser; return !!u && EDITOR_EMAILS.includes(String(u.email||'').toLowerCase()); }
 // Every save records who made it and when
 function stamp(data){ const u=auth.currentUser; return {...data, updatedBy:(u && u.email)||'', updatedAt:new Date().toISOString()}; }
@@ -5151,6 +5249,12 @@ function stopDataListeners(){
 }
 auth.onAuthStateChanged(user=>{
   if(user){
+    const em=String(user.email||'').toLowerCase();
+    if(!EDITOR_EMAILS.includes(em) && !VIEWER_EMAILS.includes(em)){
+      // Signed in, but not on the access list — don't show an empty tracker full of errors
+      const ae=document.getElementById('authError'); if(ae){ ae.textContent='This account ('+em+') does not have access to the HSE Tracker. Please ask the HSE department to add you.'; ae.hidden=false; }
+      auth.signOut(); return;
+    }
     document.getElementById('authOverlay').hidden=true;
     document.body.classList.remove('auth-open');
     document.getElementById('signOutBtn').hidden=false;
@@ -5616,6 +5720,7 @@ function renderVehicleDrawer(){
 }
 function renderVehicleDrawerBody(){
   const v=currentVehicle(); if(!v) return;
+  if(formDirtyIn('vehicleDrawerBody')) return;
   const body=document.getElementById('vehicleDrawerBody');
   if(activeVehicleTab==='profile'){ body.innerHTML=vehicleProfileTabHtml(v); return; }
   const cfg=VEHICLE_RECORD_TYPES[activeVehicleTab];
@@ -5751,8 +5856,9 @@ function emergencyGaps(s){
   if(!e.siteEmergencyNo && !e.coordinatorPhone) out.push('No site emergency number');
   if(!e.hospitalName) out.push('Nearest hospital not set');
   if(!e.musterPoint) out.push('Muster point not set');
-  if(!(e.firstAiders||[]).length) out.push('No first aider assigned');
-  if(!(e.fireWardens||[]).length) out.push('No fire warden assigned');
+  const live=ids=>(ids||[]).filter(id=>{ const w=workers.find(x=>x.id===id); return w && !w.deleted; });
+  if(!live(e.firstAiders).length) out.push('No first aider assigned');
+  if(!live(e.fireWardens).length) out.push('No fire warden assigned');
   if(!erpDocFor(s)) out.push('No Emergency Response Plan in HSE documents');
   const last=mockDrillsFor(s.id)[0];
   if(!last) out.push('No mock drill recorded');
@@ -5764,7 +5870,7 @@ function roleListHtml(ids, trainingName, roleWord){
   if(!(ids||[]).length) return `<p class="wsub">No ${roleWord} assigned yet.</p>`;
   return ids.map(id=>{
     const w=workers.find(x=>x.id===id);
-    if(!w) return `<div class="equip-line"><div class="equip-line-main"><div class="equip-line-title">Removed worker</div></div></div>`;
+    if(!w || w.deleted) return `<div class="equip-line"><div class="equip-line-main"><div class="equip-line-title">${w?esc(w.fullName||'Worker')+' — moved to Deleted workers':'Removed worker'}</div><div class="equip-line-sub">Not counted — assign someone else</div></div></div>`;
     const t=trainingStatusFor(w, trainingName);
     const badge = t.status==='valid' ? `<span class="badge ok">${esc(trainingName)} valid</span>` : t.status==='expiring' ? `<span class="badge warn">${esc(trainingName)} expiring</span>` : t.status==='expired' ? `<span class="badge danger">${esc(trainingName)} expired</span>` : `<span class="badge danger">No ${esc(trainingName)} training</span>`;
     return `<div class="equip-line" data-open-worker="${w.id}"><div class="equip-line-main"><div class="equip-line-title">${esc(w.fullName||'—')}</div><div class="wsub">${esc([w.designation, w.mobileNumber].filter(Boolean).join(' · ')||w.trade||'—')}</div></div><div class="equip-line-badges">${badge}</div></div>`;
@@ -5808,6 +5914,7 @@ function siteEmergencyTabHtml(s){
 function overdueNotice(text){ return `<div class="notice" style="background:var(--danger-bg); color:var(--danger); border-color:var(--danger);">${ic('alert')} ${text}</div>`; }
 function renderSiteDrawerBody(){
   const s=currentSite(); if(!s) return;
+  if(formDirtyIn('siteDrawerBody')) return;
   const body=document.getElementById('siteDrawerBody');
   if(activeSiteTab==='profile'){ body.innerHTML=siteProfileTabHtml(s); return; }
   if(activeSiteTab==='equipment'){ body.innerHTML=siteEquipmentTabHtml(s); return; }
@@ -6202,6 +6309,7 @@ function closeEquipDrawer(){
 function renderEquipDrawer(){
   const e=currentEquip();
   if(!e || e.deleted){ closeEquipDrawer(); return; }
+  if(formDirtyIn('equipDrawerBody')) return;
   const cat=EQUIP_CATEGORIES[e.category];
   document.getElementById('equipDrawerName').textContent = equipTitle(e);
   document.getElementById('equipDrawerSub').textContent = `${cat?cat.label:'Equipment'} · S/N ${e.serial||'—'}`;
@@ -6294,8 +6402,8 @@ function renderEquipTrashBody(){
 }
 
 async function updateEquip(id, data){
-  try{ await db.collection('equipment').doc(id).update(stamp(data)); toast('Saved'); }
-  catch(e){ console.error(e); toast('Could not save — '+(e.code||'error')); }
+  try{ await db.collection('equipment').doc(id).update(stamp(deltaize(equipmentList.find(x=>x.id===id), data))); toast('Saved'); return true; }
+  catch(e){ console.error(e); toast('Could not save — '+(e.code||'error')); return false; }
 }
 
 /* ---------------- monthly HSE report rendering ---------------- */
@@ -6550,20 +6658,8 @@ function renderCommandCentre(entries, m, key){
   }
 }
 
-function renderReportHero(m){
-  const heroes = [
-    {label:'Safe man-hours', num:m.manHours.toLocaleString()},
-    {label:'Proactive activities', num:m.proactiveTotal},
-    {label:'Safety events (NM+LTI+INC+VI)', num:m.safetyEventsTotal},
-    {label:'Vehicle KM driven', num:m.vehicleKm.toLocaleString()},
-  ];
-  document.getElementById('reportHero').innerHTML = heroes.map(h=>`
-    <div class="hero-tile"><div class="hero-num">${h.num}</div><div class="hero-label">${esc(h.label)}</div></div>
-  `).join('');
-}
-
 function renderReportDonut(m){
-  const segs = ACTIVITY_DONUT_KEYS.map(k=>({key:k, label:REPORT_CATEGORIES[k].label, value:m[k], color:REPORT_CATEGORIES[k].cat}));
+  const segs = ACTIVITY_DONUT_KEYS.map(k=>({key:k, label:REPORT_CATEGORIES[k].label, value:k==='induction'?m.inductionSessions:m[k], color:REPORT_CATEGORIES[k].cat}));
   const total = segs.reduce((n,s)=>n+s.value,0);
   document.getElementById('reportDonutTotal').textContent = total ? `${total} total` : '';
   const wrap = document.getElementById('reportDonut');
@@ -6809,7 +6905,7 @@ function closeReportEntryForm(){
 /* ---------------- monthly HSE report PDF export ---------------- */
 async function buildReportPdf(division, month, project){
   const {jsPDF} = window.jspdf;
-  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const doc = pdfDoc({unit:'pt', format:'a4'});
   const marginX=40, pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
   let y=54;
   function ensure(h){ if(y+h>pageH-36){ doc.addPage(); y=48; } }
@@ -6916,7 +7012,7 @@ async function buildReportPdf(division, month, project){
   }
 
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(150,150,150);
-  doc.text(`Generated ${new Date().toISOString().slice(0,10)} from Monthly HSE Report`, marginX, pageH-20);
+  doc.text(`Generated ${localToday()} from Monthly HSE Report`, marginX, pageH-20);
   return doc;
 }
 
@@ -6989,6 +7085,7 @@ function renderDrawer(){
 
 function renderDrawerBody(){
   const w=currentWorker(); if(!w) return;
+  if(formDirtyIn('drawerBody')) return;
   const body=document.getElementById('drawerBody');
   if(activeTab==='profile'){ body.innerHTML=profileTabHtml(w); wireSignaturePad(); return; }
   const cfg=RECORD_TYPES[activeTab];
@@ -7083,8 +7180,17 @@ async function downloadAttachment(url, filename){
     window.open(url, '_blank');
   }
 }
-async function deleteStorageFile(path){
+// Some files are shared between records (e.g. incident photos reused in a safety alert).
+// When the owning record's id is given, the file is only deleted if no OTHER record still uses it.
+function storagePathShared(path, ownerId){
+  try{
+    const pools=[workers, vehicles, siteEquipmentList, equipmentList, reportEntries, libDocs, incidentList, auditList, ...Object.values(regState).map(s=>s.list)];
+    return pools.some(list=>(list||[]).some(r=>r && r.id!==ownerId && JSON.stringify(r).includes(path)));
+  }catch(e){ return true; }   // if unsure, keep the file
+}
+async function deleteStorageFile(path, ownerId){
   if(!path) return;
+  if(ownerId && storagePathShared(path, ownerId)) return;
   try{ await storage.ref().child(path).delete(); }
   catch(e){ /* already gone or never uploaded — safe to ignore */ }
 }
@@ -7102,7 +7208,7 @@ function collectAttachmentPaths(entity, recordTypesMap, singleKeys){
 }
 async function deleteAllAttachments(entity, recordTypesMap, singleKeys){
   const paths=collectAttachmentPaths(entity, recordTypesMap, singleKeys);
-  await Promise.all(paths.map(deleteStorageFile));
+  await Promise.all(paths.map(pth=>deleteStorageFile(pth)));
 }
 
 function wireSignaturePad(){
@@ -7284,25 +7390,25 @@ function recordTabHtml(w,key,cfg){
 
 /* ---------------- writes ---------------- */
 async function updateWorker(id, data){
-  try{ await db.collection('workers').doc(id).update(stamp(data)); toast('Saved'); }
-  catch(e){ console.error(e); toast('Could not save — '+(e.code||'error')); }
+  try{ await db.collection('workers').doc(id).update(stamp(deltaize(workers.find(x=>x.id===id), data))); toast('Saved'); return true; }
+  catch(e){ console.error(e); toast('Could not save — '+(e.code||'error')); return false; }
 }
 async function updateWorkerArray(worker,key,arr){
-  await updateWorker(worker.id, {[key]:arr});
+  return updateWorker(worker.id, {[key]:arr});
 }
 async function updateVehicle(id, data){
-  try{ await db.collection('vehicles').doc(id).update(stamp(data)); toast('Saved'); }
-  catch(e){ console.error(e); toast('Could not save — '+(e.code||'error')); }
+  try{ await db.collection('vehicles').doc(id).update(stamp(deltaize(vehicles.find(x=>x.id===id), data))); toast('Saved'); return true; }
+  catch(e){ console.error(e); toast('Could not save — '+(e.code||'error')); return false; }
 }
 async function updateVehicleArray(vehicle,key,arr){
-  await updateVehicle(vehicle.id, {[key]:arr});
+  return updateVehicle(vehicle.id, {[key]:arr});
 }
 async function updateSite(id, data){
-  try{ await db.collection('siteEquipment').doc(id).update(stamp(data)); toast('Saved'); }
-  catch(e){ console.error(e); toast('Could not save — '+(e.code||'error')); }
+  try{ await db.collection('siteEquipment').doc(id).update(stamp(deltaize(siteEquipmentList.find(x=>x.id===id), data))); toast('Saved'); return true; }
+  catch(e){ console.error(e); toast('Could not save — '+(e.code||'error')); return false; }
 }
 async function updateSiteArray(site,key,arr){
-  await updateSite(site.id, {[key]:arr});
+  return updateSite(site.id, {[key]:arr});
 }
 
 /* ---------------- PDF profile export ---------------- */
@@ -7327,7 +7433,7 @@ function imgFormat(dataUrl){
 }
 async function buildProfilePdf(w){
   const {jsPDF} = window.jspdf;
-  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const doc = pdfDoc({unit:'pt', format:'a4'});
   const marginX=40, pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
   let y=54;
   function ensure(h){ if(y+h>pageH-36){ doc.addPage(); y=48; } }
@@ -7411,7 +7517,7 @@ async function buildProfilePdf(w){
   }
 
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(150,150,150);
-  doc.text(`Generated ${new Date().toISOString().slice(0,10)} from Workforce HSE Register`, marginX, pageH-20);
+  doc.text(`Generated ${localToday()} from Workforce HSE Register`, marginX, pageH-20);
   return doc;
 }
 
@@ -7429,7 +7535,7 @@ async function downloadProfile(){
 /* ---------------- vehicle PDF export ---------------- */
 async function buildVehiclePdf(v){
   const {jsPDF} = window.jspdf;
-  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const doc = pdfDoc({unit:'pt', format:'a4'});
   const marginX=40, pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
   let y=54;
   function ensure(h){ if(y+h>pageH-36){ doc.addPage(); y=48; } }
@@ -7479,7 +7585,7 @@ async function buildVehiclePdf(v){
   section('PPE & safety equipment','ppe',VEHICLE_RECORD_TYPES.ppe);
 
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(150,150,150);
-  doc.text(`Generated ${new Date().toISOString().slice(0,10)} from Vehicle Register`, marginX, pageH-20);
+  doc.text(`Generated ${localToday()} from Vehicle Register`, marginX, pageH-20);
   return doc;
 }
 
@@ -7497,7 +7603,7 @@ async function downloadVehicleProfile(){
 /* ---------------- site equipment PDF export ---------------- */
 async function buildSitePdf(s){
   const {jsPDF} = window.jspdf;
-  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const doc = pdfDoc({unit:'pt', format:'a4'});
   const marginX=40, pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
   let y=54;
   function ensure(h){ if(y+h>pageH-36){ doc.addPage(); y=48; } }
@@ -7598,7 +7704,7 @@ async function buildSitePdf(s){
   }
 
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(150,150,150);
-  doc.text(`Generated ${new Date().toISOString().slice(0,10)} from Project Details`, marginX, pageH-20);
+  doc.text(`Generated ${localToday()} from Project Details`, marginX, pageH-20);
   return doc;
 }
 
@@ -7615,7 +7721,7 @@ async function downloadSiteProfile(){
 
 /* ---------------- import from Excel ---------------- */
 const XLSX_URL='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-const EQUIP_CATEGORY_ALIASES = {powerTools:['power tool','power tools','tool','tools','equipment'], liftingGear:['lifting gear','lifting','sling','shackle'], harness:['harness','full body harness','safety harness'],
+const EQUIP_CATEGORY_ALIASES = {powerTools:['power tool','power tools','tool','tools','power equipment'], liftingGear:['lifting gear','lifting','sling','shackle'], harness:['harness','full body harness','safety harness'],
   ladders:['ladder','ladders'], extinguishers:['fire extinguisher','fire extinguishers','extinguisher','extinguishers'], firstAid:['first aid','first aid kit','first aid kits'], specialPpe:['specialized ppe','specialised ppe','special ppe','ppe'], chemicals:['chemical','chemicals','msds','sds','coshh']};
 const IMPORT_TYPES = {
   workers:{label:'Workers', noun:'worker', coll:'workers', file:'Burhan_HSE_Workers_template.xlsx', cols:[
@@ -7753,6 +7859,7 @@ function validateImportRows(rows){
       doc={category:cat||'', serial:key, make:txt('make'), certNo:txt('certNo'), expiry:dates.expiry||'', notes:txt('notes'), location:loc||'store', condition:txt('condition')?cond:'In service', attachment:null};
       const item=txt('item');
       if(cat==='powerTools' || cat==='specialPpe') doc.name=item;
+      else if(cat==='chemicals'){ doc.name=item; const hzOpts=(EQUIP_CATEGORIES.chemicals.fields.find(f=>f.key==='hazardClass')||{}).options||[]; doc.hazardClass=matchOption(txt('hazardClass')||txt('hazard'), hzOpts)||'Not classified'; if(!item) errors.push('Product name (Item) is required for chemicals'); }
       else if(cat==='harness'){ if(!/^full body harness$/i.test(item) && !doc.make) doc.make=item; }
       else if(cat==='liftingGear'){ doc.type=matchOption(item, EQUIP_CATEGORIES.liftingGear.fields[0].options)||'Other'; doc.swl=txt('swl'); }
       else if(cat==='ladders'){ doc.type=matchOption(item, EQUIP_CATEGORIES.ladders.fields[0].options)||'Other'; }
@@ -7811,7 +7918,7 @@ async function handleImportFile(file){
   if(!file) return;
   try{
     await loadScriptOnce(XLSX_URL);
-    const wb=XLSX.read(await file.arrayBuffer(), {type:'array', cellDates:false});
+    const wb=XLSX.read(await file.arrayBuffer(), {type:'array', cellDates:false, raw:true});   // raw: CSV dates stay as typed (dd/mm), not US mm/dd
     const ws=wb.Sheets[wb.SheetNames[0]];
     const rows=XLSX.utils.sheet_to_json(ws, {defval:'', raw:true});
     importResults = rows.length ? validateImportRows(rows) : {fileError:'The first sheet has no rows under the headings.'};
@@ -7924,7 +8031,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
       err.hidden=false;
     });
   });
-  document.getElementById('signOutBtn').addEventListener('click', ()=>{ stopDataListeners(); auth.signOut(); });
+  // Reload after signing out so the next person starts with a completely fresh page (no leftover read-only locks or data)
+  document.getElementById('signOutBtn').addEventListener('click', ()=>{ stopDataListeners(); Promise.resolve(auth.signOut()).catch(()=>{}).then(()=>location.reload()); });
 
   /* ---------------- attachments: download (shared across all trackers) ---------------- */
   document.addEventListener('click', e=>{
@@ -8069,8 +8177,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const w=currentWorker(); if(!w) return;
       if(target==='photo' || target==='civilIdScan' || target==='signature'){
         const old=w[target];
-        await updateWorker(w.id, {[target]:null});
-        if(old && old.path) deleteStorageFile(old.path);
+        const saved=await updateWorker(w.id, {[target]:null});
+        if(saved && old && old.path) deleteStorageFile(old.path);
       } else {
         const [key,rid]=target.split(':');
         const arr=(w[key]||[]).slice();
@@ -8078,8 +8186,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
         if(idx>-1){
           const old=arr[idx].attachment;
           arr[idx]={...arr[idx], attachment:null};
-          await updateWorkerArray(w,key,arr);
-          if(old && old.path) deleteStorageFile(old.path);
+          const saved=await updateWorkerArray(w,key,arr);
+          if(saved && old && old.path) deleteStorageFile(old.path);
         }
       }
       toast('File removed');
@@ -8097,8 +8205,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const w=currentWorker(); if(!w) return;
       const removed=(w[key]||[]).find(r=>r.id===rid);
       const arr=(w[key]||[]).filter(r=>r.id!==rid);
-      await updateWorkerArray(w,key,arr);
-      if(removed && removed.attachment && removed.attachment.path) deleteStorageFile(removed.attachment.path);
+      const saved=await updateWorkerArray(w,key,arr);
+      if(saved && removed && removed.attachment && removed.attachment.path) deleteStorageFile(removed.attachment.path);
       return;
     }
     const delWorkerBtn=e.target.closest('#deleteWorkerBtn');
@@ -8109,7 +8217,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
         return;
       }
       const w=currentWorker(); if(!w) return;
-      try{ await updateWorker(w.id, {deleted:true, deletedAt:new Date().toISOString()}); toast('Worker moved to Deleted workers'); closeDrawer(); }
+      try{ if(!(await updateWorker(w.id, {deleted:true, deletedAt:new Date().toISOString()}))) return; toast('Worker moved to Deleted workers'); closeDrawer(); }
       catch(err){ toast('Could not delete'); }
       return;
     }
@@ -8124,8 +8232,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const w=currentWorker(); if(!w) return;
       if(target==='photo' || target==='civilIdScan' || target==='signature'){
         const old=w[target];
-        await updateWorker(w.id, {[target]:att});
-        if(old && old.path) deleteStorageFile(old.path);
+        const saved=await updateWorker(w.id, {[target]:att});
+        if(saved && old && old.path) deleteStorageFile(old.path);
       } else {
         const [key,rid]=target.split(':');
         const arr=(w[key]||[]).slice();
@@ -8133,8 +8241,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
         if(idx>-1){
           const old=arr[idx].attachment;
           arr[idx]={...arr[idx], attachment:att};
-          await updateWorkerArray(w,key,arr);
-          if(old && old.path) deleteStorageFile(old.path);
+          const saved=await updateWorkerArray(w,key,arr);
+          if(saved && old && old.path) deleteStorageFile(old.path);
         }
       }
       toast('File attached');
@@ -8283,8 +8391,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
       if(idx>-1){
         const old=arr[idx].attachment;
         arr[idx]={...arr[idx], attachment:null};
-        await updateVehicleArray(v,key,arr);
-        if(old && old.path) deleteStorageFile(old.path);
+        const saved=await updateVehicleArray(v,key,arr);
+        if(saved && old && old.path) deleteStorageFile(old.path);
       }
       toast('File removed');
       return;
@@ -8301,8 +8409,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const v=currentVehicle(); if(!v) return;
       const removed=(v[key]||[]).find(r=>r.id===rid);
       const arr=(v[key]||[]).filter(r=>r.id!==rid);
-      await updateVehicleArray(v,key,arr);
-      if(removed && removed.attachment && removed.attachment.path) deleteStorageFile(removed.attachment.path);
+      const saved=await updateVehicleArray(v,key,arr);
+      if(saved && removed && removed.attachment && removed.attachment.path) deleteStorageFile(removed.attachment.path);
       return;
     }
     const delVehicleBtn=e.target.closest('#deleteVehicleBtn');
@@ -8313,7 +8421,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
         return;
       }
       const v=currentVehicle(); if(!v) return;
-      try{ await updateVehicle(v.id, {deleted:true, deletedAt:new Date().toISOString()}); toast('Vehicle moved to Deleted vehicles'); closeVehicleDrawer(); }
+      try{ if(!(await updateVehicle(v.id, {deleted:true, deletedAt:new Date().toISOString()}))) return; toast('Vehicle moved to Deleted vehicles'); closeVehicleDrawer(); }
       catch(err){ toast('Could not delete'); }
       return;
     }
@@ -8333,8 +8441,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
       if(idx>-1){
         const old=arr[idx].attachment;
         arr[idx]={...arr[idx], attachment:att};
-        await updateVehicleArray(v,key,arr);
-        if(old && old.path) deleteStorageFile(old.path);
+        const saved=await updateVehicleArray(v,key,arr);
+        if(saved && old && old.path) deleteStorageFile(old.path);
       }
       toast('File attached');
     }catch(err){ console.error(err); toast('Upload failed'); }
@@ -8396,6 +8504,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
       try{
         const s=siteEquipmentList.find(x=>x.id===purgeBtn.dataset.spurge);
         if(s) await deleteAllAttachments(s, SITE_RECORD_TYPES, []);
+        // The project's toolbox talks were copied into the Monthly Report — remove those copies too
+        if(s) for(const r of (s.toolboxTalks||[])) await removeToolboxFromReport(s.id, r.id);
         // Anything still located at this project goes back to the store, with the move logged
         const today=localToday();
         for(const item of equipmentList.filter(x=>equipLoc(x)===purgeBtn.dataset.spurge)){
@@ -8519,8 +8629,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
       if(idx>-1){
         const old=arr[idx].attachment;
         arr[idx]={...arr[idx], attachment:null};
-        await updateSiteArray(s,key,arr);
-        if(old && old.path) deleteStorageFile(old.path);
+        const saved=await updateSiteArray(s,key,arr);
+        if(saved && old && old.path) deleteStorageFile(old.path);
       }
       toast('File removed');
       return;
@@ -8537,8 +8647,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const s=currentSite(); if(!s) return;
       const removed=(s[key]||[]).find(r=>r.id===rid);
       const arr=(s[key]||[]).filter(r=>r.id!==rid);
-      await updateSiteArray(s,key,arr);
-      if(removed && removed.attachment && removed.attachment.path) deleteStorageFile(removed.attachment.path);
+      const saved=await updateSiteArray(s,key,arr);
+      if(saved && removed && removed.attachment && removed.attachment.path) deleteStorageFile(removed.attachment.path);
       if(key==='toolboxTalks') removeToolboxFromReport(s.id, rid);
       return;
     }
@@ -8550,7 +8660,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
         return;
       }
       const s=currentSite(); if(!s) return;
-      try{ await updateSite(s.id, {deleted:true, deletedAt:new Date().toISOString()}); toast('Project moved to Deleted projects'); closeSiteDrawer(); }
+      try{ if(!(await updateSite(s.id, {deleted:true, deletedAt:new Date().toISOString()}))) return; toast('Project moved to Deleted projects'); closeSiteDrawer(); }
       catch(err){ toast('Could not delete'); }
       return;
     }
@@ -8577,8 +8687,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
       if(idx>-1){
         const old=arr[idx].attachment;
         arr[idx]={...arr[idx], attachment:att};
-        await updateSiteArray(s,key,arr);
-        if(old && old.path) deleteStorageFile(old.path);
+        const saved=await updateSiteArray(s,key,arr);
+        if(saved && old && old.path) deleteStorageFile(old.path);
       }
       toast('File attached');
     }catch(err){ console.error(err); toast('Upload failed'); }
@@ -8654,8 +8764,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
         return;
       }
       const old=item.attachment;
-      await updateEquip(item.id, {attachment:null});
-      if(old && old.path) deleteStorageFile(old.path);
+      const saved=await updateEquip(item.id, {attachment:null});
+      if(saved && old && old.path) deleteStorageFile(old.path);
       toast('File removed');
       return;
     }
@@ -8679,8 +8789,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
     try{
       const att=await uploadToStorage(file);
       const old=item.attachment;
-      await updateEquip(item.id, {attachment:att});
-      if(old && old.path) deleteStorageFile(old.path);
+      const saved=await updateEquip(item.id, {attachment:att});
+      if(saved && old && old.path) deleteStorageFile(old.path);
       toast('File attached');
     }catch(err){ console.error(err); toast('Upload failed'); }
   });
@@ -8758,7 +8868,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(!data.projectId) data.projectId=null;
     try{
       if(editingReportEntryId){
-        await db.collection('hseLogs').doc(editingReportEntryId).update(stamp(data));
+        const prev=reportEntries.find(x=>x.id===editingReportEntryId);
+        if(prev && prev.category!==data.category){
+          // Category changed: replace the whole entry so the old category's fields don't linger
+          await db.collection('hseLogs').doc(editingReportEntryId).set(stamp({...data, createdAt:prev.createdAt||new Date().toISOString(), createdBy:prev.createdBy||''}));
+        } else {
+          await db.collection('hseLogs').doc(editingReportEntryId).update(stamp(data));
+        }
         toast('Entry updated');
       } else {
         data.createdAt=new Date().toISOString(); data.createdBy=(auth.currentUser&&auth.currentUser.email)||'';
@@ -9004,7 +9120,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const d=libDocs.find(x=>x.id===p.dataset.lpurge); if(!d) return;
       try{
         const paths=[d.file && d.file.path, ...(d.history||[]).map(h=>h.file && h.file.path)].filter(Boolean);
-        await Promise.all(paths.map(deleteStorageFile));
+        await Promise.all(paths.map(pth=>deleteStorageFile(pth)));
         await db.collection('qhseDocs').doc(d.id).delete();
         toast('Document and its files permanently removed');
       }catch(err){ console.error(err); toast('Could not remove — '+((err&&err.code)||'error')); }
@@ -9106,7 +9222,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(t.dataset.incFileDel!==undefined){
       if(!arm(t, 'Confirm?', 'Remove')) return;
       const files=(i.files||[]).slice(), old=files.splice(Number(t.dataset.incFileDel),1)[0];
-      if(await updateInc(i.id, {files}, true)){ if(old && old.path) deleteStorageFile(old.path); toast('File removed'); }
+      if(await updateInc(i.id, {files}, true)){ if(old && old.path) deleteStorageFile(old.path, i.id); toast('File removed'); }
       return;
     }
     if(t.id==='incCloseBtn'){
@@ -9154,7 +9270,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       if(!arm(p, 'Confirm — cannot be undone')) return;
       const i=incidentList.find(x=>x.id===p.dataset.ipurge); if(!i) return;
       try{
-        await Promise.all([i.reportFile&&i.reportFile.path, ...(i.files||[]).map(f=>f.path)].filter(Boolean).map(deleteStorageFile));
+        await Promise.all([i.reportFile&&i.reportFile.path, ...(i.files||[]).map(f=>f.path)].filter(Boolean).map(pth=>deleteStorageFile(pth, i.id)));
         await db.collection('incidents').doc(i.id).delete(); await removeIncidentFromReport(i.id);
         toast('Incident permanently removed');
       }catch(err){ console.error(err); toast('Could not remove — '+((err&&err.code)||'error')); }
@@ -9215,7 +9331,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       let list=(a.findings||[]).slice();
       if(audEditFinding) list=list.map(x=>x.id===audEditFinding?{...x, ...d}:x);
       else { const pre={'Major NC':'MAJ','Minor NC':'MIN','Observation':'OBS','OFI (opportunity for improvement)':'OFI','Positive finding':'POS'}[d.category]||'F';
-             const n=list.filter(x=>x.category===d.category).length+1; list.push({id:'f'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), no:`${pre}-${String(n).padStart(2,'0')}`, ...d}); }
+             const n=list.reduce((mx,x)=>{ const mm=new RegExp('^'+pre+'-(\\d+)$').exec(x.no||''); return mm?Math.max(mx, Number(mm[1])):mx; }, 0)+1; list.push({id:'f'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), no:`${pre}-${String(n).padStart(2,'0')}`, ...d}); }
       const upd={findings:list};
       const open=list.filter(x=>isActionFinding(x)&&(x.status||'Open')!=='Closed').length;
       if(open && ['Report issued','Closed','In progress'].includes(a.status)) upd.status='Findings open';
@@ -9338,14 +9454,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(t.dataset.sdel){ const [sk,id]=t.dataset.sdel.split(':'); if(t.dataset.armed!=='1'){ t.dataset.armed='1'; t.classList.add('armed'); toast('Click again to delete'); setTimeout(()=>{ t.dataset.armed='0'; t.classList.remove('armed'); },3000); return; }
       const list=(r[sk]||[]).filter(x=>x.id!==id), sc=cfg.subs[sk]; await regUpdate(activeReg, r.id, {[sk]:list, ...(sc.onSave?sc.onSave({...r}, list):{})}); return; }
     if(t.dataset.regFiledel){ const [k,n]=t.dataset.regFiledel.split(':'); if(t.dataset.armed!=='1'){ t.dataset.armed='1'; t.textContent='Click again'; setTimeout(()=>{ t.dataset.armed='0'; t.textContent='Remove'; },3000); return; }
-      const files=(r[k]||[]).slice(), old=files.splice(Number(n),1)[0]; if(await regUpdate(activeReg, r.id, {[k]:files}, true)){ toast('File removed'); if(old&&old.path) deleteStorageFile(old.path); } return; }
+      const files=(r[k]||[]).slice(), old=files.splice(Number(n),1)[0]; if(await regUpdate(activeReg, r.id, {[k]:files}, true)){ toast('File removed'); if(old&&old.path) deleteStorageFile(old.path, r.id); } return; }
     if(t.id==='regDeleteBtn'){ if(t.dataset.armed!=='1'){ t.dataset.armed='1'; t.textContent='Click again to confirm'; setTimeout(()=>{ t.dataset.armed='0'; t.textContent='Delete'; },3000); return; }
       if(await regUpdate(activeReg, r.id, {deleted:true, deletedAt:new Date().toISOString()}, true)){ toast('Moved to trash'); closeRegDrawer(); } return; }
   });
   body.addEventListener('change', async e=>{
     const inp=e.target, r=regCurrent(); if(!r) return;
     if(inp.matches('[data-reg-file]') && inp.files[0]){ const key=inp.dataset.regFile, old=r[key]; regBusy=true; toast('Uploading…');
-      try{ const up=await uploadToStorage(inp.files[0]); regBusy=false; if(await regUpdate(activeReg, r.id, {[key]:up}, true)){ toast('File uploaded'); if(old&&old.path) deleteStorageFile(old.path); } } catch(err){ console.error(err); toast('Upload failed'); } finally{ regBusy=false; renderRegDrawer(); } }
+      try{ const up=await uploadToStorage(inp.files[0]); regBusy=false; if(await regUpdate(activeReg, r.id, {[key]:up}, true)){ toast('File uploaded'); if(old&&old.path) deleteStorageFile(old.path, r.id); } } catch(err){ console.error(err); toast('Upload failed'); } finally{ regBusy=false; renderRegDrawer(); } }
     if(inp.matches('[data-reg-files]') && inp.files.length){ const key=inp.dataset.regFiles; regBusy=true; toast('Uploading…');
       try{ const ups=[]; for(const f of [...inp.files]) ups.push(await uploadToStorage(f)); regBusy=false; if(await regUpdate(activeReg, r.id, {[key]:(r[key]||[]).concat(ups)}, true)) toast(`${ups.length} file${ups.length===1?'':'s'} added`); } catch(err){ console.error(err); toast('Upload failed'); } finally{ regBusy=false; renderRegDrawer(); } }
   });
@@ -9356,7 +9472,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const p=e.target.closest('[data-rpurge]'); if(!p) return;
     if(p.dataset.armed!=='1'){ p.dataset.armed='1'; p.textContent='Click again — permanent'; setTimeout(()=>{ p.dataset.armed='0'; p.textContent='Delete forever'; },3000); return; }
     const cfg=REG[activeReg], r=regState[activeReg].list.find(x=>x.id===p.dataset.rpurge); if(!r) return;
-    try{ for(const f of (cfg.files||[])) if(r[f.key]&&r[f.key].path) deleteStorageFile(r[f.key].path); if(cfg.multiFiles){ const shared=new Set(incidentList.flatMap(i=>(i.files||[]).map(f=>f.path))); for(const f of (r[cfg.multiFiles.key]||[])) if(f.path && !shared.has(f.path)) deleteStorageFile(f.path); }
+    try{ for(const f of (cfg.files||[])) if(r[f.key]&&r[f.key].path) deleteStorageFile(r[f.key].path, r.id); if(cfg.multiFiles){ for(const f of (r[cfg.multiFiles.key]||[])) if(f.path) deleteStorageFile(f.path, r.id); }
       await db.collection(cfg.collection).doc(r.id).delete(); toast('Deleted permanently'); } catch(err){ console.error(err); toast('Could not delete'); }
   });
   // legal template

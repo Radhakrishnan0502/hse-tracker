@@ -1,25 +1,25 @@
 {
-  "name": "Burhan HSE",
-  "short_name": "Burhan HSE",
-  "description": "Worker HSE tracking — induction, training, competency, medical fitness, licenses, warnings and violations.",
+  "name": "Burhan HSE Tracker",
+  "short_name": "HSE Tracker",
+  "description": "Burhan Oil & Trade Services HSE Tracker — workforce, plant & equipment, projects, QHSE library and monthly HSE reporting.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f5f6f2",
-  "theme_color": "#1f6f78",
+  "background_color": "#030b18",
+  "theme_color": "#030b18",
   "orientation": "portrait-primary",
   "icons": [
     {
       "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
