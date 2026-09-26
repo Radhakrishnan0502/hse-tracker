@@ -604,6 +604,35 @@ th.as-now{color:var(--accent);} .as-c.as-now:not(.as-done):not(.as-overdue){box-
 .as-legend{display:flex; flex-wrap:wrap; gap:14px; align-items:center; margin-top:12px; font-size:12px; color:var(--ink-muted);} .as-legend span{display:inline-flex; align-items:center; gap:6px;} .as-legend .as-c{width:22px; height:20px; cursor:default;}
 .as-edit input, .as-edit select{width:100%;}
 body.read-only #addAudBtn, body.read-only #audTrashBtn, body.read-only #audFindingToggle, body.read-only [data-fedit], body.read-only [data-fdel], body.read-only #deleteAudBtn, body.read-only #asEditBtn, body.read-only [data-aud-file], body.read-only .upload-btn:has([data-aud-file]){display:none !important;}
+
+/* ---- Batch 11: grouped sidebar, registers, KPIs, action tracker, history ---- */
+.sidenav{max-height:calc(100vh - 40px); overflow-y:auto; scrollbar-width:thin;}
+.sidenav .sidenav-btn{padding-top:8px; padding-bottom:8px;}
+.nav-group{font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); opacity:.75; margin:12px 0 2px 14px;}
+@media (max-width: 760px){
+  .sidenav{flex-wrap:nowrap !important; overflow-x:auto; overflow-y:hidden; max-height:none; -webkit-overflow-scrolling:touch; padding-bottom:4px;}
+  .sidenav .sidenav-btn{flex:none; white-space:nowrap;}
+  .nav-group{display:none;}
+}
+.obj-bar{height:7px; border-radius:6px; background:var(--surface-2); overflow:hidden; min-width:80px;} .obj-bar i{display:block; height:100%; background:linear-gradient(90deg,var(--accent),var(--ok,#22c55e)); border-radius:6px;}
+.kpi-panel{padding:14px;} #kpiYearSel{width:auto;} .kpi-panel .section-head{flex-wrap:wrap; gap:8px;} .kpi-panel .section-head > div{flex-wrap:wrap;} .kpi-table{min-width:1000px;} .kpi-table th, .kpi-table td{padding:6px 8px;}
+.kpi-table .kpi-m{text-align:center; width:40px; font-family:var(--mono, ui-monospace, monospace); font-size:12px;}
+.kpi-table td.kpi-zero{color:var(--ink-muted); opacity:.55;} .kpi-table td.kpi-bad{color:var(--danger); font-weight:700;}
+.kpi-group td{font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); background:var(--surface-2);}
+.kpi-summary{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:0 0 10px;}
+.hist-list{display:flex; flex-direction:column; gap:2px;}
+.hist-row{display:grid; grid-template-columns:150px 1fr; gap:12px; padding:9px 4px; border-bottom:1px solid var(--line);}
+.hist-when{font-size:12px; color:var(--ink-muted);}
+.hist-changes{margin:6px 0 0 18px; padding:0; font-size:12.5px; color:var(--ink-muted);} .hist-changes li{margin:2px 0; word-break:break-word;}
+@media (max-width: 600px){ .hist-row{grid-template-columns:1fr; gap:4px;} }
+.hist-btn{white-space:nowrap;}
+@media (max-width: 600px){
+  .drawer-head{flex-wrap:wrap; row-gap:8px;}
+  .drawer-head > div[style*="flex:none"]{flex:1 1 100% !important; flex-wrap:wrap; justify-content:flex-end;}
+}
+.brief-cov{display:flex; gap:18px; align-items:center; flex-wrap:wrap; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:var(--surface-2); margin-bottom:14px;}
+.text-danger{color:var(--danger) !important;}
+body.read-only .reg-add-btn, body.read-only .reg-trash-btn, body.read-only .reg-edit-only, body.read-only [data-sedit], body.read-only [data-sdel], body.read-only #regDeleteBtn, body.read-only #kpiEditBtn, body.read-only #legalTemplateBtn{display:none !important;}
 </style>
 </head>
 <body class="auth-open">
@@ -631,13 +660,24 @@ body.read-only #addAudBtn, body.read-only #audTrashBtn, body.read-only #audFindi
   <aside class="sidenav">
     <img src="logo.png" alt="Burhan Oil & Trade Services" class="sidenav-logo">
     <button type="button" class="sidenav-btn" data-section="report">Monthly Report</button>
+    <div class="nav-group">Operations</div>
     <button type="button" class="sidenav-btn active" data-section="workforce">Workforce</button>
     <button type="button" class="sidenav-btn" data-section="vehicles">Plant &amp; Equipment</button>
     <button type="button" class="sidenav-btn" data-section="site">Project Details</button>
+    <button type="button" class="sidenav-btn" data-section="subcons">Subcontractors</button>
+    <div class="nav-group">Safety</div>
     <button type="button" class="sidenav-btn" data-section="incidents">Incident Register</button>
-    <button type="button" class="sidenav-btn" data-section="library">QHSE Library</button>
-    <button type="button" class="sidenav-btn" data-section="audits">Audits</button>
+    <button type="button" class="sidenav-btn" data-section="alerts">Safety Alerts</button>
+    <button type="button" class="sidenav-btn" data-section="actions">Action Tracker</button>
+    <div class="nav-group">Assurance</div>
+    <button type="button" class="sidenav-btn" data-section="objectives">Objectives &amp; KPIs</button>
     <button type="button" class="sidenav-btn" data-section="assurance">Assurance Plan</button>
+    <button type="button" class="sidenav-btn" data-section="audits">Audits</button>
+    <button type="button" class="sidenav-btn" data-section="legal">Legal Register</button>
+    <button type="button" class="sidenav-btn" data-section="meetings">Meetings</button>
+    <div class="nav-group">Documents</div>
+    <button type="button" class="sidenav-btn" data-section="library">QHSE Library</button>
+    <button type="button" class="sidenav-btn" data-section="activity">Activity Log</button>
     <div class="view-only-badge" id="viewOnlyBadge" hidden>View only — changes are made by the HSE team</div>
     <button type="button" class="theme-switch" id="themeToggle" role="switch" aria-checked="false"><span class="theme-switch-track"><span class="theme-switch-knob"></span></span><span id="themeToggleLabel">Light mode</span></button>
   </aside>
@@ -1179,6 +1219,25 @@ body.read-only #addAudBtn, body.read-only #audTrashBtn, body.read-only #audFindi
       </div>
     </main>
 
+    <main class="app-main" id="actionsSection" hidden>
+      <div class="topbar"><div><h1>Action Tracker</h1><p class="page-tagline"><span class="pt-co">Burhan Oil &amp; Trade Services</span><span class="pt-sep" aria-hidden="true"></span><span class="pt-slogan">Every action · One list · Closed on time</span></p></div>
+        <div class="topbar-actions"><button class="btn btn-sm" id="actPdfBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg> Action list PDF</button></div></div>
+      <div class="tiles tiles-4" id="actTiles"></div>
+      <div class="seg-tabs" id="actSrcTabs"></div>
+      <div class="toolbar"><input type="search" id="actSearch" placeholder="Search action, reference, owner…">
+        <select id="actStatus"><option value="open">All open</option><option value="overdue">Overdue</option><option value="soon">Due in 14 days</option><option value="closed">Closed</option><option value="all">Everything</option></select>
+        <select id="actOwner"></select></div>
+      <div class="table-wrap"><table><thead><tr><th>Source</th><th>Reference</th><th>Action</th><th>Owner</th><th>Target</th><th>Status</th><th></th></tr></thead>
+        <tbody id="actRows"><tr><td colspan="7" class="empty-state">Sign in to load actions…</td></tr></tbody></table></div>
+    </main>
+
+    <main class="app-main" id="activitySection" hidden>
+      <div class="topbar"><div><h1>Activity Log</h1><p class="page-tagline"><span class="pt-co">Burhan Oil &amp; Trade Services</span><span class="pt-sep" aria-hidden="true"></span><span class="pt-slogan">Who changed what, and when</span></p></div>
+        <div class="topbar-actions"><button class="btn btn-sm" id="activityRefresh" type="button">Refresh</button></div></div>
+      <div class="toolbar"><input type="search" id="activitySearch" placeholder="Search record, change…"><select id="activityWho"></select><select id="activitySection2"></select></div>
+      <div class="panel" id="activityBody"><p class="wsub">Open this page to load the latest changes.</p></div>
+    </main>
+
   </div>
 </div>
 
@@ -1299,6 +1358,7 @@ body.read-only #addAudBtn, body.read-only #audTrashBtn, body.read-only #audFindi
       <div class="wsub" id="incDrawerSub"></div>
     </div>
     <div style="display:flex; gap:8px; align-items:flex-start; flex:none;">
+      <button type="button" class="btn btn-sm" id="incAlertBtn"><svg class="ic" aria-hidden="true"><use href="#i-megaphone"/></svg> Safety alert</button>
       <button type="button" class="btn btn-sm" id="incPdfBtn"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg> Incident report PDF</button>
       <button class="icon-btn" id="incDrawerClose" aria-label="Close panel"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
     </div>
@@ -1339,6 +1399,29 @@ body.read-only #addAudBtn, body.read-only #audTrashBtn, body.read-only #audFindi
     <button class="icon-btn" id="audTrashClose" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
   </div>
   <div class="drawer-body" id="audTrashBody"></div>
+</aside>
+
+<div class="drawer-overlay" id="regDrawerOverlay" hidden></div>
+<aside class="drawer drawer-wide" id="regDrawer" hidden>
+  <div class="drawer-head">
+    <div><h2 id="regDrawerName"></h2><div class="wsub" id="regDrawerSub"></div></div>
+    <div style="display:flex; gap:8px; align-items:flex-start; flex:none;">
+      <button type="button" class="btn btn-sm" id="regPdfBtn" hidden></button>
+      <button class="icon-btn" id="regDrawerClose" aria-label="Close panel"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
+    </div>
+  </div>
+  <nav class="tabs" id="regDrawerTabs"></nav>
+  <div class="drawer-body" id="regDrawerBody"></div>
+</aside>
+<div class="drawer-overlay" id="regTrashOverlay" hidden></div>
+<aside class="drawer" id="regTrashDrawer" hidden>
+  <div class="drawer-head"><div><h2 id="regTrashTitle">Deleted</h2></div><button class="icon-btn" id="regTrashClose" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+  <div class="drawer-body" id="regTrashBody"></div>
+</aside>
+<div class="drawer-overlay" id="histOverlay" hidden></div>
+<aside class="drawer" id="histDrawer" hidden>
+  <div class="drawer-head"><div><h2 id="histTitle">Change history</h2><div class="wsub">Every save is recorded with the person and time.</div></div><button class="icon-btn" id="histClose" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+  <div class="drawer-body" id="histBody"></div>
 </aside>
 
 <div class="drawer-overlay" id="libDrawerOverlay" hidden></div>
@@ -1432,6 +1515,75 @@ const db = firebase.firestore();
 // Line icons (drawn in the sprite at the top of <body>)
 function ic(name, cls){ return `<svg class="ic${cls?' '+cls:''}" aria-hidden="true"><use href="#i-${name}"/></svg>`; }
 const storage = firebase.storage();
+
+/* ---------------- change history: every add / update / set / delete is written to activityLog ---------------- */
+const LOG_COLLECTION_LABELS = {workers:'Workforce', vehicles:'Fleet', siteEquipment:'Projects', equipment:'Plant & Equipment', hseLogs:'Monthly Report', qhseDocs:'QHSE Library', settings:'Settings', incidents:'Incident Register', audits:'Audits', objectives:'Objectives', safetyAlerts:'Safety Alerts', legalReqs:'Legal Register', meetings:'Meetings', subcontractors:'Subcontractors'};
+const LOG_IGNORE_KEYS = new Set(['updatedAt','updatedBy','createdAt','createdBy']);
+function logCacheFind(col, id){
+  try{
+    if(col==='settings'){ const sm={app:()=>appSettings, trainingMatrix:()=>trainingReq, targets:()=>appTargets, assurance:()=>appAssurance}; return sm[id] ? sm[id]() : null; }
+    const map={workers:()=>workers, vehicles:()=>vehicles, siteEquipment:()=>siteEquipmentList, equipment:()=>equipmentList, hseLogs:()=>reportEntries, qhseDocs:()=>libDocs, incidents:()=>incidentList, audits:()=>auditList};
+    if(map[col]) return map[col]().find(x=>x.id===id) || null;
+    const rk=Object.keys(REG).find(k=>REG[k].collection===col); if(rk) return regState[rk].list.find(x=>x.id===id) || null;
+  }catch(e){}
+  return null;
+}
+function logRecordLabel(col, rec, id){
+  const r=rec||{};
+  const pick = r.fullName || r.vehicleNumber || r.siteName || r.displayName || r.incNo || r.auditNo || r.alertNo || r.legNo || r.mtgNo || r.subNo || r.objNo || r.docNo || r.title || r.name;
+  if(col==='hseLogs') return `${(REPORT_CATEGORIES[r.category]||{}).label||r.category||'Entry'} · ${r.date||''}`;
+  if(col==='settings') return `Settings · ${id}`;
+  return String(pick || id || '').slice(0,80);
+}
+function logShort(v){ if(v===null||v===undefined||v==='') return '—'; if(typeof v==='object') return Array.isArray(v)?`${v.length} item${v.length===1?'':'s'}`:(v.name||v.url?'file':'…'); const s=String(v); return s.length>50?s.slice(0,50)+'…':s; }
+function logChanges(before, data){
+  const out=[];
+  for(const [k,v] of Object.entries(data||{})){
+    if(LOG_IGNORE_KEYS.has(k)) continue;
+    const o=before?before[k]:undefined;
+    if(JSON.stringify(o)===JSON.stringify(v)) continue;
+    if(Array.isArray(v) || Array.isArray(o)){ const a=(o||[]).length, b=(v||[]).length; out.push(a===b?`${k}: edited`:`${k}: ${a} → ${b} items`); }
+    else if(v && typeof v==='object') out.push(`${k}: ${v.url||v.name?'file updated':'updated'}`);
+    else out.push(`${k}: ${logShort(o)} → ${logShort(v)}`);
+    if(out.length>=15) break;
+  }
+  return out;
+}
+function writeActivity(col, id, action, data, before){
+  try{
+    if(col==='activityLog') return;
+    if(col==='hseLogs' && /^(tbt|inc|aud)_/.test(id||'')) return;      // automatic copies of other records
+    const u=auth.currentUser; if(!u || !canEdit()) return;
+    let act=action, changes=[];
+    if(action==='updated' || action==='set'){
+      if(data && data.deleted===true && !(before&&before.deleted)) act='moved to trash';
+      else if(data && data.deleted===false && before && before.deleted) act='restored';
+      else { changes=logChanges(before, data); if(action==='set' && !before) act='created'; else act='updated'; if(!changes.length && act==='updated') return; }
+    }
+    const rec = action==='deleted' ? before : {...(before||{}), ...(data||{})};
+    const entry={at:new Date().toISOString(), by:String(u.email||'').toLowerCase(), col, docId:id||'', action:act, label:logRecordLabel(col, rec, id), section:LOG_COLLECTION_LABELS[col]||col, changes};
+    _rawCollection('activityLog').add(entry).catch(()=>{});   // never blocks or breaks the real save
+  }catch(e){ console.warn('activity log skipped', e); }
+}
+const _rawCollection = db.collection.bind(db);
+db.collection = function(name){
+  const c=_rawCollection(name);
+  if(name==='activityLog') return c;
+  try{
+    const origAdd=c.add && c.add.bind(c), origDoc=c.doc && c.doc.bind(c);
+    if(origAdd) c.add = async data=>{ const ref=await origAdd(data); writeActivity(name, ref&&ref.id, 'created', data, null); return ref; };
+    if(origDoc) c.doc = function(id){
+      const d=origDoc(id), did=id||(d&&d.id);
+      const oSet=d.set&&d.set.bind(d), oUpd=d.update&&d.update.bind(d), oDel=d.delete&&d.delete.bind(d);
+      if(oSet) d.set = async (data,opt)=>{ const before=logCacheFind(name,did); const r=await oSet(data,opt); writeActivity(name, did, 'set', data, before); return r; };
+      if(oUpd) d.update = async data=>{ const before=logCacheFind(name,did); const r=await oUpd(data); writeActivity(name, did, 'updated', data, before); return r; };
+      if(oDel) d.delete = async ()=>{ const before=logCacheFind(name,did); const r=await oDel(); writeActivity(name, did, 'deleted', null, before); return r; };
+      return d;
+    };
+  }catch(e){ console.warn('change history wrapper not installed', e); }
+  return c;
+};
+
 
 const TABS = [
   {key:'profile', label:'Profile'},
@@ -2752,15 +2904,32 @@ function downloadIncidentPdf(){
    HSE TARGETS & OBJECTIVES (yearly, company-wide)
    ===================================================================== */
 const TARGET_DEFS = [
-  {key:'lti', label:'Lost time injuries (LTI)', type:'max', def:0},
-  {key:'ltif', label:'LTIF (per million man-hours)', type:'max', dec:2, def:0},
-  {key:'trcf', label:'TRCF (per million man-hours)', type:'max', dec:2, def:1},
-  {key:'training', label:'Training compliance', type:'min', unit:'%', def:95},
-  {key:'tbtPerMonth', label:'Toolbox talks per month (average)', type:'min', dec:1, def:8},
-  {key:'inspPerMonth', label:'Site visits, audits & inspections per month', type:'min', dec:1, def:6},
-  {key:'nearMiss', label:'Near misses reported (year)', type:'min', annual:true, def:24},
-  {key:'drills', label:'Mock drills (year)', type:'min', annual:true, def:4},
-  {key:'capaOnTime', label:'Corrective actions closed on time', type:'min', unit:'%', def:90},
+  // lagging — outcomes
+  {key:'lti', kind:'lagging', label:'Lost time injuries (LTI)', type:'max', def:0, cc:true},
+  {key:'ltif', kind:'lagging', label:'LTIF (per million man-hours)', type:'max', dec:2, def:0, cc:true},
+  {key:'trcf', kind:'lagging', label:'TRCF (per million man-hours)', type:'max', dec:2, def:1, cc:true},
+  {key:'mti', kind:'lagging', label:'Medical treatment injuries (MTI)', type:'max', def:0},
+  {key:'fac', kind:'lagging', label:'First aid cases (FAC)', type:'max', def:3},
+  {key:'vehicleInc', kind:'lagging', label:'Vehicle incidents', type:'max', def:0},
+  {key:'incidents', kind:'lagging', label:'Property damage / other incidents', type:'max', def:2},
+  {key:'daysLost', kind:'lagging', label:'Days lost to injury', type:'max', def:0},
+  {key:'complaints', kind:'lagging', label:'Client HSE complaints', type:'max', def:4},
+  // leading — proactive
+  {key:'training', kind:'leading', label:'Training compliance', type:'min', unit:'%', def:95, cc:true},
+  {key:'tbtPerMonth', kind:'leading', label:'Toolbox talks per month (average)', type:'min', dec:1, def:8, cc:true},
+  {key:'inspPerMonth', kind:'leading', label:'Site visits, audits & inspections per month', type:'min', dec:1, def:6, cc:true},
+  {key:'obsPerMonth', kind:'leading', label:'HSE observations per month (average)', type:'min', dec:1, def:20},
+  {key:'mgmtVisits', kind:'leading', label:'Management site visits (year)', type:'min', annual:true, def:12},
+  {key:'nearMiss', kind:'leading', label:'Near misses reported (year)', type:'min', annual:true, def:24, cc:true},
+  {key:'drills', kind:'leading', label:'Mock drills (year)', type:'min', annual:true, def:4, cc:true},
+  {key:'capaOnTime', kind:'leading', label:'Corrective actions closed on time', type:'min', unit:'%', def:90, cc:true},
+  {key:'auditScore', kind:'leading', label:'Average audit score', type:'min', unit:'%', def:85},
+  {key:'internalAudits', kind:'leading', label:'Internal audits completed (year)', type:'min', annual:true, def:2},
+  {key:'assurance', kind:'leading', label:'Assurance plan compliance', type:'min', unit:'%', def:90},
+  {key:'legalCompliance', kind:'leading', label:'Legal compliance (evaluated items)', type:'min', unit:'%', def:100},
+  {key:'alertBriefing', kind:'leading', label:'Safety alerts briefed to projects', type:'min', unit:'%', def:100},
+  {key:'committee', kind:'leading', label:'HSE committee meetings held (year)', type:'min', annual:true, def:12},
+  {key:'subconScore', kind:'leading', label:'Average subcontractor HSE score', type:'min', unit:'%', def:75},
 ];
 let targetsEditOpen=false;
 function targetsFor(year){ const t=(appTargets||{})[year]; return t || null; }
@@ -2769,6 +2938,8 @@ function allCorrectiveActions(){
   const out=[];
   for(const s of activeSites()) for(const a of (s.actions||[])) out.push(a);
   for(const i of activeIncidents()) for(const a of (i.capa||[])) out.push(a);
+  for(const a of activeAudits()) for(const f of (a.findings||[])) if(isActionFinding(f)) out.push(f);
+  for(const k of Object.keys(REG)) for(const r of regActive(k)) for(const [sk,sc] of Object.entries(REG[k].subs||{})) if(sc.isAction) for(const x of (r[sk]||[])) out.push(x);
   return out;
 }
 function trainingCompliancePct(){
@@ -2788,6 +2959,7 @@ function targetActuals(year){
     lti:m.lti, ltif: m.manHours ? m.lti*1e6/m.manHours : null, trcf: m.manHours ? (m.lti+m.mti)*1e6/m.manHours : null,
     training:trainingCompliancePct(), tbtPerMonth:per(m.tbt), inspPerMonth:per(m.siteVisit+m.internalAudit+m.vehicleInspection),
     nearMiss:m.nearMiss, drills:m.mockDrill, capaOnTime: judged ? Math.round(closedOnTime*100/judged) : null, _months:months,
+    ...extraKpiActuals(year, m),
   };
 }
 function targetStatus(def, actual, target, months){
@@ -2808,7 +2980,7 @@ function targetsPanelHtml(year){
   }
   if(!t) return `<p class="wsub" style="margin:10px 14px 14px;">${canEdit()?`No targets set for ${esc(year)} yet — click <strong>Set targets</strong> to add your yearly HSE objectives.`:`No HSE targets set for ${esc(year)} yet.`}</p>`;
   const a=targetActuals(year);
-  return `<div class="cc-targets">${TARGET_DEFS.map(d=>{
+  return `<div class="cc-targets">${TARGET_DEFS.filter(d=>d.cc).map(d=>{
     const act=a[d.key], tgt=t[d.key], st=targetStatus(d, act, tgt===''||tgt===undefined?null:Number(tgt), a._months);
     let pct=0; if(act!==null && act!==undefined && tgt!=='' && tgt!==undefined){ const T=Number(tgt), goal=d.annual?T*(a._months||12)/12:T; pct = d.type==='max' ? (act<=T?100:Math.max(8, Math.min(100, T/act*100))) : (goal? Math.min(100, act/goal*100) : 100); }
     return `<div class="tg-row"><div class="tg-l">${esc(d.label)}</div><div class="tg-bar"><i style="width:${pct.toFixed(0)}%; background:var(--${st.cls==='ok'?'ok':st.cls==='warn'?'warn':st.cls==='danger'?'danger':'line'});"></i></div>
@@ -3063,12 +3235,17 @@ const ASSURANCE_AUTO = {
   'audit:external':{label:'Client / 3rd-party audits (Audits)'},
   'library:ra':{label:'RA / JSA revised (QHSE Library)'},
   'incident:closed':{label:'Incidents closed (Incident Register)'},
+  'meeting:committee':{label:'HSE committee meetings (Meetings)'},
+  'meeting:mgmt':{label:'Management reviews (Meetings)'},
+  'legal:eval':{label:'Legal compliance evaluations (Legal Register)'},
+  'subcon:eval':{label:'Subcontractor evaluations (Subcontractors)'},
+  'alert:issued':{label:'Safety alerts issued (Safety Alerts)'},
 };
 const ASSURANCE_TEMPLATE = [
   {activity:'HSE policy & objectives review', clause:'5.2 / 6.2', owner:'Management', months:[1], auto:''},
   {activity:'Hazard identification & risk assessment review', clause:'6.1.2', owner:'HSE', months:[1,7], auto:'library:ra'},
-  {activity:'Evaluation of legal & other requirements', clause:'9.1.2', owner:'HSE', months:[6,12], auto:''},
-  {activity:'HSE committee / worker consultation meeting', clause:'5.4', owner:'HSE', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:''},
+  {activity:'Evaluation of legal & other requirements', clause:'9.1.2', owner:'HSE', months:[6,12], auto:'legal:eval'},
+  {activity:'HSE committee / worker consultation meeting', clause:'5.4', owner:'HSE', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:'meeting:committee'},
   {activity:'Management site visit / safety walk', clause:'5.1', owner:'Management', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:'report:siteVisit'},
   {activity:'Site HSE inspections & observations', clause:'9.1.1', owner:'HSE', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:'report:hseObservation'},
   {activity:'Vehicle inspections', clause:'8.1', owner:'Fleet', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:'report:vehicleInspection'},
@@ -3078,11 +3255,11 @@ const ASSURANCE_TEMPLATE = [
   {activity:'Equipment & lifting gear TPI review', clause:'8.1', owner:'Maintenance', months:[3,6,9,12], auto:''},
   {activity:'Internal IMS audit', clause:'9.2', owner:'HSE / QA', months:[4,10], auto:'audit:internal'},
   {activity:'Client / external audit (as scheduled)', clause:'9.2', owner:'HSE', months:[], auto:'audit:external'},
-  {activity:'Subcontractor HSE performance evaluation', clause:'8.1.4', owner:'HSE', months:[6,12], auto:''},
+  {activity:'Subcontractor HSE performance evaluation', clause:'8.1.4', owner:'HSE', months:[6,12], auto:'subcon:eval'},
   {activity:'Health surveillance / medical fitness review', clause:'8.1', owner:'HSE', months:[1], auto:''},
   {activity:'Incident & corrective action review', clause:'10.2', owner:'HSE', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:'incident:closed'},
   {activity:'HSE performance report to management', clause:'9.1', owner:'HSE', months:[1,2,3,4,5,6,7,8,9,10,11,12], auto:''},
-  {activity:'Management review meeting', clause:'9.3', owner:'Top management', months:[6,12], auto:''},
+  {activity:'Management review meeting', clause:'9.3', owner:'Top management', months:[6,12], auto:'meeting:mgmt'},
 ];
 let appAssurance={}, assuranceYear=String(new Date().getFullYear()), assuranceEditOpen=false, assuranceRows=null;
 function assurancePlanFor(y){ return (appAssurance[y] && appAssurance[y].items) || null; }
@@ -3093,6 +3270,11 @@ function assuranceEvidence(item, y, m){
   if(item.auto==='audit:external') return activeAudits().filter(x=>auditParty(x.auditType)!=='internal' && x.status!=='Planned' && String(x.startDate||'').startsWith(key)).length;
   if(item.auto==='library:ra') return activeLibDocs().filter(d=>['Risk assessment','JSA'].includes(d.docType) && String(d.lastRevDate||'').startsWith(key)).length;
   if(item.auto==='incident:closed') return activeIncidents().filter(i=>i.status==='Closed' && String(i.closedDate||'').startsWith(key)).length;
+  if(item.auto==='meeting:committee') return regActive('meetings').filter(r=>r.type===MEETING_TYPES[0] && r.status!=='Scheduled' && String(r.date||'').startsWith(key)).length;
+  if(item.auto==='meeting:mgmt') return regActive('meetings').filter(r=>r.type===MEETING_TYPES[1] && r.status!=='Scheduled' && String(r.date||'').startsWith(key)).length;
+  if(item.auto==='legal:eval') return regActive('legal').reduce((n,r)=>n+(r.evaluations||[]).filter(x=>String(x.date||'').startsWith(key)).length,0);
+  if(item.auto==='subcon:eval') return regActive('subcons').reduce((n,r)=>n+(r.evaluations||[]).filter(x=>String(x.date||'').startsWith(key)).length,0);
+  if(item.auto==='alert:issued') return regActive('alerts').filter(r=>r.status!=='Draft' && String(r.issueDate||'').startsWith(key)).length;
   return 0;
 }
 function assuranceCell(item, y, m){
@@ -3173,6 +3355,818 @@ function downloadAssurancePdf(){
   }catch(e){ console.error(e); toast('Could not generate the PDF'); }
 }
 async function saveAssurance(items){ const ok=await saveSettings('assurance', {[assuranceYear]:{items}}); if(ok) appAssurance={...appAssurance, [assuranceYear]:{items}}; return ok; }
+
+/* =====================================================================
+   GENERIC REGISTERS — Objectives, Safety Alerts, Legal Register,
+   Meetings, Subcontractors. Each is described by a config object;
+   list page, drawer, sub-lists (actions / evaluations / briefings),
+   files, trash and history are shared.
+   ===================================================================== */
+const REG = {}, regState = {};
+let activeReg=null, activeRegId=null, activeRegTab='main', regSubOpen=null, regSubEdit=null, regBusy=false, regHistoryCache={};
+function regDefine(cfg){ REG[cfg.key]=cfg; regState[cfg.key]={list:[], err:null, unsub:null, f:{q:'', status:'all', seg:'all', year: cfg.yearFilter?String(new Date().getFullYear()):'all'}}; }
+function regActive(key){ return regState[key].list.filter(r=>!r.deleted); }
+function regDeleted(key){ return regState[key].list.filter(r=>r.deleted); }
+function regCurrent(){ return activeReg ? regState[activeReg].list.find(r=>r.id===activeRegId) : null; }
+function regNextNo(key, dateStr){
+  const c=REG[key], y=(dateStr||localToday()).slice(0,4);
+  const re = c.noYear ? new RegExp('^'+c.noPrefix+'-(\\d{4})-(\\d+)$') : new RegExp('^'+c.noPrefix+'-(\\d+)$');
+  let max=0;
+  for(const r of regState[key].list){ const m=re.exec(r[c.noField]||''); if(!m) continue; if(c.noYear){ if(m[1]===y) max=Math.max(max, Number(m[2])); } else max=Math.max(max, Number(m[1])); }
+  return c.noYear ? `${c.noPrefix}-${y}-${String(max+1).padStart(3,'0')}` : `${c.noPrefix}-${String(max+1).padStart(3,'0')}`;
+}
+function regOptions(f){ return typeof f.options==='function' ? f.options() : (f.options||[]); }
+function regFieldHtml(f, v, attr){
+  attr=attr||'data-rf';
+  const req=f.required?' *':'', cls=f.wide?' class="span-all"':'';
+  if(f.type==='project') return `<label${cls}>${esc(f.label)}${req}<select ${attr}="${f.key}">${projectOptionsHtml(v||'')}</select></label>`;
+  if(f.type==='pick'){ const opts=regOptions(f); return `<label${cls}>${esc(f.label)}${req}<select ${attr}="${f.key}" ${f.required?'required':''}><option value="">${esc(f.empty||'Select…')}</option>${opts.map(o=>`<option value="${esc(o.value)}" ${o.value===v?'selected':''}>${esc(o.label)}</option>`).join('')}</select></label>`; }
+  if(f.type==='checks'){ const sel=new Set(v||[]); return `<div class="span-all"><div class="pick-label">${esc(f.label)}</div><div class="cause-list">${regOptions(f).map(o=>`<label class="chk"><input type="checkbox" ${attr}="${f.key}" value="${esc(o)}" ${sel.has(o)?'checked':''}>${esc(o)}</label>`).join('')}</div></div>`; }
+  if(f.type==='number') return `<label${cls}>${esc(f.label)}${req}<input type="number" step="any" ${f.min!==undefined?`min="${f.min}"`:''} ${f.max!==undefined?`max="${f.max}"`:''} ${attr}="${f.key}" value="${v===0?'0':esc(v===undefined||v===null?'':String(v))}" ${f.required?'required':''} placeholder="${esc(f.placeholder||'')}"></label>`;
+  if(f.type==='select') return incFieldHtml({...f, options:regOptions(f)}, v, attr);
+  return incFieldHtml(f, v, attr);
+}
+function regReadForm(form, fields, attr){
+  attr=attr||'data-rf'; const d={}, prop=attr.replace(/^data-/,'').replace(/-([a-z])/g,(_,c)=>c.toUpperCase());
+  for(const f of fields){
+    if(f.type==='checks'){ d[f.key]=[...form.querySelectorAll(`[${attr}="${f.key}"]:checked`)].map(x=>x.value); continue; }
+    const el=form.querySelector(`[${attr}="${f.key}"]`); if(!el) continue;
+    d[f.key] = f.type==='number' ? (el.value===''?'':Number(el.value)) : el.value;
+  }
+  return d;
+}
+function regFieldsOf(cfg){ return cfg.tabs.flatMap(t=>t.groups ? t.groups.flatMap(g=>g.fields) : (t.fields||[])); }
+function regFieldDef(cfg, key){ return regFieldsOf(cfg).find(f=>f.key===key); }
+function regDisplay(f, v){
+  if(v===undefined || v===null || v==='' || (Array.isArray(v)&&!v.length)) return '';
+  if(f && f.type==='project') return projectName(v);
+  if(f && f.type==='pick'){ const o=regOptions(f).find(x=>x.value===v); return o?o.label:v; }
+  if(Array.isArray(v)) return v.join(', ');
+  return String(v);
+}
+
+/* ---- data ---- */
+function startRegData(){
+  for(const key of Object.keys(REG)){
+    const st=regState[key], cfg=REG[key];
+    try{
+      st.unsub = db.collection(cfg.collection).onSnapshot(snap=>{ st.err=null; st.list=snap.docs.map(d=>({id:d.id, ...(d.data()||{})})); renderRegAll(key); if(cfg.onData) cfg.onData(); renderActionTracker(); },
+        err=>{ console.error(err); if(!auth.currentUser) return; st.err = err&&err.code==='permission-denied'?'rules':'other'; renderRegAll(key); });
+    }catch(e){ console.error(e); }
+  }
+}
+function stopRegData(){ for(const key of Object.keys(regState)){ const st=regState[key]; if(st.unsub){ st.unsub(); st.unsub=null; } st.list=[]; } }
+async function regUpdate(key, id, data, quiet){
+  try{ await db.collection(REG[key].collection).doc(id).update(stamp(data)); if(!quiet) toast('Saved'); if(REG[key].afterSave) REG[key].afterSave({...(regState[key].list.find(x=>x.id===id)||{}), ...data, id}); return true; }
+  catch(e){ console.error(e); toast(e&&e.code==='permission-denied'?RULES_UPDATE_MSG:'Could not save — '+((e&&e.code)||'error')); return false; }
+}
+async function regCreate(key, data, openTab){
+  const cfg=REG[key], u=auth.currentUser;
+  const d={deleted:false, createdAt:new Date().toISOString(), createdBy:(u&&u.email)||'', ...data};
+  for(const s of Object.keys(cfg.subs||{})) if(!d[s]) d[s]=[];
+  if(cfg.noField && !d[cfg.noField]) d[cfg.noField]=regNextNo(key, d[cfg.dateField||'date']);
+  try{ const ref=await db.collection(cfg.collection).add(stamp(d)); toast(`${d[cfg.noField]||cfg.singular} saved`); if(cfg.afterSave) cfg.afterSave({...d, id:ref.id}); openRegDrawer(key, ref.id, openTab); return ref.id; }
+  catch(e){ console.error(e); toast(e&&e.code==='permission-denied'?RULES_UPDATE_MSG:'Could not save'); return null; }
+}
+
+/* ---- list page ---- */
+function regSectionHtml(cfg){
+  const k=cfg.key;
+  return `<main class="app-main" id="${k}Section" hidden>
+    <div class="topbar"><div><h1>${esc(cfg.title)}</h1><p class="page-tagline"><span class="pt-co">Burhan Oil &amp; Trade Services</span><span class="pt-sep" aria-hidden="true"></span><span class="pt-slogan">${esc(cfg.tagline)}</span></p></div>
+      <div class="topbar-actions">${cfg.headerButtons||''}<button class="btn btn-sm reg-trash-btn" type="button" data-reg-trash="${k}">${ic('trash')} Deleted (0)</button><button class="btn btn-primary reg-add-btn" type="button" data-reg-add="${k}">${esc(cfg.addLabel)}</button></div></div>
+    <div class="tiles tiles-4" id="${k}Tiles"></div>
+    ${cfg.topPanel?`<div id="${k}Top"></div>`:''}
+    <div class="panel" id="${k}AddPanel" hidden><h3>${esc(cfg.addTitle||cfg.addLabel.replace(/^\+\s*/,''))}</h3>
+      <form data-reg-addform="${k}"><div class="form-grid" id="${k}AddFields"></div>${cfg.addExtraHtml||''}
+      <div class="form-actions"><button type="button" class="btn" data-reg-addcancel="${k}">Cancel</button><button type="submit" class="btn btn-primary">Save &amp; open</button></div></form></div>
+    ${cfg.segs?`<div class="seg-tabs" id="${k}Segs"></div>`:''}
+    <div class="toolbar"><input type="search" data-reg-search="${k}" placeholder="${esc(cfg.searchPlaceholder||'Search…')}">
+      ${cfg.yearFilter?`<select data-reg-year="${k}" id="${k}Year"></select>`:''}
+      ${cfg.statuses?`<select data-reg-status="${k}"><option value="all">Any status</option>${cfg.statuses.map(s=>`<option>${esc(s)}</option>`).join('')}</select>`:''}</div>
+    <div class="table-wrap"><table><thead><tr>${cfg.columns.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr></thead>
+      <tbody id="${k}Rows"><tr><td colspan="${cfg.columns.length}" class="empty-state">Sign in to load…</td></tr></tbody></table></div>
+  </main>`;
+}
+function regRowYear(cfg, r){ return String(r[cfg.dateField||'date']||'').slice(0,4); }
+function regMatches(key, r){
+  const cfg=REG[key], f=regState[key].f;
+  if(r.deleted) return false;
+  if(cfg.yearFilter && f.year!=='all' && regRowYear(cfg,r)!==f.year) return false;
+  if(f.status!=='all' && (cfg.statusOf?cfg.statusOf(r):r.status)!==f.status) return false;
+  if(cfg.segs && f.seg!=='all'){ const s=cfg.segs.find(x=>x.key===f.seg); if(s && !s.match(r)) return false; }
+  const q=f.q.trim().toLowerCase(); if(q && !cfg.searchText(r).toLowerCase().includes(q)) return false;
+  return true;
+}
+function renderRegAll(key){
+  const cfg=REG[key], st=regState[key];
+  const tb=document.getElementById(key+'Rows'); if(!tb || !auth.currentUser) return;
+  const tbtn=document.querySelector(`[data-reg-trash="${key}"]`); if(tbtn) tbtn.innerHTML=ic('trash')+` Deleted (${regDeleted(key).length})`;
+  document.getElementById(key+'Tiles').innerHTML = (cfg.tiles(regActive(key))||[]).map(t=>`<div class="tile"><div class="tile-head"><div class="tile-icon">${ic(t.icon||'chart')}</div><div class="tile-label">${esc(t.label)}</div></div><div class="tile-num ${t.cls||''}">${esc(String(t.num))}</div><div class="tile-sub">${esc(t.sub||'')}</div></div>`).join('');
+  if(cfg.topPanel) cfg.topPanel();
+  if(cfg.yearFilter){ const ys=new Set([String(new Date().getFullYear())]); for(const r of regActive(key)){ const y=regRowYear(cfg,r); if(y) ys.add(y); } const s=document.getElementById(key+'Year'); s.innerHTML=[...ys].sort().reverse().map(y=>`<option value="${y}">${y}</option>`).join('')+'<option value="all">All years</option>'; s.value=st.f.year; }
+  if(cfg.segs) document.getElementById(key+'Segs').innerHTML=[{key:'all',label:cfg.segAllLabel||'All'},...cfg.segs].map(s=>`<button type="button" class="seg-btn ${s.key===st.f.seg?'active':''}" data-reg-seg="${key}:${s.key}">${esc(s.label)}<span class="tab-count">${regActive(key).filter(r=>(!cfg.yearFilter||st.f.year==='all'||regRowYear(cfg,r)===st.f.year) && (s.key==='all'||s.match(r))).length}</span></button>`).join('');
+  const n=cfg.columns.length;
+  if(st.err==='rules') tb.innerHTML=`<tr><td colspan="${n}" class="empty-state">${esc(RULES_UPDATE_MSG)}</td></tr>`;
+  else if(!regActive(key).length) tb.innerHTML=`<tr><td colspan="${n}" class="empty-state">${canEdit()?esc(cfg.emptyEditor):esc(cfg.emptyViewer||'Nothing recorded yet.')}</td></tr>`;
+  else {
+    const list=st.list.filter(r=>regMatches(key,r)).sort(cfg.sort||((a,b)=>String(b[cfg.dateField||'date']||'').localeCompare(String(a[cfg.dateField||'date']||''))));
+    tb.innerHTML = list.length ? list.map(r=>`<tr data-reg-row="${key}:${r.id}">${cfg.columns.map(c=>`<td${c.cls?` class="${c.cls}"`:''}>${c.html(r)}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${n}" class="empty-state">Nothing matches your filters.</td></tr>`;
+  }
+  if(activeReg===key && activeRegId) renderRegDrawer();
+  if(activeReg===key && !document.getElementById('regTrashDrawer').hidden) renderRegTrash();
+}
+function openRegAdd(key){
+  const cfg=REG[key], fields=regFieldsOf(cfg).filter(f=>cfg.addFields.includes(f.key));
+  document.getElementById(key+'AddFields').innerHTML = cfg.addFields.map(k=>fields.find(f=>f.key===k)).filter(Boolean).map(f=>regFieldHtml(f, (cfg.addDefaults||{})[f.key]!==undefined ? (typeof cfg.addDefaults[f.key]==='function'?cfg.addDefaults[f.key]():cfg.addDefaults[f.key]) : (f.type==='date'&&f.key===(cfg.dateField||'date')?localToday():''))).join('');
+  document.getElementById(key+'AddPanel').hidden=false;
+}
+
+/* ---- drawer ---- */
+function openRegDrawer(key, id, tab){
+  const nav=document.querySelector(`.sidenav-btn[data-section="${REG[key].navKey||key}"]`); if(nav && !nav.classList.contains('active')) nav.click();
+  raiseDrawer('regDrawerOverlay','regDrawer'); activeReg=key; activeRegId=id; activeRegTab=tab||'main'; regSubOpen=null; regSubEdit=null;
+  document.getElementById('regDrawerOverlay').hidden=false; document.getElementById('regDrawer').hidden=false; renderRegDrawer();
+}
+function closeRegDrawer(){ activeRegId=null; document.getElementById('regDrawerOverlay').hidden=true; document.getElementById('regDrawer').hidden=true; }
+function regTabsFor(cfg, r){ return cfg.tabs.filter(t=>!t.showIf || t.showIf(r)).concat(cfg.files||cfg.multiFiles?[{key:'files', label:'Files'}]:[]).concat([{key:'history', label:'History'}]); }
+function renderRegDrawer(){
+  const r=regCurrent(), cfg=REG[activeReg]; if(!r || r.deleted){ closeRegDrawer(); return; } if(regBusy) return;
+  document.getElementById('regDrawerName').textContent = r[cfg.noField] ? `${r[cfg.noField]} — ${cfg.titleOf(r)}` : cfg.titleOf(r);
+  document.getElementById('regDrawerSub').textContent = cfg.subOf(r);
+  const pdf=document.getElementById('regPdfBtn'); pdf.hidden=!cfg.pdf; if(cfg.pdf) pdf.innerHTML=ic('download')+' '+esc(cfg.pdfLabel||'PDF');
+  const tabs=regTabsFor(cfg, r); if(!tabs.some(t=>t.key===activeRegTab)) activeRegTab=tabs[0].key;
+  document.getElementById('regDrawerTabs').innerHTML = tabs.map(t=>{ let x=''; if(t.sub){ const l=r[t.sub]||[], sc=cfg.subs[t.sub]; const open=sc.isAction?l.filter(a=>(a.status||'Open')!=='Closed').length:l.length; const od=sc.isAction?l.filter(a=>complaintOverdueDays(a)).length:0; if(l.length) x=` <span class="pill-count ${od?'danger':open&&sc.isAction?'warn':''}">${sc.isAction?open:l.length}</span>`; }
+    return `<button type="button" class="tab-btn ${t.key===activeRegTab?'active':''}" data-rtab="${t.key}">${esc(t.label)}${x}</button>`; }).join('');
+  const t=tabs.find(x=>x.key===activeRegTab), b=document.getElementById('regDrawerBody');
+  if(t.key==='files') b.innerHTML=regFilesHtml(cfg, r);
+  else if(t.key==='history') b.innerHTML=regHistoryHtml(cfg.collection, r.id);
+  else if(t.sub) b.innerHTML=regSubHtml(cfg, r, t.sub, t);
+  else if(t.html) b.innerHTML=t.html(r);
+  else b.innerHTML=regFormTabHtml(cfg, r, t);
+  if(t.key==='history') loadRegHistory(cfg.collection, r.id);
+}
+function regFormTabHtml(cfg, r, t){
+  const head = t.key===cfg.tabs[0].key ? `${cfg.badgesOf?`<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">${cfg.badgesOf(r)}</div>`:''}${updatedNoteHtml(r)}` : '';
+  return `${head}${t.intro?`<p class="wsub" style="margin:0 0 12px;">${t.intro}</p>`:''}${t.pre?t.pre(r):''}<form data-reg-form="${t.key}">${(t.groups||[{fields:t.fields}]).map(g=>`${g.title?`<div class="subhead">${esc(g.title)}</div>`:''}<div class="form-grid">${g.fields.map(f=>regFieldHtml(f, r[f.key])).join('')}</div>`).join('')}
+    <div class="form-actions"><button type="submit" class="btn btn-primary">Save</button></div></form>
+    ${t.key===cfg.tabs[0].key?`<div class="danger-zone"><p>Deleting moves this ${esc(cfg.singular.toLowerCase())} to the trash. It can be restored.</p><button type="button" class="btn btn-danger btn-sm" id="regDeleteBtn" data-armed="0">Delete ${esc(cfg.singular.toLowerCase())}</button></div>`:''}`;
+}
+function regSubHtml(cfg, r, subKey, t){
+  const sc=cfg.subs[subKey], list=(r[subKey]||[]).slice(), editing=regSubEdit?list.find(x=>x.id===regSubEdit):null, open=regSubOpen===subKey;
+  const defaults=typeof sc.defaults==='function'?sc.defaults(r):(sc.defaults||{});
+  const form=open?`<form data-reg-subform="${subKey}" style="margin-bottom:16px;"><div class="form-grid">${sc.fields.map(f=>regFieldHtml(f, editing?editing[f.key]:defaults[f.key], 'data-sf')).join('')}</div>
+    <div class="form-actions"><button type="submit" class="btn btn-primary btn-sm">${editing?'Save':'Add'}</button></div></form>`:'';
+  if(sc.sort) list.sort(sc.sort);
+  const cards=list.length?list.map(x=>`<div class="record-card"><div class="record-card-top"><div class="record-card-title">${sc.title(x, r)}</div>
+      <div class="record-card-actions"><button type="button" class="icon-btn" data-sedit="${subKey}:${x.id}" aria-label="Edit">${ic('pencil')}</button><button type="button" class="icon-btn danger" data-sdel="${subKey}:${x.id}" data-armed="0" aria-label="Delete">${ic('trash')}</button></div></div>
+      ${sc.body?sc.body(x, r):''}<div class="record-fields">${sc.fields.filter(f=>!(sc.hideInCard||[]).includes(f.key) && x[f.key]!==undefined && x[f.key]!=='' && !(Array.isArray(x[f.key])&&!x[f.key].length)).map(f=>`<div class="rf"><span class="rf-k">${esc(f.label)}</span><span class="rf-v">${esc(regDisplay(f, x[f.key]))}</span></div>`).join('')}</div></div>`).join('')
+    : `<p class="wsub">${esc(sc.empty||'Nothing added yet.')}</p>`;
+  return `${t.pre?t.pre(r):''}<div class="section-head"><h3>${esc(sc.label)} (${list.length})</h3><button type="button" class="btn btn-sm reg-edit-only" data-sub-toggle="${subKey}">${open?'Cancel':'+ '+esc(sc.addLabel||'Add')}</button></div>${form}${cards}`;
+}
+function regFilesHtml(cfg, r){
+  let h=(cfg.files||[]).map(f=>{ const v=r[f.key]; return `<div class="subhead">${esc(f.label)}</div><div class="att-block">${v&&v.url?libFileBlockHtml(v,false):'<span class="att-none">Not uploaded</span>'}<label class="upload-btn">${v&&v.url?'Replace':'Upload'}<input type="file" hidden data-reg-file="${f.key}"></label></div>`; }).join('');
+  if(cfg.multiFiles){ const m=cfg.multiFiles, files=r[m.key]||[];
+    h+=`<div class="section-head" style="margin-top:14px;"><h3>${esc(m.label)} (${files.length})</h3><label class="upload-btn">${ic('camera')} Add<input type="file" hidden multiple ${m.accept?`accept="${m.accept}"`:''} data-reg-files="${m.key}"></label></div>
+      ${m.hint?`<p class="wsub" style="margin:0 0 10px;">${esc(m.hint)}</p>`:''}<div class="inc-files">${files.map((f,n)=>`<div class="inc-file">${/^image\//.test(f.contentType||'')?`<img src="${esc(f.url)}" alt="" loading="lazy">`:`<span class="att-file-icon">${ic('file')}</span>`}
+        <div class="lib-file-name">${esc(f.name||'file')}</div><div class="att-actions"><a class="att-link" href="${esc(f.url)}" target="_blank" rel="noopener">View</a><button type="button" class="att-link" data-download-url="${esc(f.url)}" data-download-name="${esc(f.name||'file')}">Download</button><button type="button" class="att-link att-remove" data-reg-filedel="${m.key}:${n}" data-armed="0">Remove</button></div></div>`).join('')||'<p class="wsub">No files yet.</p>'}</div>`; }
+  return h;
+}
+function openRegTrash(key){ activeReg=key; document.getElementById('regTrashTitle').textContent='Deleted — '+REG[key].title; document.getElementById('regTrashOverlay').hidden=false; document.getElementById('regTrashDrawer').hidden=false; renderRegTrash(); }
+function closeRegTrash(){ document.getElementById('regTrashOverlay').hidden=true; document.getElementById('regTrashDrawer').hidden=true; }
+function renderRegTrash(){ const cfg=REG[activeReg], list=regDeleted(activeReg); document.getElementById('regTrashBody').innerHTML = list.length?list.map(r=>`<div class="record-card"><div class="record-card-top"><div class="record-card-title">${esc([r[cfg.noField], cfg.titleOf(r)].filter(Boolean).join(' · '))}</div><div class="record-card-actions"><button type="button" class="btn btn-sm" data-rrestore="${r.id}">Restore</button><button type="button" class="btn btn-danger btn-sm" data-rpurge="${r.id}" data-armed="0">Delete forever</button></div></div></div>`).join(''):'<p class="wsub">Nothing in the trash.</p>'; }
+
+/* ---- history (activity log) ---- */
+function historyRowsHtml(list, showRecord){
+  if(!list.length) return '<p class="wsub">No changes recorded yet. Changes are logged from the day this feature was installed.</p>';
+  return `<div class="hist-list">${list.map(e=>{ const d=new Date(e.at); const when=isNaN(d)?e.at:d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const cls=/trash|deleted/.test(e.action)?'danger':e.action==='created'?'ok':e.action==='restored'?'warn':'muted';
+    return `<div class="hist-row"><div class="hist-when mono">${esc(when)}</div><div class="hist-main"><div><span class="badge ${cls}">${esc(e.action)}</span> ${showRecord?`<strong>${esc(e.section||'')}</strong> · ${esc(e.label||'')} `:''}<span class="wsub" style="display:inline;">by ${esc(e.by||'—')}</span></div>
+      ${(e.changes||[]).length?`<ul class="hist-changes">${e.changes.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`:''}</div></div>`; }).join('')}</div>`;
+}
+function regHistoryHtml(col, id){ const c=regHistoryCache[col+':'+id]; return `<div id="regHistBox">${c?historyRowsHtml(c,false):'<p class="wsub">Loading history…</p>'}</div>`; }
+async function fetchHistory(col, id){
+  const snap=await db.collection('activityLog').where('docId','==',id).limit(300).get();
+  return snap.docs.map(d=>({id:d.id, ...(d.data()||{})})).filter(e=>e.col===col).sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+}
+async function loadRegHistory(col, id, boxId){
+  try{ const list=await fetchHistory(col, id); regHistoryCache[col+':'+id]=list; const box=document.getElementById(boxId||'regHistBox'); if(box) box.innerHTML=historyRowsHtml(list,false); }
+  catch(e){ console.error(e); const box=document.getElementById(boxId||'regHistBox'); if(box) box.innerHTML=`<p class="wsub">${e&&e.code==='permission-denied'?esc(RULES_UPDATE_MSG):'Could not load history.'}</p>`; }
+}
+
+/* ---------------- shared option lists ---------------- */
+const ACTION_STATUSES = COMPLAINT_STATUSES;   // Open / Pending / Closed
+const ACTION_FIELDS = [
+  {key:'action', label:'Action', type:'text', required:true, wide:true},
+  {key:'owner', label:'Action owner', type:'text', required:true},
+  {key:'targetDate', label:'Target date', type:'date'},
+  {key:'status', label:'Status', type:'select', options:ACTION_STATUSES, required:true},
+  {key:'closedDate', label:'Closed on', type:'date'},
+  {key:'verification', label:'Close-out / verification', type:'textarea', wide:true},
+];
+const actionSub = (label, extra)=>({label:label||'Actions', addLabel:'Add action', isAction:true, fields:ACTION_FIELDS, defaults:{status:'Open'}, hideInCard:['action'],
+  title:x=>`<span>${esc(x.action||'')}</span> ${complaintBadges(x)}`, empty:'No actions yet.', ...(extra||{})});
+function divisionOptions(){ return DIVISIONS.map(d=>divLabel(d)); }
+function incidentPickOptions(){ return activeIncidents().slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).map(i=>({value:i.id, label:`${i.incNo||'Incident'} · ${i.date||''} · ${i.type||''}`})); }
+function sevNum(s){ const n=parseInt(String(s||''),10); return isNaN(n)?0:n; }
+function ratingOf(score){ return auditRating(score); }
+function yearOptions(){ const y=new Date().getFullYear(); return [String(y-1), String(y), String(y+1)]; }
+function kpiPickOptions(){ return TARGET_DEFS.map(d=>({value:d.key, label:`${d.kind==='lagging'?'Lagging':'Leading'} · ${d.label}`})); }
+
+/* =============================== OBJECTIVES =============================== */
+const OBJ_STATUSES=['Not started','On track','At risk','Achieved','Not achieved'];
+const POLICY_COMMITMENTS=['Prevent injury & ill health','Eliminate hazards & reduce risks','Comply with legal & other requirements','Consultation & participation of workers','Continual improvement of HSE performance','Protect the environment / prevent pollution','Customer & client satisfaction'];
+function objStatusBadge(r){ const s=r.status||'Not started'; const c=s==='Achieved'||s==='On track'?'ok':s==='At risk'?'warn':s==='Not achieved'?'danger':'muted'; return `<span class="badge ${c}">${esc(s)}</span>`; }
+function objKpiLive(r){
+  const d=TARGET_DEFS.find(x=>x.key===r.kpi); if(!d) return null;
+  const y=String(r.year||new Date().getFullYear()), a=targetActuals(y), t=targetsFor(y)||{}, tgt=t[d.key];
+  const st=targetStatus(d, a[d.key], tgt===''||tgt===undefined?null:Number(tgt), a._months);
+  return {d, act:a[d.key], tgt, st};
+}
+function objProgress(r){ const p=(r.plan||[]); if(r.progress!==''&&r.progress!==undefined&&r.progress!==null) return Number(r.progress); if(!p.length) return 0; return Math.round(p.filter(x=>x.status==='Closed').length*100/p.length); }
+regDefine({
+  key:'objectives', collection:'objectives', singular:'Objective', title:'Objectives & KPIs', tagline:'Set · Measure · Review · Improve',
+  addLabel:'+ Add objective', noField:'objNo', noPrefix:'OBJ', noYear:true, dateField:'startDate', yearFilter:false,
+  searchPlaceholder:'Search objective, owner…', statuses:OBJ_STATUSES, emptyEditor:'No objectives yet — click “+ Add objective”. Each objective can be linked to a KPI so progress is measured automatically.',
+  titleOf:r=>r.objective?String(r.objective).slice(0,70):'Objective', subOf:r=>[r.year, r.owner?'owner '+r.owner:'', r.division].filter(Boolean).join(' · '),
+  badgesOf:r=>objStatusBadge(r), searchText:r=>[r.objNo,r.objective,r.owner,r.target].join(' '),
+  addFields:['year','objective','policy','kpi','target','owner','dueDate'], addDefaults:{year:()=>String(new Date().getFullYear()), status:'On track'},
+  sort:(a,b)=>String(a.objNo||'').localeCompare(String(b.objNo||'')),
+  tabs:[{key:'main', label:'Objective', groups:[
+    {fields:[
+      {key:'objNo', label:'Objective no.', required:true},
+      {key:'year', label:'Year', type:'select', options:yearOptions, required:true},
+      {key:'status', label:'Status', type:'select', options:OBJ_STATUSES},
+      {key:'objective', label:'Objective (specific & measurable)', type:'textarea', required:true, wide:true, placeholder:'e.g. Reduce vehicle incidents by 50% compared with last year'},
+      {key:'policy', label:'HSE policy commitment it supports', type:'select', options:POLICY_COMMITMENTS},
+      {key:'division', label:'Division (optional)', type:'select', options:divisionOptions},
+      {key:'kpi', label:'Measured by KPI', type:'pick', options:kpiPickOptions, empty:'— Not linked / measured manually —'},
+      {key:'target', label:'Target', placeholder:'e.g. ≤ 2 vehicle incidents'},
+      {key:'measure', label:'How it is measured / evaluated', wide:true},
+      {key:'owner', label:'Owner (responsible)', required:true},
+      {key:'resources', label:'Resources required', wide:true},
+      {key:'startDate', label:'Start date', type:'date'},
+      {key:'dueDate', label:'Completion date', type:'date'},
+      {key:'progress', label:'Progress % (leave blank to use the action plan)', type:'number', min:0, max:100},
+      {key:'review', label:'Review notes / evaluation of results', type:'textarea', wide:true},
+    ]}]},
+    {key:'sub:plan', label:'Action plan', sub:'plan'}],
+  subs:{plan:actionSub('Action plan', {addLabel:'Add step', empty:'No steps yet — break the objective into actions with owners and dates.'})},
+  columns:[
+    {label:'No.', cls:'mono', html:r=>`<strong>${esc(r.objNo||'—')}</strong><div class="wsub">${esc(r.year||'')}</div>`},
+    {label:'Objective', html:r=>`<div class="wname">${esc(String(r.objective||'').slice(0,110))}</div><div class="wsub">${esc(r.policy||'')}${r.division?' · '+esc(r.division):''}</div>`},
+    {label:'Target / KPI', html:r=>{ const k=objKpiLive(r); return `${esc(r.target||'—')}${k?`<div class="wsub">${esc(k.d.label)}: <strong>${fmtTarget(k.d,k.act)}</strong> <span class="badge ${k.st.cls}">${k.st.t}</span></div>`:''}`; }},
+    {label:'Owner', html:r=>`${esc(r.owner||'—')}<div class="wsub">due ${esc(r.dueDate||'—')}</div>`},
+    {label:'Progress', html:r=>{ const p=objProgress(r); return `<div class="obj-bar"><i style="width:${Math.max(0,Math.min(100,p))}%"></i></div><div class="wsub">${p}%</div>`; }},
+    {label:'Status', html:r=>objStatusBadge(r)},
+  ],
+  tiles:list=>{ const y=String(new Date().getFullYear()), cur=list.filter(r=>String(r.year)===y); const avg=cur.length?Math.round(cur.reduce((n,r)=>n+objProgress(r),0)/cur.length):null;
+    return [{label:`Objectives ${y}`, num:cur.length, sub:`${list.length} in total`, icon:'target'},
+      {label:'Achieved / on track', num:cur.filter(r=>['Achieved','On track'].includes(r.status)).length, cls:'ok', sub:'this year', icon:'checkcircle'},
+      {label:'At risk / not achieved', num:cur.filter(r=>['At risk','Not achieved'].includes(r.status)).length, cls:cur.some(r=>['At risk','Not achieved'].includes(r.status))?'danger':'ok', sub:'needs management attention', icon:'alert'},
+      {label:'Average progress', num:avg===null?'—':avg+'%', sub:'across this year’s objectives', icon:'trend'}]; },
+  topPanel:()=>renderKpiPanel(),
+});
+
+/* =============================== SAFETY ALERTS =============================== */
+const ALERT_TYPES=['Initial LFI (within 7 days)','Lessons learned (2-page)','External alert (PDO / client / industry)','HSE bulletin'];
+const ALERT_STATUSES=['Draft','Issued','Closed'];
+function alertCoverage(r){
+  const done=new Set((r.briefings||[]).map(b=>b.projectId||'office'));
+  const targets=activeSites().filter(s=>(s.status||'Active')!=='Completed' && (!r.audience||!r.audience.length||r.audience.includes('All divisions')||r.audience.includes(divLabel(s.division))));
+  const hit=targets.filter(s=>done.has(s.id)).length;
+  return {hit, total:targets.length, pct: targets.length?Math.round(hit*100/targets.length):null, missing:targets.filter(s=>!done.has(s.id))};
+}
+function incidentNeedsLfi(i){ return !i.deleted && (sevNum(i.actualSeverity)>=4 || sevNum(i.potentialSeverity)>=4); }
+function incidentsMissingLfi(){ const has=new Set(regActive('alerts').map(a=>a.incidentId).filter(Boolean)); return activeIncidents().filter(i=>incidentNeedsLfi(i) && !has.has(i.id)); }
+function alertStatusBadge(r){ const s=r.status||'Draft'; const due=(s==='Draft' && r.dueDate && daysUntil(r.dueDate)<0); return `<span class="badge ${s==='Issued'?'ok':s==='Closed'?'muted':'warn'}">${esc(s)}</span>${due?` <span class="badge danger">Overdue ${-daysUntil(r.dueDate)}d</span>`:''}`; }
+function alertFromIncident(i){
+  const due=i.date?new Date(new Date(i.date+'T00:00:00Z').getTime()+7*86400000).toISOString().slice(0,10):'';
+  const images=(i.files||[]).filter(f=>/^image\//.test(f.contentType||'')).slice(0,4);
+  return {alertType: incidentNeedsLfi(i)?'Initial LFI (within 7 days)':'Lessons learned (2-page)', status:'Draft', source:'Our incident', incidentId:i.id,
+    title:`${i.type||'Incident'} — ${String(i.description||'').slice(0,70)}`, issueDate:localToday(), dueDate:due, projectId:i.projectId||'', location:i.location||'',
+    eventDate:i.date||'', eventType:[i.type, i.injuryClass&&!/^Not applicable/.test(i.injuryClass)?i.injuryClass:''].filter(Boolean).join(' · '), actualSeverity:i.actualSeverity||'', potentialSeverity:i.potentialSeverity||'',
+    whatHappened:i.description||'', whatWentWrong:(i.immediateCauses||[]).join('\n'), whyItHappened:[...(i.rootCauses||[]), i.findings||''].filter(Boolean).join('\n'),
+    keyLessons:i.lessons||'', askYourself:'', mgmtLearning:'', audience:['All divisions'], photos:images,
+    actions:[], briefings:[]};
+}
+async function openAlertForIncident(i){
+  const ex=regActive('alerts').find(a=>a.incidentId===i.id);
+  if(ex){ openRegDrawer('alerts', ex.id); return; }
+  if(!canEdit()){ toast('No safety alert has been issued for this incident yet'); return; }
+  await regCreate('alerts', alertFromIncident(i), 'content');
+}
+regDefine({
+  key:'alerts', collection:'safetyAlerts', singular:'Safety alert', title:'Safety Alerts & Lessons Learned', tagline:'Share · Brief · Learn · Prevent',
+  addLabel:'+ New alert', noField:'alertNo', noPrefix:'SA', noYear:true, dateField:'issueDate', yearFilter:true, statuses:ALERT_STATUSES,
+  headerButtons:'', searchPlaceholder:'Search alert no., title, location…',
+  emptyEditor:'No alerts yet. Open an incident and click “Safety alert” to create one from it, or add an external alert received from PDO / the client.',
+  titleOf:r=>r.title||'Safety alert', subOf:r=>[r.alertType, r.issueDate, r.source].filter(Boolean).join(' · '), badgesOf:r=>alertStatusBadge(r),
+  searchText:r=>[r.alertNo,r.title,r.location,r.source,r.eventType].join(' '),
+  addFields:['alertType','source','title','issueDate','incidentId','projectId'], addDefaults:{status:'Draft', source:'Our incident', audience:['All divisions']},
+  segs:[{key:'lfi', label:'Initial LFI', match:r=>r.alertType===ALERT_TYPES[0]},{key:'ll', label:'Lessons learned', match:r=>r.alertType===ALERT_TYPES[1]},{key:'ext', label:'External (PDO / client)', match:r=>r.alertType===ALERT_TYPES[2]},{key:'bul', label:'Bulletins', match:r=>r.alertType===ALERT_TYPES[3]}],
+  segAllLabel:'All alerts',
+  tabs:[
+    {key:'main', label:'Details', groups:[{fields:[
+      {key:'alertNo', label:'Alert no.', required:true},
+      {key:'alertType', label:'Alert type', type:'select', options:ALERT_TYPES, required:true},
+      {key:'status', label:'Status', type:'select', options:ALERT_STATUSES, required:true},
+      {key:'title', label:'Alert title', required:true, wide:true},
+      {key:'source', label:'Source', type:'select', options:['Our incident','PDO','Client (other)','Industry / IOGP','Other']},
+      {key:'incidentId', label:'Linked incident', type:'pick', options:incidentPickOptions, empty:'— None / external —'},
+      {key:'issueDate', label:'Issue date', type:'date', required:true},
+      {key:'dueDate', label:'Due (LFI within 7 days of incident)', type:'date'},
+      {key:'projectId', label:'Project', type:'project'},
+      {key:'location', label:'Location'},
+      {key:'eventDate', label:'Date of event', type:'date'},
+      {key:'eventType', label:'Event type / classification'},
+      {key:'actualSeverity', label:'Actual severity', type:'select', options:SEVERITY_LEVELS},
+      {key:'potentialSeverity', label:'Potential severity', type:'select', options:SEVERITY_LEVELS},
+      {key:'preparedBy', label:'Prepared by'},
+      {key:'approvedBy', label:'Approved by'},
+      {key:'audience', label:'Distribute to', type:'checks', options:()=>['All divisions', ...divisionOptions(), 'Subcontractors', 'Client']},
+    ]}]},
+    {key:'content', label:'Page 1 · Workers', intro:'Page 1 is the poster for the workforce — short, plain language, one idea per line.', fields:[
+      {key:'whatHappened', label:'What happened?', type:'textarea', wide:true},
+      {key:'whatWentWrong', label:'What went wrong? (one per line)', type:'textarea', wide:true},
+      {key:'keyLessons', label:'Key lessons / do’s and don’ts (one per line)', type:'textarea', wide:true},
+      {key:'askYourself', label:'Ask yourself… (one per line)', type:'textarea', wide:true, placeholder:'Could this happen on my site?\nDo I stop the job when something changes?'},
+    ]},
+    {key:'mgmt', label:'Page 2 · Management', intro:'Page 2 is for supervisors and managers — why it happened (system failures) and what the company is changing.', fields:[
+      {key:'whyItHappened', label:'Why did it happen? Root causes & system failures (one per line)', type:'textarea', wide:true},
+      {key:'mgmtLearning', label:'Management learning — what must change in our systems (one per line)', type:'textarea', wide:true},
+    ]},
+    {key:'sub:actions', label:'Actions', sub:'actions', pre:r=>{ const i=r.incidentId&&incidentList.find(x=>x.id===r.incidentId); if(!i) return ''; const c=i.capa||[];
+      return `<div class="subhead">Incident actions — ${esc(i.incNo||'')} <span class="wsub" style="display:inline;">(managed in the Incident Register, printed on page 2)</span></div>${c.length?c.map(a=>`<div class="record-card"><div class="record-card-title">${esc(a.action||'')} ${complaintBadges(a)}</div><div class="wsub">${esc(a.owner||'—')} · target ${esc(a.targetDate||'—')}</div></div>`).join(''):'<p class="wsub">No actions on the incident yet.</p>'}<div style="height:10px;"></div>`; }},
+    {key:'sub:briefings', label:'Briefings', sub:'briefings', pre:r=>{ const c=alertCoverage(r); return `<div class="brief-cov"><div><div class="wsub">Projects briefed</div><div class="tile-num ${c.pct===null?'':c.pct>=100?'ok':c.pct>=60?'warn':'danger'}" style="font-size:26px;">${c.pct===null?'—':c.pct+'%'}</div><div class="wsub">${c.hit} of ${c.total} active projects in the distribution</div></div>${c.missing.length?`<div class="wsub"><strong>Not briefed yet:</strong> ${c.missing.map(s=>esc(s.siteName||'Project')).join(', ')}</div>`:''}</div>`; }},
+  ],
+  subs:{
+    actions:actionSub('Additional actions from this alert', {empty:'Add actions only if this alert needs something beyond the incident’s own corrective actions (e.g. company-wide changes, or actions for an external PDO alert).'}),
+    briefings:{label:'Briefings held', addLabel:'Record briefing', fields:[
+      {key:'projectId', label:'Project', type:'project'},
+      {key:'date', label:'Date', type:'date', required:true},
+      {key:'briefedBy', label:'Briefed by', required:true},
+      {key:'attendees', label:'No. of attendees', type:'number', min:0},
+      {key:'notes', label:'Notes', type:'text', wide:true}], defaults:()=>({date:localToday()}),
+      title:x=>`<span>${esc(x.projectId?projectName(x.projectId):'Office / other')}</span> <span class="badge muted">${esc(x.date||'')}</span>`, hideInCard:['projectId','date'], empty:'Record each toolbox talk or meeting where this alert was presented.'},
+  },
+  multiFiles:{key:'photos', label:'Photos for the alert', accept:'image/*', hint:'The first two photos are printed on page 1 of the PDF.'},
+  columns:[
+    {label:'Alert no.', cls:'mono', html:r=>`<strong>${esc(r.alertNo||'—')}</strong><div class="wsub">${esc(r.issueDate||'')}</div>`},
+    {label:'Title', html:r=>`<div class="wname">${esc(r.title||'—')}</div><div class="wsub">${esc(r.alertType||'')}${r.source?' · '+esc(r.source):''}</div>`},
+    {label:'Incident / project', html:r=>{ const i=r.incidentId&&incidentList.find(x=>x.id===r.incidentId); return `${i?esc(i.incNo||''):'<span class="wsub">—</span>'}<div class="wsub">${esc(r.projectId?projectName(r.projectId):(r.location||''))}</div>`; }},
+    {label:'Severity', html:r=>`${r.actualSeverity?esc(r.actualSeverity):'—'}${r.potentialSeverity?`<div class="wsub">potential ${esc(r.potentialSeverity)}</div>`:''}`},
+    {label:'Briefed', html:r=>{ const c=alertCoverage(r); return c.pct===null?'<span class="wsub">—</span>':`<span class="badge ${c.pct>=100?'ok':c.pct>=60?'warn':'danger'}">${c.pct}%</span><div class="wsub">${c.hit}/${c.total} projects</div>`; }},
+    {label:'Status', html:r=>alertStatusBadge(r)},
+  ],
+  tiles:list=>{ const y=String(new Date().getFullYear()), cur=list.filter(r=>String(r.issueDate||'').startsWith(y)), miss=incidentsMissingLfi(), cov=cur.filter(r=>r.status!=='Draft').map(alertCoverage).filter(c=>c.pct!==null);
+    return [{label:`Alerts issued ${y}`, num:cur.filter(r=>r.status!=='Draft').length, sub:`${cur.filter(r=>r.status==='Draft').length} draft`, icon:'megaphone'},
+      {label:'LFI still needed', num:miss.length, cls:miss.length?'danger':'ok', sub:miss.length?miss.slice(0,3).map(i=>i.incNo).join(', '):'every HiPo / sev 4–5 incident has an alert', icon:'siren'},
+      {label:'Briefing coverage', num:cov.length?Math.round(cov.reduce((n,c)=>n+c.pct,0)/cov.length)+'%':'—', sub:'average across issued alerts', icon:'users'},
+      {label:'Open alert actions', num:list.reduce((n,r)=>n+(r.actions||[]).filter(a=>(a.status||'Open')!=='Closed').length,0), sub:`${list.reduce((n,r)=>n+(r.actions||[]).filter(a=>complaintOverdueDays(a)).length,0)} overdue`, icon:'clipcheck'}]; },
+  pdf:r=>downloadAlertPdf(r), pdfLabel:'Alert PDF',
+  afterSave:r=>{ if(r.incidentId && r.status==='Issued'){ const i=incidentList.find(x=>x.id===r.incidentId); if(i && i.alertShared!=='Yes') db.collection('incidents').doc(i.id).update(stamp({alertShared:'Yes', alertDate:r.issueDate||localToday()})).catch(()=>{}); } },
+});
+
+/* =============================== LEGAL REGISTER =============================== */
+const LEGAL_STATUSES=['Compliant','Partially compliant','Non-compliant','Not evaluated','Not applicable'];
+const LEGAL_CATEGORIES=['Oman law / Royal Decree','Ministerial decision / regulation','Authority permit / licence','Client requirement (PDO / OQ / other)','ISO / international standard','Company requirement','Other'];
+const LEGAL_FREQ={'Monthly':1,'Quarterly':3,'6-monthly':6,'Yearly':12,'Every 2 years':24};
+function legalStatusBadge(r){ const s=r.status||'Not evaluated'; const c=s==='Compliant'?'ok':s==='Partially compliant'?'warn':s==='Non-compliant'?'danger':'muted'; const od=r.nextEvaluation && daysUntil(r.nextEvaluation)<0 && s!=='Not applicable'; return `<span class="badge ${c}">${esc(s)}</span>${od?' <span class="badge danger">Evaluation overdue</span>':''}`; }
+function addMonths(dateStr, n){ const d=new Date(String(dateStr||'').slice(0,10)+'T00:00:00Z'); if(isNaN(d)) return ''; d.setUTCMonth(d.getUTCMonth()+n); return d.toISOString().slice(0,10); }
+function legalCompliancePct(list){ const ev=(list||regActive('legal')).filter(r=>['Compliant','Partially compliant','Non-compliant'].includes(r.status)); return ev.length?Math.round(ev.filter(r=>r.status==='Compliant').length*100/ev.length):null; }
+const LEGAL_TEMPLATE=[
+  {title:'Labour Law', category:LEGAL_CATEGORIES[0], authority:'Ministry of Labour', reference:'Royal Decree 53/2023', requirement:'Employment conditions, working hours, rest periods, employer duties for worker health & safety.', frequency:'Yearly'},
+  {title:'Occupational safety & health regulation for establishments under the Labour Law', category:LEGAL_CATEGORIES[1], authority:'Ministry of Labour', reference:'Ministerial Decision 286/2008', requirement:'OSH measures: PPE, first aid, safe equipment, hazardous substances, work environment, OSH records and reporting of injuries.', frequency:'6-monthly'},
+  {title:'Midday work break for outdoor workers (summer)', category:LEGAL_CATEGORIES[1], authority:'Ministry of Labour', reference:'Ministerial Decision 286/2008 — annual summer midday break', requirement:'No outdoor work under the sun 12:30–15:30, 1 June – 31 August. Check each year’s ministry announcement.', frequency:'Yearly'},
+  {title:'Environmental protection & pollution control', category:LEGAL_CATEGORIES[0], authority:'Environment Authority', reference:'Royal Decree 114/2001 (check current amendments)', requirement:'Prevention of pollution, waste handling and disposal, environmental permits where required.', frequency:'Yearly'},
+  {title:'Traffic law — vehicles & drivers', category:LEGAL_CATEGORIES[0], authority:'Royal Oman Police', reference:'Traffic Law (check current version)', requirement:'Valid driving licences, vehicle registration & insurance, seat belts, speed limits, mobile phone ban.', frequency:'6-monthly'},
+  {title:'Fire safety & civil defence approvals', category:LEGAL_CATEGORIES[2], authority:'Civil Defence and Ambulance Authority', reference:'Fire safety certificate for premises', requirement:'Valid fire safety approval, fire extinguishers inspected, emergency exits and alarm systems maintained.', frequency:'Yearly'},
+  {title:'Social protection — work injury insurance', category:LEGAL_CATEGORIES[0], authority:'Social Protection Fund', reference:'Social Protection Law (check current version)', requirement:'All eligible employees registered; work injuries notified within the required time.', frequency:'Yearly'},
+  {title:'Commercial registration & municipality licence', category:LEGAL_CATEGORIES[2], authority:'Ministry of Commerce / Municipality', reference:'CR & municipality licence', requirement:'Valid CR and premises licences for yard / workshop / office.', frequency:'Yearly'},
+  {title:'PDO HSE contractor requirements (specifications)', category:LEGAL_CATEGORIES[3], authority:'PDO', reference:'Contract HSE specification / CP & SP documents listed in the contract', requirement:'Contract HSE plan, competence, permit to work, driving (journey management / IVMS), incident reporting and lessons learned.', frequency:'6-monthly'},
+  {title:'ISO 45001:2018 — OH&S management system', category:LEGAL_CATEGORIES[4], authority:'Certification body', reference:'ISO 45001:2018', requirement:'Maintain certification — internal audit, management review, objectives, compliance evaluation.', frequency:'Yearly'},
+];
+regDefine({
+  key:'legal', collection:'legalReqs', singular:'Requirement', title:'Legal & Other Requirements', tagline:'Identify · Evaluate · Comply',
+  addLabel:'+ Add requirement', noField:'legNo', noPrefix:'LEG', noYear:false, dateField:'lastEvaluated', statuses:LEGAL_STATUSES, statusOf:r=>r.status||'Not evaluated',
+  headerButtons:'<button class="btn btn-sm reg-edit-only" type="button" id="legalTemplateBtn">Load common Oman requirements</button>',
+  searchPlaceholder:'Search title, reference, authority…', emptyEditor:'No requirements yet — click “Load common Oman requirements” to start with a list you can edit, or add your own.',
+  titleOf:r=>r.title||'Requirement', subOf:r=>[r.reference, r.authority].filter(Boolean).join(' · '), badgesOf:r=>legalStatusBadge(r),
+  searchText:r=>[r.legNo,r.title,r.reference,r.authority,r.category].join(' '),
+  sort:(a,b)=>String(a.legNo||'').localeCompare(String(b.legNo||'')),
+  addFields:['title','category','authority','reference','owner','frequency'], addDefaults:{status:'Not evaluated', frequency:'Yearly'},
+  segs:LEGAL_CATEGORIES.slice(0,5).map((c,n)=>({key:'c'+n, label:c.replace(/ \(.*\)/,'').replace(' / Royal Decree',''), match:r=>r.category===c})), segAllLabel:'All',
+  tabs:[{key:'main', label:'Requirement', groups:[{fields:[
+      {key:'legNo', label:'Ref no.', required:true},
+      {key:'category', label:'Category', type:'select', options:LEGAL_CATEGORIES, required:true},
+      {key:'title', label:'Title', required:true, wide:true},
+      {key:'authority', label:'Issuing authority'},
+      {key:'reference', label:'Reference (decree / decision / document no.)'},
+      {key:'clause', label:'Relevant articles / clauses'},
+      {key:'requirement', label:'What it requires', type:'textarea', wide:true},
+      {key:'applicability', label:'How it applies to Burhan', type:'textarea', wide:true},
+      {key:'appliesTo', label:'Applies to', type:'checks', options:()=>['All divisions', ...divisionOptions()]},
+      {key:'owner', label:'Responsible person'},
+      {key:'frequency', label:'Evaluation frequency', type:'select', options:Object.keys(LEGAL_FREQ)},
+      {key:'permitNo', label:'Permit / licence no. (if any)'},
+      {key:'permitExpiry', label:'Permit / licence expiry', type:'date'},
+    ]},{title:'Current compliance (updated from the latest evaluation)', fields:[
+      {key:'status', label:'Compliance status', type:'select', options:LEGAL_STATUSES},
+      {key:'lastEvaluated', label:'Last evaluated', type:'date'},
+      {key:'nextEvaluation', label:'Next evaluation due', type:'date'},
+    ]}]},
+    {key:'sub:evaluations', label:'Evaluations', sub:'evaluations'},
+    {key:'sub:actions', label:'Actions', sub:'actions'}],
+  subs:{
+    evaluations:{label:'Compliance evaluations', addLabel:'Record evaluation', fields:[
+      {key:'date', label:'Date evaluated', type:'date', required:true},
+      {key:'status', label:'Result', type:'select', options:LEGAL_STATUSES.slice(0,3), required:true},
+      {key:'evaluatedBy', label:'Evaluated by', required:true},
+      {key:'evidence', label:'Evidence checked', type:'textarea', wide:true},
+      {key:'notes', label:'Gaps / notes', type:'textarea', wide:true}], defaults:()=>({date:localToday()}),
+      sort:(a,b)=>String(b.date||'').localeCompare(String(a.date||'')),
+      title:x=>`<span class="mono">${esc(x.date||'')}</span> ${legalStatusBadge({status:x.status})}`, hideInCard:['date','status'], empty:'No evaluations yet. Each evaluation updates the compliance status and the next due date.',
+      onSave:(r, list)=>{ const last=list.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0]; if(!last) return {}; return {status:last.status, lastEvaluated:last.date, nextEvaluation:addMonths(last.date, LEGAL_FREQ[r.frequency]||12)}; }},
+    actions:actionSub('Actions to close gaps'),
+  },
+  files:[{key:'docFile', label:'Copy of the law / permit / licence'}],
+  columns:[
+    {label:'Ref', cls:'mono', html:r=>`<strong>${esc(r.legNo||'—')}</strong>`},
+    {label:'Requirement', html:r=>`<div class="wname">${esc(r.title||'—')}</div><div class="wsub">${esc(r.reference||'')}${r.authority?' · '+esc(r.authority):''}</div>`},
+    {label:'Category', html:r=>`<span class="wsub" style="margin:0;">${esc(r.category||'')}</span>`},
+    {label:'Owner', html:r=>esc(r.owner||'—')},
+    {label:'Evaluated', html:r=>`${esc(r.lastEvaluated||'—')}<div class="wsub">next ${esc(r.nextEvaluation||'—')}</div>${r.permitExpiry?`<div class="wsub ${daysUntil(r.permitExpiry)<30?'text-danger':''}">permit exp. ${esc(r.permitExpiry)}</div>`:''}`},
+    {label:'Status', html:r=>legalStatusBadge(r)},
+  ],
+  tiles:list=>{ const pct=legalCompliancePct(list), nc=list.filter(r=>r.status==='Non-compliant'||r.status==='Partially compliant').length, od=list.filter(r=>r.nextEvaluation&&daysUntil(r.nextEvaluation)<0&&r.status!=='Not applicable').length, ne=list.filter(r=>(r.status||'Not evaluated')==='Not evaluated').length, px=list.filter(r=>r.permitExpiry&&daysUntil(r.permitExpiry)<=30).length;
+    return [{label:'Requirements', num:list.length, sub:`${ne} not evaluated yet`, icon:'books'},
+      {label:'Compliance', num:pct===null?'—':pct+'%', cls:pct===null?'':pct>=100?'ok':pct>=80?'warn':'danger', sub:'compliant ÷ evaluated', icon:'checkcircle'},
+      {label:'Gaps', num:nc, cls:nc?'danger':'ok', sub:'non / partially compliant', icon:'alert'},
+      {label:'Evaluation overdue', num:od, cls:od?'danger':'ok', sub:`${px} permit(s) expiring ≤ 30 days`, icon:'clock'}]; },
+});
+
+/* =============================== MEETINGS =============================== */
+const MEETING_TYPES=['HSE committee meeting','Management review (ISO 9.3)','Client HSE meeting','Project kick-off / pre-job HSE meeting','Incident review meeting','Other'];
+const MR_INPUTS=['Status of actions from previous reviews','Changes in external & internal issues','Changes in needs of workers & interested parties','Legal & other requirements — compliance evaluation','Risks & opportunities','Extent objectives were met','HSE performance: incidents, NCs, corrective actions, monitoring results','Audit results','Consultation & participation of workers','Adequacy of resources','Communications with interested parties','Opportunities for continual improvement'];
+function mtgStatusBadge(r){ const s=r.status||'Scheduled'; return `<span class="badge ${s==='Minutes issued'?'ok':s==='Scheduled'?'muted':'warn'}">${esc(s)}</span>`; }
+regDefine({
+  key:'meetings', collection:'meetings', singular:'Meeting', title:'Meetings & Management Review', tagline:'Consult · Decide · Act',
+  addLabel:'+ New meeting', noField:'mtgNo', noPrefix:'MTG', noYear:true, dateField:'date', yearFilter:true, statuses:['Scheduled','Held — minutes draft','Minutes issued'],
+  searchPlaceholder:'Search meeting, chair, agenda…', emptyEditor:'No meetings yet — record HSE committee meetings and management reviews here with their minutes and actions.',
+  titleOf:r=>r.type||'Meeting', subOf:r=>[r.date, r.chair?'chair '+r.chair:'', r.projectId?projectName(r.projectId):r.location].filter(Boolean).join(' · '), badgesOf:r=>mtgStatusBadge(r),
+  searchText:r=>[r.mtgNo,r.type,r.chair,r.agenda,r.minutes].join(' '),
+  addFields:['type','date','time','chair','location','projectId'], addDefaults:{status:'Scheduled'},
+  segs:[{key:'com', label:'HSE committee', match:r=>r.type===MEETING_TYPES[0]},{key:'mr', label:'Management review', match:r=>r.type===MEETING_TYPES[1]},{key:'cl', label:'Client', match:r=>r.type===MEETING_TYPES[2]},{key:'oth', label:'Other', match:r=>!MEETING_TYPES.slice(0,3).includes(r.type)}], segAllLabel:'All meetings',
+  tabs:[{key:'main', label:'Meeting', groups:[{fields:[
+      {key:'mtgNo', label:'Meeting no.', required:true},
+      {key:'type', label:'Meeting type', type:'select', options:MEETING_TYPES, required:true},
+      {key:'status', label:'Status', type:'select', options:['Scheduled','Held — minutes draft','Minutes issued']},
+      {key:'date', label:'Date', type:'date', required:true},
+      {key:'time', label:'Time', type:'time'},
+      {key:'chair', label:'Chaired by'},
+      {key:'location', label:'Location'},
+      {key:'projectId', label:'Project (optional)', type:'project'},
+      {key:'attendees', label:'Attendees (name — role)', type:'textarea', wide:true},
+      {key:'apologies', label:'Apologies / absent', wide:true},
+      {key:'agenda', label:'Agenda', type:'textarea', wide:true},
+      {key:'minutes', label:'Discussion / minutes', type:'textarea', wide:true},
+      {key:'decisions', label:'Decisions made', type:'textarea', wide:true},
+      {key:'nextMeeting', label:'Next meeting', type:'date'},
+    ]}]},
+    {key:'mr', label:'Review inputs & outputs', showIf:r=>r.type===MEETING_TYPES[1], intro:'ISO 45001 clause 9.3 — tick each input that was reviewed and record the outputs.', fields:[
+      {key:'mrInputs', label:'Inputs reviewed', type:'checks', options:MR_INPUTS},
+      {key:'mrSuitability', label:'Conclusion: continuing suitability, adequacy & effectiveness of the HSE system', type:'textarea', wide:true},
+      {key:'mrImprovements', label:'Opportunities for continual improvement', type:'textarea', wide:true},
+      {key:'mrChanges', label:'Changes needed to the HSE management system / policy / objectives', type:'textarea', wide:true},
+      {key:'mrResources', label:'Resources needed', type:'textarea', wide:true},
+    ]},
+    {key:'sub:actions', label:'Actions', sub:'actions'}],
+  subs:{actions:actionSub('Actions from this meeting')},
+  files:[{key:'minutesFile', label:'Signed minutes'},{key:'attendanceFile', label:'Attendance sheet'},{key:'presentationFile', label:'Presentation / supporting pack'}],
+  columns:[
+    {label:'No.', cls:'mono', html:r=>`<strong>${esc(r.mtgNo||'—')}</strong>`},
+    {label:'Date', cls:'mono', html:r=>`${esc(r.date||'—')}<div class="wsub">${esc(r.time||'')}</div>`},
+    {label:'Meeting', html:r=>`<div class="wname">${esc(r.type||'—')}</div><div class="wsub">${esc(r.projectId?projectName(r.projectId):(r.location||''))}</div>`},
+    {label:'Chair', html:r=>esc(r.chair||'—')},
+    {label:'Actions', html:r=>{ const l=r.actions||[], o=l.filter(a=>(a.status||'Open')!=='Closed').length, od=l.filter(a=>complaintOverdueDays(a)).length; return l.length?`${o} open / ${l.length}${od?` <span class="badge danger">${od} overdue</span>`:''}`:'<span class="wsub">—</span>'; }},
+    {label:'Status', html:r=>mtgStatusBadge(r)},
+  ],
+  tiles:list=>{ const y=String(new Date().getFullYear()), cur=list.filter(r=>String(r.date||'').startsWith(y)&&r.status!=='Scheduled'); const acts=list.flatMap(r=>r.actions||[]); const next=list.filter(r=>r.status==='Scheduled'&&r.date&&daysUntil(r.date)>=0).sort((a,b)=>a.date.localeCompare(b.date))[0];
+    const lastMr=list.filter(r=>r.type===MEETING_TYPES[1]&&r.status!=='Scheduled').sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
+    return [{label:`Committee meetings ${y}`, num:cur.filter(r=>r.type===MEETING_TYPES[0]).length, sub:`${cur.length} meetings held in total`, icon:'users'},
+      {label:'Last management review', num:lastMr?lastMr.date:'—', sub:lastMr?`${Math.max(0,-daysUntil(lastMr.date))} days ago`:'none recorded', cls:lastMr&&-daysUntil(lastMr.date)<=365?'ok':'danger', icon:'clipcheck'},
+      {label:'Open meeting actions', num:acts.filter(a=>(a.status||'Open')!=='Closed').length, cls:acts.some(a=>complaintOverdueDays(a))?'danger':'', sub:`${acts.filter(a=>complaintOverdueDays(a)).length} overdue`, icon:'alert'},
+      {label:'Next meeting', num:next?`${daysUntil(next.date)}d`:'—', sub:next?`${next.date} · ${next.type}`:'nothing scheduled', icon:'clock'}]; },
+  onData:()=>renderAssuranceAll(),
+});
+
+/* =============================== SUBCONTRACTORS =============================== */
+const SUB_STATUSES=['Approved','Conditional','Pending','Rejected','Suspended'];
+function subStatusBadge(r){ const s=r.status||'Pending'; return `<span class="badge ${s==='Approved'?'ok':s==='Conditional'||s==='Pending'?'warn':'danger'}">${esc(s)}</span>`; }
+function subLatestEval(r){ return (r.evaluations||[]).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0]||null; }
+function subWorkers(r){ const n=String(r.name||'').trim().toLowerCase(); if(!n) return []; return workers.filter(w=>(w.status||'active')!=='deleted' && !w.deleted && String(w.contractor||'').trim().toLowerCase()===n); }
+function subDocsExpiring(r){ return ['crExpiry','insuranceExpiry','certExpiry'].filter(k=>r[k] && daysUntil(r[k])<=30); }
+regDefine({
+  key:'subcons', collection:'subcontractors', singular:'Subcontractor', title:'Subcontractors', tagline:'Pre-qualify · Monitor · Evaluate',
+  addLabel:'+ Add subcontractor', noField:'subNo', noPrefix:'SUB', noYear:false, dateField:'prequalDate', statuses:SUB_STATUSES, statusOf:r=>r.status||'Pending',
+  searchPlaceholder:'Search name, CR, services…', emptyEditor:'No subcontractors yet — add each company that supplies workers or services, with its pre-qualification and evaluations.',
+  titleOf:r=>r.name||'Subcontractor', subOf:r=>[r.services, r.riskCategory?r.riskCategory+' risk':''].filter(Boolean).join(' · '), badgesOf:r=>subStatusBadge(r),
+  searchText:r=>[r.subNo,r.name,r.crNumber,r.services,r.contactPerson].join(' '), sort:(a,b)=>String(a.name||'').localeCompare(String(b.name||'')),
+  addFields:['name','services','riskCategory','status','contactPerson','phone'], addDefaults:{status:'Pending', riskCategory:'Medium'},
+  tabs:[{key:'main', label:'Company', groups:[{fields:[
+      {key:'subNo', label:'Ref no.', required:true},
+      {key:'name', label:'Company name (as used in Workforce)', required:true},
+      {key:'status', label:'Approval status', type:'select', options:SUB_STATUSES},
+      {key:'services', label:'Services / scope', wide:true},
+      {key:'riskCategory', label:'HSE risk category', type:'select', options:['High','Medium','Low']},
+      {key:'contactPerson', label:'Contact person'}, {key:'phone', label:'Phone'}, {key:'email', label:'Email', type:'email'},
+      {key:'crNumber', label:'CR number'}, {key:'crExpiry', label:'CR expiry', type:'date'},
+      {key:'jsrsNo', label:'JSRS / vendor registration no.'},
+      {key:'certExpiry', label:'ISO 45001 / HSE certificate expiry', type:'date'},
+      {key:'insuranceExpiry', label:'Insurance expiry', type:'date'},
+    ]},{title:'Pre-qualification', fields:[
+      {key:'prequalDate', label:'Pre-qualified on', type:'date'},
+      {key:'prequalScore', label:'Pre-qualification score %', type:'number', min:0, max:100},
+      {key:'hsePlanApproved', label:'HSE plan approved', type:'select', options:['Yes','No','Not required']},
+      {key:'nextEvaluation', label:'Next performance evaluation', type:'date'},
+      {key:'notes', label:'Notes / conditions of approval', type:'textarea', wide:true},
+    ]}]},
+    {key:'sub:evaluations', label:'Evaluations', sub:'evaluations'},
+    {key:'workers', label:'Workers', html:r=>{ const ws=subWorkers(r); return `<p class="wsub" style="margin:0 0 10px;">Workers in the Workforce register whose contractor name is “${esc(r.name||'')}”.</p>${ws.length?`<div class="record-list">${ws.map(w=>`<div class="record-card"><div class="record-card-title">${esc(w.fullName||'')}</div><div class="wsub">${esc(w.designation||w.trade||'')}${w.projectId?' · '+esc(projectName(w.projectId)):''}</div></div>`).join('')}</div>`:'<p class="wsub">No workers linked yet.</p>'}`; }}],
+  subs:{evaluations:{label:'Performance evaluations', addLabel:'Add evaluation', fields:[
+      {key:'date', label:'Date', type:'date', required:true},
+      {key:'period', label:'Period / job', placeholder:'e.g. Q3 2026 or project name'},
+      {key:'projectId', label:'Project', type:'project'},
+      {key:'hseScore', label:'HSE performance (1–5)', type:'number', min:1, max:5},
+      {key:'complianceScore', label:'Compliance with rules & PTW (1–5)', type:'number', min:1, max:5},
+      {key:'competenceScore', label:'Competence & supervision (1–5)', type:'number', min:1, max:5},
+      {key:'docsScore', label:'Documentation & reporting (1–5)', type:'number', min:1, max:5},
+      {key:'housekeepingScore', label:'Housekeeping & equipment (1–5)', type:'number', min:1, max:5},
+      {key:'incidents', label:'Incidents in period', type:'number', min:0},
+      {key:'evaluatedBy', label:'Evaluated by', required:true},
+      {key:'comments', label:'Comments / improvement required', type:'textarea', wide:true}], defaults:()=>({date:localToday()}),
+      sort:(a,b)=>String(b.date||'').localeCompare(String(a.date||'')),
+      title:x=>{ const s=subEvalScore(x), r=ratingOf(s); return `<span class="mono">${esc(x.date||'')}</span> ${s===null?'':`<span class="badge ${r.cls}">${s}% · ${r.t}</span>`}`; }, hideInCard:['date'],
+      empty:'No evaluations yet. Score each area 1–5; the overall % and rating are calculated automatically.',
+      onSave:(r, list)=>{ const l=list.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0]; return l?{nextEvaluation:addMonths(l.date, r.riskCategory==='High'?3:r.riskCategory==='Low'?12:6)}:{}; }}},
+  files:[{key:'prequalFile', label:'Pre-qualification questionnaire'},{key:'hsePlanFile', label:'HSE plan'},{key:'certFile', label:'ISO / HSE certificate'},{key:'insuranceFile', label:'Insurance certificate'},{key:'crFile', label:'CR copy'}],
+  columns:[
+    {label:'Ref', cls:'mono', html:r=>`<strong>${esc(r.subNo||'—')}</strong>`},
+    {label:'Company', html:r=>`<div class="wname">${esc(r.name||'—')}</div><div class="wsub">${esc(r.services||'')}</div>`},
+    {label:'Risk', html:r=>r.riskCategory?`<span class="badge ${r.riskCategory==='High'?'danger':r.riskCategory==='Medium'?'warn':'muted'}">${esc(r.riskCategory)}</span>`:'—'},
+    {label:'Workers', html:r=>String(subWorkers(r).length)},
+    {label:'Latest score', html:r=>{ const e=subLatestEval(r), s=e?subEvalScore(e):null, rt=ratingOf(s); return s===null?'<span class="wsub">—</span>':`<span class="badge ${rt.cls}">${s}% · ${rt.t}</span><div class="wsub">${esc(e.date||'')}</div>`; }},
+    {label:'Documents', html:r=>{ const x=subDocsExpiring(r); return x.length?`<span class="badge danger">${x.length} expiring / expired</span>`:'<span class="badge ok">Valid</span>'; }},
+    {label:'Status', html:r=>subStatusBadge(r)},
+  ],
+  tiles:list=>{ const sc=list.map(r=>subLatestEval(r)).filter(Boolean).map(subEvalScore).filter(x=>x!==null); const avg=sc.length?Math.round(sc.reduce((a,b)=>a+b,0)/sc.length):null, r=ratingOf(avg);
+    return [{label:'Subcontractors', num:list.length, sub:`${list.filter(r=>r.status==='Approved').length} approved · ${list.filter(r=>r.status==='Conditional'||r.status==='Pending').length} conditional/pending`, icon:'users'},
+      {label:'Average HSE score', num:avg===null?'—':avg+'%', cls:r?r.cls:'', sub:r?r.t:'no evaluations yet', icon:'chart'},
+      {label:'Documents expiring', num:list.filter(r=>subDocsExpiring(r).length).length, cls:list.some(r=>subDocsExpiring(r).length)?'danger':'ok', sub:'CR / insurance / certificate ≤ 30 days', icon:'file'},
+      {label:'Evaluation overdue', num:list.filter(r=>r.nextEvaluation&&daysUntil(r.nextEvaluation)<0&&r.status!=='Rejected').length, sub:'past the next evaluation date', icon:'clock'}]; },
+});
+function subEvalScore(e){ const ks=['hseScore','complianceScore','competenceScore','docsScore','housekeepingScore'].map(k=>Number(e[k])).filter(n=>n>=1&&n<=5); if(!ks.length) return null; return Math.round(ks.reduce((a,b)=>a+b,0)/(ks.length*5)*100); }
+
+/* =============================== KPI SCORECARD =============================== */
+let kpiEditOpen=false, kpiYear=String(new Date().getFullYear());
+function kpiMonthMetrics(year){ const out=[]; for(let m=1;m<=12;m++) out.push(computeReportMetrics(reportEntriesFor('all', `${year}-${String(m).padStart(2,'0')}`, 'all'))); return out; }
+const KPI_MONTH = {   // monthly value for the scorecard grid (count-type KPIs)
+  lti:m=>m.lti, mti:m=>m.mti, fac:m=>m.fac, vehicleInc:m=>m.vehicleIncident, incidents:m=>m.incident, daysLost:m=>m.ltiDaysLost,
+  tbtPerMonth:m=>m.tbt, inspPerMonth:m=>m.siteVisit+m.internalAudit+m.vehicleInspection, obsPerMonth:m=>m.hseObservation, nearMiss:m=>m.nearMiss, drills:m=>m.mockDrill, mgmtVisits:m=>m.siteVisit,
+};
+function renderKpiPanel(){
+  const el=document.getElementById('objectivesTop'); if(!el || !auth.currentUser) return;
+  const t=targetsFor(kpiYear), a=targetActuals(kpiYear), mm=kpiMonthMetrics(kpiYear);
+  const now=new Date(), lastM = Number(kpiYear)===now.getFullYear() ? now.getMonth()+1 : Number(kpiYear)<now.getFullYear()?12:0;
+  const years=[String(now.getFullYear()-1), String(now.getFullYear()), String(now.getFullYear()+1)];
+  let body;
+  if(kpiEditOpen && canEdit()){
+    const cur=t||{};
+    body=`<form id="kpiForm"><p class="wsub" style="margin:0 0 10px;">KPI targets for ${esc(kpiYear)}. “≤” targets are limits (lower is better); “≥” targets are minimums. Yearly counts are compared pro-rata during the year.</p>
+      ${['lagging','leading'].map(kind=>`<div class="subhead">${kind==='lagging'?'Lagging KPIs (outcomes)':'Leading KPIs (activities that prevent incidents)'}</div><div class="form-grid">${TARGET_DEFS.filter(d=>d.kind===kind).map(d=>`<label>${esc(d.label)} <span class="wsub" style="display:inline;">(${d.type==='max'?'≤':'≥'}${d.unit?' '+d.unit:''}${d.annual?' per year':''})</span><input type="number" step="any" min="0" data-kfield="${d.key}" value="${esc(cur[d.key]!==undefined?String(cur[d.key]):String(d.def))}"></label>`).join('')}</div>`).join('')}
+      <div class="form-actions"><button type="button" class="btn" id="kpiCancel">Cancel</button><button type="submit" class="btn btn-primary">Save KPI targets</button></div></form>`;
+  } else if(!t){
+    body=`<p class="wsub" style="margin:6px 0;">${canEdit()?`No KPI targets set for ${esc(kpiYear)} yet — click <strong>Set KPI targets</strong>. Suggested values are filled in for you.`:`No KPI targets set for ${esc(kpiYear)} yet.`}</p>`;
+  } else {
+    const row=d=>{ const act=a[d.key], tgt=t[d.key], st=targetStatus(d, act, tgt===''||tgt===undefined?null:Number(tgt), a._months); const mf=KPI_MONTH[d.key];
+      const cells=MONTHS_SHORT.map((_,n)=>{ if(!mf || n+1>lastM) return '<td class="kpi-m"></td>'; const v=mf(mm[n]); const bad = d.type==='max' ? v>0 && (d.key==='lti'||d.key==='mti'||d.key==='vehicleInc') : (!d.annual && tgt!==undefined && tgt!=='' && v<Number(tgt)); return `<td class="kpi-m ${v?'':'kpi-zero'} ${bad?'kpi-bad':''}">${v}</td>`; }).join('');
+      return `<tr><td><div class="wname">${esc(d.label)}</div></td><td class="mono">${d.type==='max'?'≤':'≥'} ${fmtTarget(d, tgt)}</td>${cells}<td class="mono"><strong>${fmtTarget(d, act)}</strong></td><td><span class="badge ${st.cls}">${st.t}</span></td></tr>`; };
+    body=`<div class="table-wrap"><table class="kpi-table"><thead><tr><th>KPI</th><th>Target</th>${MONTHS_SHORT.map(m=>`<th class="kpi-m">${m}</th>`).join('')}<th>YTD</th><th>Status</th></tr></thead><tbody>
+      <tr class="kpi-group"><td colspan="16">Lagging KPIs — outcomes</td></tr>${TARGET_DEFS.filter(d=>d.kind==='lagging').map(row).join('')}
+      <tr class="kpi-group"><td colspan="16">Leading KPIs — proactive activities</td></tr>${TARGET_DEFS.filter(d=>d.kind==='leading').map(row).join('')}
+      </tbody></table></div>`;
+    const all=TARGET_DEFS.map(d=>targetStatus(d, a[d.key], t[d.key]===''||t[d.key]===undefined?null:Number(t[d.key]), a._months)).filter(s=>s.cls!=='muted');
+    body = `<div class="kpi-summary"><span class="badge ok">${all.filter(s=>s.cls==='ok').length} on target</span><span class="badge warn">${all.filter(s=>s.cls==='warn').length} slightly behind</span><span class="badge danger">${all.filter(s=>s.cls==='danger').length} off target</span><span class="wsub" style="display:inline;">${TARGET_DEFS.length-all.length} without data yet</span></div>` + body;
+  }
+  el.innerHTML=`<div class="panel kpi-panel"><div class="section-head"><h3>KPI SCORECARD</h3><div style="display:flex; gap:8px; align-items:center;"><select id="kpiYearSel" aria-label="KPI year">${years.map(y=>`<option ${y===kpiYear?'selected':''}>${y}</option>`).join('')}</select>${canEdit()&&!kpiEditOpen?`<button type="button" class="btn btn-sm reg-edit-only" id="kpiEditBtn">${ic('target')} Set KPI targets</button>`:''}<button type="button" class="btn btn-sm" id="kpiPdfBtn">${ic('download')} KPI PDF</button></div></div>${body}</div>
+    <div class="section-head" style="margin:18px 0 8px;"><h3>HSE OBJECTIVES</h3></div>`;
+}
+function downloadKpiPdf(){
+  const t=targetsFor(kpiYear); if(!t){ toast('Set KPI targets first'); return; }
+  if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
+  try{
+    const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'pt', format:'a4', orientation:'landscape'}); const M=30, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
+    const a=targetActuals(kpiYear), mm=kpiMonthMetrics(kpiYear), now=new Date(), lastM=Number(kpiYear)===now.getFullYear()?now.getMonth()+1:Number(kpiYear)<now.getFullYear()?12:0;
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Burhan Oil & Trade Services', M, 36); doc.setFontSize(15); doc.text(`HSE KPI Scorecard ${kpiYear}`, M, 56);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(110); doc.text(`Year to date · printed ${localToday()}`, M, 70); doc.setTextColor(20);
+    const colK=230, colT=60, mw=(W-2*M-colK-colT-130)/12; let y=92;
+    const head=()=>{ doc.setFillColor(20,30,48); doc.rect(M,y-11,W-2*M,16,'F'); doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.text('KPI',M+4,y); doc.text('Target',M+colK+4,y); MONTHS_SHORT.forEach((m,n)=>doc.text(m, M+colK+colT+n*mw+mw/2, y, {align:'center'})); doc.text('YTD', W-M-100, y); doc.text('Status', W-M-60, y); doc.setTextColor(20); y+=16; };
+    head();
+    for(const kind of ['lagging','leading']){
+      doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(200,16,46); doc.text(kind==='lagging'?'LAGGING KPIs':'LEADING KPIs', M+4, y); doc.setTextColor(20); y+=14;
+      TARGET_DEFS.filter(d=>d.kind===kind).forEach((d,idx)=>{ if(y>H-40){ doc.addPage(); y=40; head(); }
+        if(idx%2){ doc.setFillColor(242,244,247); doc.rect(M,y-10,W-2*M,14,'F'); }
+        const st=targetStatus(d, a[d.key], t[d.key]===''||t[d.key]===undefined?null:Number(t[d.key]), a._months);
+        doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.text(doc.splitTextToSize(d.label, colK-8)[0], M+4, y); doc.text(`${d.type==='max'?'<=':'>='} ${fmtTarget(d,t[d.key])}`, M+colK+4, y);
+        const mf=KPI_MONTH[d.key]; if(mf) for(let n=0;n<lastM;n++) doc.text(String(mf(mm[n])), M+colK+colT+n*mw+mw/2, y, {align:'center'});
+        doc.setFont('helvetica','bold'); doc.text(fmtTarget(d,a[d.key]), W-M-100, y);
+        const col=st.cls==='ok'?[22,150,90]:st.cls==='warn'?[200,130,0]:st.cls==='danger'?[210,30,45]:[120,120,120]; doc.setTextColor(...col); doc.text(st.t, W-M-60, y); doc.setTextColor(20); y+=14; });
+      y+=4;
+    }
+    doc.save(`HSE_KPI_Scorecard_${kpiYear}.pdf`); toast('KPI scorecard downloaded');
+  }catch(e){ console.error(e); toast('Could not generate the PDF'); }
+}
+function extraKpiActuals(year, m){
+  const now=new Date(), months = Number(year)===now.getFullYear() ? now.getMonth()+1 : (Number(year)<now.getFullYear()?12:0);
+  const inY=d=>String(d||'').startsWith(year);
+  const scored=activeAudits().filter(a=>inY(a.startDate) && a.score!=='' && a.score!=null && !isNaN(Number(a.score)));
+  const st = assurancePlanFor(year) ? assuranceStats(assurancePlanFor(year), year) : null;
+  const cov = (typeof regActive==='function' && regState.alerts) ? regActive('alerts').filter(r=>inY(r.issueDate) && r.status!=='Draft').map(alertCoverage).filter(c=>c.pct!==null) : [];
+  const subs = regState.subcons ? regActive('subcons').map(subLatestEval).filter(Boolean).map(subEvalScore).filter(x=>x!==null) : [];
+  return {
+    mti:m.mti, fac:m.fac, vehicleInc:m.vehicleIncident, incidents:m.incident, daysLost:m.ltiDaysLost,
+    complaints: complaintsFor('all', year, 'all').length,
+    obsPerMonth: months ? m.hseObservation/months : null, mgmtVisits:m.siteVisit,
+    auditScore: scored.length ? Math.round(scored.reduce((n,a)=>n+Number(a.score),0)/scored.length) : null,
+    internalAudits: activeAudits().filter(a=>inY(a.startDate) && auditParty(a.auditType)==='internal' && a.status!=='Planned').length,
+    assurance: st ? st.pct : null,
+    legalCompliance: regState.legal ? legalCompliancePct() : null,
+    alertBriefing: cov.length ? Math.round(cov.reduce((n,c)=>n+c.pct,0)/cov.length) : null,
+    committee: regState.meetings ? regActive('meetings').filter(r=>r.type===MEETING_TYPES[0] && inY(r.date) && r.status!=='Scheduled').length : 0,
+    subconScore: subs.length ? Math.round(subs.reduce((a,b)=>a+b,0)/subs.length) : null,
+  };
+}
+
+/* =============================== ACTION TRACKER =============================== */
+let actFilters={src:'all', status:'open', owner:'all', q:''};
+const ACT_SOURCES=[{key:'incident',label:'Incidents'},{key:'audit',label:'Audit findings'},{key:'project',label:'Project actions'},{key:'complaint',label:'Client complaints'},{key:'meeting',label:'Meetings'},{key:'legal',label:'Legal gaps'},{key:'alert',label:'Safety alerts'},{key:'objective',label:'Objectives'}];
+function collectAllActions(){
+  const out=[];
+  for(const i of activeIncidents()) for(const a of (i.capa||[])) out.push({src:'incident', ref:i.incNo||'Incident', where:i.projectId?projectName(i.projectId):(i.location||''), text:a.action, owner:a.owner, targetDate:a.targetDate, status:a.status||'Open', closedDate:a.closedDate, open:()=>{ document.querySelector('.sidenav-btn[data-section="incidents"]').click(); openIncDrawer(i.id,'actions'); }});
+  for(const au of activeAudits()) for(const f of (au.findings||[])) if(isActionFinding(f)) out.push({src:'audit', ref:`${au.auditNo||'Audit'} ${f.no||''}`, where:au.auditingBody||'', text:f.correctiveAction||f.description, owner:f.owner, targetDate:f.targetDate, status:f.status||'Open', closedDate:f.closedDate, tag:f.category, open:()=>{ document.querySelector('.sidenav-btn[data-section="audits"]').click(); openAudDrawer(au.id,'findings'); }});
+  for(const s of activeSites()){
+    for(const a of (s.actions||[])) out.push({src:'project', ref:s.siteName||'Project', where:a.source||'', text:a.action, owner:a.owner, targetDate:a.targetDate, status:a.status||'Open', closedDate:a.closedDate, open:()=>{ document.querySelector('.sidenav-btn[data-section="site"]').click(); openSiteDrawer(s.id); activeSiteTab='actions'; renderSiteDrawer(); }});
+    for(const c of (s.complaints||[])) out.push({src:'complaint', ref:s.siteName||'Project', where:c.raisedBy||'', text:c.correctiveAction||c.issue, owner:c.actionOwner, targetDate:c.targetDate, status:c.status||'Open', closedDate:c.closedDate, tag:c.category, open:()=>{ document.querySelector('.sidenav-btn[data-section="site"]').click(); openSiteDrawer(s.id); activeSiteTab='complaints'; renderSiteDrawer(); }});
+  }
+  const regSrc={meetings:'meeting', legal:'legal', alerts:'alert', objectives:'objective'};
+  for(const [k,src] of Object.entries(regSrc)){ const cfg=REG[k]; if(!cfg) continue;
+    for(const r of regActive(k)) for(const [sk,sc] of Object.entries(cfg.subs||{})) if(sc.isAction) for(const x of (r[sk]||[])) out.push({src, ref:r[cfg.noField]||cfg.singular, where:cfg.titleOf(r), text:x.action, owner:x.owner, targetDate:x.targetDate, status:x.status||'Open', closedDate:x.closedDate, open:()=>openRegDrawer(k, r.id, 'sub:'+sk)}); }
+  return out;
+}
+function actMatches(a){
+  if(actFilters.src!=='all' && a.src!==actFilters.src) return false;
+  const od=complaintOverdueDays(a), d=a.targetDate?daysUntil(a.targetDate):null;
+  if(actFilters.status==='open' && a.status==='Closed') return false;
+  if(actFilters.status==='overdue' && !od) return false;
+  if(actFilters.status==='soon' && !(a.status!=='Closed' && d!==null && d>=0 && d<=14)) return false;
+  if(actFilters.status==='closed' && a.status!=='Closed') return false;
+  if(actFilters.owner!=='all' && String(a.owner||'').trim().toLowerCase()!==actFilters.owner) return false;
+  const q=actFilters.q.trim().toLowerCase(); if(q && !(`${a.ref} ${a.where} ${a.text} ${a.owner}`).toLowerCase().includes(q)) return false;
+  return true;
+}
+let actCache=[];
+function renderActionTracker(){
+  const tb=document.getElementById('actRows'); if(!tb || !auth.currentUser) return;
+  const all=collectAllActions(); actCache=all;
+  const open=all.filter(a=>a.status!=='Closed'), od=open.filter(a=>complaintOverdueDays(a)), soon=open.filter(a=>{ const d=a.targetDate?daysUntil(a.targetDate):null; return d!==null&&d>=0&&d<=7; });
+  const judged=all.filter(a=>a.targetDate && (a.status==='Closed' || daysUntil(a.targetDate)<0)), onTime=judged.filter(a=>a.status==='Closed' && a.closedDate && a.closedDate<=a.targetDate).length;
+  const pct=judged.length?Math.round(onTime*100/judged.length):null;
+  document.getElementById('actTiles').innerHTML=[
+    {label:'Open actions', num:open.length, sub:`${all.length} actions in total`, icon:'clipcheck'},
+    {label:'Overdue', num:od.length, cls:od.length?'danger':'ok', sub:'past the target date', icon:'alert'},
+    {label:'Due in 7 days', num:soon.length, cls:soon.length?'warn':'', sub:'coming up', icon:'clock'},
+    {label:'Closed on time', num:pct===null?'—':pct+'%', cls:pct===null?'':pct>=90?'ok':pct>=75?'warn':'danger', sub:'of actions due so far', icon:'checkcircle'},
+  ].map(t=>`<div class="tile"><div class="tile-head"><div class="tile-icon">${ic(t.icon)}</div><div class="tile-label">${esc(t.label)}</div></div><div class="tile-num ${t.cls||''}">${esc(String(t.num))}</div><div class="tile-sub">${esc(t.sub)}</div></div>`).join('');
+  document.getElementById('actSrcTabs').innerHTML=[{key:'all',label:'All sources'},...ACT_SOURCES].map(s=>{ const n=open.filter(a=>s.key==='all'||a.src===s.key).length; return `<button type="button" class="seg-btn ${s.key===actFilters.src?'active':''}" data-actsrc="${s.key}">${esc(s.label)}<span class="tab-count">${n}</span></button>`; }).join('');
+  const owners=[...new Set(all.map(a=>String(a.owner||'').trim()).filter(Boolean).map(o=>o.toLowerCase()))].sort();
+  const os=document.getElementById('actOwner'); const names={}; all.forEach(a=>{ const o=String(a.owner||'').trim(); if(o) names[o.toLowerCase()]=o; });
+  os.innerHTML='<option value="all">All owners</option>'+owners.map(o=>`<option value="${esc(o)}">${esc(names[o])}</option>`).join(''); os.value=owners.includes(actFilters.owner)?actFilters.owner:'all';
+  const list=all.map((a,n)=>({...a, n})).filter(actMatches).sort((a,b)=>{ const ao=a.status==='Closed'?1:0, bo=b.status==='Closed'?1:0; if(ao!==bo) return ao-bo; return String(a.targetDate||'9999').localeCompare(String(b.targetDate||'9999')); });
+  const srcLabel=k=>(ACT_SOURCES.find(s=>s.key===k)||{}).label||k;
+  tb.innerHTML = !all.length ? '<tr><td colspan="7" class="empty-state">No actions anywhere yet — actions from incidents, audits, projects, meetings, legal gaps and alerts will all appear here.</td></tr>'
+    : !list.length ? '<tr><td colspan="7" class="empty-state">Nothing matches your filters.</td></tr>'
+    : list.map(a=>`<tr data-actn="${a.n}"><td><span class="badge muted">${esc(srcLabel(a.src))}</span></td><td><div class="wname">${esc(a.ref)}</div><div class="wsub">${esc(a.where||'')}</div></td>
+      <td>${esc(String(a.text||'').slice(0,160))}${a.tag?`<div class="wsub">${esc(a.tag)}</div>`:''}</td><td>${esc(a.owner||'—')}</td><td class="mono" style="white-space:nowrap;">${esc(a.targetDate||'—')}</td><td>${complaintBadges(a)}</td>
+      <td><button type="button" class="btn btn-sm" data-actopen="${a.n}">Open</button></td></tr>`).join('');
+}
+function downloadActionsPdf(){
+  if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
+  const list=actCache.filter(actMatches).sort((a,b)=>String(a.targetDate||'9999').localeCompare(String(b.targetDate||'9999')));
+  try{
+    const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'pt', format:'a4', orientation:'landscape'}); const M=30, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Burhan Oil & Trade Services', M, 36); doc.setFontSize(15); doc.text('HSE Action Tracker', M, 56);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(110); doc.text(`${list.length} actions · filter: ${actFilters.status}${actFilters.src!=='all'?' · '+actFilters.src:''} · printed ${localToday()}`, M, 70); doc.setTextColor(20);
+    const cols=[{t:'Source',w:70},{t:'Reference',w:120},{t:'Action',w:300},{t:'Owner',w:100},{t:'Target',w:60},{t:'Status',w:W-2*M-650}]; let y=92;
+    const head=()=>{ doc.setFillColor(20,30,48); doc.rect(M,y-11,W-2*M,16,'F'); doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(8); let x=M+4; cols.forEach(c=>{ doc.text(c.t,x,y); x+=c.w; }); doc.setTextColor(20); y+=16; };
+    head();
+    list.forEach((a,idx)=>{ const lines=doc.splitTextToSize(String(a.text||''), cols[2].w-8).slice(0,4); const h=Math.max(14, lines.length*10+4); if(y+h>H-30){ doc.addPage(); y=40; head(); }
+      if(idx%2){ doc.setFillColor(242,244,247); doc.rect(M,y-10,W-2*M,h,'F'); }
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); let x=M+4; const od=complaintOverdueDays(a);
+      const vals=[(ACT_SOURCES.find(s=>s.key===a.src)||{}).label||a.src, doc.splitTextToSize(String(a.ref||''), cols[1].w-6)[0], null, doc.splitTextToSize(String(a.owner||'—'), cols[3].w-6)[0], a.targetDate||'—', a.status+(od?` (${od}d overdue)`:'')];
+      vals.forEach((v,ci)=>{ if(ci===2) lines.forEach((l,n)=>doc.text(l, x, y+n*10)); else { if(ci===5 && od) doc.setTextColor(210,30,45); doc.text(String(v), x, y); doc.setTextColor(20); } x+=cols[ci].w; }); y+=h; });
+    doc.save(`HSE_Action_Tracker_${localToday()}.pdf`); toast('Action list downloaded');
+  }catch(e){ console.error(e); toast('Could not generate the PDF'); }
+}
+
+/* =============================== ACTIVITY LOG =============================== */
+let activityList=[], activityFilters={who:'all', section:'all', q:''};
+async function loadActivityLog(){
+  const box=document.getElementById('activityBody'); if(!box) return;
+  box.innerHTML='<p class="wsub">Loading the latest changes…</p>';
+  try{ const snap=await db.collection('activityLog').orderBy('at','desc').limit(400).get(); activityList=snap.docs.map(d=>({id:d.id, ...(d.data()||{})})).sort((a,b)=>String(b.at).localeCompare(String(a.at))); renderActivityLog(); }
+  catch(e){ console.error(e); box.innerHTML=`<p class="wsub">${e&&e.code==='permission-denied'?esc(RULES_UPDATE_MSG):'Could not load the activity log.'}</p>`; }
+}
+function renderActivityLog(){
+  const box=document.getElementById('activityBody'); if(!box) return;
+  const whos=[...new Set(activityList.map(e=>e.by).filter(Boolean))].sort(), secs=[...new Set(activityList.map(e=>e.section).filter(Boolean))].sort();
+  const w=document.getElementById('activityWho'), s=document.getElementById('activitySection2');
+  w.innerHTML='<option value="all">Everyone</option>'+whos.map(x=>`<option ${x===activityFilters.who?'selected':''}>${esc(x)}</option>`).join('');
+  s.innerHTML='<option value="all">All registers</option>'+secs.map(x=>`<option ${x===activityFilters.section?'selected':''}>${esc(x)}</option>`).join('');
+  const q=activityFilters.q.trim().toLowerCase();
+  const list=activityList.filter(e=>(activityFilters.who==='all'||e.by===activityFilters.who) && (activityFilters.section==='all'||e.section===activityFilters.section) && (!q || `${e.label} ${e.action} ${(e.changes||[]).join(' ')}`.toLowerCase().includes(q)));
+  box.innerHTML = `<p class="wsub" style="margin:0 0 10px;">Showing the latest ${list.length} change${list.length===1?'':'s'} (up to 400 are loaded). Each record also has its own history.</p>` + historyRowsHtml(list, true);
+}
+
+/* =============================== SAFETY ALERT PDF (PDO-style) =============================== */
+async function downloadAlertPdf(r){
+  if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
+  try{
+    toast('Preparing the alert…');
+    const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'pt', format:'a4'}); const M=34, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
+    const lines=t=>String(t||'').split(/\n+/).map(x=>x.replace(/^[-•*\s]+/,'').trim()).filter(Boolean);
+    const logo=await fetchImageDataUrl('logo.png').catch(()=>null);
+    const photos=[]; for(const p of (r.photos||[]).filter(f=>/^image\//.test(f.contentType||'')).slice(0,2)){ const d=await fetchImageDataUrl(p.url).catch(()=>null); if(d) photos.push(d); }
+    const isLfi=r.alertType===ALERT_TYPES[0], isExt=r.alertType===ALERT_TYPES[2];
+    const band=(title, sub)=>{ doc.setFillColor(200,16,46); doc.rect(0,0,W,70,'F'); if(logo){ try{ doc.setFillColor(255,255,255); doc.roundedRect ? doc.roundedRect(M-4,12,40,48,4,4,'F') : doc.rect(M-4,12,40,48,'F'); doc.addImage(logo,'PNG',M,14,32,44); }catch(e){} }
+      doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.text(title, M+50, 38); doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.text(sub, M+50, 54);
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text(r.alertNo||'', W-M, 34, {align:'right'}); doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.text(`Issued ${r.issueDate||'—'}`, W-M, 48, {align:'right'}); doc.setTextColor(20); };
+    const footer=()=>{ doc.setFillColor(20,30,48); doc.rect(0,H-30,W,30,'F'); doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.text('THINK SAFE, WORK SAFE, HOME SAFE', M, H-12); doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.text('Burhan Oil & Trade Services · share this alert with your team', W-M, H-12, {align:'right'}); doc.setTextColor(20); };
+    let y;
+    const heading=(t, col)=>{ y+=8; doc.setFillColor(...(col||[20,30,48])); doc.rect(M, y-11, W-2*M, 17, 'F'); doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text(t.toUpperCase(), M+8, y+1); doc.setTextColor(20); y+=18; };
+    const para=(t, size)=>{ doc.setFont('helvetica','normal'); doc.setFontSize(size||10); doc.splitTextToSize(String(t||'—'), W-2*M-12).forEach(l=>{ if(y>H-50){ footer(); doc.addPage(); y=50; } doc.text(l, M+6, y); y+=(size||10)+3; }); y+=2; };
+    const bullets=(arr, size)=>{ if(!arr.length){ para('—'); return; } doc.setFontSize(size||10); arr.forEach(b=>{ const ls=doc.splitTextToSize(b, W-2*M-26); ls.forEach((l,n)=>{ if(y>H-50){ footer(); doc.addPage(); y=50; } doc.setFont('helvetica', n?'normal':'bold'); if(!n) doc.text('•', M+8, y); doc.setFont('helvetica','normal'); doc.text(l, M+20, y); y+=(size||10)+3; }); }); y+=2; };
+    // ---------- page 1: workers ----------
+    band(isLfi?'INITIAL LEARNING FROM INCIDENT':isExt?'SAFETY ALERT':'SAFETY ALERT — LESSONS LEARNED', isExt?`Source: ${r.source||'external'} — shared for awareness`:'Burhan Oil & Trade Services');
+    y=96; doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.splitTextToSize(r.title||'', W-2*M).forEach(l=>{ doc.text(l, M, y); y+=19; });
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(90); doc.text([r.eventDate?`Date: ${r.eventDate}`:'', r.location||(r.projectId?projectName(r.projectId):''), r.eventType, r.potentialSeverity?`Potential severity ${r.potentialSeverity}`:''].filter(Boolean).join('   ·   '), M, y); doc.setTextColor(20); y+=8;
+    if(photos.length){ const pw=(W-2*M-10)/photos.length, ph=Math.min(170, pw*0.66); photos.forEach((d,n)=>{ try{ doc.addImage(d, imgFormat(d), M+n*(pw+10), y+4, pw, ph); }catch(e){} }); y+=ph+12; }
+    heading('What happened', [200,16,46]); para(r.whatHappened);
+    heading('What went wrong', [200,16,46]); bullets(lines(r.whatWentWrong));
+    heading('Key lessons', [22,120,70]); bullets(lines(r.keyLessons), 10.5);
+    if(lines(r.askYourself).length){ heading('Ask yourself', [23,110,170]); bullets(lines(r.askYourself)); }
+    footer();
+    // ---------- page 2: management ----------
+    if(!isLfi || lines(r.whyItHappened).length || (r.actions||[]).length){
+      doc.addPage(); band('MANAGEMENT LEARNING', 'For supervisors, managers & HSE — page 2'); y=94;
+      heading('Event details');
+      const inc=r.incidentId && incidentList.find(x=>x.id===r.incidentId);
+      [['Incident no.', inc?inc.incNo:'—'],['Date / location', [r.eventDate, r.location||(r.projectId?projectName(r.projectId):'')].filter(Boolean).join(' · ')||'—'],['Classification', r.eventType||'—'],['Actual / potential severity', `${r.actualSeverity||'—'} / ${r.potentialSeverity||'—'}`],['Prepared / approved by', `${r.preparedBy||'—'} / ${r.approvedBy||'—'}`],['Distribution', (r.audience||[]).join(', ')||'—']].forEach(([k,v])=>{ doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(100); doc.text(k, M+6, y); doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(20); doc.text(doc.splitTextToSize(String(v), W-2*M-170)[0], M+160, y); y+=14; });
+      heading('Why it happened — root causes & system failures', [200,16,46]); bullets(lines(r.whyItHappened));
+      heading('Management learning — what we are changing', [22,120,70]); bullets(lines(r.mgmtLearning));
+      heading('Actions');
+      const incActs=(inc&&inc.capa)||[]; r={...r, actions:[...incActs, ...(r.actions||[])]};
+      if(!(r.actions||[]).length) para('No actions recorded.');
+      else { doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.text('Action', M+6, y); doc.text('Owner', M+320, y); doc.text('Target', M+420, y); doc.text('Status', M+480, y); y+=12;
+        (r.actions||[]).forEach(a=>{ const ls=doc.splitTextToSize(String(a.action||''), 305); if(y+ls.length*11>H-50){ footer(); doc.addPage(); y=50; } doc.setFont('helvetica','normal'); doc.setFontSize(9); ls.forEach((l,n)=>doc.text(l, M+6, y+n*11)); doc.text(doc.splitTextToSize(String(a.owner||'—'),95)[0], M+320, y); doc.text(a.targetDate||'—', M+420, y); doc.text(a.status||'Open', M+480, y); y+=ls.length*11+4; }); }
+      footer();
+    }
+    doc.save(`${(r.alertNo||'alert').replace(/[^a-z0-9-]+/gi,'_')}_safety_alert.pdf`); toast('Safety alert PDF downloaded');
+  }catch(e){ console.error(e); toast('Could not generate the PDF'); }
+}
+
+/* build the register pages (they are generated from the configs above) */
+(function regBuildDom(){
+  const shell=document.querySelector('.app-content')||document.querySelector('.app-shell'); if(!shell) return;
+  for(const cfg of Object.values(REG)) if(!document.getElementById(cfg.key+'Section')) shell.insertAdjacentHTML('beforeend', regSectionHtml(cfg));
+})();
+/* History button on the older record drawers (workers, fleet, projects, plant, library, incidents, audits) */
+const HISTORY_DRAWERS=[
+  {drawer:'drawer', close:'drawerClose', col:'workers', id:()=>typeof activeWorkerId!=='undefined'?activeWorkerId:null},
+  {drawer:'vehicleDrawer', close:'vehicleDrawerClose', col:'vehicles', id:()=>typeof activeVehicleId!=='undefined'?activeVehicleId:null},
+  {drawer:'siteDrawer', close:'siteDrawerClose', col:'siteEquipment', id:()=>typeof activeSiteId!=='undefined'?activeSiteId:null},
+  {drawer:'equipDrawer', close:'equipDrawerClose', col:'equipment', id:()=>typeof activeEquipId!=='undefined'?activeEquipId:null},
+  {drawer:'libDrawer', close:'libDrawerClose', col:'qhseDocs', id:()=>typeof activeLibId!=='undefined'?activeLibId:null},
+  {drawer:'incDrawer', close:'incDrawerClose', col:'incidents', id:()=>activeIncId},
+  {drawer:'audDrawer', close:'audDrawerClose', col:'audits', id:()=>activeAudId},
+];
+let histTarget=null;
+function openHistoryDrawer(col, id, title){
+  histTarget={col,id}; document.getElementById('histTitle').textContent='Change history — '+(title||'');
+  raiseDrawer('histOverlay','histDrawer'); document.getElementById('histOverlay').hidden=false; document.getElementById('histDrawer').hidden=false;
+  document.getElementById('histBody').innerHTML='<div id="histBox"><p class="wsub">Loading history…</p></div>'; loadRegHistory(col, id, 'histBox');
+}
+function closeHistoryDrawer(){ document.getElementById('histOverlay').hidden=true; document.getElementById('histDrawer').hidden=true; }
 
 /* ---------------- plant & equipment register config ---------------- */
 // Every movable item lives once in the 'equipment' collection with a category,
@@ -3576,6 +4570,7 @@ function stopDataListeners(){
   if(unsubscribeLib){ unsubscribeLib(); unsubscribeLib=null; }
   if(unsubscribeIncidents){ unsubscribeIncidents(); unsubscribeIncidents=null; }
   if(unsubscribeAudits){ unsubscribeAudits(); unsubscribeAudits=null; }
+  stopRegData();
 }
 auth.onAuthStateChanged(user=>{
   if(user){
@@ -3592,6 +4587,7 @@ auth.onAuthStateChanged(user=>{
     startLibraryData();
     startIncidentData();
     startAuditData();
+    startRegData();
   } else {
     stopDataListeners();
     document.getElementById('dbUnavailableBanner').hidden=true;
@@ -6584,7 +7580,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     btn.addEventListener('click', ()=>{
       const section=btn.dataset.section;
       document.querySelectorAll('.sidenav-btn[data-section]').forEach(b=>b.classList.toggle('active', b===btn));
-      const SECTIONS={workforce:'workforceSection', vehicles:'vehiclesSection', site:'siteSection', report:'reportSection', incidents:'incidentsSection', library:'librarySection', audits:'auditsSection', assurance:'assuranceSection'};
+      const SECTIONS={workforce:'workforceSection', vehicles:'vehiclesSection', site:'siteSection', report:'reportSection', incidents:'incidentsSection', library:'librarySection', audits:'auditsSection', assurance:'assuranceSection', actions:'actionsSection', activity:'activitySection', ...Object.fromEntries(Object.keys(REG).map(k=>[k, k+'Section']))};
       for(const [k,id] of Object.entries(SECTIONS)) document.getElementById(id).hidden = section!==k;
     });
   });
@@ -7583,7 +8579,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   // ---- HSE targets ----
   document.addEventListener('click', e=>{
-    if(e.target.closest('#ccTargetsEdit')){ targetsEditOpen=true; renderTargetsPanel(); return; }
+    if(e.target.closest('#ccTargetsEdit')){ kpiEditOpen=true; kpiYear = reportPeriod==='year' ? reportYear : String(reportMonth).slice(0,4); document.querySelector('.sidenav-btn[data-section="objectives"]').click(); renderKpiPanel(); return; }
     if(e.target.id==='targetsCancel'){ targetsEditOpen=false; renderTargetsPanel(); }
   });
   document.addEventListener('submit', async e=>{
@@ -7696,6 +8692,124 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(await saveAssurance(items)){ assuranceEditOpen=false; assuranceRows=null; renderAssuranceAll(); }
   });
   $('asPrintBtn').addEventListener('click', downloadAssurancePdf);
+});
+
+/* ---------------- Batch 11: registers, action tracker, activity log, KPIs, alerts ---------------- */
+document.addEventListener('DOMContentLoaded', ()=>{
+  const $=id=>document.getElementById(id);
+  if(!$('regDrawer')) return;
+  // history buttons on older drawers
+  for(const h of HISTORY_DRAWERS){
+    const close=$(h.close); if(!close || close.previousElementSibling&&close.previousElementSibling.dataset&&close.previousElementSibling.dataset.hist) continue;
+    close.insertAdjacentHTML('beforebegin', `<button type="button" class="btn btn-sm hist-btn" data-hist="${h.col}" title="Who changed what, and when">${ic('clock')} History</button>`);
+    const b=close.previousElementSibling; b.addEventListener('click', ()=>{ const id=h.id(); if(!id) return; const name=(document.querySelector('#'+h.drawer+' h2')||{}).textContent||''; openHistoryDrawer(h.col, id, name); });
+  }
+  $('histClose').addEventListener('click', closeHistoryDrawer); $('histOverlay').addEventListener('click', closeHistoryDrawer);
+
+  // generic register list pages
+  document.addEventListener('click', e=>{
+    const add=e.target.closest('[data-reg-add]'); if(add){ openRegAdd(add.dataset.regAdd); return; }
+    const cancel=e.target.closest('[data-reg-addcancel]'); if(cancel){ const k=cancel.dataset.regAddcancel; $(k+'AddPanel').hidden=true; return; }
+    const tr=e.target.closest('[data-reg-trash]'); if(tr){ openRegTrash(tr.dataset.regTrash); return; }
+    const seg=e.target.closest('[data-reg-seg]'); if(seg){ const [k,s]=seg.dataset.regSeg.split(':'); regState[k].f.seg=s; renderRegAll(k); return; }
+    const row=e.target.closest('[data-reg-row]'); if(row){ const [k,id]=row.dataset.regRow.split(':'); openRegDrawer(k,id); return; }
+  });
+  document.addEventListener('input', e=>{ const s=e.target.closest('[data-reg-search]'); if(s){ regState[s.dataset.regSearch].f.q=s.value; renderRegAll(s.dataset.regSearch); } });
+  document.addEventListener('change', e=>{
+    const y=e.target.closest('[data-reg-year]'); if(y){ regState[y.dataset.regYear].f.year=y.value; renderRegAll(y.dataset.regYear); return; }
+    const st=e.target.closest('[data-reg-status]'); if(st){ regState[st.dataset.regStatus].f.status=st.value; renderRegAll(st.dataset.regStatus); return; }
+  });
+  document.addEventListener('submit', async e=>{
+    const f=e.target.closest('[data-reg-addform]'); if(!f) return; e.preventDefault(); if(!canEdit()) return;
+    const k=f.dataset.regAddform, cfg=REG[k];
+    const d={...Object.fromEntries(Object.entries(cfg.addDefaults||{}).map(([a,b])=>[a, typeof b==='function'?b():b])), ...regReadForm(f, regFieldsOf(cfg).filter(x=>cfg.addFields.includes(x.key)))};
+    const id=await regCreate(k, d); if(id){ f.reset(); $(k+'AddPanel').hidden=true; }
+  });
+  // drawer
+  $('regDrawerClose').addEventListener('click', closeRegDrawer); $('regDrawerOverlay').addEventListener('click', closeRegDrawer);
+  $('regPdfBtn').addEventListener('click', ()=>{ const r=regCurrent(); if(r && REG[activeReg].pdf) REG[activeReg].pdf(r); });
+  $('regDrawerTabs').addEventListener('click', e=>{ const b=e.target.closest('[data-rtab]'); if(!b) return; activeRegTab=b.dataset.rtab; regSubOpen=null; regSubEdit=null; renderRegDrawer(); });
+  const body=$('regDrawerBody');
+  body.addEventListener('submit', async e=>{
+    e.preventDefault(); const r=regCurrent(), cfg=REG[activeReg]; if(!r || !canEdit()) return; const f=e.target;
+    if(f.dataset.regForm){
+      const tab=cfg.tabs.find(t=>t.key===f.dataset.regForm); const fields=(tab.groups||[{fields:tab.fields}]).flatMap(g=>g.fields);
+      const d=regReadForm(f, fields);
+      if(cfg.noField && d[cfg.noField] && d[cfg.noField]!==r[cfg.noField] && regActive(activeReg).some(x=>x.id!==r.id && x[cfg.noField]===d[cfg.noField])){ toast('That number is already used'); return; }
+      await regUpdate(activeReg, r.id, d);
+    } else if(f.dataset.regSubform){
+      const sk=f.dataset.regSubform, sc=cfg.subs[sk], d=regReadForm(f, sc.fields, 'data-sf');
+      if(sc.isAction && d.status==='Closed' && !d.closedDate) d.closedDate=localToday();
+      let list=(r[sk]||[]).slice();
+      if(regSubEdit) list=list.map(x=>x.id===regSubEdit?{...x, ...d}:x); else list.push({id:sk.slice(0,1)+Date.now().toString(36)+Math.random().toString(36).slice(2,6), ...d});
+      const upd={[sk]:list, ...(sc.onSave?sc.onSave({...r}, list):{})};
+      regSubOpen=null; regSubEdit=null; await regUpdate(activeReg, r.id, upd);
+    }
+  });
+  body.addEventListener('click', async e=>{
+    const r=regCurrent(), cfg=REG[activeReg]; if(!r) return; const t=e.target.closest('button'); if(!t) return;
+    if(t.dataset.subToggle){ regSubOpen = regSubOpen===t.dataset.subToggle ? null : t.dataset.subToggle; regSubEdit=null; renderRegDrawer(); return; }
+    if(t.dataset.sedit){ const [sk,id]=t.dataset.sedit.split(':'); regSubOpen=sk; regSubEdit=id; renderRegDrawer(); return; }
+    if(t.dataset.sdel){ const [sk,id]=t.dataset.sdel.split(':'); if(t.dataset.armed!=='1'){ t.dataset.armed='1'; t.classList.add('armed'); toast('Click again to delete'); setTimeout(()=>{ t.dataset.armed='0'; t.classList.remove('armed'); },3000); return; }
+      const list=(r[sk]||[]).filter(x=>x.id!==id), sc=cfg.subs[sk]; await regUpdate(activeReg, r.id, {[sk]:list, ...(sc.onSave?sc.onSave({...r}, list):{})}); return; }
+    if(t.dataset.regFiledel){ const [k,n]=t.dataset.regFiledel.split(':'); if(t.dataset.armed!=='1'){ t.dataset.armed='1'; t.textContent='Click again'; setTimeout(()=>{ t.dataset.armed='0'; t.textContent='Remove'; },3000); return; }
+      const files=(r[k]||[]).slice(), old=files.splice(Number(n),1)[0]; if(await regUpdate(activeReg, r.id, {[k]:files}, true)){ toast('File removed'); if(old&&old.path) deleteStorageFile(old.path); } return; }
+    if(t.id==='regDeleteBtn'){ if(t.dataset.armed!=='1'){ t.dataset.armed='1'; t.textContent='Click again to confirm'; setTimeout(()=>{ t.dataset.armed='0'; t.textContent='Delete'; },3000); return; }
+      if(await regUpdate(activeReg, r.id, {deleted:true, deletedAt:new Date().toISOString()}, true)){ toast('Moved to trash'); closeRegDrawer(); } return; }
+  });
+  body.addEventListener('change', async e=>{
+    const inp=e.target, r=regCurrent(); if(!r) return;
+    if(inp.matches('[data-reg-file]') && inp.files[0]){ const key=inp.dataset.regFile, old=r[key]; regBusy=true; toast('Uploading…');
+      try{ const up=await uploadToStorage(inp.files[0]); regBusy=false; if(await regUpdate(activeReg, r.id, {[key]:up}, true)){ toast('File uploaded'); if(old&&old.path) deleteStorageFile(old.path); } } catch(err){ console.error(err); toast('Upload failed'); } finally{ regBusy=false; renderRegDrawer(); } }
+    if(inp.matches('[data-reg-files]') && inp.files.length){ const key=inp.dataset.regFiles; regBusy=true; toast('Uploading…');
+      try{ const ups=[]; for(const f of [...inp.files]) ups.push(await uploadToStorage(f)); regBusy=false; if(await regUpdate(activeReg, r.id, {[key]:(r[key]||[]).concat(ups)}, true)) toast(`${ups.length} file${ups.length===1?'':'s'} added`); } catch(err){ console.error(err); toast('Upload failed'); } finally{ regBusy=false; renderRegDrawer(); } }
+  });
+  // trash
+  $('regTrashClose').addEventListener('click', closeRegTrash); $('regTrashOverlay').addEventListener('click', closeRegTrash);
+  $('regTrashBody').addEventListener('click', async e=>{
+    const rs=e.target.closest('[data-rrestore]'); if(rs){ if(await regUpdate(activeReg, rs.dataset.rrestore, {deleted:false}, true)) toast('Restored'); return; }
+    const p=e.target.closest('[data-rpurge]'); if(!p) return;
+    if(p.dataset.armed!=='1'){ p.dataset.armed='1'; p.textContent='Click again — permanent'; setTimeout(()=>{ p.dataset.armed='0'; p.textContent='Delete forever'; },3000); return; }
+    const cfg=REG[activeReg], r=regState[activeReg].list.find(x=>x.id===p.dataset.rpurge); if(!r) return;
+    try{ for(const f of (cfg.files||[])) if(r[f.key]&&r[f.key].path) deleteStorageFile(r[f.key].path); if(cfg.multiFiles){ const shared=new Set(incidentList.flatMap(i=>(i.files||[]).map(f=>f.path))); for(const f of (r[cfg.multiFiles.key]||[])) if(f.path && !shared.has(f.path)) deleteStorageFile(f.path); }
+      await db.collection(cfg.collection).doc(r.id).delete(); toast('Deleted permanently'); } catch(err){ console.error(err); toast('Could not delete'); }
+  });
+  // legal template
+  $('legalTemplateBtn').addEventListener('click', async ()=>{
+    if(!canEdit()) return; const have=new Set(regActive('legal').map(r=>String(r.title||'').toLowerCase())); let n=0;
+    for(const t of LEGAL_TEMPLATE){ if(have.has(t.title.toLowerCase())) continue; const d={...t, status:'Not evaluated', appliesTo:['All divisions'], deleted:false, evaluations:[], actions:[], legNo:regNextNo('legal'), createdAt:new Date().toISOString(), createdBy:(auth.currentUser&&auth.currentUser.email)||''};
+      try{ await db.collection('legalReqs').add(stamp(d)); n++; }catch(err){ console.error(err); toast(err&&err.code==='permission-denied'?RULES_UPDATE_MSG:'Could not add'); return; } }
+    toast(n?`${n} requirements added — check each reference is the current version, then record an evaluation`:'All common requirements are already in the register');
+  });
+  // incident → safety alert
+  $('incAlertBtn').addEventListener('click', ()=>{ const i=incidentList.find(x=>x.id===activeIncId); if(i){ closeIncDrawer(); openAlertForIncident(i); } });
+  // KPI panel
+  $('objectivesTop').addEventListener('click', e=>{
+    if(e.target.closest('#kpiEditBtn')){ kpiEditOpen=true; renderKpiPanel(); return; }
+    if(e.target.closest('#kpiCancel')){ kpiEditOpen=false; renderKpiPanel(); return; }
+    if(e.target.closest('#kpiPdfBtn')){ downloadKpiPdf(); return; }
+  });
+  $('objectivesTop').addEventListener('change', e=>{ if(e.target.id==='kpiYearSel'){ kpiYear=e.target.value; renderKpiPanel(); } });
+  $('objectivesTop').addEventListener('submit', async e=>{
+    if(e.target.id!=='kpiForm') return; e.preventDefault();
+    const d={...(targetsFor(kpiYear)||{})}; e.target.querySelectorAll('[data-kfield]').forEach(el=>{ d[el.dataset.kfield]= el.value===''?'':Number(el.value); });
+    if(await saveSettings('targets', {[kpiYear]:d})){ appTargets={...appTargets, [kpiYear]:d}; kpiEditOpen=false; targetsEditOpen=false; renderKpiPanel(); renderTargetsPanel(); renderRegAll('objectives'); }
+  });
+  // action tracker
+  $('actSrcTabs').addEventListener('click', e=>{ const b=e.target.closest('[data-actsrc]'); if(!b) return; actFilters.src=b.dataset.actsrc; renderActionTracker(); });
+  $('actStatus').addEventListener('change', e=>{ actFilters.status=e.target.value; renderActionTracker(); });
+  $('actOwner').addEventListener('change', e=>{ actFilters.owner=e.target.value; renderActionTracker(); });
+  $('actSearch').addEventListener('input', e=>{ actFilters.q=e.target.value; renderActionTracker(); });
+  $('actRows').addEventListener('click', e=>{ const b=e.target.closest('[data-actn]'); if(!b) return; const a=actCache[Number(b.dataset.actn)]; if(a) a.open(); });
+  $('actPdfBtn').addEventListener('click', downloadActionsPdf);
+  // activity log
+  $('activityRefresh').addEventListener('click', loadActivityLog);
+  $('activityWho').addEventListener('change', e=>{ activityFilters.who=e.target.value; renderActivityLog(); });
+  $('activitySection2').addEventListener('change', e=>{ activityFilters.section=e.target.value; renderActivityLog(); });
+  $('activitySearch').addEventListener('input', e=>{ activityFilters.q=e.target.value; renderActivityLog(); });
+  document.querySelectorAll('.sidenav-btn[data-section]').forEach(btn=>btn.addEventListener('click', ()=>{ if(window.innerWidth<=760){ try{ btn.scrollIntoView({inline:'center', block:'nearest', behavior:'smooth'}); }catch(e){} } }));
+  document.querySelector('.sidenav-btn[data-section="activity"]').addEventListener('click', loadActivityLog);
+  document.querySelector('.sidenav-btn[data-section="actions"]').addEventListener('click', renderActionTracker);
 });
 
 // Register the service worker so this page can be installed as an app
