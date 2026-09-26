@@ -357,7 +357,10 @@ body.read-only #equipMoveBtn, body.read-only #sitePickerOpenTeam, body.read-only
 body.read-only [data-unassign-worker], body.read-only [data-unassign-vehicle], body.read-only #siteLogEntryBtn,
 body.read-only .drawer .form-actions, body.read-only .sig-pad-wrap, body.read-only #recordForm,
 body.read-only #addLibBtn, body.read-only #libTrashBtn, body.read-only #libNewRevBtn, body.read-only #monitorEditBtn,
-body.read-only #editReqBtn, body.read-only #reqPanel{display:none !important;}
+body.read-only #editReqBtn, body.read-only #reqPanel,
+body.read-only #addIncBtn, body.read-only #incTrashBtn, body.read-only #incPersonToggle, body.read-only #incCapaToggle,
+body.read-only [data-pedit], body.read-only [data-pdel], body.read-only [data-cedit], body.read-only [data-cdel],
+body.read-only #ccTargetsEdit, body.read-only #emLogDrillBtn, body.read-only #siteEmergencyForm{display:none !important;}
 /* ---- IVMS / DFMS monitoring links ---- */
 .monitor-bar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:14px; box-shadow:var(--shadow);}
 .monitor-bar-label{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-muted); font-weight:700; margin-right:4px;}
@@ -465,6 +468,51 @@ label.chk input{width:auto; flex:none;}
   .cc-title small{margin-left:0; width:100%;}
 }
 @media (prefers-reduced-motion:reduce){ .cc-ring{animation:none;} .cc-arc, .cc-tile{transition:none;} }
+/* ---- incident register ---- */
+.rm-wrap{margin:14px 0 4px; display:grid; gap:6px; justify-items:start;}
+.rm-grid{display:grid; grid-template-columns:22px repeat(5, 42px); gap:3px; align-items:center; position:relative; padding-left:16px;}
+.rm-y{position:absolute; left:-18px; top:50%; transform:rotate(-90deg) translateX(50%); font-size:10.5px; color:var(--ink-muted); letter-spacing:.08em; text-transform:uppercase;}
+.rm-label{font-size:11px; color:var(--ink-muted); text-align:center;}
+.rm-cell{height:28px; display:grid; place-items:center; font-size:11px; font-weight:700; border-radius:4px; opacity:.55;}
+.rm-cell.rm-ok{background:var(--ok-bg); color:var(--ok);} .rm-cell.rm-warn{background:var(--warn-bg); color:var(--warn);} .rm-cell.rm-danger{background:var(--danger-bg); color:var(--danger);}
+.rm-cell.rm-on{opacity:1; outline:2px solid var(--ink); box-shadow:0 0 12px var(--glow); transform:scale(1.08);}
+.rm-x{font-size:10.5px; color:var(--ink-muted); letter-spacing:.08em; text-transform:uppercase; padding-left:40px;}
+.rm-result{font-size:13px;}
+.cause-group{margin-bottom:10px;}
+.cause-title{font-size:12px; font-weight:700; color:var(--ink-muted); margin:6px 0;}
+.cause-list{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px 14px;}
+.whys{display:grid; gap:8px;}
+.checklist{display:grid; gap:6px;}
+.ck{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; border:1px solid var(--line); font-size:13px;}
+.ck.ok{color:var(--ok); background:var(--ok-bg);} .ck.no{color:var(--danger); background:var(--danger-bg);}
+.inc-files{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:10px;}
+.inc-file{border:1px solid var(--line); border-radius:10px; padding:8px; background:var(--surface-2); display:grid; gap:6px;}
+.inc-file img{width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:6px; display:block;}
+.inc-file-doc{aspect-ratio:4/3; display:grid; place-items:center; color:var(--brand);}
+.inc-file-doc .ic{width:40px; height:40px; stroke-width:1.4;}
+.inc-file-name{font-size:12px; word-break:break-word;}
+.inc-file .att-actions{gap:8px;}
+@media (max-width:560px){ .cause-list{grid-template-columns:1fr;} }
+/* ---- HSE targets (Command Centre) ---- */
+.cc-title #ccTargetsEdit{margin-left:8px;}
+.cc-targets{display:grid; gap:2px; padding:10px 14px 14px;}
+.tg-row{display:grid; grid-template-columns:minmax(150px,1.4fr) 1fr auto auto; gap:10px; align-items:center; padding:7px 0; border-bottom:1px dashed var(--line); font-size:13px;}
+.tg-row:last-child{border-bottom:none;}
+.tg-bar{height:8px; border-radius:4px; background:var(--surface-2); overflow:hidden;}
+.tg-bar i{display:block; height:100%; border-radius:4px;}
+.tg-v{font-family:var(--font-num); font-size:15px; white-space:nowrap; font-variant-numeric:tabular-nums;}
+.cc-targets-form{padding:12px 14px 14px;}
+@media (max-width:640px){ .tg-row{grid-template-columns:1fr auto; } .tg-bar{grid-column:1 / -1; grid-row:2;} }
+/* ---- project emergency tab ---- */
+.em-card{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:0 0 6px;}
+.em-row{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:9px; background:var(--surface-2); font-size:13px;}
+.em-row > span:first-child{color:var(--ink-muted);}
+.em-row .ic{color:var(--brand);}
+a.em-tel{color:var(--ink); font-weight:700; text-decoration:none; font-family:var(--font-mono); white-space:nowrap;}
+a.em-tel .ic{color:var(--ok);}
+.notice .ic{vertical-align:-.2em;}
+.ok-notice{background:var(--ok-bg) !important; color:var(--ok) !important; border-color:var(--ok) !important;}
+@media (max-width:560px){ .em-card{grid-template-columns:1fr;} }
 /* ---- QHSE library ---- */
 .lib-file-name{font-weight:600; font-size:13px; word-break:break-word;}
 td.lib-file{white-space:nowrap;}
@@ -529,7 +577,7 @@ body.auth-open{overflow:hidden; height:100%;}
 </style>
 </head>
 <body class="auth-open">
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="16.5" cy="9" r="2.5"/><path d="M15.8 14.1c2.4-.2 4.2 1.4 4.7 4.4"/></symbol><symbol id="i-idcard" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M5.5 16c.5-1.6 1.6-2.4 3-2.4s2.5.8 3 2.4"/><path d="M14 10h4M14 13.5h4"/></symbol><symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="9" y="3" width="6" height="3" rx="1"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/></symbol><symbol id="i-cap" viewBox="0 0 24 24"><path d="M2.5 9.5 12 5l9.5 4.5L12 14z"/><path d="M6.5 11.5v4c1.5 1.5 3.4 2.2 5.5 2.2s4-.7 5.5-2.2v-4"/><path d="M21.5 9.5v5"/></symbol><symbol id="i-badge" viewBox="0 0 24 24"><path d="M12 3l2.2 1.6 2.7-.1.9 2.6 2.2 1.6-.8 2.6.8 2.6-2.2 1.6-.9 2.6-2.7-.1L12 21l-2.2-1.6-2.7.1-.9-2.6L4 15.3l.8-2.6L4 10.1l2.2-1.6.9-2.6 2.7.1z"/><path d="m8.8 12.2 2.2 2.2 4.2-4.4"/></symbol><symbol id="i-heart" viewBox="0 0 24 24"><path d="M20.2 12.3 12 20.5l-8.2-8.2A4.9 4.9 0 0 1 12 6.1a4.9 4.9 0 0 1 8.2 6.2z"/><path d="M3.8 12.5h3.7l1.6-3 2.4 6 1.8-3.5h3.2"/></symbol><symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 16.5h7"/></symbol><symbol id="i-filecheck" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="m9 14.5 2 2 4-4.2"/></symbol><symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v4.5"/><path d="M12 17.4v.1"/></symbol><symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/></symbol><symbol id="i-truck" viewBox="0 0 24 24"><path d="M2.5 6.5h11v10h-11z"/><path d="M13.5 10h4l3 3.2v3.3h-7"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></symbol><symbol id="i-vest" viewBox="0 0 24 24"><path d="M8 3.5 5 6v14h5.5v-6l1.5-2 1.5 2v6H19V6l-3-2.5-2.5 4h-3z"/><path d="M5 13h5.5M13.5 13H19"/></symbol><symbol id="i-crane" viewBox="0 0 24 24"><path d="M6 21V4l13 3.5"/><path d="M6 7.5h13"/><path d="M16.5 7.5V12"/><rect x="14.5" y="12" width="4" height="3.2" rx=".5"/><path d="M3 21h7"/><path d="m6 11.5 3-4M6 15.5l3-4"/></symbol><symbol id="i-hardhat" viewBox="0 0 24 24"><path d="M3.5 17.5h17"/><path d="M5 17.5V15a7 7 0 0 1 14 0v2.5"/><path d="M10 8.2V6h4v2.2"/><path d="M12 8v5"/></symbol><symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.2 5.2L4 17v3h3l5.5-5.5a4 4 0 0 0 5.2-5.2l-2.6 2.6-2.4-.6-.6-2.4z"/></symbol><symbol id="i-stop" viewBox="0 0 24 24"><path d="M8.2 3h7.6L21 8.2v7.6L15.8 21H8.2L3 15.8V8.2z"/><path d="m9 9 6 6M15 9l-6 6"/></symbol><symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M6.5 3h11M6.5 21h11"/><path d="M7.5 3c0 4 4.5 5.5 4.5 9s-4.5 5-4.5 9M16.5 3c0 4-4.5 5.5-4.5 9s4.5 5 4.5 9"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><path d="M12 14.5v2.5"/></symbol><symbol id="i-chain" viewBox="0 0 24 24"><path d="M9.5 14.5 14.5 9.5"/><path d="M11 6.5 12.8 4.7a3.8 3.8 0 0 1 5.4 5.4L16.4 12"/><path d="M13 17.5 11.2 19.3a3.8 3.8 0 0 1-5.4-5.4L7.6 12"/></symbol><symbol id="i-harness" viewBox="0 0 24 24"><circle cx="12" cy="4.5" r="2"/><path d="M8 9.5h8l-1 6h-6z"/><path d="m9 9.5 6 6M15 9.5l-6 6"/><path d="M9.5 15.5 9 21M14.5 15.5 15 21"/></symbol><symbol id="i-ladder" viewBox="0 0 24 24"><path d="M7 3v18M17 3v18"/><path d="M7 7h10M7 11h10M7 15h10M7 19h10"/></symbol><symbol id="i-extinguisher" viewBox="0 0 24 24"><rect x="8" y="8" width="7" height="13" rx="2.5"/><path d="M11.5 8V5.5"/><path d="M9.5 5.5h5l3-2"/><path d="M15 5.5 18 8.5"/></symbol><symbol id="i-firstaid" viewBox="0 0 24 24"><rect x="3.5" y="6.5" width="17" height="13" rx="2"/><path d="M9 6.5V4.5h6v2"/><path d="M12 10v6M9 13h6"/></symbol><symbol id="i-goggles" viewBox="0 0 24 24"><path d="M3 10.5C3 9 4 8 5.5 8h13C20 8 21 9 21 10.5v2c0 2-1.5 3.5-3.5 3.5-1.6 0-2.4-1-3.2-2.2-.6-.9-1.4-.9-2 0C11.5 15 10.7 16 9 16H6.5C4.5 16 3 14.5 3 12.5z"/></symbol><symbol id="i-books" viewBox="0 0 24 24"><rect x="4" y="4" width="4" height="16" rx="1"/><rect x="9.5" y="4" width="4" height="16" rx="1"/><path d="m15.5 5.5 3.5-1 2.5 14.5-3.5 1z"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol><symbol id="i-checkcircle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.3 12.3 2.5 2.5 5-5.2"/></symbol><symbol id="i-xcircle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m9 9 6 6M15 9l-6 6"/></symbol><symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V11M10 20V5M16 20v-7M21.5 20h-19"/></symbol><symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"/></symbol><symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"/></symbol><symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 6.5h16"/><path d="M9.5 6.5V4.5h5v2"/><path d="M6 6.5l1 13a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5l1-13"/><path d="M10 10.5v6.5M14 10.5v6.5"/></symbol><symbol id="i-printer" viewBox="0 0 24 24"><path d="M7 8V3.5h10V8"/><rect x="3.5" y="8" width="17" height="8.5" rx="1.5"/><rect x="7" y="13.5" width="10" height="7"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="6.5"/><path d="M12 2.8v2.7M12 18.5v2.7M21.2 12h-2.7M5.5 12H2.8M18.5 5.5l-1.9 1.9M7.4 16.6l-1.9 1.9M18.5 18.5l-1.9-1.9M7.4 7.4 5.5 5.5"/></symbol><symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17z"/><path d="m14.5 7.5 2 2"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol><symbol id="i-move" viewBox="0 0 24 24"><path d="M4 8h14M14.5 4.5 18 8l-3.5 3.5"/><path d="M20 16H6M9.5 12.5 6 16l3.5 3.5"/></symbol><symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol><symbol id="i-megaphone" viewBox="0 0 24 24"><path d="M3.5 10v4h3l7 4.5v-13l-7 4.5z"/><path d="M17 9a4 4 0 0 1 0 6"/><path d="M6.5 14l1.2 5h2.3l-.9-4"/></symbol><symbol id="i-clipcheck" viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="9" y="3" width="6" height="3" rx="1"/><path d="m9 13.5 2.2 2.2 4-4.3"/></symbol><symbol id="i-trend" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></symbol><symbol id="i-qr" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18.5h2M18.5 14h1.5"/></symbol><symbol id="i-prev" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol><symbol id="i-next" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol><symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s6.5-6 6.5-11a6.5 6.5 0 0 0-13 0c0 5 6.5 11 6.5 11z"/><circle cx="12" cy="10" r="2.3"/></symbol></defs></svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="16.5" cy="9" r="2.5"/><path d="M15.8 14.1c2.4-.2 4.2 1.4 4.7 4.4"/></symbol><symbol id="i-idcard" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M5.5 16c.5-1.6 1.6-2.4 3-2.4s2.5.8 3 2.4"/><path d="M14 10h4M14 13.5h4"/></symbol><symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="9" y="3" width="6" height="3" rx="1"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/></symbol><symbol id="i-cap" viewBox="0 0 24 24"><path d="M2.5 9.5 12 5l9.5 4.5L12 14z"/><path d="M6.5 11.5v4c1.5 1.5 3.4 2.2 5.5 2.2s4-.7 5.5-2.2v-4"/><path d="M21.5 9.5v5"/></symbol><symbol id="i-badge" viewBox="0 0 24 24"><path d="M12 3l2.2 1.6 2.7-.1.9 2.6 2.2 1.6-.8 2.6.8 2.6-2.2 1.6-.9 2.6-2.7-.1L12 21l-2.2-1.6-2.7.1-.9-2.6L4 15.3l.8-2.6L4 10.1l2.2-1.6.9-2.6 2.7.1z"/><path d="m8.8 12.2 2.2 2.2 4.2-4.4"/></symbol><symbol id="i-heart" viewBox="0 0 24 24"><path d="M20.2 12.3 12 20.5l-8.2-8.2A4.9 4.9 0 0 1 12 6.1a4.9 4.9 0 0 1 8.2 6.2z"/><path d="M3.8 12.5h3.7l1.6-3 2.4 6 1.8-3.5h3.2"/></symbol><symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 16.5h7"/></symbol><symbol id="i-filecheck" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="m9 14.5 2 2 4-4.2"/></symbol><symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v4.5"/><path d="M12 17.4v.1"/></symbol><symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/></symbol><symbol id="i-truck" viewBox="0 0 24 24"><path d="M2.5 6.5h11v10h-11z"/><path d="M13.5 10h4l3 3.2v3.3h-7"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></symbol><symbol id="i-vest" viewBox="0 0 24 24"><path d="M8 3.5 5 6v14h5.5v-6l1.5-2 1.5 2v6H19V6l-3-2.5-2.5 4h-3z"/><path d="M5 13h5.5M13.5 13H19"/></symbol><symbol id="i-crane" viewBox="0 0 24 24"><path d="M6 21V4l13 3.5"/><path d="M6 7.5h13"/><path d="M16.5 7.5V12"/><rect x="14.5" y="12" width="4" height="3.2" rx=".5"/><path d="M3 21h7"/><path d="m6 11.5 3-4M6 15.5l3-4"/></symbol><symbol id="i-hardhat" viewBox="0 0 24 24"><path d="M3.5 17.5h17"/><path d="M5 17.5V15a7 7 0 0 1 14 0v2.5"/><path d="M10 8.2V6h4v2.2"/><path d="M12 8v5"/></symbol><symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.2 5.2L4 17v3h3l5.5-5.5a4 4 0 0 0 5.2-5.2l-2.6 2.6-2.4-.6-.6-2.4z"/></symbol><symbol id="i-stop" viewBox="0 0 24 24"><path d="M8.2 3h7.6L21 8.2v7.6L15.8 21H8.2L3 15.8V8.2z"/><path d="m9 9 6 6M15 9l-6 6"/></symbol><symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M6.5 3h11M6.5 21h11"/><path d="M7.5 3c0 4 4.5 5.5 4.5 9s-4.5 5-4.5 9M16.5 3c0 4-4.5 5.5-4.5 9s4.5 5 4.5 9"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><path d="M12 14.5v2.5"/></symbol><symbol id="i-chain" viewBox="0 0 24 24"><path d="M9.5 14.5 14.5 9.5"/><path d="M11 6.5 12.8 4.7a3.8 3.8 0 0 1 5.4 5.4L16.4 12"/><path d="M13 17.5 11.2 19.3a3.8 3.8 0 0 1-5.4-5.4L7.6 12"/></symbol><symbol id="i-harness" viewBox="0 0 24 24"><circle cx="12" cy="4.5" r="2"/><path d="M8 9.5h8l-1 6h-6z"/><path d="m9 9.5 6 6M15 9.5l-6 6"/><path d="M9.5 15.5 9 21M14.5 15.5 15 21"/></symbol><symbol id="i-ladder" viewBox="0 0 24 24"><path d="M7 3v18M17 3v18"/><path d="M7 7h10M7 11h10M7 15h10M7 19h10"/></symbol><symbol id="i-extinguisher" viewBox="0 0 24 24"><rect x="8" y="8" width="7" height="13" rx="2.5"/><path d="M11.5 8V5.5"/><path d="M9.5 5.5h5l3-2"/><path d="M15 5.5 18 8.5"/></symbol><symbol id="i-firstaid" viewBox="0 0 24 24"><rect x="3.5" y="6.5" width="17" height="13" rx="2"/><path d="M9 6.5V4.5h6v2"/><path d="M12 10v6M9 13h6"/></symbol><symbol id="i-goggles" viewBox="0 0 24 24"><path d="M3 10.5C3 9 4 8 5.5 8h13C20 8 21 9 21 10.5v2c0 2-1.5 3.5-3.5 3.5-1.6 0-2.4-1-3.2-2.2-.6-.9-1.4-.9-2 0C11.5 15 10.7 16 9 16H6.5C4.5 16 3 14.5 3 12.5z"/></symbol><symbol id="i-books" viewBox="0 0 24 24"><rect x="4" y="4" width="4" height="16" rx="1"/><rect x="9.5" y="4" width="4" height="16" rx="1"/><path d="m15.5 5.5 3.5-1 2.5 14.5-3.5 1z"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol><symbol id="i-checkcircle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.3 12.3 2.5 2.5 5-5.2"/></symbol><symbol id="i-xcircle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m9 9 6 6M15 9l-6 6"/></symbol><symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V11M10 20V5M16 20v-7M21.5 20h-19"/></symbol><symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"/></symbol><symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"/></symbol><symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 6.5h16"/><path d="M9.5 6.5V4.5h5v2"/><path d="M6 6.5l1 13a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5l1-13"/><path d="M10 10.5v6.5M14 10.5v6.5"/></symbol><symbol id="i-printer" viewBox="0 0 24 24"><path d="M7 8V3.5h10V8"/><rect x="3.5" y="8" width="17" height="8.5" rx="1.5"/><rect x="7" y="13.5" width="10" height="7"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="6.5"/><path d="M12 2.8v2.7M12 18.5v2.7M21.2 12h-2.7M5.5 12H2.8M18.5 5.5l-1.9 1.9M7.4 16.6l-1.9 1.9M18.5 18.5l-1.9-1.9M7.4 7.4 5.5 5.5"/></symbol><symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17z"/><path d="m14.5 7.5 2 2"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol><symbol id="i-move" viewBox="0 0 24 24"><path d="M4 8h14M14.5 4.5 18 8l-3.5 3.5"/><path d="M20 16H6M9.5 12.5 6 16l3.5 3.5"/></symbol><symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol><symbol id="i-megaphone" viewBox="0 0 24 24"><path d="M3.5 10v4h3l7 4.5v-13l-7 4.5z"/><path d="M17 9a4 4 0 0 1 0 6"/><path d="M6.5 14l1.2 5h2.3l-.9-4"/></symbol><symbol id="i-clipcheck" viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="9" y="3" width="6" height="3" rx="1"/><path d="m9 13.5 2.2 2.2 4-4.3"/></symbol><symbol id="i-trend" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></symbol><symbol id="i-qr" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18.5h2M18.5 14h1.5"/></symbol><symbol id="i-prev" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol><symbol id="i-next" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol><symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s6.5-6 6.5-11a6.5 6.5 0 0 0-13 0c0 5 6.5 11 6.5 11z"/><circle cx="12" cy="10" r="2.3"/></symbol><symbol id="i-flask" viewBox="0 0 24 24"><path d="M9.5 3h5M10.5 3v6L5 18.5A1.7 1.7 0 0 0 6.5 21h11a1.7 1.7 0 0 0 1.5-2.5L13.5 9V3"/><path d="M7.5 14.5h9"/></symbol><symbol id="i-shirt" viewBox="0 0 24 24"><path d="M8.5 3.5 4 6l1.5 4.5 2-.8V20.5h9V9.7l2 .8L20 6l-4.5-2.5a3.5 3.5 0 0 1-7 0z"/></symbol><symbol id="i-siren" viewBox="0 0 24 24"><path d="M6 18v-5a6 6 0 0 1 12 0v5"/><path d="M4 21h16v-3H4z"/><path d="M12 3v2M4.2 6.2l1.4 1.4M19.8 6.2l-1.4 1.4M12 11v4"/></symbol><symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></symbol><symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3.5l1.5-2.5h6L16.5 8H20v11.5H4z"/><circle cx="12" cy="13.5" r="3.5"/></symbol><symbol id="i-phone" viewBox="0 0 24 24"><path d="M5 3.5h3.5l1.5 4.5-2.2 1.4a11 11 0 0 0 5.3 5.3L14.5 12.5l4.5 1.5V17.5A2 2 0 0 1 17 19.5 15 15 0 0 1 3 5.5a2 2 0 0 1 2-2z"/></symbol><symbol id="i-hospital" viewBox="0 0 24 24"><path d="M4 21V7h16v14"/><path d="M9 21v-4h6v4"/><path d="M12 9.5v5M9.5 12h5"/><path d="M8 7V3.5h8V7"/></symbol><symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></symbol></defs></svg>
 
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card">
@@ -556,6 +604,7 @@ body.auth-open{overflow:hidden; height:100%;}
     <button type="button" class="sidenav-btn active" data-section="workforce">Workforce</button>
     <button type="button" class="sidenav-btn" data-section="vehicles">Plant &amp; Equipment</button>
     <button type="button" class="sidenav-btn" data-section="site">Project Details</button>
+    <button type="button" class="sidenav-btn" data-section="incidents">Incident Register</button>
     <button type="button" class="sidenav-btn" data-section="library">QHSE Library</button>
     <div class="view-only-badge" id="viewOnlyBadge" hidden>View only — changes are made by the HSE team</div>
     <button type="button" class="theme-switch" id="themeToggle" role="switch" aria-checked="false"><span class="theme-switch-track"><span class="theme-switch-knob"></span></span><span id="themeToggleLabel">Light mode</span></button>
@@ -906,6 +955,10 @@ body.auth-open{overflow:hidden; height:100%;}
             <div class="cc-title">Training compliance by division <small>required trainings in date</small></div>
             <div class="cc-gauges" id="ccGauges"></div>
           </div>
+          <div class="cc-panel">
+            <div class="cc-title">HSE targets <small id="ccTargetsYear"></small><button type="button" class="btn btn-sm" id="ccTargetsEdit" hidden><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg> Set targets</button></div>
+            <div id="ccTargets"></div>
+          </div>
         </div>
         <div class="cc-stack">
           <div class="cc-panel"><div class="cc-title">Safe man-hours <small>last 12 months</small></div><div class="cc-chart" id="ccLine"></div></div>
@@ -942,6 +995,40 @@ body.auth-open{overflow:hidden; height:100%;}
           <tbody id="reportRows">
             <tr><td colspan="6" class="empty-state">Sign in to load report data…</td></tr>
           </tbody>
+        </table>
+      </div>
+    </main>
+
+    <main class="app-main" id="incidentsSection" hidden>
+      <div class="topbar">
+        <div>
+          <h1>Incident Register</h1>
+          <p class="page-tagline"><span class="pt-co">Burhan Oil &amp; Trade Services</span><span class="pt-sep" aria-hidden="true"></span><span class="pt-slogan">Report · Investigate · Learn · Prevent</span></p>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-sm" id="incTrashBtn" type="button">Deleted incidents (0)</button>
+          <button class="btn btn-primary" id="addIncBtn" type="button">+ Report incident</button>
+        </div>
+      </div>
+      <div class="tiles tiles-4" id="incTiles"></div>
+      <div class="panel" id="addIncPanel" hidden>
+        <h3>Report an incident</h3>
+        <form id="addIncForm">
+          <div class="form-grid" id="addIncFields"></div>
+          <div class="form-actions"><button type="button" class="btn" id="cancelAddInc">Cancel</button><button type="submit" class="btn btn-primary">Save &amp; open investigation</button></div>
+        </form>
+      </div>
+      <div class="toolbar">
+        <input type="search" id="incSearch" placeholder="Search no., person, location…">
+        <select id="incYearFilter"></select>
+        <select id="incTypeFilter"></select>
+        <select id="incStatusFilter"><option value="all">Any status</option><option value="open">All open</option><option>Reported</option><option>Under investigation</option><option>Actions in progress</option><option>Closed</option></select>
+        <select id="incProjectFilter"></select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Incident no.</th><th>Date</th><th>Project / location</th><th>Type</th><th>Injury</th><th>Risk</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="incRows"><tr><td colspan="8" class="empty-state">Sign in to load incidents…</td></tr></tbody>
         </table>
       </div>
     </main>
@@ -1122,6 +1209,31 @@ body.auth-open{overflow:hidden; height:100%;}
   <div class="drawer-body" id="equipTrashBody"></div>
 </aside>
 
+<div class="drawer-overlay" id="incDrawerOverlay" hidden></div>
+<aside class="drawer drawer-wide" id="incDrawer" hidden>
+  <div class="drawer-head">
+    <div>
+      <h2 id="incDrawerName"></h2>
+      <div class="wsub" id="incDrawerSub"></div>
+    </div>
+    <div style="display:flex; gap:8px; align-items:flex-start; flex:none;">
+      <button type="button" class="btn btn-sm" id="incPdfBtn"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg> Incident report PDF</button>
+      <button class="icon-btn" id="incDrawerClose" aria-label="Close panel"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
+    </div>
+  </div>
+  <nav class="tabs" id="incDrawerTabs"></nav>
+  <div class="drawer-body" id="incDrawerBody"></div>
+</aside>
+
+<div class="drawer-overlay" id="incTrashOverlay" hidden></div>
+<aside class="drawer" id="incTrashDrawer" hidden>
+  <div class="drawer-head">
+    <div><h2>Deleted incidents</h2><div class="wsub">Restore an incident, or remove it for good with its photos and files.</div></div>
+    <button class="icon-btn" id="incTrashClose" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
+  </div>
+  <div class="drawer-body" id="incTrashBody"></div>
+</aside>
+
 <div class="drawer-overlay" id="libDrawerOverlay" hidden></div>
 <aside class="drawer" id="libDrawer" hidden>
   <div class="drawer-head">
@@ -1221,6 +1333,7 @@ const TABS = [
   {key:'competency', label:'Competency'},
   {key:'medical', label:'Medical'},
   {key:'licenses', label:'Licenses'},
+  {key:'ppeIssued', label:'PPE issued'},
   {key:'warnings', label:'Warnings'},
   {key:'violations', label:'Violations'},
 ];
@@ -1284,6 +1397,19 @@ const RECORD_TYPES = {
       {key:'issuingAuthority', label:'Issuing authority', type:'text'},
       {key:'date', label:'Issue date', type:'date'},
       {key:'expiry', label:'Expiry date', type:'date', required:true},
+      {key:'notes', label:'Notes', type:'textarea'},
+    ],
+  },
+  ppeIssued:{
+    title:'PPE issued', addLabel:'+ Issue PPE', hasExpiry:true, hasAttachment:true, attachLabel:'signed issue form',
+    fields:[
+      {key:'item', label:'PPE item', type:'select', required:true, options:['Safety helmet','Safety shoes / boots','Coverall','Safety glasses','Goggles','Face shield','Gloves (general)','Gloves (chemical)','Gloves (cut-resistant)','Ear plugs / muffs','Dust mask','Respirator','Hi-vis vest','Full body harness','Welding kit','Rain / winter jacket','Other']},
+      {key:'size', label:'Size', type:'text', placeholder:'e.g. L, 42, 10'},
+      {key:'quantity', label:'Quantity', type:'number'},
+      {key:'date', label:'Issue date', type:'date', required:true},
+      {key:'expiry', label:'Replacement due', type:'date'},
+      {key:'issuedBy', label:'Issued by', type:'text'},
+      {key:'condition', label:'Issue type', type:'select', options:['New issue','Replacement (worn out)','Replacement (damaged)','Replacement (lost)']},
       {key:'notes', label:'Notes', type:'textarea'},
     ],
   },
@@ -1373,6 +1499,7 @@ const SITE_TABS = [
   {key:'permits', label:'Permits to work'},
   {key:'actions', label:'Corrective actions'},
   {key:'complaints', label:'Client complaints'},
+  {key:'emergency', label:'Emergency'},
   {key:'team', label:'Team'},
   {key:'vehicles', label:'Vehicles'},
   {key:'equipment', label:'Equipment on site'},
@@ -1566,6 +1693,7 @@ function startSettingsData(){
       const map={}; snap.docs.forEach(d=>{ map[d.id]=d.data()||{}; });
       appSettings=map.app||{};
       trainingReq=map.trainingMatrix||{trainings:[]};
+      appTargets=map.targets||{};
       renderMonitorBar(); renderVehicleTable(); if(activeVehicleId) renderVehicleDrawer();
       renderMatrix(); renderReportAll();
     }, err=>{
@@ -2049,6 +2177,528 @@ function wireLibDateAuto(e){
   const v=addYears(t.value,1); if(v) next.value=v;
 }
 
+/* =====================================================================
+   INCIDENT INVESTIGATION REGISTER
+   One document per incident in 'incidents'. Structure follows the usual
+   oil & gas practice: notification → classification → people → description
+   → investigation (immediate & root causes, 5 whys) → corrective actions →
+   close-out. Each incident also appears once in the Monthly Report (fixed id
+   'inc_<id>'), so LTI / MTI / FAC / near-miss figures are never typed twice.
+   ===================================================================== */
+const INCIDENT_TYPES = ['Injury','Occupational illness','Near miss','Dangerous occurrence','Property / equipment damage','Vehicle incident (RTA)','Fire / explosion','Environmental (spill / release)','Security incident'];
+const INJURY_CLASSES = ['Not applicable (no injury)','First aid case (FAC)','Medical treatment case (MTC)','Restricted work case (RWC)','Lost time injury (LTI)','Fatality'];
+const INJURY_SHORT = {'Not applicable (no injury)':'No injury','First aid case (FAC)':'FAC','Medical treatment case (MTC)':'MTC','Restricted work case (RWC)':'RWC','Lost time injury (LTI)':'LTI','Fatality':'Fatality'};
+const SEVERITY_LEVELS = ['1 · Slight','2 · Minor','3 · Moderate','4 · Major','5 · Catastrophic'];
+const LIKELIHOOD_LEVELS = ['1 · Rare','2 · Unlikely','3 · Possible','4 · Likely','5 · Almost certain'];
+const INCIDENT_STATUSES = ['Reported','Under investigation','Actions in progress','Closed'];
+const INVESTIGATION_METHODS = ['5 Whys','Fishbone (Ishikawa)','SCAT / loss causation model','TapRooT','ICAM','Fault tree','Other'];
+const BODY_PARTS = ['Head','Eye(s)','Face','Neck','Shoulder','Arm','Elbow','Wrist','Hand','Finger(s)','Chest','Back','Abdomen','Hip','Leg','Knee','Ankle','Foot','Toe(s)','Multiple','Internal / systemic','Not applicable'];
+const INJURY_NATURES = ['Cut / laceration','Abrasion / graze','Bruise / contusion','Sprain / strain','Fracture','Dislocation','Burn (heat)','Burn (chemical)','Electric shock','Crush','Puncture','Foreign body (eye)','Amputation','Heat stress','Inhalation / poisoning','Other'];
+const TREATMENTS = ['First aid on site','Site clinic / medic','Hospital — outpatient','Hospital — admitted','None required'];
+const EMPLOYERS = ['Burhan Oil & Trade Services','Subcontractor','Client','Third party / public'];
+const IMMEDIATE_CAUSES = {
+  'Unsafe acts':['Operating without authority / permit','Failure to warn or secure','Improper speed','Safety device made inoperable','Using defective equipment','Using equipment improperly','PPE not used or used improperly','Improper loading or placement','Improper lifting / manual handling','Improper position for task','Servicing equipment in operation','Horseplay','Under influence of drugs / alcohol','Failure to follow procedure'],
+  'Unsafe conditions':['Inadequate guards or barriers','Inadequate or improper PPE','Defective tools, equipment or materials','Congestion / restricted space','Inadequate warning system','Fire or explosion hazard','Poor housekeeping','Hazardous atmosphere (gas, dust, fumes)','Noise','Temperature extremes / heat','Poor illumination','Inadequate ventilation','Unprotected work at height','Poor road or ground conditions'],
+};
+const ROOT_CAUSES = {
+  'Personal factors':['Inadequate physical / mental capability','Lack of knowledge / training','Lack of skill / experience','Stress or fatigue','Improper motivation / shortcut'],
+  'Job / system factors':['Inadequate supervision / leadership','Inadequate engineering or design','Inadequate purchasing / materials','Inadequate maintenance','Inadequate tools or equipment','Inadequate procedures / work standards','Inadequate risk assessment / JSA','Inadequate communication','Inadequate permit-to-work control','Wear and tear','Abuse or misuse','Contractor management failure'],
+};
+let incidentList=[], incidentLoadError=null, unsubscribeIncidents=null;
+let incFilters={year:String(new Date().getFullYear()), type:'all', status:'all', project:'all', q:''};
+let activeIncId=null, activeIncTab='overview', incEditPerson=null, incPersonFormOpen=false, incEditCapa=null, incCapaFormOpen=false, incBusy=false;
+
+function activeIncidents(){ return incidentList.filter(i=>!i.deleted); }
+function deletedIncidents(){ return incidentList.filter(i=>i.deleted); }
+function currentInc(){ return incidentList.find(i=>i.id===activeIncId); }
+function sevNum(v){ const n=parseInt(String(v||''),10); return n>=1&&n<=5 ? n : null; }
+function riskScore(i){ const c=sevNum(i.potentialSeverity)||sevNum(i.actualSeverity), l=sevNum(i.likelihood); return (c&&l) ? c*l : null; }
+function riskBand(score){ if(score===null) return null; return score>=15?{t:'Extreme',cls:'danger'}: score>=10?{t:'High',cls:'danger'}: score>=5?{t:'Medium',cls:'warn'}:{t:'Low',cls:'ok'}; }
+function isRecordable(i){ return ['Medical treatment case (MTC)','Restricted work case (RWC)','Lost time injury (LTI)','Fatality'].includes(i.injuryClass); }
+function investigationRequired(i){ return isRecordable(i) || (sevNum(i.actualSeverity)||0)>=3 || (sevNum(i.potentialSeverity)||0)>=4; }
+function incCapaOpen(i){ return (i.capa||[]).filter(a=>(a.status||'Open')!=='Closed'); }
+function incCapaOverdue(i){ return incCapaOpen(i).filter(a=>a.targetDate && daysUntil(a.targetDate)<0); }
+function incInvestigationOverdue(i){ return i.status!=='Closed' && investigationRequired(i) && !i.invCompleted && i.invDue && daysUntil(i.invDue)<0; }
+function incReportedLate(i){ if(!i.date || !i.reportedDate) return false; const d=(new Date(i.reportedDate+'T00:00:00')-new Date(i.date+'T00:00:00'))/86400000; return d>1; }
+function incStatusBadge(i){ const st=i.status||'Reported'; const cls=st==='Closed'?'ok':st==='Reported'?'danger':'warn'; return `<span class="badge ${cls}">${esc(st)}</span>`; }
+function incTitle(i){ return `${i.incNo||'Incident'} · ${i.type||''}`; }
+function incYear(i){ return String(i.date||'').slice(0,4); }
+function nextIncNo(dateStr){
+  const y=(dateStr||localToday()).slice(0,4);
+  let max=0; for(const i of incidentList){ const m=/^INC-(\d{4})-(\d+)$/.exec(i.incNo||''); if(m && m[1]===y) max=Math.max(max, Number(m[2])); }
+  return `INC-${y}-${String(max+1).padStart(3,'0')}`;
+}
+// Monthly Report category for this incident (one entry per incident)
+function incReportCategory(i){
+  const c=i.injuryClass||'';
+  if(c==='Lost time injury (LTI)' || c==='Fatality') return 'lti';
+  if(c==='Medical treatment case (MTC)' || c==='Restricted work case (RWC)') return 'mti';
+  if(c==='First aid case (FAC)') return 'fac';
+  if(i.type==='Near miss') return 'nearMiss';
+  if(i.type==='Vehicle incident (RTA)') return 'vehicleIncident';
+  return 'incident';
+}
+function incDaysLost(i){ return (i.persons||[]).reduce((n,p)=>n+(parseInt(p.daysLost,10)||0),0); }
+async function syncIncidentToReport(i){
+  const site=siteEquipmentList.find(s=>s.id===i.projectId);
+  const cat=incReportCategory(i), sev=sevNum(i.actualSeverity)||1;
+  const text=`${i.incNo||''} — ${String(i.description||'').slice(0,140)}`;
+  const data={category:cat, date:i.date||'', division:(site && site.division) || i.division || 'Civil', projectId:i.projectId||null,
+    description:text, actionTaken:i.immediateActions||'', source:'incident', sourceIncidentId:i.id};
+  if(cat==='lti') data.daysLost=incDaysLost(i);
+  if(cat==='incident' || cat==='vehicleIncident') data.severity = sev>=4?'Critical':sev>=3?'Major':'Minor';
+  if(cat==='vehicleIncident') data.vehicleNumber=i.vehicleNo||'—';
+  if(cat==='mti') data.treatmentGiven=((i.persons||[])[0]||{}).treatment||'';
+  if(cat==='fac') data.bodyPart=((i.persons||[])[0]||{}).bodyPart||'';
+  try{ await db.collection('hseLogs').doc('inc_'+i.id).set(stamp(data)); }
+  catch(e){ console.error('incident sync failed', e); toast('Saved, but the Monthly Report could not be updated — '+(e.code||'error')); }
+}
+async function removeIncidentFromReport(id){ try{ await db.collection('hseLogs').doc('inc_'+id).delete(); }catch(e){} }
+async function updateInc(id, data, quiet){
+  try{
+    await db.collection('incidents').doc(id).update(stamp(data));
+    if(!quiet) toast('Saved');
+    const merged={...(incidentList.find(x=>x.id===id)||{}), ...data, id};
+    if(!merged.deleted) syncIncidentToReport(merged);
+    return true;
+  }catch(e){ console.error(e); toast('Could not save — '+((e&&e.code)||'error')); return false; }
+}
+function startIncidentData(){
+  try{
+    unsubscribeIncidents = db.collection('incidents').onSnapshot(snap=>{
+      incidentLoadError=null;
+      incidentList=snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
+      renderIncidentAll(); renderReportAll();
+    }, err=>{
+      console.error(err); if(!auth.currentUser) return;
+      incidentLoadError = err && err.code==='permission-denied' ? 'rules' : 'other';
+      renderIncidentAll();
+    });
+  }catch(e){ console.error(e); }
+}
+
+/* ---------- register page ---------- */
+function renderIncidentAll(){
+  if(!document.getElementById('incRows')) return;
+  renderIncTiles(); renderIncFilters(); renderIncTable();
+  document.getElementById('incTrashBtn').innerHTML = ic('trash')+` Deleted incidents (${deletedIncidents().length})`;
+  if(activeIncId) renderIncDrawer();
+  if(!document.getElementById('incTrashDrawer').hidden) renderIncTrashBody();
+}
+function renderIncTiles(){
+  const y=incFilters.year, list=activeIncidents().filter(i=>y==='all' || incYear(i)===y);
+  const inj=list.filter(i=>i.injuryClass && i.injuryClass!=='Not applicable (no injury)').length, nm=list.filter(i=>i.type==='Near miss').length;
+  const rec=list.filter(isRecordable), lti=list.filter(i=>['Lost time injury (LTI)','Fatality'].includes(i.injuryClass)).length;
+  const openInv=activeIncidents().filter(i=>i.status!=='Closed' && investigationRequired(i) && !i.invCompleted), invOver=openInv.filter(incInvestigationOverdue).length;
+  const capaOpen=activeIncidents().reduce((n,i)=>n+incCapaOpen(i).length,0), capaOver=activeIncidents().reduce((n,i)=>n+incCapaOverdue(i).length,0);
+  const yl = y==='all' ? 'all years' : y;
+  document.getElementById('incTiles').innerHTML=[
+    {label:'Incidents '+yl, num:list.length, cls:'', sub:`${inj} with injury · ${nm} near misses`, icon:'alert'},
+    {label:'Recordable injuries', num:rec.length, cls:rec.length?'danger':'ok', sub:`${lti} LTI / fatality · MTC + RWC + LTI`, icon:'firstaid'},
+    {label:'Open investigations', num:openInv.length, cls:invOver?'danger':(openInv.length?'warn':'ok'), sub:`${invOver} past the due date`, icon:'search'},
+    {label:'Open incident actions', num:capaOpen, cls:capaOver?'danger':(capaOpen?'warn':'ok'), sub:`${capaOver} overdue`, icon:'clipcheck'},
+  ].map(t=>`<div class="tile"><div class="tile-head"><div class="tile-icon">${ic(t.icon)}</div><div class="tile-label">${esc(t.label)}</div></div><div class="tile-num ${t.cls}">${t.num}</div><div class="tile-sub">${esc(t.sub)}</div></div>`).join('');
+}
+function renderIncFilters(){
+  const ys=new Set([String(new Date().getFullYear())]); for(const i of activeIncidents()) if(incYear(i)) ys.add(incYear(i));
+  const ysel=document.getElementById('incYearFilter');
+  ysel.innerHTML=[...ys].sort().reverse().map(y=>`<option value="${y}">${y}</option>`).join('')+'<option value="all">All years</option>';
+  ysel.value=incFilters.year;
+  const psel=document.getElementById('incProjectFilter'), cur=incFilters.project;
+  psel.innerHTML='<option value="all">All projects</option><option value="none">No project (office / other)</option>'+activeSites().map(s=>`<option value="${s.id}">${esc(s.siteName||'Project')}</option>`).join('');
+  psel.value=[...psel.options].some(o=>o.value===cur)?cur:'all'; incFilters.project=psel.value;
+}
+function incMatches(i){
+  if(i.deleted) return false;
+  if(incFilters.year!=='all' && incYear(i)!==incFilters.year) return false;
+  if(incFilters.type!=='all' && i.type!==incFilters.type) return false;
+  if(incFilters.status==='open' ? i.status==='Closed' : (incFilters.status!=='all' && (i.status||'Reported')!==incFilters.status)) return false;
+  if(incFilters.project==='none' ? !!i.projectId : (incFilters.project!=='all' && i.projectId!==incFilters.project)) return false;
+  const q=incFilters.q.trim().toLowerCase();
+  if(q && !((i.incNo||'')+' '+(i.description||'')+' '+(i.location||'')+' '+(i.persons||[]).map(p=>p.name).join(' ')).toLowerCase().includes(q)) return false;
+  return true;
+}
+function renderIncTable(){
+  const tb=document.getElementById('incRows'); if(!auth.currentUser) return;
+  if(incidentLoadError==='rules'){ tb.innerHTML=`<tr><td colspan="8" class="empty-state">${esc(RULES_UPDATE_MSG)}</td></tr>`; return; }
+  if(!activeIncidents().length){ tb.innerHTML=`<tr><td colspan="8" class="empty-state">${canEdit()?'No incidents recorded — click “+ Report incident” when something happens.':'No incidents recorded.'}</td></tr>`; return; }
+  const list=incidentList.filter(incMatches).sort((a,b)=>(b.date||'').localeCompare(a.date||'') || (b.incNo||'').localeCompare(a.incNo||''));
+  if(!list.length){ tb.innerHTML='<tr><td colspan="8" class="empty-state">No incidents match your filters.</td></tr>'; return; }
+  tb.innerHTML=list.map(i=>{
+    const rb=riskBand(riskScore(i)), open=incCapaOpen(i).length, over=incCapaOverdue(i).length;
+    const flags=[incInvestigationOverdue(i)?'<span class="badge danger">Investigation overdue</span>':'', incReportedLate(i)?'<span class="badge warn">Reported late</span>':''].join(' ');
+    return `<tr data-id="${i.id}">
+      <td class="mono" style="white-space:nowrap;"><strong>${esc(i.incNo||'—')}</strong></td>
+      <td class="mono" style="white-space:nowrap;">${esc(i.date||'—')}${i.time?`<div class="wsub">${esc(i.time)}</div>`:''}</td>
+      <td>${i.projectId?esc(projectName(i.projectId)):'<span class="wsub">—</span>'}<div class="wsub">${esc(i.location||'')}</div></td>
+      <td>${esc(i.type||'—')}<div class="wsub">${esc(String(i.description||'').slice(0,70))}${(i.description||'').length>70?'…':''}</div></td>
+      <td>${i.injuryClass && i.injuryClass!=='Not applicable (no injury)' ? `<span class="badge ${isRecordable(i)?'danger':'warn'}">${esc(INJURY_SHORT[i.injuryClass]||i.injuryClass)}</span>` : '<span class="wsub">No injury</span>'}</td>
+      <td>${rb?`<span class="badge ${rb.cls}">${rb.t} · ${riskScore(i)}</span>`:'<span class="wsub">—</span>'}</td>
+      <td>${incStatusBadge(i)} ${flags}</td>
+      <td>${(i.capa||[]).length ? `<span class="pill-count ${over?'danger':open?'warn':''}">${open}/${(i.capa||[]).length}</span>` : '<span class="wsub">—</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+function incFieldHtml(f, v, attr){
+  attr=attr||'data-ifield';
+  const req=f.required?' *':'', cls=f.wide?' class="span-all"':'';
+  if(f.type==='select') return `<label${cls}>${esc(f.label)}${req}<select ${attr}="${f.key}" ${f.required?'required':''}><option value="">Select…</option>${f.options.map(o=>`<option value="${esc(o)}" ${o===v?'selected':''}>${esc(o)}</option>`).join('')}${v && !f.options.includes(v)?`<option selected>${esc(v)}</option>`:''}</select></label>`;
+  if(f.type==='textarea') return `<label${cls}>${esc(f.label)}${req}<textarea ${attr}="${f.key}" ${f.required?'required':''} placeholder="${esc(f.placeholder||'')}">${esc(v||'')}</textarea></label>`;
+  return `<label${cls}>${esc(f.label)}${req}<input type="${f.type||'text'}" ${attr}="${f.key}" value="${esc(v||'')}" ${f.required?'required':''} placeholder="${esc(f.placeholder||'')}"></label>`;
+}
+function projectOptionsHtml(sel){ return `<option value="">— No project (office / other) —</option>`+activeSites().map(s=>`<option value="${s.id}" ${s.id===sel?'selected':''}>${esc(s.siteName||'Project')}</option>`).join(''); }
+const INC_QUICK_FIELDS = [
+  {key:'date', label:'Date of incident', type:'date', required:true},
+  {key:'time', label:'Time', type:'time'},
+  {key:'location', label:'Exact location', type:'text', required:true, placeholder:'e.g. Tank T-12 roof, scaffold level 3'},
+  {key:'type', label:'Incident type', type:'select', required:true, options:INCIDENT_TYPES},
+  {key:'injuryClass', label:'Injury classification', type:'select', required:true, options:INJURY_CLASSES},
+  {key:'actualSeverity', label:'Actual severity', type:'select', required:true, options:SEVERITY_LEVELS},
+  {key:'potentialSeverity', label:'Potential severity (worst credible)', type:'select', options:SEVERITY_LEVELS},
+  {key:'likelihood', label:'Likelihood of recurrence', type:'select', options:LIKELIHOOD_LEVELS},
+  {key:'reportedBy', label:'Reported by', type:'text', required:true},
+  {key:'description', label:'What happened (brief)', type:'textarea', required:true, wide:true, placeholder:'Sequence of events in plain words'},
+  {key:'immediateActions', label:'Immediate actions taken', type:'textarea', wide:true, placeholder:'e.g. area barricaded, first aid given, work stopped'},
+];
+function openAddIncForm(){
+  const f=document.getElementById('addIncFields');
+  f.innerHTML = `<label>Project<select data-ifield="projectId">${projectOptionsHtml('')}</select></label>` + INC_QUICK_FIELDS.map(x=>incFieldHtml(x, x.key==='date'?localToday():x.key==='injuryClass'?'':'')).join('');
+  document.getElementById('addIncPanel').hidden=false;
+}
+function closeAddIncForm(){ document.getElementById('addIncPanel').hidden=true; document.getElementById('addIncForm').reset(); }
+
+/* ---------- incident drawer ---------- */
+const INC_TABS=[{key:'overview',label:'Overview'},{key:'people',label:'People'},{key:'investigation',label:'Investigation'},{key:'actions',label:'Actions'},{key:'closeout',label:'Close-out'},{key:'files',label:'Photos & files'}];
+function openIncDrawer(id, tab){
+  raiseDrawer('incDrawerOverlay','incDrawer');
+  activeIncId=id; activeIncTab=tab||'overview'; incEditPerson=null; incPersonFormOpen=false; incEditCapa=null; incCapaFormOpen=false;
+  document.getElementById('incDrawerOverlay').hidden=false; document.getElementById('incDrawer').hidden=false;
+  renderIncDrawer();
+}
+function closeIncDrawer(){ activeIncId=null; document.getElementById('incDrawerOverlay').hidden=true; document.getElementById('incDrawer').hidden=true; }
+function renderIncDrawer(){
+  const i=currentInc(); if(!i || i.deleted){ closeIncDrawer(); return; }
+  if(incBusy) return;
+  document.getElementById('incDrawerName').textContent=i.incNo||'Incident';
+  document.getElementById('incDrawerSub').textContent=[i.type, i.date, i.projectId?projectName(i.projectId):'no project'].filter(Boolean).join(' · ');
+  document.getElementById('incDrawerTabs').innerHTML=INC_TABS.map(t=>{
+    let extra='';
+    if(t.key==='actions'){ const o=incCapaOpen(i).length, ov=incCapaOverdue(i).length; if(o) extra=` <span class="pill-count ${ov?'danger':'warn'}">${o}</span>`; }
+    if(t.key==='people' && (i.persons||[]).length) extra=` <span class="pill-count">${i.persons.length}</span>`;
+    if(t.key==='files' && (i.files||[]).length) extra=` <span class="pill-count">${i.files.length}</span>`;
+    if(t.key==='investigation' && incInvestigationOverdue(i)) extra=` <span class="pill-count danger">!</span>`;
+    return `<button type="button" class="tab-btn ${t.key===activeIncTab?'active':''}" data-itab="${t.key}">${t.label}${extra}</button>`;
+  }).join('');
+  const b=document.getElementById('incDrawerBody');
+  b.innerHTML = activeIncTab==='people' ? incPeopleHtml(i) : activeIncTab==='investigation' ? incInvestigationHtml(i) : activeIncTab==='actions' ? incActionsHtml(i) : activeIncTab==='closeout' ? incCloseoutHtml(i) : activeIncTab==='files' ? incFilesHtml(i) : incOverviewHtml(i);
+}
+function riskMatrixHtml(i){
+  const c=sevNum(i.potentialSeverity)||sevNum(i.actualSeverity), l=sevNum(i.likelihood);
+  let rows='';
+  for(let sv=5; sv>=1; sv--){
+    rows+=`<div class="rm-label">${sv}</div>`;
+    for(let lk=1; lk<=5; lk++){ const sc=sv*lk, band=riskBand(sc); rows+=`<div class="rm-cell rm-${band.cls} ${sv===c&&lk===l?'rm-on':''}" title="Severity ${sv} × likelihood ${lk} = ${sc} (${band.t})">${sc}</div>`; }
+  }
+  const band=riskBand(riskScore(i));
+  return `<div class="rm-wrap"><div class="rm-grid"><div class="rm-y">Severity</div>${rows}<div></div>${[1,2,3,4,5].map(n=>`<div class="rm-label">${n}</div>`).join('')}</div>
+    <div class="rm-x">Likelihood →</div>
+    <div class="rm-result">${band?`Risk rating: <span class="badge ${band.cls}">${band.t} · ${riskScore(i)}</span>`:'Set potential severity and likelihood to rate the risk.'}</div></div>`;
+}
+function incOverviewHtml(i){
+  const flags=[];
+  if(investigationRequired(i)) flags.push(`<span class="badge ${i.invCompleted?'ok':'danger'}">${i.invCompleted?'Investigation complete':'Formal investigation required'}</span>`);
+  if(incInvestigationOverdue(i)) flags.push('<span class="badge danger">Investigation overdue</span>');
+  if(incReportedLate(i)) flags.push('<span class="badge warn">Reported more than 24 h after the incident</span>');
+  if(isRecordable(i)) flags.push('<span class="badge danger">Recordable</span>');
+  const reportCat=REPORT_CATEGORIES[incReportCategory(i)];
+  const f=(k,l,t,o)=>incFieldHtml({key:k,label:l,type:t||'text',...(o||{})}, i[k]);
+  return `<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">${incStatusBadge(i)} ${flags.join(' ')}</div>
+  ${updatedNoteHtml(i)}
+  <p class="wsub" style="margin:0 0 12px;">Counted in the Monthly Report as <strong>${esc(reportCat?reportCat.label:'—')}</strong>${i.projectId?` for ${esc(projectName(i.projectId))}`:''}.</p>
+  <form id="incOverviewForm">
+    <div class="subhead">Notification</div>
+    <div class="form-grid">
+      ${f('incNo','Incident no.','text',{required:true})}
+      ${f('date','Date of incident','date',{required:true})}
+      ${f('time','Time','time')}
+      ${f('reportedDate','Date reported','date')}
+      ${f('reportedBy','Reported by')}
+      <label>Project<select data-ifield="projectId">${projectOptionsHtml(i.projectId)}</select></label>
+      ${f('location','Exact location','text',{required:true})}
+      ${f('shift','Shift','select',{options:['Day','Night']})}
+      ${f('activity','Work activity at the time','text',{placeholder:'e.g. scaffold dismantling'})}
+      ${f('permitNo','Permit to work no.','text')}
+      ${f('conditions','Weather / lighting','text',{placeholder:'e.g. 46 °C, windy, daylight'})}
+      ${f('status','Status','select',{options:INCIDENT_STATUSES, required:true})}
+    </div>
+    <div class="subhead">Classification</div>
+    <div class="form-grid">
+      ${f('type','Incident type','select',{options:INCIDENT_TYPES, required:true})}
+      ${f('injuryClass','Injury classification','select',{options:INJURY_CLASSES, required:true})}
+      ${f('actualSeverity','Actual severity','select',{options:SEVERITY_LEVELS, required:true})}
+      ${f('potentialSeverity','Potential severity (worst credible)','select',{options:SEVERITY_LEVELS})}
+      ${f('likelihood','Likelihood of recurrence','select',{options:LIKELIHOOD_LEVELS})}
+      ${f('clientNotified','Client notified','select',{options:['Yes','No','Not required']})}
+      ${f('clientNotifiedDate','Client notified on','date')}
+      ${f('authorityNotified','Authority notified (MoL / ROP / EA)','select',{options:['Yes','No','Not required']})}
+      ${f('authorityRef','Authority / reference','text')}
+    </div>
+    ${riskMatrixHtml(i)}
+    <div class="subhead">Description</div>
+    <div class="form-grid">
+      ${f('description','What happened — sequence of events','textarea',{required:true, wide:true})}
+      ${f('immediateActions','Immediate actions taken','textarea',{wide:true})}
+      ${f('equipmentInvolved','Equipment / material involved','text')}
+      ${f('vehicleNo','Vehicle no. (if any)','text')}
+      ${f('damageCost','Estimated damage cost (OMR)','number')}
+      ${f('envRelease','Environmental release (substance · quantity)','text')}
+      ${f('witnesses','Witnesses (names · contact)','textarea',{wide:true})}
+    </div>
+    <div class="form-actions"><button type="submit" class="btn btn-primary">Save overview</button></div>
+  </form>
+  <div class="danger-zone"><p>Deleting moves this incident to Deleted incidents and removes it from the Monthly Report. It can be restored.</p><button type="button" class="btn btn-danger btn-sm" id="deleteIncBtn" data-armed="0">Delete incident</button></div>`;
+}
+const PERSON_FIELDS=[
+  {key:'employer', label:'Employer', type:'select', options:EMPLOYERS},
+  {key:'employerName', label:'Company name (if not Burhan)', type:'text'},
+  {key:'designation', label:'Designation / trade', type:'text'},
+  {key:'bodyPart', label:'Body part affected', type:'select', options:BODY_PARTS},
+  {key:'injuryNature', label:'Nature of injury', type:'select', options:INJURY_NATURES},
+  {key:'treatment', label:'Treatment', type:'select', options:TREATMENTS},
+  {key:'daysLost', label:'Days lost', type:'number'},
+  {key:'restrictedDays', label:'Restricted work days', type:'number'},
+  {key:'returnDate', label:'Returned to work on', type:'date'},
+  {key:'notes', label:'Notes', type:'textarea', wide:true},
+];
+function incPeopleHtml(i){
+  const list=i.persons||[];
+  const editing = incEditPerson ? list.find(p=>p.id===incEditPerson) : null;
+  const cards = list.length ? list.map(p=>`<div class="record-card"><div class="record-card-top"><div class="record-card-title">${esc(p.name||'—')} ${p.injuryNature?`<span class="badge warn">${esc(p.injuryNature)}</span>`:''} ${(parseInt(p.daysLost,10)||0)?`<span class="badge danger">${esc(p.daysLost)} days lost</span>`:''}</div>
+      <div class="record-card-actions"><button type="button" class="icon-btn" data-pedit="${p.id}" aria-label="Edit">${ic('pencil')}</button><button type="button" class="icon-btn danger" data-pdel="${p.id}" data-armed="0" aria-label="Delete">${ic('trash')}</button></div></div>
+      <div class="record-fields">${PERSON_FIELDS.filter(f=>p[f.key]).map(f=>`<div class="rf"><span class="rf-k">${esc(f.label)}</span><span class="rf-v">${esc(p[f.key])}</span></div>`).join('')}</div></div>`).join('')
+    : '<p class="wsub">No people recorded yet. Add everyone injured or directly involved.</p>';
+  const wsel=`<label>From Workforce<select data-pfield="workerId"><option value="">— Not in Workforce / enter name —</option>${activeWorkers().slice().sort((a,b)=>(a.fullName||'').localeCompare(b.fullName||'')).map(w=>`<option value="${w.id}" ${editing&&editing.workerId===w.id?'selected':''}>${esc(w.fullName)}</option>`).join('')}</select></label>`;
+  const form = incPersonFormOpen ? `<form id="incPersonForm" style="margin-bottom:16px;"><div class="form-grid">${wsel}${incFieldHtml({key:'name',label:'Full name',type:'text',required:true}, editing?editing.name:'', 'data-pfield')}${PERSON_FIELDS.map(f=>incFieldHtml(f, editing?editing[f.key]:(f.key==='employer'?'Burhan Oil & Trade Services':''), 'data-pfield')).join('')}</div>
+    <div class="form-actions"><button type="submit" class="btn btn-primary btn-sm">${editing?'Save changes':'Add person'}</button></div></form>` : '';
+  return `<div class="section-head"><h3>People involved (${list.length})</h3><button type="button" class="btn btn-sm" id="incPersonToggle">${incPersonFormOpen?'Cancel':'+ Add person'}</button></div>${form}${cards}
+    <p class="wsub">Days lost are added up and sent to the Monthly Report for LTI cases.</p>`;
+}
+function causeChecks(groups, selected, attr){
+  const sel=new Set(selected||[]);
+  return Object.entries(groups).map(([g,items])=>`<div class="cause-group"><div class="cause-title">${esc(g)}</div><div class="cause-list">${items.map(c=>`<label class="chk"><input type="checkbox" ${attr}="1" value="${esc(c)}" ${sel.has(c)?'checked':''}>${esc(c)}</label>`).join('')}</div></div>`).join('');
+}
+function incInvestigationHtml(i){
+  const need=investigationRequired(i), whys=i.whys||[];
+  const f=(k,l,t,o)=>incFieldHtml({key:k,label:l,type:t||'text',...(o||{})}, i[k]);
+  return `${need?`<div class="notice">${ic('alert')} A formal investigation is required for this incident (recordable injury or high severity).${i.invDue?` Due by <strong>${esc(i.invDue)}</strong>.`:''}</div>`:'<p class="wsub" style="margin:0 0 12px;">A formal investigation is optional for this incident, but recording causes still helps prevent repeats.</p>'}
+  <form id="incInvestigationForm">
+    <div class="subhead">Investigation team</div>
+    <div class="form-grid">
+      ${f('leadInvestigator','Lead investigator')}
+      ${f('team','Team members','text',{placeholder:'names, roles'})}
+      ${f('method','Method used','select',{options:INVESTIGATION_METHODS})}
+      ${f('invStart','Started on','date')}
+      ${f('invDue','Due by','date')}
+      ${f('invCompleted','Completed on','date')}
+    </div>
+    <div class="subhead">Immediate causes</div>${causeChecks(IMMEDIATE_CAUSES, i.immediateCauses, 'data-icause')}
+    <div class="subhead">Root causes (basic causes)</div>${causeChecks(ROOT_CAUSES, i.rootCauses, 'data-rcause')}
+    <div class="subhead">5 Whys</div>
+    <div class="whys">${[0,1,2,3,4].map(n=>`<label>Why ${n+1}?<input data-why="${n}" value="${esc(whys[n]||'')}" placeholder="${n===0?'Why did the incident happen?':'Why?'}"></label>`).join('')}</div>
+    <div class="subhead">Findings</div>
+    <div class="form-grid">
+      ${f('findings','Conclusion / key findings','textarea',{wide:true})}
+      ${f('lessons','Lessons learned','textarea',{wide:true})}
+      ${f('alertShared','Safety alert shared with all sites','select',{options:['Yes','No']})}
+      ${f('alertDate','Shared on','date')}
+    </div>
+    <div class="form-actions"><button type="submit" class="btn btn-primary">Save investigation</button></div>
+  </form>
+  <div class="subhead">Investigation report</div>
+  <div class="att-block">${i.reportFile && i.reportFile.url ? libFileBlockHtml(i.reportFile,false) : '<span class="att-none">No report uploaded</span>'}<label class="upload-btn">${i.reportFile&&i.reportFile.url?'Replace':'Upload'} investigation report<input type="file" hidden data-inc-report></label></div>`;
+}
+const CAPA_FIELDS=[
+  {key:'action', label:'Action', type:'text', required:true, wide:true},
+  {key:'kind', label:'Type', type:'select', options:['Corrective','Preventive']},
+  {key:'owner', label:'Owner', type:'text', required:true},
+  {key:'targetDate', label:'Target date', type:'date', required:true},
+  {key:'status', label:'Status', type:'select', options:COMPLAINT_STATUSES, required:true},
+  {key:'closedDate', label:'Closed on', type:'date'},
+  {key:'verification', label:'Verification / evidence', type:'textarea', wide:true},
+];
+function incActionsHtml(i){
+  const list=(i.capa||[]).slice().sort((a,b)=>(a.targetDate||'').localeCompare(b.targetDate||''));
+  const editing = incEditCapa ? list.find(a=>a.id===incEditCapa) : null;
+  const form = incCapaFormOpen ? `<form id="incCapaForm" style="margin-bottom:16px;"><div class="form-grid">${CAPA_FIELDS.map(f=>incFieldHtml(f, editing?editing[f.key]:(f.key==='status'?'Open':f.key==='kind'?'Corrective':''), 'data-cfield')).join('')}</div>
+    <div class="form-actions"><button type="submit" class="btn btn-primary btn-sm">${editing?'Save changes':'Add action'}</button></div></form>` : '';
+  const cards = list.length ? list.map(a=>`<div class="record-card"><div class="record-card-top"><div class="record-card-title">${esc(a.action||'—')} ${complaintBadges(a)} ${a.kind?`<span class="badge muted">${esc(a.kind)}</span>`:''}</div>
+      <div class="record-card-actions"><button type="button" class="icon-btn" data-cedit="${a.id}" aria-label="Edit">${ic('pencil')}</button><button type="button" class="icon-btn danger" data-cdel="${a.id}" data-armed="0" aria-label="Delete">${ic('trash')}</button></div></div>
+      <div class="record-fields">${['owner','targetDate','closedDate','verification'].filter(k=>a[k]).map(k=>`<div class="rf"><span class="rf-k">${esc(CAPA_FIELDS.find(f=>f.key===k).label)}</span><span class="rf-v">${esc(a[k])}</span></div>`).join('')}</div></div>`).join('')
+    : '<p class="wsub">No actions yet. Add one for each root cause found.</p>';
+  return `<div class="section-head"><h3>Corrective &amp; preventive actions (${list.length})</h3><button type="button" class="btn btn-sm" id="incCapaToggle">${incCapaFormOpen?'Cancel':'+ Add action'}</button></div>${form}${cards}
+    <p class="wsub">Overdue actions go into the daily reminder email and the Command Centre.</p>`;
+}
+function incCloseoutHtml(i){
+  const need=investigationRequired(i), open=incCapaOpen(i).length;
+  const checks=[
+    {ok:!!(i.description && i.type && i.injuryClass), t:'Incident details and classification recorded'},
+    {ok:!!(i.persons||[]).length || i.injuryClass==='Not applicable (no injury)', t:'People involved recorded'},
+    {ok:!need || !!i.invCompleted, t:need?'Investigation completed':'Investigation not required'},
+    {ok:!need || !!(i.rootCauses||[]).length, t:'Root causes identified'},
+    {ok:!!(i.capa||[]).length || !need, t:'Corrective actions raised'},
+    {ok:open===0, t: open?`${open} action${open===1?'':'s'} still open`:'All actions closed'},
+  ];
+  const ready=checks.every(c=>c.ok);
+  const f=(k,l,t,o)=>incFieldHtml({key:k,label:l,type:t||'text',...(o||{})}, i[k]);
+  return `<div class="section-head"><h3>Close-out checklist</h3>${incStatusBadge(i)}</div>
+    <div class="checklist">${checks.map(c=>`<div class="ck ${c.ok?'ok':'no'}">${ic(c.ok?'checkcircle':'xcircle')} ${esc(c.t)}</div>`).join('')}</div>
+    <form id="incCloseForm" style="margin-top:14px;">
+      <div class="form-grid">
+        ${f('closedBy','Closed by (HSE)')}
+        ${f('closedDate','Closure date','date')}
+        ${f('effectivenessVerified','Actions verified effective','select',{options:['Yes','No','Pending']})}
+        ${f('closureNotes','Closure remarks','textarea',{wide:true})}
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn">Save close-out details</button>
+        ${i.status==='Closed' ? '<button type="button" class="btn" id="incReopenBtn">Reopen incident</button>' : `<button type="button" class="btn btn-primary" id="incCloseBtn" ${ready?'':'data-force="1"'}>${ic('check')} Close incident</button>`}
+      </div>
+      ${ready||i.status==='Closed' ? '' : '<p class="wsub" style="text-align:right;">Some checklist items are not complete — closing now will ask you to confirm.</p>'}
+    </form>`;
+}
+function incFilesHtml(i){
+  const files=i.files||[];
+  return `<div class="section-head"><h3>Photos &amp; files (${files.length})</h3><label class="upload-btn">${ic('camera')} Add photos / files<input type="file" hidden multiple data-inc-files></label></div>
+    ${files.length ? `<div class="inc-files">${files.map((f,n)=>{ const img=(f.contentType||'').startsWith('image/');
+      return `<div class="inc-file">${img?`<a href="${esc(f.url)}" target="_blank" rel="noopener"><img src="${esc(f.url)}" alt="${esc(f.name||'photo')}"></a>`:`<div class="inc-file-doc">${ic('file')}</div>`}
+        <div class="inc-file-name">${esc(f.name||'file')}</div>
+        <div class="att-actions"><a class="att-link" href="${esc(f.url)}" target="_blank" rel="noopener">View</a><button type="button" class="att-link" data-download-url="${esc(f.url)}" data-download-name="${esc(f.name||'file')}">Download</button><button type="button" class="att-link att-remove" data-inc-file-del="${n}" data-armed="0">Remove</button></div></div>`; }).join('')}</div>`
+      : '<p class="wsub">No photos yet. Add scene photos, sketches, statements or the flash report.</p>'}`;
+}
+function openIncTrash(){ document.getElementById('incTrashOverlay').hidden=false; document.getElementById('incTrashDrawer').hidden=false; renderIncTrashBody(); }
+function closeIncTrash(){ document.getElementById('incTrashOverlay').hidden=true; document.getElementById('incTrashDrawer').hidden=true; }
+function renderIncTrashBody(){
+  const list=deletedIncidents();
+  document.getElementById('incTrashBody').innerHTML = list.length ? list.map(i=>`<div class="record-card"><div class="record-card-top"><div class="record-card-title">${esc(incTitle(i))}</div>
+    <div class="record-card-actions"><button type="button" class="btn btn-sm" data-irestore="${i.id}">Restore</button><button type="button" class="btn btn-danger btn-sm" data-ipurge="${i.id}" data-armed="0">Delete forever</button></div></div>
+    <div class="record-fields"><div class="rf"><span class="rf-k">Date</span><span class="rf-v">${esc(i.date||'—')}</span></div><div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc((i.deletedAt||'').slice(0,10)||'—')}</span></div></div></div>`).join('') : '<p class="wsub">Nothing in the trash.</p>';
+}
+
+/* ---------- incident report PDF ---------- */
+function buildIncidentPdf(i){
+  const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'pt', format:'a4'});
+  const M=40, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight(); let y=48;
+  const ensure=h=>{ if(y+h>H-40){ doc.addPage(); y=48; } };
+  const h2=t=>{ ensure(28); y+=6; doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(200,16,46); doc.text(t.toUpperCase(), M, y); y+=5; doc.setDrawColor(215); doc.line(M,y,W-M,y); y+=14; doc.setTextColor(20,20,20); };
+  const kv=(k,v)=>{ const lines=doc.splitTextToSize(String(v==null||v===''?'—':v), W-2*M-150); ensure(12*lines.length+4); doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(100,105,110); doc.text(String(k), M, y); doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(20,20,20); lines.forEach((l,n)=>doc.text(l, M+150, y+n*12)); y+=12*lines.length+3; };
+  const para=t=>{ const lines=doc.splitTextToSize(String(t||'—'), W-2*M); doc.setFont('helvetica','normal'); doc.setFontSize(9.5); lines.forEach(l=>{ ensure(12); doc.text(l, M, y); y+=12; }); y+=4; };
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Burhan Oil & Trade Services', M, 36);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(120); doc.text('HSE Incident Investigation Report', M, 47); doc.setTextColor(20);
+  y=76; doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.text(`${i.incNo||'Incident'} — ${i.type||''}`, M, y); y+=16;
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(90); doc.text(`${i.date||''}${i.time?' '+i.time:''}  ·  ${i.projectId?projectName(i.projectId):'No project'}  ·  ${i.location||''}  ·  Status: ${i.status||'Reported'}`, M, y); doc.setTextColor(20); y+=10;
+  h2('1. Notification'); kv('Reported by', i.reportedBy); kv('Date reported', i.reportedDate); kv('Shift', i.shift); kv('Work activity', i.activity); kv('Permit to work no.', i.permitNo); kv('Weather / lighting', i.conditions);
+  h2('2. Classification'); kv('Incident type', i.type); kv('Injury classification', i.injuryClass); kv('Actual severity', i.actualSeverity); kv('Potential severity', i.potentialSeverity); kv('Likelihood', i.likelihood);
+  const rb=riskBand(riskScore(i)); kv('Risk rating', rb?`${rb.t} (${riskScore(i)})`:'—'); kv('Client notified', [i.clientNotified, i.clientNotifiedDate].filter(Boolean).join(' · ')); kv('Authority notified', [i.authorityNotified, i.authorityRef].filter(Boolean).join(' · '));
+  h2('3. Description'); para(i.description); kv('Immediate actions', i.immediateActions); kv('Equipment involved', i.equipmentInvolved); kv('Vehicle no.', i.vehicleNo); kv('Damage cost (OMR)', i.damageCost); kv('Environmental release', i.envRelease); kv('Witnesses', i.witnesses);
+  h2(`4. People involved (${(i.persons||[]).length})`);
+  if(!(i.persons||[]).length) para('None recorded.');
+  for(const p of (i.persons||[])){ doc.setFont('helvetica','bold'); doc.setFontSize(9.5); ensure(14); doc.text(`• ${p.name||'—'}  (${[p.employer==='Burhan Oil & Trade Services'?'Burhan':p.employerName||p.employer, p.designation].filter(Boolean).join(', ')})`, M, y); y+=12;
+    doc.setFont('helvetica','normal'); para(`${[p.bodyPart, p.injuryNature, p.treatment].filter(Boolean).join(' · ')}${p.daysLost?` · ${p.daysLost} days lost`:''}${p.restrictedDays?` · ${p.restrictedDays} restricted days`:''}${p.returnDate?` · returned ${p.returnDate}`:''}`); }
+  h2('5. Investigation'); kv('Lead investigator', i.leadInvestigator); kv('Team', i.team); kv('Method', i.method); kv('Started / due / completed', [i.invStart, i.invDue, i.invCompleted].map(x=>x||'—').join('  /  '));
+  kv('Immediate causes', (i.immediateCauses||[]).join('; ')); kv('Root causes', (i.rootCauses||[]).join('; '));
+  (i.whys||[]).forEach((w,n)=>{ if(w) kv(`Why ${n+1}`, w); });
+  kv('Findings', i.findings); kv('Lessons learned', i.lessons); kv('Safety alert shared', [i.alertShared, i.alertDate].filter(Boolean).join(' · '));
+  h2(`6. Corrective & preventive actions (${(i.capa||[]).length})`);
+  if(!(i.capa||[]).length) para('None recorded.');
+  for(const a of (i.capa||[])){ ensure(14); doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.text(`• ${a.action||'—'}`, M, y); y+=12; doc.setFont('helvetica','normal'); para(`${a.kind||'Corrective'} · owner ${a.owner||'—'} · target ${a.targetDate||'—'} · ${a.status||'Open'}${a.closedDate?' (closed '+a.closedDate+')':''}${a.verification?' · '+a.verification:''}`); }
+  h2('7. Close-out'); kv('Closed by', i.closedBy); kv('Closure date', i.closedDate); kv('Actions verified effective', i.effectivenessVerified); kv('Remarks', i.closureNotes);
+  ensure(60); y+=24; doc.setDrawColor(150); doc.line(M, y, M+180, y); doc.line(W-M-180, y, W-M, y); doc.setFontSize(8.5); doc.setTextColor(100); doc.text('HSE Manager', M, y+12); doc.text('Project / Operations Manager', W-M-180, y+12);
+  const pages=doc.internal.getNumberOfPages ? doc.internal.getNumberOfPages() : 1;
+  for(let n=1;n<=pages;n++){ if(doc.setPage) doc.setPage(n); doc.setFontSize(7.5); doc.setTextColor(140); doc.text(`${i.incNo||''} · page ${n} of ${pages} · printed ${localToday()}`, W-M, H-20, {align:'right'}); }
+  return doc;
+}
+function downloadIncidentPdf(){
+  const i=currentInc(); if(!i) return;
+  if(!(window.jspdf && window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
+  try{ buildIncidentPdf(i).save(`${(i.incNo||'incident').replace(/[^a-z0-9-]+/gi,'_')}_report.pdf`); toast('Incident report downloaded'); }
+  catch(e){ console.error(e); toast('Could not generate the PDF'); }
+}
+
+/* =====================================================================
+   HSE TARGETS & OBJECTIVES (yearly, company-wide)
+   ===================================================================== */
+const TARGET_DEFS = [
+  {key:'lti', label:'Lost time injuries (LTI)', type:'max', def:0},
+  {key:'ltif', label:'LTIF (per million man-hours)', type:'max', dec:2, def:0},
+  {key:'trcf', label:'TRCF (per million man-hours)', type:'max', dec:2, def:1},
+  {key:'training', label:'Training compliance', type:'min', unit:'%', def:95},
+  {key:'tbtPerMonth', label:'Toolbox talks per month (average)', type:'min', dec:1, def:8},
+  {key:'inspPerMonth', label:'Site visits, audits & inspections per month', type:'min', dec:1, def:6},
+  {key:'nearMiss', label:'Near misses reported (year)', type:'min', annual:true, def:24},
+  {key:'drills', label:'Mock drills (year)', type:'min', annual:true, def:4},
+  {key:'capaOnTime', label:'Corrective actions closed on time', type:'min', unit:'%', def:90},
+];
+let targetsEditOpen=false;
+function targetsFor(year){ const t=(appTargets||{})[year]; return t || null; }
+let appTargets={};
+function allCorrectiveActions(){
+  const out=[];
+  for(const s of activeSites()) for(const a of (s.actions||[])) out.push(a);
+  for(const i of activeIncidents()) for(const a of (i.capa||[])) out.push(a);
+  return out;
+}
+function trainingCompliancePct(){
+  const reqs=requiredTrainings(); if(!reqs.length) return null;
+  let need=0, ok=0;
+  for(const w of activeWorkers().filter(w=>(w.status||'active')==='active')) for(const t of reqs){ if(!(t.divisions||[]).includes(w.trade)) continue; need++; const st=trainingStatusFor(w,t.name).status; if(st==='valid'||st==='expiring') ok++; }
+  return need ? Math.round(ok*100/need) : null;
+}
+function targetActuals(year){
+  const m=computeReportMetrics(reportEntriesFor('all', year, 'all'));
+  const now=new Date(), months = Number(year)===now.getFullYear() ? now.getMonth()+1 : (Number(year)<now.getFullYear()?12:0);
+  const per=n=>months ? n/months : null;
+  const acts=allCorrectiveActions().filter(a=>a.targetDate && String(a.targetDate).startsWith(year));
+  const closedOnTime=acts.filter(a=>a.status==='Closed' && a.closedDate && a.closedDate<=a.targetDate).length;
+  const judged=acts.filter(a=>a.status==='Closed' || daysUntil(a.targetDate)<0).length;
+  return {
+    lti:m.lti, ltif: m.manHours ? m.lti*1e6/m.manHours : null, trcf: m.manHours ? (m.lti+m.mti)*1e6/m.manHours : null,
+    training:trainingCompliancePct(), tbtPerMonth:per(m.tbt), inspPerMonth:per(m.siteVisit+m.internalAudit+m.vehicleInspection),
+    nearMiss:m.nearMiss, drills:m.mockDrill, capaOnTime: judged ? Math.round(closedOnTime*100/judged) : null, _months:months,
+  };
+}
+function targetStatus(def, actual, target, months){
+  if(actual===null || actual===undefined || target===null || target===undefined || target==='') return {cls:'muted', t:'No data'};
+  if(def.type==='max') return actual<=target ? {cls:'ok', t:'On target'} : {cls:'danger', t:'Off target'};
+  const goal = def.annual ? target*(months||12)/12 : target;
+  if(actual>=goal) return {cls:'ok', t: def.annual && months<12 ? 'On track' : 'On target'};
+  return actual>=goal*0.75 ? {cls:'warn', t:'Slightly behind'} : {cls:'danger', t:'Behind'};
+}
+function fmtTarget(def, v){ if(v===null || v===undefined || v==='') return '—'; const n=Number(v); const s = def.dec ? n.toFixed(def.dec) : (Number.isInteger(n)?String(n):n.toFixed(1)); return s+(def.unit||''); }
+function targetsPanelHtml(year){
+  const t=targetsFor(year);
+  if(targetsEditOpen && canEdit()){
+    const cur=t||{};
+    return `<form id="targetsForm" class="cc-targets-form"><p class="wsub" style="margin:0 0 10px;">Targets for ${esc(year)} — company-wide. “Max” targets are limits (lower is better); the others are minimums. Yearly counts are compared pro-rata during the year.</p>
+      <div class="form-grid">${TARGET_DEFS.map(d=>`<label>${esc(d.label)} <span class="wsub" style="display:inline;">(${d.type==='max'?'max':'min'}${d.unit?' '+d.unit:''})</span><input type="number" step="any" min="0" data-tfield="${d.key}" value="${esc(cur[d.key]!==undefined?cur[d.key]:d.def)}"></label>`).join('')}</div>
+      <div class="form-actions"><button type="button" class="btn btn-sm" id="targetsCancel">Cancel</button><button type="submit" class="btn btn-primary btn-sm">Save targets</button></div></form>`;
+  }
+  if(!t) return `<p class="wsub" style="margin:10px 14px 14px;">${canEdit()?`No targets set for ${esc(year)} yet — click <strong>Set targets</strong> to add your yearly HSE objectives.`:`No HSE targets set for ${esc(year)} yet.`}</p>`;
+  const a=targetActuals(year);
+  return `<div class="cc-targets">${TARGET_DEFS.map(d=>{
+    const act=a[d.key], tgt=t[d.key], st=targetStatus(d, act, tgt===''||tgt===undefined?null:Number(tgt), a._months);
+    let pct=0; if(act!==null && act!==undefined && tgt!=='' && tgt!==undefined){ const T=Number(tgt), goal=d.annual?T*(a._months||12)/12:T; pct = d.type==='max' ? (act<=T?100:Math.max(8, Math.min(100, T/act*100))) : (goal? Math.min(100, act/goal*100) : 100); }
+    return `<div class="tg-row"><div class="tg-l">${esc(d.label)}</div><div class="tg-bar"><i style="width:${pct.toFixed(0)}%; background:var(--${st.cls==='ok'?'ok':st.cls==='warn'?'warn':st.cls==='danger'?'danger':'line'});"></i></div>
+      <div class="tg-v"><strong>${fmtTarget(d, act)}</strong> <span class="wsub" style="display:inline;">/ ${d.type==='max'?'≤':'≥'} ${fmtTarget(d, tgt)}</span></div><span class="badge ${st.cls}">${st.t}</span></div>`;
+  }).join('')}</div>`;
+}
+function renderTargetsPanel(){
+  const el=document.getElementById('ccTargets'); if(!el) return;
+  const year = reportPeriod==='year' ? reportYear : String(reportMonth).slice(0,4);
+  document.getElementById('ccTargetsYear').textContent = `${year} · company-wide, year to date`;
+  el.innerHTML = targetsPanelHtml(year);
+  const b=document.getElementById('ccTargetsEdit'); if(b) b.hidden = !canEdit() || targetsEditOpen;
+}
+
 /* ---------------- plant & equipment register config ---------------- */
 // Every movable item lives once in the 'equipment' collection with a category,
 // a current location ('store' or a project id), a condition and a move history.
@@ -2117,8 +2767,20 @@ const EQUIP_CATEGORIES = {
       {key:'notes', label:'Notes', type:'textarea'},
     ],
     display:e=>e.kitType||'First aid kit' },
+  chemicals:{ label:'Chemicals / MSDS', short:'Chemicals', icon:'flask', noun:'chemical', emailLabel:'Chemical (SDS review)', attachLabel:'safety data sheet (SDS)',
+    fields:[
+      {key:'name', label:'Product name', type:'text', required:true, placeholder:'e.g. Thinner, Diesel, Acetylene'},
+      {key:'supplier', label:'Supplier / manufacturer', type:'text'},
+      {key:'hazardClass', label:'Main hazard (GHS)', type:'select', required:true, options:['Flammable','Oxidising','Corrosive','Acute toxic','Health hazard (CMR)','Irritant / harmful','Compressed gas','Explosive','Environmental hazard','Not classified']},
+      {key:'quantity', label:'Quantity held', type:'text', placeholder:'e.g. 4 × 20 L drums'},
+      {key:'serial', label:'Container / batch no.', type:'text'},
+      {key:'expiry', label:'SDS review / product expiry', type:'date'},
+      {key:'ppeRequired', label:'PPE required', type:'text', placeholder:'e.g. chemical gloves, goggles, respirator'},
+      {key:'notes', label:'Storage & first aid notes', type:'textarea'},
+    ],
+    display:e=>e.name||'Chemical' },
 };
-const EQUIP_CATEGORY_ORDER = ['powerTools','liftingGear','harness','ladders','extinguishers','firstAid','specialPpe'];
+const EQUIP_CATEGORY_ORDER = ['powerTools','liftingGear','harness','ladders','extinguishers','firstAid','specialPpe','chemicals'];
 const EQUIP_CONDITIONS = ['In service','Out for TPI / repair','Damaged / quarantined'];
 // How older project tabs map into the register (used once, automatically)
 const LEGACY_SITE_MAP = {
@@ -2437,6 +3099,7 @@ function stopDataListeners(){
   if(unsubscribeReportEntries){ unsubscribeReportEntries(); unsubscribeReportEntries=null; }
   if(unsubscribeSettings){ unsubscribeSettings(); unsubscribeSettings=null; }
   if(unsubscribeLib){ unsubscribeLib(); unsubscribeLib=null; }
+  if(unsubscribeIncidents){ unsubscribeIncidents(); unsubscribeIncidents=null; }
 }
 auth.onAuthStateChanged(user=>{
   if(user){
@@ -2451,6 +3114,7 @@ auth.onAuthStateChanged(user=>{
     startReportData();
     startSettingsData();
     startLibraryData();
+    startIncidentData();
   } else {
     stopDataListeners();
     document.getElementById('dbUnavailableBanner').hidden=true;
@@ -2464,6 +3128,8 @@ auth.onAuthStateChanged(user=>{
     document.getElementById('siteRows').innerHTML='<tr><td colspan="8" class="empty-state">Sign in to load project data…</td></tr>';
     document.getElementById('reportRows').innerHTML='<tr><td colspan="6" class="empty-state">Sign in to load report data…</td></tr>';
     libDocs=[]; appSettings={}; trainingReq={trainings:[]}; libLoadError=null; settingsLoadError=null; monitorEditOpen=false;
+    incidentList=[]; appTargets={}; closeIncDrawer();
+    document.getElementById('incRows').innerHTML='<tr><td colspan="8" class="empty-state">Sign in to load incidents…</td></tr>';
     closeLibDrawer(); closeReqEditor();
     document.getElementById('libRows').innerHTML='<tr><td colspan="8" class="empty-state">Sign in to load the library…</td></tr>';
     document.getElementById('monitorBar').innerHTML='';
@@ -3000,7 +3666,94 @@ function siteTabCount(s, key){
   if(key==='actions'){ const l=(s.actions||[]).filter(r=>(r.status||'Open')!=='Closed'); return l.length ? {n:l.length, cls:l.some(r=>complaintOverdueDays(r))?'danger':'warn'} : null; }
   if(key==='permits'){ const l=(s.permits||[]).filter(r=>(r.status||'Open')==='Open'); return l.length ? {n:l.length, cls:l.some(r=>permitOverdueDays(r))?'danger':'warn'} : null; }
   if(key==='toolboxTalks'){ const n=(s.toolboxTalks||[]).length; return n ? {n, cls:''} : null; }
+  if(key==='emergency'){ const n=emergencyGaps(s).length; return n ? {n, cls:'warn'} : null; }
   return null;
+}
+/* ---------------- project emergency preparedness ---------------- */
+const EMERGENCY_FIELDS = [
+  {group:'Emergency numbers', fields:[
+    {key:'siteEmergencyNo', label:'Site emergency number', type:'tel', placeholder:'+968 …'},
+    {key:'clientEmergencyNo', label:'Client emergency / control room', type:'tel', placeholder:'e.g. PDO emergency line'},
+    {key:'nationalEmergencyNo', label:'Police · ambulance · fire (ROP)', type:'tel', placeholder:'9999', def:'9999'},
+    {key:'coordinatorName', label:'Emergency coordinator', type:'text', placeholder:'name'},
+    {key:'coordinatorPhone', label:'Coordinator phone', type:'tel', placeholder:'+968 …'},
+  ]},
+  {group:'Medical', fields:[
+    {key:'hospitalName', label:'Nearest hospital', type:'text', placeholder:'e.g. Nizwa Hospital'},
+    {key:'hospitalPhone', label:'Hospital phone', type:'tel'},
+    {key:'hospitalDistance', label:'Distance / drive time', type:'text', placeholder:'e.g. 45 km · 40 min'},
+    {key:'clinicName', label:'Site clinic / medic', type:'text'},
+    {key:'clinicPhone', label:'Clinic / medic phone', type:'tel'},
+  ]},
+  {group:'Evacuation', fields:[
+    {key:'musterPoint', label:'Primary muster point', type:'text', placeholder:'e.g. Gate 2 car park'},
+    {key:'musterPoint2', label:'Alternate muster point', type:'text'},
+    {key:'evacuationNotes', label:'Evacuation route / alarm notes', type:'textarea', placeholder:'e.g. continuous siren = evacuate; wind direction sock at main gate'},
+  ]},
+];
+function emergencyData(s){ return s.emergency || {}; }
+function mockDrillsFor(siteId){ return reportEntries.filter(e=>e.category==='mockDrill' && e.projectId===siteId).sort((a,b)=>(b.date||'').localeCompare(a.date||'')); }
+function erpDocFor(s){ return (s.hseDocs||[]).find(d=>/emergency response/i.test(d.type||'')); }
+// What is missing for this site to be emergency-ready (plain words)
+function emergencyGaps(s){
+  const e=emergencyData(s), out=[];
+  if(projectStatus(s)==='Completed') return out;
+  if(!e.siteEmergencyNo && !e.coordinatorPhone) out.push('No site emergency number');
+  if(!e.hospitalName) out.push('Nearest hospital not set');
+  if(!e.musterPoint) out.push('Muster point not set');
+  if(!(e.firstAiders||[]).length) out.push('No first aider assigned');
+  if(!(e.fireWardens||[]).length) out.push('No fire warden assigned');
+  if(!erpDocFor(s)) out.push('No Emergency Response Plan in HSE documents');
+  const last=mockDrillsFor(s.id)[0];
+  if(!last) out.push('No mock drill recorded');
+  else if(daysUntil(String(last.date).slice(0,10))!==null && -daysUntil(String(last.date).slice(0,10))>183) out.push('Last mock drill over 6 months ago');
+  return out;
+}
+function telLink(n){ const v=String(n||'').trim(); return v ? `<a class="em-tel" href="tel:${esc(v.replace(/[^+\d]/g,''))}">${ic('phone')} ${esc(v)}</a>` : '<span class="wsub">not set</span>'; }
+function roleListHtml(ids, trainingName, roleWord){
+  if(!(ids||[]).length) return `<p class="wsub">No ${roleWord} assigned yet.</p>`;
+  return ids.map(id=>{
+    const w=workers.find(x=>x.id===id);
+    if(!w) return `<div class="equip-line"><div class="equip-line-main"><div class="equip-line-title">Removed worker</div></div></div>`;
+    const t=trainingStatusFor(w, trainingName);
+    const badge = t.status==='valid' ? `<span class="badge ok">${esc(trainingName)} valid</span>` : t.status==='expiring' ? `<span class="badge warn">${esc(trainingName)} expiring</span>` : t.status==='expired' ? `<span class="badge danger">${esc(trainingName)} expired</span>` : `<span class="badge danger">No ${esc(trainingName)} training</span>`;
+    return `<div class="equip-line" data-open-worker="${w.id}"><div class="equip-line-main"><div class="equip-line-title">${esc(w.fullName||'—')}</div><div class="wsub">${esc([w.designation, w.mobileNumber].filter(Boolean).join(' · ')||w.trade||'—')}</div></div><div class="equip-line-badges">${badge}</div></div>`;
+  }).join('');
+}
+function siteEmergencyTabHtml(s){
+  const e=emergencyData(s), gaps=emergencyGaps(s), drills=mockDrillsFor(s.id), erp=erpDocFor(s);
+  const readiness = gaps.length
+    ? `<div class="notice">${ic('alert')} <strong>${gaps.length} gap${gaps.length===1?'':'s'} in emergency readiness:</strong> ${esc(gaps.join(' · '))}</div>`
+    : `<div class="notice ok-notice">${ic('checkcircle')} Emergency readiness complete for this project.</div>`;
+  const card = `<div class="em-card">
+    <div class="em-row"><span>Site emergency</span>${telLink(e.siteEmergencyNo)}</div>
+    <div class="em-row"><span>Client emergency</span>${telLink(e.clientEmergencyNo)}</div>
+    <div class="em-row"><span>ROP (police · ambulance · fire)</span>${telLink(e.nationalEmergencyNo||'9999')}</div>
+    <div class="em-row"><span>Coordinator${e.coordinatorName?' · '+esc(e.coordinatorName):''}</span>${telLink(e.coordinatorPhone)}</div>
+    <div class="em-row"><span>${ic('hospital')} ${esc(e.hospitalName||'Nearest hospital')}${e.hospitalDistance?' · '+esc(e.hospitalDistance):''}</span>${telLink(e.hospitalPhone)}</div>
+    <div class="em-row"><span>${ic('flag')} Muster point</span><strong>${esc(e.musterPoint||'not set')}</strong></div>
+  </div>`;
+  const groups = EMERGENCY_FIELDS.map(g=>`<div class="subhead">${esc(g.group)}</div><div class="form-grid">${g.fields.map(f=>{
+      const v = e[f.key]!=null && e[f.key]!=='' ? e[f.key] : (f.def||'');
+      if(f.type==='textarea') return `<label class="span-all">${esc(f.label)}<textarea data-emfield="${f.key}" placeholder="${esc(f.placeholder||'')}">${esc(v)}</textarea></label>`;
+      return `<label>${esc(f.label)}<input type="${f.type}" data-emfield="${f.key}" value="${esc(v)}" placeholder="${esc(f.placeholder||'')}"></label>`;
+    }).join('')}</div>`).join('');
+  return `${readiness}${card}
+    <div class="section-head" style="margin-top:18px;"><h3>First aiders (${(e.firstAiders||[]).length})</h3></div>${roleListHtml(e.firstAiders, 'First Aid', 'first aiders')}
+    <div class="section-head" style="margin-top:14px;"><h3>Fire wardens (${(e.fireWardens||[]).length})</h3></div>${roleListHtml(e.fireWardens, 'Fire', 'fire wardens')}
+    <div class="section-head" style="margin-top:14px;"><h3>Emergency Response Plan</h3></div>
+    ${erp ? `<div class="equip-line" data-open-stab="hseDocs"><div class="equip-line-main"><div class="equip-line-title">${esc(erp.reference||erp.type)}</div><div class="wsub">in HSE documents${erp.expiry?' · review '+esc(erp.expiry):''}</div></div><div class="equip-line-badges">${erp.expiry?badgeHtml(statusFor(erp.expiry)):'<span class="badge ok">On file</span>'}</div></div>` : `<p class="wsub">Upload the ERP in the <strong>HSE documents</strong> tab with type “Emergency response plan”.</p>`}
+    <div class="section-head" style="margin-top:14px;"><h3>Mock drills (${drills.length})</h3><button type="button" class="btn btn-sm" id="emLogDrillBtn">+ Log mock drill</button></div>
+    ${drills.length ? drills.slice(0,8).map(d=>`<div class="rf"><span class="rf-k mono">${esc(d.date||'—')}</span><span class="rf-v"><strong>${esc(d.type||'Drill')}</strong>${d.participants?` · ${esc(d.participants)} participants`:''}${d.conductedBy?` · by ${esc(d.conductedBy)}`:''}</span></div>`).join('') : '<p class="wsub">No mock drills logged for this project yet.</p>'}
+    <form id="siteEmergencyForm" style="margin-top:18px;">
+      ${groups}
+      <div class="subhead">Emergency roles</div>
+      <div class="form-grid">
+        ${workerPickFieldHtml({key:'firstAiders', label:'First aiders'}, {firstAiders:e.firstAiders||[]}, s)}
+        ${workerPickFieldHtml({key:'fireWardens', label:'Fire wardens'}, {fireWardens:e.fireWardens||[]}, s)}
+      </div>
+      <div class="form-actions"><button type="submit" class="btn btn-primary">Save emergency details</button></div>
+    </form>`;
 }
 function overdueNotice(text){ return `<div class="notice" style="background:var(--danger-bg); color:var(--danger); border-color:var(--danger);">${ic('alert')} ${text}</div>`; }
 function renderSiteDrawerBody(){
@@ -3011,6 +3764,7 @@ function renderSiteDrawerBody(){
   if(activeSiteTab==='hseStats'){ body.innerHTML=siteStatsTabHtml(s); return; }
   if(activeSiteTab==='team'){ body.innerHTML=siteTeamTabHtml(s); return; }
   if(activeSiteTab==='vehicles'){ body.innerHTML=siteVehiclesTabHtml(s); return; }
+  if(activeSiteTab==='emergency'){ body.innerHTML=siteEmergencyTabHtml(s); return; }
   const cfg=SITE_RECORD_TYPES[activeSiteTab];
   const savedActiveTab=activeTab, savedEditing=editingRecordId, savedAddOpen=addFormOpen;
   activeTab=activeSiteTab; editingRecordId=editingSiteRecordId; addFormOpen=siteAddFormOpen;
@@ -3405,6 +4159,7 @@ function historyItemHtml(h){
   return `<li><span class="history-date">${esc(h.date||'—')}</span><div>${main}${note}</div></li>`;
 }
 function equipDrawerBodyHtml(e){
+  const cat=EQUIP_CATEGORIES[e.category];
   const loc=equipLoc(e);
   const hist=(e.history||[]).slice();
   const lastMove=[...hist].reverse().find(h=>h.kind!=='condition');
@@ -3439,8 +4194,8 @@ function equipDrawerBodyHtml(e){
     <div class="form-actions"><button type="submit" class="btn btn-primary btn-sm">Save changes</button></div>
   </form>
 
-  <div class="subhead">Certificate / photo</div>
-  ${attachmentBlock(e, null, null, 'certificate', 'attachment')}
+  <div class="subhead">${esc((cat&&cat.attachLabel) ? cat.attachLabel.replace(/^./,c=>c.toUpperCase()) : 'Certificate / photo')}</div>
+  ${attachmentBlock(e, null, null, (cat&&cat.attachLabel)||'certificate', 'attachment')}
 
   <div class="subhead">Movement &amp; condition history</div>
   ${histHtml}
@@ -3658,7 +4413,8 @@ function renderCommandCentre(entries, m, key){
   const prevName = key.length===4 ? prevKey : ccMonthLabel(prevKey);
   let mhSub = prev.manHours ? `${m.manHours>=prev.manHours?'▲':'▼'} ${Math.abs((m.manHours-prev.manHours)/prev.manHours*100).toFixed(1)}% on ${prevName}` : `${periodWord}`;
   // corrective actions & permits (open now, for the projects in view)
-  const allActs=projectRecordsFor('actions', division, '', project), openActs=allActs.filter(x=>(x.status||'Open')!=='Closed'), overdueActs=openActs.filter(x=>complaintOverdueDays(x));
+  const incActs=activeIncidents().filter(i=>{ const site=siteEquipmentList.find(s=>s.id===i.projectId); const div=(site&&site.division)||i.division||''; return (division==='all' || div===division) && (project==='all' || (project==='none' ? !i.projectId : i.projectId===project)); }).flatMap(i=>i.capa||[]);
+  const allActs=projectRecordsFor('actions', division, '', project).concat(incActs), openActs=allActs.filter(x=>(x.status||'Open')!=='Closed'), overdueActs=openActs.filter(x=>complaintOverdueDays(x));
   const allPtw=projectRecordsFor('permits', division, '', project), ptwPeriod=allPtw.filter(x=>(x.date||'').startsWith(key));
   const ptwOpen=allPtw.filter(x=>(x.status||'Open')==='Open'), ptwStale=ptwOpen.filter(x=>permitOverdueDays(x));
   const ltif = m.manHours ? (m.lti*1000000/m.manHours) : null;
@@ -3719,6 +4475,7 @@ function renderCommandCentre(entries, m, key){
     ['QHSE documents up to date', pct(libOk,lib.length), `${libOk} of ${lib.length} documents`],
   ];
   document.getElementById('ccMini').innerHTML = minis.map(([n,v,s])=>`<div class="cc-m">${ccDial(v,58,6,n)}<div><div class="cc-mv" style="color:${ccStatusColor(v)}">${v===null?'—':v+'%'}</div><div class="cc-ml">${esc(n)}</div><div class="cc-ms">${esc(v===null?'nothing recorded yet':s)}</div></div></div>`).join('');
+  renderTargetsPanel();
   // animate only when the view changes (not on every live update)
   const sig=[key,division,project].join('|');
   const animate = sig!==ccLastSig && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -3891,7 +4648,10 @@ function renderReportTable(entries){
   tbody.innerHTML=list.map(e=>{
     const cfg=REPORT_CATEGORIES[e.category];
     const fromProject = e.source==='projectToolbox' && e.sourceSiteId && activeSites().some(x=>x.id===e.sourceSiteId);
-    const actions = fromProject
+    const fromIncident = e.source==='incident' && e.sourceIncidentId && activeIncidents().some(x=>x.id===e.sourceIncidentId);
+    const actions = fromIncident
+      ? `<button type="button" class="btn btn-sm" data-ropen-inc="${esc(e.sourceIncidentId)}" title="Recorded in the Incident Register — edit it there">Open incident</button>`
+      : fromProject
       ? `<button type="button" class="btn btn-sm" data-ropen-site="${esc(e.sourceSiteId)}" title="Logged in the project's Toolbox talks tab — edit it there">Open in project</button>`
       : `<button type="button" class="icon-btn" data-redit="${e.id}" aria-label="Edit">${ic('pencil')}</button>
         <button type="button" class="icon-btn danger" data-rdel="${e.id}" data-armed="0" aria-label="Delete">${ic('trash')}</button>`;
@@ -3900,7 +4660,7 @@ function renderReportTable(entries){
       <td>${esc(e.division?divLabel(e.division):'—')}</td>
       <td>${e.projectId ? esc(projectName(e.projectId)) : '<span class="wsub">—</span>'}</td>
       <td>${esc(cfg?cfg.label:e.category)}</td>
-      <td>${esc(reportEntrySummary(e))}${fromProject?'<div class="wsub">from the project\'s Toolbox talks register</div>':''}</td>
+      <td>${esc(reportEntrySummary(e))}${fromProject?'<div class="wsub">from the project\'s Toolbox talks register</div>':''}${fromIncident?'<div class="wsub">from the Incident Register</div>':''}</td>
       <td style="text-align:right; white-space:nowrap;">${actions}</td>
     </tr>`;
   }).join('');
@@ -3965,6 +4725,8 @@ function renderReportEntryForm(category, editing, setDivision, presetProjectId){
 function openReportEntryForm(entryId, presetProjectId){
   const synced = entryId && reportEntries.find(x=>x.id===entryId && x.source==='projectToolbox' && activeSites().some(s=>s.id===x.sourceSiteId));
   if(synced){ openSiteDrawer(synced.sourceSiteId); activeSiteTab='toolboxTalks'; renderSiteDrawer(); return; }
+  const incSynced = entryId && reportEntries.find(x=>x.id===entryId && x.source==='incident' && activeIncidents().some(i=>i.id===x.sourceIncidentId));
+  if(incSynced){ openIncDrawer(incSynced.sourceIncidentId); return; }
   editingReportEntryId = entryId || null;
   const editing = entryId ? reportEntries.find(e=>e.id===entryId) : null;
   const category = editing ? editing.category : 'training';
@@ -4787,7 +5549,7 @@ async function downloadSiteProfile(){
 /* ---------------- import from Excel ---------------- */
 const XLSX_URL='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
 const EQUIP_CATEGORY_ALIASES = {powerTools:['power tool','power tools','tool','tools','equipment'], liftingGear:['lifting gear','lifting','sling','shackle'], harness:['harness','full body harness','safety harness'],
-  ladders:['ladder','ladders'], extinguishers:['fire extinguisher','fire extinguishers','extinguisher','extinguishers'], firstAid:['first aid','first aid kit','first aid kits'], specialPpe:['specialized ppe','specialised ppe','special ppe','ppe']};
+  ladders:['ladder','ladders'], extinguishers:['fire extinguisher','fire extinguishers','extinguisher','extinguishers'], firstAid:['first aid','first aid kit','first aid kits'], specialPpe:['specialized ppe','specialised ppe','special ppe','ppe'], chemicals:['chemical','chemicals','msds','sds','coshh']};
 const IMPORT_TYPES = {
   workers:{label:'Workers', noun:'worker', coll:'workers', file:'Burhan_HSE_Workers_template.xlsx', cols:[
     {key:'fullName', h:'Full name', req:true, help:'Worker full name', ex:'Ramesh Kumar'},
@@ -5333,7 +6095,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     btn.addEventListener('click', ()=>{
       const section=btn.dataset.section;
       document.querySelectorAll('.sidenav-btn[data-section]').forEach(b=>b.classList.toggle('active', b===btn));
-      const SECTIONS={workforce:'workforceSection', vehicles:'vehiclesSection', site:'siteSection', report:'reportSection', library:'librarySection'};
+      const SECTIONS={workforce:'workforceSection', vehicles:'vehiclesSection', site:'siteSection', report:'reportSection', incidents:'incidentsSection', library:'librarySection'};
       for(const [k,id] of Object.entries(SECTIONS)) document.getElementById(id).hidden = section!==k;
     });
   });
@@ -5585,6 +6347,16 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   /* ---------------- site: profile + record form submit ---------------- */
   document.getElementById('siteDrawerBody').addEventListener('submit', async e=>{
+    if(e.target.id==='siteEmergencyForm'){
+      e.preventDefault();
+      const s=currentSite(); if(!s) return;
+      const data={...(s.emergency||{})};
+      e.target.querySelectorAll('[data-emfield]').forEach(el=>{ data[el.dataset.emfield]=el.value.trim(); });
+      const multi=readRecordForm(e.target);
+      data.firstAiders=multi.firstAiders||[]; data.fireWardens=multi.fireWardens||[];
+      await updateSite(s.id, {emergency:data});
+      return;
+    }
     if(e.target.id==='siteProfileForm'){
       e.preventDefault();
       const s=currentSite(); if(!s) return;
@@ -5625,6 +6397,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const s0=currentSite();
     // --- HSE statistics tab ---
     if(e.target.id==='siteLogEntryBtn' && s0){ goToReportForProject(s0.id, true); return; }
+    if(e.target.id==='emLogDrillBtn' && s0){
+      goToReportForProject(s0.id, true);
+      const sel=document.getElementById('reportCategorySelect'); if(sel){ sel.value='mockDrill'; sel.dispatchEvent(new Event('change')); }
+      return;
+    }
+    const openTab=e.target.closest('[data-open-stab]');
+    if(openTab){ activeSiteTab=openTab.dataset.openStab; editingSiteRecordId=null; siteAddFormOpen=false; renderSiteDrawer(); return; }
     if(e.target.id==='siteOpenReportBtn' && s0){ goToReportForProject(s0.id, false); return; }
     // --- team & vehicle assignment ---
     if(e.target.id==='sitePickerOpenTeam' || e.target.id==='sitePickerOpenVehicles'){
@@ -5922,6 +6701,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 
   document.getElementById('reportRows').addEventListener('click', async e=>{
+    const openInc=e.target.closest('[data-ropen-inc]');
+    if(openInc){ openIncDrawer(openInc.dataset.ropenInc); return; }
     const openSite=e.target.closest('[data-ropen-site]');
     if(openSite){ openSiteDrawer(openSite.dataset.ropenSite); activeSiteTab='toolboxTalks'; renderSiteDrawer(); return; }
     const editBtn=e.target.closest('[data-redit]');
@@ -6151,6 +6932,169 @@ document.addEventListener('DOMContentLoaded', ()=>{
         toast('Document and its files permanently removed');
       }catch(err){ console.error(err); toast('Could not remove — '+((err&&err.code)||'error')); }
     }
+  });
+});
+
+/* ---------------- events: Incident Register, HSE targets ---------------- */
+document.addEventListener('DOMContentLoaded', ()=>{
+  const $=id=>document.getElementById(id);
+  const addDays=(d,n)=>{ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(d||''); if(!m) return ''; const x=new Date(Date.UTC(+m[1],+m[2]-1,+m[3]+n)); return x.toISOString().slice(0,10); };
+  const readF=(root, attr)=>{ const o={}; root.querySelectorAll(`[${attr}]`).forEach(el=>{ o[el.getAttribute(attr)] = typeof el.value==='string' ? el.value.trim() : el.value; }); return o; };
+  const arm=(btn, label, orig)=>{ if(btn.dataset.armed==='1') return true; btn.dataset.armed='1'; const o=orig||btn.innerHTML; btn.innerHTML=label; setTimeout(()=>{ if(btn.dataset.armed==='1'){ btn.dataset.armed='0'; btn.innerHTML=o; } },4000); return false; };
+
+  $('incTypeFilter').innerHTML='<option value="all">All types</option>'+INCIDENT_TYPES.map(t=>`<option>${esc(t)}</option>`).join('');
+  $('addIncBtn').addEventListener('click', ()=>{ if($('addIncPanel').hidden) openAddIncForm(); else closeAddIncForm(); });
+  $('cancelAddInc').addEventListener('click', closeAddIncForm);
+  $('addIncForm').addEventListener('submit', async e=>{
+    e.preventDefault(); if(incBusy) return;
+    const d=readF(e.target,'data-ifield');
+    const site=siteEquipmentList.find(s=>s.id===d.projectId);
+    const u=auth.currentUser;
+    const data={...d, projectId:d.projectId||'', division:(site&&site.division)||'', incNo:nextIncNo(d.date), status:'Reported', reportedDate:localToday(),
+      persons:[], capa:[], files:[], immediateCauses:[], rootCauses:[], whys:[], createdAt:new Date().toISOString(), createdBy:(u&&u.email)||''};
+    if(investigationRequired(data)) data.invDue=addDays(d.date, ['Lost time injury (LTI)','Fatality'].includes(d.injuryClass)?7:14);
+    incBusy=true;
+    try{
+      const ref=await db.collection('incidents').add(stamp(data));
+      await syncIncidentToReport({...data, id:ref.id});
+      toast(`${data.incNo} recorded — add the people involved and start the investigation`);
+      closeAddIncForm();
+      incBusy=false;
+      openIncDrawer(ref.id, data.injuryClass && data.injuryClass!=='Not applicable (no injury)' ? 'people' : 'overview');
+    }catch(err){ console.error(err); toast('Could not save — '+((err&&err.code)||'error')); }
+    finally{ incBusy=false; }
+  });
+  $('incSearch').addEventListener('input', e=>{ incFilters.q=e.target.value; renderIncTable(); });
+  [['incYearFilter','year'],['incTypeFilter','type'],['incStatusFilter','status'],['incProjectFilter','project']].forEach(([id,k])=>$(id).addEventListener('change', e=>{ incFilters[k]=e.target.value; renderIncidentAll(); }));
+  $('incRows').addEventListener('click', e=>{ const tr=e.target.closest('tr[data-id]'); if(tr) openIncDrawer(tr.dataset.id); });
+  $('incDrawerClose').addEventListener('click', closeIncDrawer);
+  $('incDrawerOverlay').addEventListener('click', closeIncDrawer);
+  $('incPdfBtn').addEventListener('click', downloadIncidentPdf);
+  $('incDrawerTabs').addEventListener('click', e=>{ const b=e.target.closest('[data-itab]'); if(!b) return; activeIncTab=b.dataset.itab; incPersonFormOpen=false; incEditPerson=null; incCapaFormOpen=false; incEditCapa=null; renderIncDrawer(); });
+
+  $('incDrawerBody').addEventListener('submit', async e=>{
+    const i=currentInc(); if(!i) return;
+    e.preventDefault();
+    const f=e.target;
+    if(f.id==='incOverviewForm'){
+      const d=readF(f,'data-ifield');
+      if(d.incNo && activeIncidents().some(x=>x.id!==i.id && x.incNo===d.incNo)){ toast(`${d.incNo} is already used by another incident`); return; }
+      const site=siteEquipmentList.find(s=>s.id===d.projectId); d.division=(site&&site.division)||i.division||'';
+      const merged={...i, ...d};
+      if(investigationRequired(merged) && !merged.invDue) d.invDue=addDays(merged.date, 14);
+      await updateInc(i.id, d);
+    } else if(f.id==='incInvestigationForm'){
+      const d=readF(f,'data-ifield');
+      d.immediateCauses=[...f.querySelectorAll('[data-icause]:checked')].map(x=>x.value);
+      d.rootCauses=[...f.querySelectorAll('[data-rcause]:checked')].map(x=>x.value);
+      d.whys=[...f.querySelectorAll('[data-why]')].map(x=>x.value.trim());
+      if(i.status!=='Closed'){
+        if(d.invCompleted) d.status = incCapaOpen(i).length ? 'Actions in progress' : (i.status==='Reported'||i.status==='Under investigation' ? 'Actions in progress' : i.status);
+        else if((i.status||'Reported')==='Reported' && (d.leadInvestigator || d.invStart)) d.status='Under investigation';
+      }
+      await updateInc(i.id, d);
+    } else if(f.id==='incPersonForm'){
+      const d=readF(f,'data-pfield');
+      if(!d.name){ toast('Enter the person’s name'); return; }
+      const list=(i.persons||[]).slice();
+      if(incEditPerson){ const n=list.findIndex(p=>p.id===incEditPerson); if(n>-1) list[n]={...list[n], ...d}; }
+      else list.push({id:genId(), ...d});
+      incEditPerson=null; incPersonFormOpen=false;
+      await updateInc(i.id, {persons:list});
+    } else if(f.id==='incCapaForm'){
+      const d=readF(f,'data-cfield');
+      if(d.status==='Closed' && !d.closedDate) d.closedDate=localToday();
+      if(d.status!=='Closed') d.closedDate='';
+      const list=(i.capa||[]).slice();
+      if(incEditCapa){ const n=list.findIndex(a=>a.id===incEditCapa); if(n>-1) list[n]={...list[n], ...d}; }
+      else list.push({id:genId(), ...d});
+      incEditCapa=null; incCapaFormOpen=false;
+      const upd={capa:list};
+      if(i.status==='Reported' || (i.status==='Under investigation' && i.invCompleted)) upd.status='Actions in progress';
+      await updateInc(i.id, upd);
+    } else if(f.id==='incCloseForm'){
+      await updateInc(i.id, readF(f,'data-ifield'));
+    }
+  });
+
+  $('incDrawerBody').addEventListener('click', async e=>{
+    const i=currentInc(); if(!i) return;
+    const t=e.target.closest('button, [data-open-worker]'); if(!t) return;
+    if(t.id==='incPersonToggle'){ incPersonFormOpen=!incPersonFormOpen; incEditPerson=null; renderIncDrawer(); return; }
+    if(t.id==='incCapaToggle'){ incCapaFormOpen=!incCapaFormOpen; incEditCapa=null; renderIncDrawer(); return; }
+    if(t.dataset.pedit){ incEditPerson=t.dataset.pedit; incPersonFormOpen=true; renderIncDrawer(); return; }
+    if(t.dataset.cedit){ incEditCapa=t.dataset.cedit; incCapaFormOpen=true; renderIncDrawer(); return; }
+    if(t.dataset.pdel){ if(!arm(t, ic('check'))) return; await updateInc(i.id, {persons:(i.persons||[]).filter(p=>p.id!==t.dataset.pdel)}, true); toast('Removed'); return; }
+    if(t.dataset.cdel){ if(!arm(t, ic('check'))) return; await updateInc(i.id, {capa:(i.capa||[]).filter(a=>a.id!==t.dataset.cdel)}, true); toast('Action removed'); return; }
+    if(t.dataset.incFileDel!==undefined){
+      if(!arm(t, 'Confirm?', 'Remove')) return;
+      const files=(i.files||[]).slice(), old=files.splice(Number(t.dataset.incFileDel),1)[0];
+      if(await updateInc(i.id, {files}, true)){ if(old && old.path) deleteStorageFile(old.path); toast('File removed'); }
+      return;
+    }
+    if(t.id==='incCloseBtn'){
+      if(t.dataset.force==='1' && !arm(t, 'Checklist incomplete — click again to close anyway')) return;
+      const form=$('incCloseForm'); const d=form?readF(form,'data-ifield'):{};
+      if(!d.closedDate) d.closedDate=localToday();
+      if(await updateInc(i.id, {...d, status:'Closed'}, true)) toast(`${i.incNo} closed`);
+      return;
+    }
+    if(t.id==='incReopenBtn'){ if(await updateInc(i.id, {status:incCapaOpen(i).length?'Actions in progress':'Under investigation'}, true)) toast('Incident reopened'); return; }
+    if(t.id==='deleteIncBtn'){
+      if(!arm(t, 'Confirm delete')) return;
+      try{ await db.collection('incidents').doc(i.id).update(stamp({deleted:true, deletedAt:new Date().toISOString()})); await removeIncidentFromReport(i.id); toast('Incident moved to Deleted incidents'); closeIncDrawer(); }
+      catch(err){ console.error(err); toast('Could not delete — '+((err&&err.code)||'error')); }
+    }
+  });
+  $('incDrawerBody').addEventListener('change', async e=>{
+    const i=currentInc(); if(!i) return;
+    if(e.target.matches('#incPersonForm [data-pfield="workerId"]')){
+      const w=workers.find(x=>x.id===e.target.value); if(!w) return;
+      const form=e.target.closest('form'); const set=(k,v)=>{ const el=form.querySelector(`[data-pfield="${k}"]`); if(el && v) el.value=v; };
+      set('name', w.fullName); set('designation', [w.designation, w.trade].filter(Boolean).join(' · '));
+      if(w.trade==='Sub Contractor'){ set('employer','Subcontractor'); set('employerName', w.contractor); } else set('employer','Burhan Oil & Trade Services');
+      return;
+    }
+    const up=async (files, apply)=>{
+      incBusy=true;
+      try{ toast('Uploading…'); const out=[]; for(const file of files){ out.push(await uploadToStorage(file)); } incBusy=false; await apply(out); }
+      catch(err){ console.error(err); toast('Could not upload — '+((err&&err.code)||'error')); }
+      finally{ incBusy=false; renderIncDrawer(); }
+    };
+    if(e.target.matches('[data-inc-report]')){ const file=e.target.files[0]; if(!file) return;
+      await up([file], async ([att])=>{ const old=i.reportFile; if(await updateInc(i.id, {reportFile:att}, true)){ if(old&&old.path) deleteStorageFile(old.path); toast('Investigation report uploaded'); } }); }
+    if(e.target.matches('[data-inc-files]')){ const files=[...e.target.files]; if(!files.length) return;
+      await up(files, async atts=>{ if(await updateInc(i.id, {files:(i.files||[]).concat(atts)}, true)) toast(`${atts.length} file${atts.length===1?'':'s'} added`); }); }
+  });
+  $('incTrashBtn').addEventListener('click', openIncTrash);
+  $('incTrashClose').addEventListener('click', closeIncTrash);
+  $('incTrashOverlay').addEventListener('click', closeIncTrash);
+  $('incTrashBody').addEventListener('click', async e=>{
+    const r=e.target.closest('[data-irestore]');
+    if(r){ if(await updateInc(r.dataset.irestore, {deleted:false, deletedAt:null}, true)) toast('Incident restored'); return; }
+    const p=e.target.closest('[data-ipurge]');
+    if(p){
+      if(!arm(p, 'Confirm — cannot be undone')) return;
+      const i=incidentList.find(x=>x.id===p.dataset.ipurge); if(!i) return;
+      try{
+        await Promise.all([i.reportFile&&i.reportFile.path, ...(i.files||[]).map(f=>f.path)].filter(Boolean).map(deleteStorageFile));
+        await db.collection('incidents').doc(i.id).delete(); await removeIncidentFromReport(i.id);
+        toast('Incident permanently removed');
+      }catch(err){ console.error(err); toast('Could not remove — '+((err&&err.code)||'error')); }
+    }
+  });
+
+  // ---- HSE targets ----
+  document.addEventListener('click', e=>{
+    if(e.target.closest('#ccTargetsEdit')){ targetsEditOpen=true; renderTargetsPanel(); return; }
+    if(e.target.id==='targetsCancel'){ targetsEditOpen=false; renderTargetsPanel(); }
+  });
+  document.addEventListener('submit', async e=>{
+    if(e.target.id!=='targetsForm') return;
+    e.preventDefault();
+    const year = reportPeriod==='year' ? reportYear : String(reportMonth).slice(0,4);
+    const vals={}; e.target.querySelectorAll('[data-tfield]').forEach(el=>{ vals[el.dataset.tfield] = el.value==='' ? '' : Number(el.value); });
+    if(await saveSettings('targets', {[year]:vals})){ targetsEditOpen=false; appTargets={...appTargets, [year]:vals}; renderTargetsPanel(); }
   });
 });
 
