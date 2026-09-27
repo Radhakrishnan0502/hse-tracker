@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Burhan HSE Tracker</title>
+<title>Burhan HSE Portal</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#030b18">
 <script>
@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="HSE Tracker">
+<meta name="apple-mobile-web-app-title" content="Burhan HSE">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:wght@500;600;700;800&family=Rajdhani:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root{
@@ -468,6 +468,20 @@ label.chk input{width:auto; flex:none;}
   .cc-title small{margin-left:0; width:100%;}
 }
 @media (prefers-reduced-motion:reduce){ .cc-ring{animation:none;} .cc-arc, .cc-tile{transition:none;} }
+.svc-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:14px;}
+.svc-card{border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:var(--surface-2); min-width:0;}
+.svc-card.svc-danger{border-color:color-mix(in srgb, var(--danger) 55%, transparent); background:linear-gradient(90deg, var(--danger-bg), var(--surface-2));}
+.svc-card.svc-warn{border-color:color-mix(in srgb, var(--warn) 50%, transparent); background:linear-gradient(90deg, var(--warn-bg), var(--surface-2));}
+.svc-card.svc-ok{border-color:color-mix(in srgb, var(--ok) 45%, transparent);}
+.svc-k{font-size:10.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-muted);}
+.svc-v{font-family:var(--font-num); font-size:20px; font-weight:700; margin-top:4px; line-height:1.2; display:flex; flex-wrap:wrap; gap:6px; align-items:center;}
+.svc-v small{font-family:var(--font-body); font-size:11.5px; font-weight:600; color:var(--ink-muted);}
+.svc-v .badge{font-family:var(--font-body);}
+.svc-s{font-size:11.5px; color:var(--ink-muted); margin-top:3px; line-height:1.35;}
+.svc-pm{border:1px solid var(--line); border-radius:10px; padding:4px 12px 12px; margin-bottom:16px;}
+body.read-only #vehiclePmForm .form-actions{display:none;}
+.svc-card.svc-wide{grid-column:1/-1;}
+.svc-card.svc-txt .svc-v{font-family:var(--font-body); font-size:15px;}
 /* ---- incident register ---- */
 .rm-wrap{margin:14px 0 4px; display:grid; gap:6px; justify-items:start;}
 .rm-grid{display:grid; grid-template-columns:22px repeat(5, 42px); gap:3px; align-items:center; position:relative; padding-left:16px;}
@@ -857,7 +871,7 @@ body.read-only #ckTemplatesBtn{display:none !important;}
 
       <div class="monitor-bar" id="monitorBar"></div>
 
-      <div class="tiles" id="vehicleTiles"></div>
+      <div class="tiles tiles-4" id="vehicleTiles"></div>
 
       <div class="panel" id="addVehiclePanel" hidden>
         <h3>Add a vehicle</h3>
@@ -887,11 +901,11 @@ body.read-only #ckTemplatesBtn{display:none !important;}
         <table>
           <thead>
             <tr>
-              <th>Vehicle number</th><th>Model</th><th>Ownership</th><th>Documents</th><th>PPE</th><th>IVMS / DFMS</th>
+              <th>Vehicle number</th><th>Model</th><th>Ownership</th><th>Documents</th><th>PPE</th><th>Service</th><th>IVMS / DFMS</th>
             </tr>
           </thead>
           <tbody id="vehicleRows">
-            <tr><td colspan="6" class="empty-state">Sign in to load vehicle data…</td></tr>
+            <tr><td colspan="7" class="empty-state">Sign in to load vehicle data…</td></tr>
           </tbody>
         </table>
       </div>
@@ -1846,13 +1860,17 @@ let pendingWorkerOpen = new URLSearchParams(location.search).get('worker');
 const VEHICLE_TABS = [
   {key:'profile', label:'Profile'},
   {key:'documents', label:'Documents'},
+  {key:'services', label:'Service & maintenance'},
   {key:'ppe', label:'PPE & safety kit'},
 ];
+const SERVICE_TYPES=['General service','Preventive maintenance (PM)','Battery check / service','Battery replacement','Tyre change','Tyre service / repair','Breakdown','Repair','Other'];
+const PM_RESET_TYPES=['General service','Preventive maintenance (PM)'];
+const SVC_BATTERY=['Battery check / service','Battery replacement'], SVC_TYRE=['Tyre change','Tyre service / repair'];
 const VEHICLE_RECORD_TYPES = {
   documents:{
     title:'Vehicle documents', addLabel:'+ Add document', hasExpiry:true, hasAttachment:true, attachLabel:'document scan',
     fields:[
-      {key:'type', label:'Document type', type:'select', options:['Vehicle Registration','MOT','Insurance','IVMS','DFMS','RAS Sticker','Other'], required:true},
+      {key:'type', label:'Document type', type:'select', options:['Mulkiya','Vehicle Registration','MOT','Insurance','IVMS','DFMS','RAS Sticker','Other'], required:true},
       {key:'date', label:'Done date', type:'date'},
       {key:'expiry', label:'Expiry date', type:'date', required:true},
       {key:'notes', label:'Notes', type:'textarea'},
@@ -1867,6 +1885,26 @@ const VEHICLE_RECORD_TYPES = {
       {key:'notes', label:'Notes', type:'textarea'},
     ],
   },
+};
+VEHICLE_RECORD_TYPES.services={
+  title:'Service & maintenance log', addLabel:'+ Log service / breakdown', hasExpiry:false, hasAttachment:true, attachLabel:'job card / invoice',
+  cardBadge:r=>Number(r.downtime)>0?`<span class="badge ${r.type==='Breakdown'?'danger':'warn'}">${esc(r.downtime)} day(s) off-road</span>`:'',
+  fields:[
+    {key:'type', label:'Type', type:'select', options:SERVICE_TYPES, required:true},
+    {key:'date', label:'Date', type:'date', required:true},
+    {key:'odometer', label:'Odometer (km)', type:'number', placeholder:'reading on the day'},
+    {key:'workshop', label:'Workshop / done by', type:'text'},
+    {key:'location', label:'Breakdown location', type:'text', showWhen:['Breakdown']},
+    {key:'cause', label:'Cause of breakdown', type:'textarea', showWhen:['Breakdown']},
+    {key:'battery', label:'Battery make / size / serial', type:'text', showWhen:SVC_BATTERY},
+    {key:'tyres', label:'Tyre position(s), size & brand', type:'text', placeholder:'e.g. front left + right, 265/65R17', showWhen:SVC_TYRE},
+    {key:'work', label:'Work done', type:'textarea'},
+    {key:'parts', label:'Parts replaced', type:'text'},
+    {key:'downtime', label:'Off-road / downtime (days)', type:'number'},
+    {key:'cost', label:'Cost (OMR)', type:'number'},
+    {key:'nextDate', label:'Next due date (from job card)', type:'date'},
+    {key:'nextKm', label:'Next due at (km)', type:'number'},
+  ],
 };
 const VEHICLE_COUNT_FIELDS = [
   {key:'jackCount', label:'Jack'},
@@ -5551,10 +5589,12 @@ function renderVehicleTiles(){
     return {expired,expiring};
   }
   const doc=agg('documents'), ppe=agg('ppe');
+  const svc=list.map(vehicleServiceStats), svcOver=svc.filter(x=>x.status==='overdue').length, svcSoon=svc.filter(x=>x.status==='soon').length, bdYear=svc.reduce((n,x)=>n+x.bdYear,0);
   const tiles=[
     {label:'Fleet', num:total, cls:'', sub:`${own} own · ${rental} rental`, cat:'--cat-1', icon:ic('truck')},
     {label:'Documents', num:doc.expired, cls:doc.expired?'danger':(doc.expiring?'warn':'ok'), sub:`${doc.expiring} expiring soon`, cat:'--cat-2', icon:ic('file')},
     {label:'PPE & safety kit', num:ppe.expired, cls:ppe.expired?'danger':(ppe.expiring?'warn':'ok'), sub:`${ppe.expiring} expiring soon`, cat:'--cat-6', icon:ic('vest')},
+    {label:'Service overdue', num:svcOver, cls:svcOver?'danger':(svcSoon?'warn':'ok'), sub:`${svcSoon} due soon · ${bdYear} breakdown${bdYear===1?'':'s'} this year`, cat:'--cat-4', icon:ic('wrench')},
   ];
   document.getElementById('vehicleTiles').innerHTML = tiles.map(t=>`
     <div class="tile" style="--tile-accent:var(${t.cat})">
@@ -5575,9 +5615,9 @@ function vehicleMatches(v){
 function renderVehicleTable(){
   const tbody=document.getElementById('vehicleRows');
   if(!auth.currentUser) return;
-  if(activeVehicles().length===0){ tbody.innerHTML='<tr><td colspan="6" class="empty-state">No vehicles yet — click “Add vehicle” to get started.</td></tr>'; return; }
+  if(activeVehicles().length===0){ tbody.innerHTML='<tr><td colspan="7" class="empty-state">No vehicles yet — click “Add vehicle” to get started.</td></tr>'; return; }
   const list=vehicles.filter(vehicleMatches);
-  if(list.length===0){ tbody.innerHTML='<tr><td colspan="6" class="empty-state">No vehicles match your filters.</td></tr>'; return; }
+  if(list.length===0){ tbody.innerHTML='<tr><td colspan="7" class="empty-state">No vehicles match your filters.</td></tr>'; return; }
   tbody.innerHTML=list.map(v=>{
     const doc=vehicleAggFor(v,'documents'), ppe=vehicleAggFor(v,'ppe');
     return `<tr data-id="${v.id}">
@@ -5586,6 +5626,7 @@ function renderVehicleTable(){
       <td>${(v.ownership||'Own')==='Rental'?'<span class="badge warn">Rental</span>':'<span class="badge ok">Own</span>'}</td>
       <td>${badgeHtml(doc.status)}</td>
       <td>${badgeHtml(ppe.status)}</td>
+      <td>${svcStatusBadge(v)}</td>
       <td>${vehicleMonitorCell(v)}</td>
     </tr>`;
   }).join('');
@@ -5633,6 +5674,7 @@ function vehicleIssues(v){
   const out=[];
   if(vehicleAggFor(v,'documents').status==='expired') out.push('Document expired');
   if(vehicleAggFor(v,'ppe').status==='expired') out.push('Safety kit expired');
+  if(vehicleServiceStats(v).status==='overdue') out.push('Service overdue');
   return out;
 }
 function siteDocsSummary(s){
@@ -5748,9 +5790,74 @@ function renderVehicleDrawerBody(){
   const cfg=VEHICLE_RECORD_TYPES[activeVehicleTab];
   const savedActiveTab=activeTab, savedEditing=editingRecordId, savedAddOpen=addFormOpen;
   activeTab=activeVehicleTab; editingRecordId=editingVehicleRecordId; addFormOpen=vehicleAddFormOpen;
-  body.innerHTML=recordTabHtml(v, activeVehicleTab, cfg);
+  body.innerHTML=(activeVehicleTab==='services' ? vehicleServiceSummaryHtml(v) : '') + recordTabHtml(v, activeVehicleTab, cfg);
   activeTab=savedActiveTab; editingRecordId=savedEditing; addFormOpen=savedAddOpen;
 }
+
+/* ---- vehicle service & maintenance ---- */
+function svcNum(x){ if(x===''||x==null) return null; const n=parseFloat(x); return isNaN(n)?null:n; }
+function vehicleServiceStats(v){
+  const recs=(v.services||[]).filter(r=>r.date).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  const lastOf=types=>{ for(let i=recs.length-1;i>=0;i--) if(types.includes(recs[i].type)) return recs[i]; return null; };
+  const readings=recs.map(r=>({km:svcNum(r.odometer), date:r.date})).filter(x=>x.km!==null);
+  if(svcNum(v.odometer)!==null) readings.push({km:svcNum(v.odometer), date:v.odometerDate||''});
+  const top=readings.sort((a,b)=>b.km-a.km)[0]||null, odo=top?top.km:null;
+  const iKm=svcNum(v.pmIntervalKm), iMo=svcNum(v.pmIntervalMonths), lastPm=lastOf(PM_RESET_TYPES);
+  let dueDate='', dueKm=null;
+  if(lastPm){
+    dueDate = lastPm.nextDate || (iMo ? addMonths(lastPm.date, iMo) : '');
+    const lk=svcNum(lastPm.odometer); dueKm = svcNum(lastPm.nextKm)!==null ? svcNum(lastPm.nextKm) : (lk!==null && iKm ? lk+iKm : null);
+  }
+  const dd=dueDate?daysUntil(dueDate):null, kmLeft=(dueKm!==null && odo!==null) ? dueKm-odo : null;
+  let status='none';
+  if(lastPm && (dueDate || dueKm!==null)) status = ((dd!==null && dd<0) || (kmLeft!==null && kmLeft<=0)) ? 'overdue' : ((dd!==null && dd<=30) || (kmLeft!==null && kmLeft<=1000)) ? 'soon' : 'ok';
+  else if(!lastPm && (iKm || iMo)) status='nolog';
+  const year=localToday().slice(0,4), inYear=recs.filter(r=>String(r.date).startsWith(year));
+  const sum=(list,k)=>list.reduce((n,r)=>n+(svcNum(r[k])||0),0);
+  const bd=recs.filter(r=>r.type==='Breakdown'), bdYear=inYear.filter(r=>r.type==='Breakdown');
+  return {recs, odo, odoDate:top?top.date:'', iKm, iMo, lastPm, dueDate, dueKm, dd, kmLeft, status,
+    bdTotal:bd.length, bdYear:bdYear.length, lastBd:bd[bd.length-1]||null, downYear:sum(inYear,'downtime'), costYear:sum(inYear,'cost'), entriesYear:inYear.length,
+    lastBatt:lastOf(['Battery replacement']), lastBattAny:lastOf(SVC_BATTERY), lastTyre:lastOf(['Tyre change']), lastTyreAny:lastOf(SVC_TYRE)};
+}
+const SVC_STATUS={overdue:{t:'Service overdue', cls:'danger'}, soon:{t:'Service due soon', cls:'warn'}, ok:{t:'On schedule', cls:'ok'}, nolog:{t:'No service logged', cls:'warn'}, none:{t:'No schedule', cls:'muted'}};
+function svcStatusBadge(v){ const st=vehicleServiceStats(v).status, b=SVC_STATUS[st]; return `<span class="badge ${b.cls}">${b.t}</span>`; }
+function monthsAgo(date){ const d=daysUntil(date); if(d===null) return ''; const n=-d; if(n<45) return n<=0?'today':`${n} day${n===1?'':'s'} ago`; const m=Math.round(n/30.44); return m<24?`${m} months ago`:`${(n/365.25).toFixed(1)} years ago`; }
+function fmtKm(n){ return n===null||n===undefined ? '—' : Math.round(n).toLocaleString()+' km'; }
+function vehicleServiceSummaryHtml(v){
+  const s=vehicleServiceStats(v), b=SVC_STATUS[s.status];
+  let dueMain='—', dueSub='Set the service interval below, then log the last service.';
+  if(s.lastPm && (s.dueDate || s.dueKm!==null)){
+    const parts=[]; if(s.dueDate) parts.push(s.dd<0?`overdue ${-s.dd} day${s.dd===-1?'':'s'}`:s.dd===0?'due today':`in ${s.dd} day${s.dd===1?'':'s'}`);
+    if(s.kmLeft!==null) parts.push(s.kmLeft<=0?`${fmtKm(-s.kmLeft)} over`:`${fmtKm(s.kmLeft)} to go`);
+    dueMain = s.dueDate || fmtKm(s.dueKm);
+    dueSub = (s.dueDate && s.dueKm!==null ? `or at ${fmtKm(s.dueKm)} · ` : '') + parts.join(' · ') + ` · last ${s.lastPm.type==='General service'?'general service':'PM'} ${s.lastPm.date}`;
+  } else if(s.lastPm){ dueSub=`Last service ${s.lastPm.date} — set the interval below to see when the next one is due.`; }
+  const card=(k,val,sub,cls)=>`<div class="svc-card ${cls||''}"><div class="svc-k">${k}</div><div class="svc-v">${val}</div><div class="svc-s">${sub}</div></div>`;
+  const batt = s.lastBatt ? `Replaced ${monthsAgo(s.lastBatt.date)}` : (s.lastBattAny ? 'Serviced' : '—');
+  const battSub = s.lastBatt ? `on ${s.lastBatt.date}${s.lastBattAny && s.lastBattAny!==s.lastBatt ? ' · last check '+s.lastBattAny.date : ''}` : (s.lastBattAny ? `last check ${s.lastBattAny.date}` : 'no battery entry yet');
+  const tyreKm = s.lastTyre && svcNum(s.lastTyre.odometer)!==null && s.odo!==null ? s.odo-svcNum(s.lastTyre.odometer) : null;
+  const tyre = s.lastTyre ? `Changed ${monthsAgo(s.lastTyre.date)}` : (s.lastTyreAny ? 'Serviced' : '—');
+  const tyreSub = s.lastTyre ? `on ${s.lastTyre.date}${tyreKm!==null?' · '+fmtKm(tyreKm)+' since':''}` : (s.lastTyreAny ? `last service ${s.lastTyreAny.date}` : 'no tyre entry yet');
+  return `<div class="svc-grid">
+    ${card('Next service / PM', `${esc(dueMain)} <span class="badge ${b.cls}">${b.t}</span>`, esc(dueSub), 'svc-wide svc-'+b.cls)}
+    ${card('Odometer', fmtKm(s.odo), s.odo!==null ? esc(s.odoDate?'reading of '+s.odoDate:'latest reading') : 'enter a reading below or on a service')}
+    ${card('Breakdowns', `${s.bdYear} <small>this year</small>`, `${s.bdTotal} in total${s.downYear?` · ${s.downYear} day${s.downYear===1?'':'s'} off-road this year`:''}${s.lastBd?` · last ${esc(s.lastBd.date)}`:''}`, s.bdYear?'svc-danger':'')}
+    ${card('Maintenance cost', `OMR ${s.costYear.toLocaleString(undefined,{maximumFractionDigits:3})} <small>this year</small>`, `${s.entriesYear} entr${s.entriesYear===1?'y':'ies'} this year · ${s.recs.length} in total`)}
+    ${card('Battery', esc(batt), esc(battSub), 'svc-txt')}
+    ${card('Tyres', esc(tyre), esc(tyreSub), 'svc-txt')}
+  </div>
+  <form id="vehiclePmForm" class="svc-pm">
+    <div class="subhead">Preventive maintenance schedule</div>
+    <div class="form-grid">
+      <label>Service every (km)<input type="number" min="0" step="any" data-pmfield="pmIntervalKm" value="${esc(v.pmIntervalKm||'')}" placeholder="e.g. 10000"></label>
+      <label>or every (months)<input type="number" min="0" step="any" data-pmfield="pmIntervalMonths" value="${esc(v.pmIntervalMonths||'')}" placeholder="e.g. 6"></label>
+      <label>Current odometer (km)<input type="number" min="0" step="any" data-pmfield="odometer" value="${esc(v.odometer||'')}" placeholder="latest reading"></label>
+    </div>
+    <p class="wsub" style="margin:6px 0 0;">Whichever comes first. A <b>General service</b> or <b>Preventive maintenance</b> entry restarts the countdown; a next-due date or km written on that entry (from the job card) takes priority.</p>
+    <div class="form-actions" style="margin-top:10px;"><button type="submit" class="btn btn-primary btn-sm">Save schedule</button></div>
+  </form>`;
+}
+function pmFieldsFor(v){ const s=vehicleServiceStats(v); return {pmNextDue:s.dueDate||'', pmStatus:s.status}; }
 
 function vehicleProfileTabHtml(v){
   const countsHtml = VEHICLE_COUNT_FIELDS.map(f=>`<label>${esc(f.label)} — count<input type="number" min="0" step="1" data-vfield="${f.key}" value="${esc(v[f.key]!=null?v[f.key]:'0')}"></label>`).join('');
@@ -7396,9 +7503,10 @@ function recordTabHtml(w,key,cfg){
   const formFields = cfg.fields.map(f=>{
     const val = editing ? (editing[f.key]||'') : (f.default||'');
     if(f.type==='workers') return workerPickFieldHtml(f, editing, w);
-    if(f.type==='textarea') return `<label>${esc(f.label)}${f.required?' *':''}<textarea data-field="${f.key}" ${f.required?'required':''}>${esc(val)}</textarea></label>`;
-    if(f.type==='select') return `<label>${esc(f.label)}${f.required?' *':''}<select data-field="${f.key}" ${f.required?'required':''}><option value="">Select…</option>${f.options.map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
-    return `<label>${esc(f.label)}${f.required?' *':''}<input type="${f.type}" data-field="${f.key}" value="${esc(val)}" ${f.required?'required':''} ${f.placeholder?`placeholder="${esc(f.placeholder)}"`:''}></label>`;
+    const sw = f.showWhen ? ` data-show-when="${esc(f.showWhen.join('|'))}" ${f.showWhen.includes(editing?editing[cfg.fields[0].key]:'')?'':'hidden'}` : '';
+    if(f.type==='textarea') return `<label${sw}>${esc(f.label)}${f.required?' *':''}<textarea data-field="${f.key}" ${f.required?'required':''}>${esc(val)}</textarea></label>`;
+    if(f.type==='select') return `<label${sw}>${esc(f.label)}${f.required?' *':''}<select data-field="${f.key}" ${f.required?'required':''}><option value="">Select…</option>${f.options.map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
+    return `<label${sw}>${esc(f.label)}${f.required?' *':''}<input type="${f.type}" data-field="${f.key}" value="${esc(val)}" ${f.required?'required':''} ${f.placeholder?`placeholder="${esc(f.placeholder)}"`:''} ${f.type==='number'?'min="0" step="any"':''}></label>`;
   }).join('');
 
   return `
@@ -7423,7 +7531,7 @@ async function updateVehicle(id, data){
   catch(e){ console.error(e); toast('Could not save — '+(e.code||'error')); return false; }
 }
 async function updateVehicleArray(vehicle,key,arr){
-  return updateVehicle(vehicle.id, {[key]:arr});
+  return updateVehicle(vehicle.id, key==='services' ? {services:arr, ...pmFieldsFor({...vehicle, services:arr})} : {[key]:arr});
 }
 async function updateSite(id, data){
   try{ await db.collection('siteEquipment').doc(id).update(stamp(deltaize(siteEquipmentList.find(x=>x.id===id), data))); toast('Saved'); return true; }
@@ -7605,6 +7713,17 @@ async function buildVehiclePdf(v){
 
   section('Vehicle documents','documents',VEHICLE_RECORD_TYPES.documents);
   section('PPE & safety equipment','ppe',VEHICLE_RECORD_TYPES.ppe);
+
+  { const s=vehicleServiceStats(v);
+    h2('Service & maintenance summary');
+    kv('Odometer', s.odo!==null ? fmtKm(s.odo)+(s.odoDate?' ('+s.odoDate+')':'') : '');
+    kv('PM schedule', [s.iKm?`every ${fmtKm(s.iKm)}`:'', s.iMo?`every ${s.iMo} months`:''].filter(Boolean).join(' or ')+(s.iKm||s.iMo?', whichever first':''));
+    kv('Last service / PM', s.lastPm ? `${s.lastPm.date} (${s.lastPm.type})` : '');
+    kv('Next service due', [s.dueDate, s.dueKm!==null?'at '+fmtKm(s.dueKm):''].filter(Boolean).join(' or ')+(s.status!=='none'?'  -  '+SVC_STATUS[s.status].t:''));
+    kv('Breakdowns', `${s.bdYear} this year, ${s.bdTotal} in total${s.downYear?`, ${s.downYear} day(s) off-road this year`:''}`);
+    kv('Maintenance cost', `OMR ${s.costYear} this year`);
+  }
+  section('Service & maintenance history','services',VEHICLE_RECORD_TYPES.services);
 
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(150,150,150);
   doc.text(`Generated ${localToday()} from Vehicle Register`, marginX, pageH-20);
@@ -8377,10 +8496,18 @@ document.addEventListener('DOMContentLoaded', ()=>{
       }
       await updateVehicle(v.id,data);
     }
+    if(e.target.id==='vehiclePmForm'){
+      e.preventDefault();
+      const v=currentVehicle(); if(!v) return;
+      const data={}; e.target.querySelectorAll('[data-pmfield]').forEach(el=>{ data[el.dataset.pmfield]=el.value.trim(); });
+      if(data.odometer!==String(v.odometer||'')) data.odometerDate=localToday();
+      await updateVehicle(v.id, {...data, ...pmFieldsFor({...v, ...data})});
+      return;
+    }
     if(e.target.id==='recordForm'){
       e.preventDefault();
       const v=currentVehicle(); if(!v) return;
-      const data={}; e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
+      const data={}; e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]= el.closest('label[hidden]') ? '' : el.value; });
       const arr=(v[activeVehicleTab]||[]).slice();
       if(editingVehicleRecordId){
         const idx=arr.findIndex(r=>r.id===editingVehicleRecordId);
@@ -8451,6 +8578,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 
   /* ---------------- vehicle: attachment upload ---------------- */
+  document.getElementById('vehicleDrawerBody').addEventListener('change', e=>{
+    const sel=e.target.closest('#recordForm [data-field="type"]'); if(!sel) return;
+    sel.form.querySelectorAll('label[data-show-when]').forEach(l=>{ l.hidden=!l.dataset.showWhen.split('|').includes(sel.value); });
+  });
   document.getElementById('vehicleDrawerBody').addEventListener('change', async e=>{
     if(!e.target.matches('[data-attach-for]')) return;
     const file=e.target.files[0]; if(!file) return;

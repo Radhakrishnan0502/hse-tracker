@@ -1,7 +1,7 @@
 {
-  "name": "Burhan HSE Tracker",
-  "short_name": "HSE Tracker",
-  "description": "Burhan Oil & Trade Services HSE Tracker — workforce, plant & equipment, projects, QHSE library and monthly HSE reporting.",
+  "name": "Burhan HSE Portal",
+  "short_name": "Burhan HSE",
+  "description": "Burhan Oil & Trade Services HSE Portal — workforce, plant & equipment, projects, QHSE library and monthly HSE reporting.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
