@@ -1941,9 +1941,7 @@ function currentVehicle(){ return vehicles.find(v=>v.id===activeVehicleId); }
 function vehicleAggFor(v,key){
   const recs=v[key]||[];
   if(recs.length===0) return {status:'none'};
-  let worst='valid';
-  for(const r of recs){ const s=statusFor(r.expiry); if(RANK[s]>RANK[worst]) worst=s; }
-  return {status:worst};
+  return {status:worstStatusOf(currentRecs(recs, key))};
 }
 
 /* ---------------- site equipment config ---------------- */
@@ -2116,9 +2114,7 @@ function currentSite(){ return siteEquipmentList.find(s=>s.id===activeSiteId); }
 function siteAggFor(s,key){
   const recs=s[key]||[];
   if(recs.length===0) return {status:'none'};
-  let worst='valid';
-  for(const r of recs){ const st=statusFor(r.expiry); if(RANK[st]>RANK[worst]) worst=st; }
-  return {status:worst};
+  return {status:worstStatusOf(currentRecs(recs, key))};
 }
 
 /* ---------------- toolbox talks → Monthly Report (log once) ---------------- */
@@ -5236,12 +5232,34 @@ function badgeHtml(status, labelMap){
   return `<span class="badge ${cls}">${map[status]||status}</span>`;
 }
 
+/* ---- renewals: only the newest record of each item counts ----
+   Certificates (training, medical, licence, vehicle documents…) are grouped by their name/type;
+   physical items (tools, harnesses, ladders, PPE) only by serial number, so two different items are
+   never mixed up. Within a group the record with the latest expiry is current; older ones are history. */
+const RENEW_BY_TITLE={inductions:'site', trainings:'name', competency:'skill', medical:'type', licenses:'type', ppeIssued:'item', documents:'type', hseDocs:'type'};
+const RENEW_BY_SERIAL=['ppe','powerTools','harness','ladders','otherPpe'];
+function renewNorm(x){ return String(x==null?'':x).trim().toLowerCase().replace(/\s+/g,' '); }
+function renewKey(key, r){
+  if(key==='trainings'){ const n=typeof normTraining==='function' ? normTraining(r.name) : renewNorm(r.name); return n ? 't:'+n : null; }
+  if(RENEW_BY_TITLE[key]){ const t=renewNorm(r[RENEW_BY_TITLE[key]]); if(!t) return null; return t+'|'+renewNorm(r.serial); }
+  if(RENEW_BY_SERIAL.includes(key)){ const sn=renewNorm(r.serial); return sn ? (renewNorm(r.item||r.type)+'|'+sn) : null; }
+  return null;
+}
+function currentRecs(recs, key){
+  const groups=new Map(), out=[];
+  for(const r of (recs||[])){ const k=renewKey(key, r); if(k===null){ out.push(r); continue; } const c=groups.get(k); if(!c || String(r.expiry||'9999-12-31')>String(c.expiry||'9999-12-31') || (String(r.expiry||'9999-12-31')===String(c.expiry||'9999-12-31') && String(r.date||'')>String(c.date||''))) groups.set(k, r); }
+  let cur=out.concat([...groups.values()]);
+  if(key==='medical'){ // a pre-employment medical is replaced by any later medical
+    cur=cur.filter(r=>!(r.type==='Pre-employment Medical' && (recs||[]).some(o=>o!==r && o.type!=='Pre-employment Medical' && String(o.date||'')>String(r.date||''))));
+  }
+  return cur;
+}
+function isRenewed(recs, key, r){ return !currentRecs(recs, key).includes(r); }
+function worstStatusOf(recs){ let worst='valid'; for(const r of recs){ const st=statusFor(r.expiry); if(RANK[st]>RANK[worst]) worst=st; } return worst; }
 function aggFor(worker,key){
   const recs = worker[key]||[];
   if(recs.length===0) return key==='inductions' ? {status:'missing'} : {status:'none'};
-  let worst='valid';
-  for(const r of recs){ const s=statusFor(r.expiry); if(RANK[s]>RANK[worst]) worst=s; }
-  return {status:worst};
+  return {status:worstStatusOf(currentRecs(recs, key))};
 }
 function civilIdStatus(w){
   if(!w.civilIdExpiry) return {status:'none'};
@@ -5250,10 +5268,9 @@ function civilIdStatus(w){
 function medicalStatus(w){
   const recs=w.medical||[];
   if(recs.length===0) return {status:'none'};
-  if(recs.some(r=>r.result==='Unfit')) return {status:'unfit'};
-  let worst='valid';
-  for(const r of recs){ const s=statusFor(r.expiry); if(RANK[s]>RANK[worst]) worst=s; }
-  return {status:worst};
+  const cur=currentRecs(recs, 'medical');
+  if(cur.some(r=>r.result==='Unfit')) return {status:'unfit'};
+  return {status:worstStatusOf(cur)};
 }
 function computeFlags(w){
   const induction=aggFor(w,'inductions');
@@ -5483,8 +5500,7 @@ function renderTiles(){
     for(const w of list){
       const recs=w[key]||[];
       if(recs.length===0){ if(key==='inductions') missing++; continue; }
-      let worst='valid';
-      for(const r of recs){ const s=statusFor(r.expiry); if(RANK[s]>RANK[worst]) worst=s; }
+      const worst=worstStatusOf(currentRecs(recs, key));
       if(worst==='expired') expired++; else if(worst==='expiring') expiring++;
     }
     return {expired,expiring,missing};
@@ -5601,8 +5617,7 @@ function renderVehicleTiles(){
     let expired=0, expiring=0;
     for(const v of list){
       const recs=v[key]||[]; if(recs.length===0) continue;
-      let worst='valid';
-      for(const r of recs){ const s=statusFor(r.expiry); if(RANK[s]>RANK[worst]) worst=s; }
+      const worst=worstStatusOf(currentRecs(recs, key));
       if(worst==='expired') expired++; else if(worst==='expiring') expiring++;
     }
     return {expired,expiring};
@@ -5698,7 +5713,7 @@ function vehicleIssues(v){
 }
 function siteDocsSummary(s){
   let expired=0, expiring=0;
-  for(const d of (s.hseDocs||[])){ const st=statusFor(d.expiry); if(d.expiry && st==='expired') expired++; else if(d.expiry && st==='expiring') expiring++; }
+  for(const d of currentRecs(s.hseDocs||[], 'hseDocs')){ const st=statusFor(d.expiry); if(d.expiry && st==='expired') expired++; else if(d.expiry && st==='expiring') expiring++; }
   return {count:(s.hseDocs||[]).length, expired, expiring};
 }
 function projectStatus(s){ return s.status || 'Active'; }
@@ -7518,7 +7533,7 @@ function recordTabHtml(w,key,cfg){
   const cards = recs.length ? recs.map(r=>{
     const titleField=cfg.fields[0].key;
     const resultBadge = r.result==='Unfit' ? `<span class="badge danger">Unfit</span>` : (r.result==='Fit with restrictions' ? `<span class="badge warn">Fit with restrictions</span>` : (r.result==='Fit' ? `<span class="badge ok">Fit</span>` : ''));
-    const expiryBadge = cfg.cardBadge ? cfg.cardBadge(r) : cfg.hasExpiry ? (r.expiry? badgeHtml(statusFor(r.expiry)) : `<span class="badge muted">No expiry set</span>`) : (r.level==='Final warning' ? `<span class="badge danger">Final warning</span>` : (r.severity? `<span class="badge ${r.severity==='Critical'?'danger':r.severity==='Major'?'warn':'muted'}">${esc(r.severity)}</span>` : ''));
+    const expiryBadge = cfg.cardBadge ? cfg.cardBadge(r) : cfg.hasExpiry ? (isRenewed(w[key], key, r) ? `<span class="badge muted" title="A newer record replaces this one">Renewed</span>` : r.expiry? badgeHtml(statusFor(r.expiry)) : `<span class="badge muted">No expiry set</span>`) : (r.level==='Final warning' ? `<span class="badge danger">Final warning</span>` : (r.severity? `<span class="badge ${r.severity==='Critical'?'danger':r.severity==='Major'?'warn':'muted'}">${esc(r.severity)}</span>` : ''));
     const fieldsHtml = cfg.fields.slice(1).map(f=>{
       if(f.type==='workers'){
         const ids=r[f.key]||[]; if(!ids.length) return '';
@@ -7620,7 +7635,7 @@ async function buildProfilePdf(w){
       ensure(14);
       const titleVal=r[cfg.fields[0].key]||'';
       let tag='';
-      if(cfg.hasExpiry){ tag = r.expiry? `  ·  valid until ${r.expiry} (${statusFor(r.expiry)})` : '  ·  no expiry set'; }
+      if(cfg.hasExpiry){ tag = r.expiry? `  ·  valid until ${r.expiry} (${isRenewed(w[key], key, r)?'renewed':statusFor(r.expiry)})` : '  ·  no expiry set'; }
       else if(r.level) tag=`  ·  ${r.level}`;
       else if(r.severity) tag=`  ·  ${r.severity}`;
       doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(20,20,20);
@@ -7720,7 +7735,7 @@ async function buildVehiclePdf(v){
     for(const r of recs){
       ensure(14);
       const titleVal=r[cfg.fields[0].key]||'';
-      const tag = cfg.hasExpiry ? (r.expiry? `  ·  valid until ${r.expiry} (${statusFor(r.expiry)})` : '  ·  no expiry set') : '';
+      const tag = cfg.hasExpiry ? (r.expiry? `  ·  valid until ${r.expiry} (${isRenewed(v[key], key, r)?'renewed':statusFor(r.expiry)})` : '  ·  no expiry set') : '';
       doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(20,20,20);
       doc.text(`•  ${titleVal}${tag}`, marginX, y); y+=12;
       const bits=cfg.fields.slice(1).filter(f=>f.key!=='expiry' && r[f.key]).map(f=>`${f.label}: ${r[f.key]}`).join('    ');
@@ -7799,7 +7814,7 @@ async function buildSitePdf(s){
     for(const r of recs){
       ensure(14);
       const titleVal=r[cfg.fields[0].key]||'';
-      const tag = cfg.hasExpiry ? (r.expiry? `  ·  valid until ${r.expiry} (${statusFor(r.expiry)})` : '  ·  no expiry set') : (r.status ? `  ·  ${r.status}` : '');
+      const tag = cfg.hasExpiry ? (r.expiry? `  ·  valid until ${r.expiry} (${isRenewed(s[key], key, r)?'renewed':statusFor(r.expiry)})` : '  ·  no expiry set') : (r.status ? `  ·  ${r.status}` : '');
       doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(20,20,20);
       doc.text(`•  ${titleVal}${tag}`, marginX, y); y+=12;
       const bits=cfg.fields.slice(1).filter(f=>f.key!=='expiry' && f.key!=='status' && r[f.key] && !(Array.isArray(r[f.key]) && !r[f.key].length)).map(f=>{
