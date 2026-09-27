@@ -1652,7 +1652,7 @@ function clearDirtyForms(){ document.querySelectorAll('form[data-dirty]').forEac
   document.addEventListener('input', mark, true);
   document.addEventListener('change', mark, true);
   document.addEventListener('submit', ()=>clearDirtyForms(), true);
-  document.addEventListener('click', e=>{ const b=e.target && e.target.closest && e.target.closest('button'); if(b && b.type!=='submit') clearDirtyForms(); }, true);
+  document.addEventListener('click', e=>{ const b=e.target && e.target.closest && e.target.closest('button'); if(b && (b.type!=='submit' || !b.form)) clearDirtyForms(); }, true);
 })();
 
 
@@ -2618,7 +2618,7 @@ function renderLibTrashBody(){
       <div class="record-fields">
         <div class="rf"><span class="rf-k">Type</span><span class="rf-v">${esc(d.docType||'—')}</span></div>
         <div class="rf"><span class="rf-k">Revision</span><span class="rf-v">${esc(d.revision||'—')}</span></div>
-        <div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc((d.deletedAt||'').slice(0,10)||'—')}</span></div>
+        <div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc(isoToLocalDate(d.deletedAt||'')||'—')}</span></div>
       </div>
     </div>`).join('') : '<p class="wsub">Nothing in the trash.</p>';
 }
@@ -3051,7 +3051,7 @@ function renderIncTrashBody(){
   const list=deletedIncidents();
   document.getElementById('incTrashBody').innerHTML = list.length ? list.map(i=>`<div class="record-card"><div class="record-card-top"><div class="record-card-title">${esc(incTitle(i))}</div>
     <div class="record-card-actions"><button type="button" class="btn btn-sm" data-irestore="${i.id}">Restore</button><button type="button" class="btn btn-danger btn-sm" data-ipurge="${i.id}" data-armed="0">Delete forever</button></div></div>
-    <div class="record-fields"><div class="rf"><span class="rf-k">Date</span><span class="rf-v">${esc(i.date||'—')}</span></div><div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc((i.deletedAt||'').slice(0,10)||'—')}</span></div></div></div>`).join('') : '<p class="wsub">Nothing in the trash.</p>';
+    <div class="record-fields"><div class="rf"><span class="rf-k">Date</span><span class="rf-v">${esc(i.date||'—')}</span></div><div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc(isoToLocalDate(i.deletedAt||'')||'—')}</span></div></div></div>`).join('') : '<p class="wsub">Nothing in the trash.</p>';
 }
 
 /* ---------- incident report PDF ---------- */
@@ -3130,14 +3130,7 @@ const TARGET_DEFS = [
 let targetsEditOpen=false;
 function targetsFor(year){ const t=(appTargets||{})[year]; return t || null; }
 let appTargets={};
-function allCorrectiveActions(){
-  const out=[];
-  for(const s of activeSites()) for(const a of (s.actions||[])) out.push(a);
-  for(const i of activeIncidents()) for(const a of (i.capa||[])) out.push(a);
-  for(const a of activeAudits()) for(const f of (a.findings||[])) if(isActionFinding(f)) out.push(f);
-  for(const k of Object.keys(REG)) for(const r of regActive(k)) for(const [sk,sc] of Object.entries(REG[k].subs||{})) if(sc.isAction) for(const x of (r[sk]||[])) out.push(x);
-  return out;
-}
+function allCorrectiveActions(){ return collectAllActions(); }   // same list as the Action Tracker
 function trainingCompliancePct(){
   const reqs=requiredTrainings(); if(!reqs.length) return null;
   let need=0, ok=0;
@@ -3479,7 +3472,7 @@ let appAssurance={}, assuranceYear=String(new Date().getFullYear()), assuranceEd
 function assurancePlanFor(y){ return (appAssurance[y] && appAssurance[y].items) || null; }
 function assuranceEvidence(item, y, m){
   const key=`${y}-${String(m).padStart(2,'0')}`, a=ASSURANCE_AUTO[item.auto||'']; if(!item.auto || !a) return 0;
-  if(a.cat) return reportEntries.filter(e=>e.category===a.cat && entryMonth(e)===key).length;
+  if(a.cat) return liveReportEntries().filter(e=>e.category===a.cat && entryMonth(e)===key).length;
   if(item.auto==='audit:internal') return activeAudits().filter(x=>auditParty(x.auditType)==='internal' && x.status!=='Planned' && String(x.startDate||'').startsWith(key)).length;
   if(item.auto==='audit:external') return activeAudits().filter(x=>auditParty(x.auditType)!=='internal' && x.status!=='Planned' && String(x.startDate||'').startsWith(key)).length;
   if(item.auto==='library:ra') return activeLibDocs().filter(d=>['Risk assessment','JSA'].includes(d.docType) && String(d.lastRevDate||'').startsWith(key)).length;
@@ -4785,7 +4778,7 @@ async function buildClientPack(opts){
   const monthName=new Date(month+'-01T00:00:00').toLocaleDateString('en-GB',{month:'long', year:'numeric'});
   const inProj=x=>proj==='all' || x.projectId===proj;
   const mE=reportEntriesFor('all', month, proj), m=computeReportMetrics(mE);
-  const yE=reportEntries.filter(e=>entryMonth(e).startsWith(year) && entryMonth(e)<=month && reportProjectMatch(e, proj)), y=computeReportMetrics(yE);
+  const yE=liveReportEntries().filter(e=>entryMonth(e).startsWith(year) && entryMonth(e)<=month && reportProjectMatch(e, proj)), y=computeReportMetrics(yE);
   const rate=(n,h)=>h?(n*1e6/h).toFixed(2):'—';
   const logo=await fetchImageDataUrl('logo.png').catch(()=>null);
   let pg=1; let yy;
@@ -4836,7 +4829,7 @@ async function buildClientPack(opts){
   const inspY=regActive('insp').filter(r=>String(r.date||'').startsWith(year) && String(r.date)<=month+'-31' && inProj(r));
   h2('2. Proactive HSE activities');
   table(['Activity', monthName, `Year to date ${year}`], [
-    ['Toolbox talks', m.tbt, y.tbt], ['Training sessions', m.training, y.training], ['Inductions', m.induction, y.induction],
+    ['Toolbox talks', m.tbt, y.tbt], ['Training sessions', m.training, y.training], ['Induction sessions (people inducted)', `${m.inductionSessions} (${m.induction})`, `${y.inductionSessions} (${y.induction})`],
     ['Management site visits', m.siteVisit, y.siteVisit], ['Internal audits', m.internalAudit, y.internalAudit], ['Vehicle inspections', m.vehicleInspection, y.vehicleInspection],
     ['Checklist inspections', inspM.length, inspY.length], ['HSE observations', m.hseObservation, y.hseObservation], ['Emergency drills', m.mockDrill, y.mockDrill],
   ], [270, 110, 135], {right:true});
@@ -5122,8 +5115,11 @@ function reportProjectMatch(e, project){
   return e.projectId===project;
 }
 // periodKey is 'YYYY-MM' for a month or 'YYYY' for a whole year
+// Entries of a project in Deleted projects are left out everywhere (they come back when the project is restored)
+function deletedProjectIds(){ return new Set(siteEquipmentList.filter(s=>s.deleted).map(s=>s.id)); }
+function liveReportEntries(){ const del=deletedProjectIds(); return del.size ? reportEntries.filter(e=>!(e.projectId && del.has(e.projectId))) : reportEntries; }
 function reportEntriesFor(division, periodKey, project){
-  return reportEntries.filter(e=> (division==='all' || e.division===division) && entryMonth(e).startsWith(periodKey) && reportProjectMatch(e, project));
+  return liveReportEntries().filter(e=> (division==='all' || e.division===division) && entryMonth(e).startsWith(periodKey) && reportProjectMatch(e, project));
 }
 // Client complaints live on each project; counted by the date they were received
 function complaintsFor(division, periodKey, project){
@@ -5240,14 +5236,22 @@ const RENEW_BY_TITLE={inductions:'site', trainings:'name', competency:'skill', m
 const RENEW_BY_SERIAL=['ppe','powerTools','harness','ladders','otherPpe'];
 function renewNorm(x){ return String(x==null?'':x).trim().toLowerCase().replace(/\s+/g,' '); }
 function renewKey(key, r){
+  if(/^other$/i.test(String((RENEW_BY_TITLE[key] && r[RENEW_BY_TITLE[key]]) || r.item || r.type || '').trim())) return null;   // "Other" items are never treated as renewals of each other
   if(key==='trainings'){ const n=typeof normTraining==='function' ? normTraining(r.name) : renewNorm(r.name); return n ? 't:'+n : null; }
   if(RENEW_BY_TITLE[key]){ const t=renewNorm(r[RENEW_BY_TITLE[key]]); if(!t) return null; return t+'|'+renewNorm(r.serial); }
   if(RENEW_BY_SERIAL.includes(key)){ const sn=renewNorm(r.serial); return sn ? (renewNorm(r.item||r.type)+'|'+sn) : null; }
   return null;
 }
+// Is record a newer than b? Both with an expiry → later expiry (then later date). Otherwise the later record date wins.
+function renewNewer(a, b){
+  const ae=String(a.expiry||''), be=String(b.expiry||''), ad=String(a.date||''), bd=String(b.date||'');
+  if(ae && be) return ae>be || (ae===be && ad>bd);
+  if(ad && bd && ad!==bd) return ad>bd;
+  return (ae||'9999-12-31')>(be||'9999-12-31');
+}
 function currentRecs(recs, key){
   const groups=new Map(), out=[];
-  for(const r of (recs||[])){ const k=renewKey(key, r); if(k===null){ out.push(r); continue; } const c=groups.get(k); if(!c || String(r.expiry||'9999-12-31')>String(c.expiry||'9999-12-31') || (String(r.expiry||'9999-12-31')===String(c.expiry||'9999-12-31') && String(r.date||'')>String(c.date||''))) groups.set(k, r); }
+  for(const r of (recs||[])){ const k=renewKey(key, r); if(k===null){ out.push(r); continue; } const c=groups.get(k); if(!c || renewNewer(r, c)) groups.set(k, r); }
   let cur=out.concat([...groups.values()]);
   if(key==='medical'){ // a pre-employment medical is replaced by any later medical
     cur=cur.filter(r=>!(r.type==='Pre-employment Medical' && (recs||[]).some(o=>o!==r && o.type!=='Pre-employment Medical' && String(o.date||'')>String(r.date||''))));
@@ -5510,11 +5514,8 @@ function renderTiles(){
   for(const w of list){ if(!w.civilIdExpiry) continue; const s=statusFor(w.civilIdExpiry); if(s==='expired') civExpired++; else if(s==='expiring') civExpiring++; }
   let medUnfit=0, medExpired=0, medExpiring=0;
   for(const w of list){
-    const recs=w.medical||[]; if(recs.length===0) continue;
-    if(recs.some(r=>r.result==='Unfit')){ medUnfit++; continue; }
-    let worst='valid';
-    for(const r of recs){ const s=statusFor(r.expiry); if(RANK[s]>RANK[worst]) worst=s; }
-    if(worst==='expired') medExpired++; else if(worst==='expiring') medExpiring++;
+    const ms=medicalStatus(w).status;
+    if(ms==='unfit') medUnfit++; else if(ms==='expired') medExpired++; else if(ms==='expiring') medExpiring++;
   }
   const totalWarnings=list.reduce((n,w)=>n+((w.warnings||[]).length),0);
   const finalWarn=list.filter(w=>(w.warnings||[]).some(x=>x.level==='Final warning')).length;
@@ -5793,6 +5794,7 @@ function renderSiteTable(){
 /* ---------------- vehicle drawer ---------------- */
 let drawerZ=41;
 function raiseDrawer(overlayId, drawerId){
+  clearDirtyForms();
   document.getElementById(overlayId).style.zIndex = ++drawerZ;
   document.getElementById(drawerId).style.zIndex = ++drawerZ;
 }
@@ -5804,6 +5806,7 @@ function openVehicleDrawer(id){
   renderVehicleDrawer();
 }
 function closeVehicleDrawer(){
+  clearDirtyForms();
   activeVehicleId=null;
   document.getElementById('vehicleDrawerOverlay').hidden=true;
   document.getElementById('vehicleDrawer').hidden=true;
@@ -5846,6 +5849,7 @@ function vehicleServiceStats(v){
   let status='none';
   if(lastPm && (dueDate || dueKm!==null)) status = ((dd!==null && dd<0) || (kmLeft!==null && kmLeft<=0)) ? 'overdue' : ((dd!==null && dd<=30) || (kmLeft!==null && kmLeft<=1000)) ? 'soon' : 'ok';
   else if(!lastPm && (iKm || iMo)) status='nolog';
+  else if(lastPm && iKm) status='noodo';
   const year=localToday().slice(0,4), inYear=recs.filter(r=>String(r.date).startsWith(year));
   const sum=(list,k)=>list.reduce((n,r)=>n+(svcNum(r[k])||0),0);
   const bd=recs.filter(r=>r.type==='Breakdown'), bdYear=inYear.filter(r=>r.type==='Breakdown');
@@ -5853,7 +5857,7 @@ function vehicleServiceStats(v){
     bdTotal:bd.length, bdYear:bdYear.length, lastBd:bd[bd.length-1]||null, downYear:sum(inYear,'downtime'), costYear:sum(inYear,'cost'), entriesYear:inYear.length,
     lastBatt:lastOf(['Battery replacement']), lastBattAny:lastOf(SVC_BATTERY), lastTyre:lastOf(['Tyre change']), lastTyreAny:lastOf(SVC_TYRE)};
 }
-const SVC_STATUS={overdue:{t:'Service overdue', cls:'danger'}, soon:{t:'Service due soon', cls:'warn'}, ok:{t:'On schedule', cls:'ok'}, nolog:{t:'No service logged', cls:'warn'}, none:{t:'No schedule', cls:'muted'}};
+const SVC_STATUS={overdue:{t:'Service overdue', cls:'danger'}, soon:{t:'Service due soon', cls:'warn'}, ok:{t:'On schedule', cls:'ok'}, nolog:{t:'No service logged', cls:'warn'}, noodo:{t:'Odometer needed', cls:'warn'}, none:{t:'No schedule', cls:'muted'}};
 function svcStatusBadge(v){ const st=vehicleServiceStats(v).status, b=SVC_STATUS[st]; return `<span class="badge ${b.cls}">${b.t}</span>`; }
 function monthsAgo(date){ const d=daysUntil(date); if(d===null) return ''; const n=-d; if(n<45) return n<=0?'today':`${n} day${n===1?'':'s'} ago`; const m=Math.round(n/30.44); return m<24?`${m} months ago`:`${(n/365.25).toFixed(1)} years ago`; }
 function fmtKm(n){ return n===null||n===undefined ? '—' : Math.round(n).toLocaleString()+' km'; }
@@ -5865,7 +5869,8 @@ function vehicleServiceSummaryHtml(v){
     if(s.kmLeft!==null) parts.push(s.kmLeft<=0?`${fmtKm(-s.kmLeft)} over`:`${fmtKm(s.kmLeft)} to go`);
     dueMain = s.dueDate || fmtKm(s.dueKm);
     dueSub = (s.dueDate && s.dueKm!==null ? `or at ${fmtKm(s.dueKm)} · ` : '') + parts.join(' · ') + ` · last ${s.lastPm.type==='General service'?'general service':'PM'} ${s.lastPm.date}`;
-  } else if(s.lastPm){ dueSub=`Last service ${s.lastPm.date} — set the interval below to see when the next one is due.`; }
+  } else if(s.status==='noodo'){ dueSub=`Add the odometer reading to the last service (${s.lastPm.date}) — or set a months interval — so the countdown can start.`; }
+  else if(s.lastPm){ dueSub=`Last service ${s.lastPm.date} — set the interval below to see when the next one is due.`; }
   const card=(k,val,sub,cls)=>`<div class="svc-card ${cls||''}"><div class="svc-k">${k}</div><div class="svc-v">${val}</div><div class="svc-s">${sub}</div></div>`;
   const batt = s.lastBatt ? `Replaced ${monthsAgo(s.lastBatt.date)}` : (s.lastBattAny ? 'Serviced' : '—');
   const battSub = s.lastBatt ? `on ${s.lastBatt.date}${s.lastBattAny && s.lastBattAny!==s.lastBatt ? ' · last check '+s.lastBattAny.date : ''}` : (s.lastBattAny ? `last check ${s.lastBattAny.date}` : 'no battery entry yet');
@@ -5948,7 +5953,7 @@ function renderVehicleTrashBody(){
       <div class="record-fields">
         <div class="rf"><span class="rf-k">Model</span><span class="rf-v">${esc(v.model||'—')}</span></div>
         <div class="rf"><span class="rf-k">Ownership</span><span class="rf-v">${esc(v.ownership||'Own')}</span></div>
-        <div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc((v.deletedAt||'').slice(0,10)||'—')}</span></div>
+        <div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc(isoToLocalDate(v.deletedAt||'')||'—')}</span></div>
       </div>
     </div>`).join('') : `<p class="wsub">Nothing in the trash.</p>`;
 }
@@ -6011,7 +6016,7 @@ const EMERGENCY_FIELDS = [
 ];
 function emergencyData(s){ return s.emergency || {}; }
 function mockDrillsFor(siteId){ return reportEntries.filter(e=>e.category==='mockDrill' && e.projectId===siteId).sort((a,b)=>(b.date||'').localeCompare(a.date||'')); }
-function erpDocFor(s){ return (s.hseDocs||[]).find(d=>/emergency response/i.test(d.type||'')); }
+function erpDocFor(s){ return currentRecs(s.hseDocs||[], 'hseDocs').filter(d=>/emergency response/i.test(d.type||'')).sort((a,b)=>String(b.expiry||b.date||'').localeCompare(String(a.expiry||a.date||'')))[0]; }
 // What is missing for this site to be emergency-ready (plain words)
 function emergencyGaps(s){
   const e=emergencyData(s), out=[];
@@ -6348,7 +6353,7 @@ function renderSiteTrashBody(){
       <div class="record-fields">
         <div class="rf"><span class="rf-k">Division</span><span class="rf-v">${esc(s.division||'Civil')}</span></div>
         <div class="rf"><span class="rf-k">Location</span><span class="rf-v">${esc(s.location||'—')}</span></div>
-        <div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc((s.deletedAt||'').slice(0,10)||'—')}</span></div>
+        <div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc(isoToLocalDate(s.deletedAt||'')||'—')}</span></div>
       </div>
     </div>`).join('') : `<p class="wsub">Nothing in the trash.</p>`;
 }
@@ -6465,6 +6470,7 @@ function openEquipDrawer(id){
   renderEquipDrawer();
 }
 function closeEquipDrawer(){
+  clearDirtyForms();
   activeEquipId=null; equipMoveOpen=false;
   document.getElementById('equipDrawerOverlay').hidden=true;
   document.getElementById('equipDrawer').hidden=true;
@@ -6559,7 +6565,7 @@ function renderEquipTrashBody(){
         <div class="rf"><span class="rf-k">Category</span><span class="rf-v">${esc(EQUIP_CATEGORIES[e.category]?EQUIP_CATEGORIES[e.category].label:e.category)}</span></div>
         <div class="rf"><span class="rf-k">Serial no.</span><span class="rf-v">${esc(e.serial||'—')}</span></div>
         <div class="rf"><span class="rf-k">Last location</span><span class="rf-v">${esc(locLabel(equipLoc(e)))}</span></div>
-        <div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc((e.deletedAt||'').slice(0,10)||'—')}</span></div>
+        <div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc(isoToLocalDate(e.deletedAt||'')||'—')}</span></div>
       </div>
     </div>`).join('') : `<p class="wsub">Nothing in the trash.</p>`;
 }
@@ -6632,7 +6638,14 @@ function renderSiteSummary(){
   el.innerHTML = auth.currentUser ? projectBreakdownHtml(siteFilters.division, key) : '';
 }
 
+// The KPI scorecard and Assurance plan read report entries, settings, incidents… — refresh them when those change
+function refreshLinkedPanels(){
+  const vis=id=>{ const el=document.getElementById(id); return el && !el.hidden; };
+  try{ if(vis('objectivesSection')) renderKpiPanel(); }catch(e){ console.warn(e); }
+  try{ if(vis('assuranceSection')) renderAssuranceAll(); }catch(e){ console.warn(e); }
+}
 function renderReportAll(){
+  setTimeout(refreshLinkedPanels, 0);
   renderReportProjectFilter();
   const key = reportPeriodKey();
   document.getElementById('reportPeriodCtl').innerHTML = periodCtlHtml('report');
@@ -6673,7 +6686,7 @@ function ccMonthLabel(k){ const [y,m]=k.split('-').map(Number); return ['Jan','F
 // refDay lets the client pack measure "at month end".
 function ccLtiStreak(division, project, refDay){
   const today=refDay || localToday();
-  const list=reportEntries.filter(e=>(division==='all' || e.division===division) && reportProjectMatch(e, project));
+  const list=liveReportEntries().filter(e=>(division==='all' || e.division===division) && reportProjectMatch(e, project));
   const firstDay=e=>{ const d=String(e.date||''); return d.length===7 ? d+'-01' : d.slice(0,10); };
   const valid=d=>/^\d{4}-\d{2}-\d{2}$/.test(d) && d<=today;
   const dates=list.map(firstDay).filter(valid).sort();
@@ -6694,7 +6707,12 @@ function ccLtiStreak(division, project, refDay){
   const carry = Number(appSettings.ltiBaseHours)||0, asOf=String(appSettings.ltiBaseHoursAsOf||'');
   let hours=0, carried=false;
   if(company && base && start===base && carry>0 && /^\d{4}-\d{2}$/.test(asOf) && asOf>=sMonth){
-    hours=carry; carried=true; for(const [k,h] of Object.entries(mhBy)) if(k>asOf) hours+=h;
+    carried=true;
+    if(upto>=asOf){ hours=carry; for(const [k,h] of Object.entries(mhBy)) if(k>asOf) hours+=h; }
+    else { // looking back to a month before the brought-forward figure: take off the hours logged after that month
+      let later=0; for(const e of list) if(e.category==='manHours'){ const k=entryMonth(e); if(k>upto && k<=asOf) later+=Number(e.hours)||0; }
+      hours=Math.max(0, carry-later);
+    }
   } else {
     for(const [k,h] of Object.entries(mhBy)){
       if(k>sMonth) hours+=h;
@@ -6762,8 +6780,9 @@ function renderCommandCentre(entries, m, key){
   const prevName = key.length===4 ? prevKey : ccMonthLabel(prevKey);
   let mhSub = prev.manHours ? `${m.manHours>=prev.manHours?'▲':'▼'} ${Math.abs((m.manHours-prev.manHours)/prev.manHours*100).toFixed(1)}% on ${prevName}` : `${periodWord}`;
   // corrective actions & permits (open now, for the projects in view)
-  const incActs=activeIncidents().filter(i=>{ const site=siteEquipmentList.find(s=>s.id===i.projectId); const div=(site&&site.division)||i.division||''; return (division==='all' || div===division) && (project==='all' || (project==='none' ? !i.projectId : i.projectId===project)); }).flatMap(i=>i.capa||[]).concat(division==='all' && project==='all' ? activeAudits().flatMap(a=>(a.findings||[]).filter(isActionFinding)) : activeAudits().filter(a=>{ const site=siteEquipmentList.find(s=>s.id===a.projectId); return (division==='all' || (site&&site.division)===division) && (project==='all' || (project==='none' ? !a.projectId : a.projectId===project)); }).flatMap(a=>(a.findings||[]).filter(isActionFinding)));
-  const allActs=projectRecordsFor('actions', division, '', project).concat(incActs), openActs=allActs.filter(x=>(x.status||'Open')!=='Closed'), overdueActs=openActs.filter(x=>complaintOverdueDays(x));
+  // every action in the tracker (same list as the Action Tracker), limited to the division / project in view
+  const inScope=a=>{ if(!a.projectId) return division==='all' && (project==='all' || project==='none'); const site=siteEquipmentList.find(x=>x.id===a.projectId); if(site && site.deleted) return false; return (division==='all' || (site&&site.division||'Civil')===division) && (project==='all' || a.projectId===project); };
+  const allActs=collectAllActions().filter(inScope), openActs=allActs.filter(x=>(x.status||'Open')!=='Closed'), overdueActs=openActs.filter(x=>complaintOverdueDays(x));
   const allPtw=projectRecordsFor('permits', division, '', project), ptwPeriod=allPtw.filter(x=>(x.date||'').startsWith(key));
   const ptwOpen=allPtw.filter(x=>(x.status||'Open')==='Open'), ptwStale=ptwOpen.filter(x=>permitOverdueDays(x));
   const ltif = m.manHours ? (m.lti*1000000/m.manHours) : null;
@@ -7041,7 +7060,7 @@ function reportProjectOptionsHtml(selected){
 function renderReportProjectFilter(){
   const sel=document.getElementById('reportProjectFilter'); if(!sel) return;
   const ids=new Set(activeSites().map(s=>s.id));
-  for(const e of reportEntries) if(e.projectId) ids.add(e.projectId);
+  for(const e of liveReportEntries()) if(e.projectId) ids.add(e.projectId);
   const opts=[...ids].map(id=>({id, name:projectName(id)})).sort((a,b)=>a.name.localeCompare(b.name));
   sel.innerHTML = `<option value="all">All projects</option><option value="none">No specific project</option>` + opts.map(o=>`<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('');
   if(reportProject!=='all' && reportProject!=='none' && !ids.has(reportProject)) reportProject='all';
@@ -7130,11 +7149,11 @@ async function buildReportPdf(division, month, project){
   h2('Headline figures');
   kv('Safe man-hours', m.manHours.toLocaleString());
   kv('Proactive activities logged', m.proactiveTotal);
-  kv('Safety events (near miss + LTI + incident + vehicle incident)', m.safetyEventsTotal);
+  kv('Safety events', `${m.safetyEventsTotal}  (near miss + LTI + incident + vehicle incident)`);
   kv('Vehicle KM driven', m.vehicleKm.toLocaleString());
 
   h2('Proactive activity mix');
-  for(const k of ACTIVITY_DONUT_KEYS){ kv(REPORT_CATEGORIES[k].label, m[k]); }
+  for(const k of ACTIVITY_DONUT_KEYS){ kv(REPORT_CATEGORIES[k].label, k==='induction' ? `${m.inductionSessions}${m.induction?` (${m.induction} people)`:''}` : m[k]); }
 
   h2('Safety performance');
   kv('Near miss', m.nearMiss);
@@ -7224,6 +7243,7 @@ function openDrawer(id){
   renderDrawer();
 }
 function closeDrawer(){
+  clearDirtyForms();
   activeWorkerId=null;
   document.getElementById('drawerOverlay').hidden=true;
   document.getElementById('drawer').hidden=true;
@@ -7255,7 +7275,7 @@ function renderTrashBody(){
       <div class="record-fields">
         <div class="rf"><span class="rf-k">Civil ID</span><span class="rf-v">${esc(w.civilId||'—')}</span></div>
         <div class="rf"><span class="rf-k">Trade</span><span class="rf-v">${esc(w.trade||'—')}</span></div>
-        <div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc((w.deletedAt||'').slice(0,10)||'—')}</span></div>
+        <div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc(isoToLocalDate(w.deletedAt||'')||'—')}</span></div>
       </div>
     </div>`).join('') : `<p class="wsub">Nothing in the trash.</p>`;
 }
@@ -7408,7 +7428,7 @@ function wireSignaturePad(){
     const scaleX=canvas.width/r.width, scaleY=canvas.height/r.height;
     return {x:(e.clientX-r.left)*scaleX, y:(e.clientY-r.top)*scaleY};
   }
-  function start(e){ drawing=true; hasDrawn=true; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); try{ canvas.setPointerCapture(e.pointerId); }catch(err){} }
+  function start(e){ const pf=document.getElementById('profileForm'); if(pf) pf.dataset.dirty='1'; drawing=true; hasDrawn=true; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); try{ canvas.setPointerCapture(e.pointerId); }catch(err){} }
   function move(e){ if(!drawing) return; const p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); }
   function end(){ drawing=false; }
   canvas.addEventListener('pointerdown', start);
@@ -7420,13 +7440,16 @@ function wireSignaturePad(){
   clearBtn.addEventListener('click', ()=>{ ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height); hasDrawn=false; });
   saveBtn.addEventListener('click', ()=>{
     if(!hasDrawn){ toast('Draw a signature first'); return; }
+    const wid=activeWorkerId;
     canvas.toBlob(async blob=>{
       if(!blob) return;
       try{
         const file=new File([blob], 'signature.png', {type:'image/png'});
         const att=await uploadToStorage(file);
-        const w=currentWorker(); if(!w) return;
-        await updateWorker(w.id, {signature:att});
+        const w=workers.find(x=>x.id===wid); if(!w){ if(att && att.path) deleteStorageFile(att.path); return; }
+        const old=w.signature;
+        if(!(await updateWorker(w.id, {signature:att}))) return;
+        if(old && old.path) deleteStorageFile(old.path);
         toast('Signature saved');
       }catch(e){ console.error(e); toast('Could not save signature'); }
     }, 'image/png');
@@ -7693,6 +7716,7 @@ async function buildProfilePdf(w){
   section('Competency assessments','competency',RECORD_TYPES.competency);
   section('Medical fitness & screening','medical',RECORD_TYPES.medical);
   section('Licenses & permits','licenses',RECORD_TYPES.licenses);
+  if(RECORD_TYPES.ppeIssued) section('PPE issued','ppeIssued',RECORD_TYPES.ppeIssued);
   section('Warning letters','warnings',RECORD_TYPES.warnings);
   section('Violations','violations',RECORD_TYPES.violations);
 
@@ -7778,7 +7802,7 @@ async function buildVehiclePdf(v){
     kv('Last service / PM', s.lastPm ? `${s.lastPm.date} (${s.lastPm.type})` : '');
     kv('Next service due', [s.dueDate, s.dueKm!==null?'at '+fmtKm(s.dueKm):''].filter(Boolean).join(' or ')+(s.status!=='none'?'  -  '+SVC_STATUS[s.status].t:''));
     kv('Breakdowns', `${s.bdYear} this year, ${s.bdTotal} in total${s.downYear?`, ${s.downYear} day(s) off-road this year`:''}`);
-    kv('Maintenance cost', `OMR ${s.costYear} this year`);
+    kv('Maintenance cost', `OMR ${s.costYear.toLocaleString(undefined,{maximumFractionDigits:3})} this year`);
   }
   section('Service & maintenance history','services',VEHICLE_RECORD_TYPES.services);
 
@@ -7978,7 +8002,11 @@ function importDate(v){
 function matchOption(value, options){
   const v=String(value||'').trim(); if(!v) return '';
   const lv=v.toLowerCase().replace('co2','co₂');
-  return options.find(o=>o.toLowerCase()===lv) || options.find(o=>o.toLowerCase().startsWith(lv) || lv.startsWith(o.toLowerCase().split(' ')[0])) || '';
+  const exact=options.find(o=>o.toLowerCase()===lv); if(exact) return exact;
+  const pre=options.filter(o=>lv.startsWith(o.toLowerCase())).sort((a,b)=>b.length-a.length)[0] || options.find(o=>o.toLowerCase().startsWith(lv)); if(pre) return pre;
+  // last resort: first word — but only when exactly one option starts with it
+  const fw=options.filter(o=>lv.split(' ')[0]===o.toLowerCase().split(' ')[0]);
+  return fw.length===1 ? fw[0] : '';
 }
 function mapTrade(v){
   const s=String(v||'').toLowerCase();
@@ -8037,7 +8065,7 @@ function validateImportRows(rows){
       const trade=mapTrade(txt('trade'));
       if(txt('trade') && trade===null) errors.push(`Trade / division "${txt('trade')}" not recognised`);
       label=txt('fullName'); key=txt('civilId'); dupKey=normKey(key);
-      doc={fullName:label, civilId:key, civilIdExpiry:dates.civilIdExpiry||'', nationality:txt('nationality'), dateOfBirth:dates.dateOfBirth||'', bloodGroup:txt('bloodGroup').toUpperCase(),
+      doc={fullName:label, civilId:key, civilIdExpiry:dates.civilIdExpiry||'', nationality:txt('nationality'), dateOfBirth:dates.dateOfBirth||'', bloodGroup:(BLOOD_GROUPS.find(b=>b.toLowerCase()===txt('bloodGroup').trim().toLowerCase())||''),
         mobileNumber:txt('mobileNumber'), designation:txt('designation'), trade:trade||'', contractor:txt('contractor'), dateOfJoining:dates.dateOfJoining||'',
         status:/^inact/i.test(txt('status'))?'inactive':'active', experienceGCCYears:txt('experienceGCCYears'), experienceOtherYears:txt('experienceOtherYears'),
         emergencyContactName:txt('emergencyContactName'), emergencyContactRelation:txt('emergencyContactRelation'), emergencyContactPhone:txt('emergencyContactPhone'),
@@ -8181,7 +8209,7 @@ async function downloadWorkerQrCard(){
   g.fillStyle='#ffffff'; g.fillRect(0,0,W,H);
   g.fillStyle='#b3121f'; g.font='800 26px Archivo, Arial, sans-serif'; g.textAlign='center'; g.fillText('BURHAN OIL & TRADE SERVICES', W/2, 52);
   g.drawImage(qr, (W-520)/2, 76, 520, 520);
-  g.fillStyle='#111111'; g.font='800 34px Archivo, Arial, sans-serif'; g.fillText(L.name, W/2, 650);
+  g.fillStyle='#111111'; let fs=34; g.font=`800 ${fs}px Archivo, Arial, sans-serif`; while(fs>18 && g.measureText(L.name).width>W-40){ fs-=2; g.font=`800 ${fs}px Archivo, Arial, sans-serif`; } g.fillText(L.name, W/2, 650, W-40);
   g.fillStyle='#444444'; g.font='24px "IBM Plex Mono", monospace'; g.fillText(L.civil, W/2, 694);
   g.font='24px "IBM Plex Sans", Arial, sans-serif'; g.fillText(L.trade, W/2, 734);
   g.fillStyle='#777777'; g.font='18px "IBM Plex Sans", Arial, sans-serif'; g.fillText('Scan to check HSE status (sign-in required)', W/2, 800);
@@ -8427,8 +8455,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const file=e.target.files[0]; if(!file) return;
     const target=e.target.dataset.attachFor;
     try{
+      const wid=activeWorkerId;
       const att=await uploadToStorage(file);
-      const w=currentWorker(); if(!w) return;
+      const w=workers.find(x=>x.id===wid); if(!w){ if(att && att.path) deleteStorageFile(att.path); return; }
       if(target==='photo' || target==='civilIdScan' || target==='signature'){
         const old=w[target];
         const saved=await updateWorker(w.id, {[target]:att});
@@ -8471,6 +8500,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       document.querySelectorAll('.sidenav-btn[data-section]').forEach(b=>b.classList.toggle('active', b===btn));
       const SECTIONS={workforce:'workforceSection', vehicles:'vehiclesSection', site:'siteSection', report:'reportSection', incidents:'incidentsSection', library:'librarySection', audits:'auditsSection', assurance:'assuranceSection', actions:'actionsSection', activity:'activitySection', ...Object.fromEntries(Object.keys(REG).map(k=>[k, k+'Section']))};
       for(const [k,id] of Object.entries(SECTIONS)) document.getElementById(id).hidden = section!==k;
+      if(section==='objectives' || section==='assurance') refreshLinkedPanels();
     });
   });
 
@@ -8644,8 +8674,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const file=e.target.files[0]; if(!file) return;
     const target=e.target.dataset.attachFor;
     try{
+      const vid=activeVehicleId;
       const att=await uploadToStorage(file);
-      const v=currentVehicle(); if(!v) return;
+      const v=vehicles.find(x=>x.id===vid); if(!v){ if(att && att.path) deleteStorageFile(att.path); return; }
       const [key,rid]=target.split(':');
       const arr=(v[key]||[]).slice();
       const idx=arr.findIndex(r=>r.id===rid);
@@ -8751,8 +8782,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const data={};
       e.target.querySelectorAll('[data-sfield]').forEach(el=>{ data[el.dataset.sfield]=el.value; });
       const divisionChanged = data.division && data.division!==(s.division||'Civil');
-      await updateSite(s.id,data);
-      if(divisionChanged) for(const r of (s.toolboxTalks||[])) db.collection('hseLogs').doc(tbtLogId(s.id, r.id)).update({division:data.division}).catch(()=>{});
+      if(!(await updateSite(s.id,data))) return;
+      if(divisionChanged){   // every Monthly Report entry of this project moves to the new division (toolbox talks, man-hours, incidents, observations…)
+        const ids=new Set(reportEntries.filter(x=>x.projectId===s.id).map(x=>x.id));
+        for(const r of (s.toolboxTalks||[])) ids.add(tbtLogId(s.id, r.id));
+        let moved=0; for(const id of ids){ try{ await db.collection('hseLogs').doc(id).update({division:data.division}); moved++; }catch(err){ console.warn('division move', id, err); } }
+        if(moved) toast(`Moved ${moved} report entr${moved===1?'y':'ies'} to ${divLabel(data.division)}`);
+      }
     }
     if(e.target.id==='recordForm'){
       e.preventDefault();
@@ -8774,8 +8810,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
         saved={id:genId(), ...data};
         arr.push(saved);
       }
+      const prevEditing=editingSiteRecordId, prevOpen=siteAddFormOpen;
       editingSiteRecordId=null; siteAddFormOpen=false;
-      await updateSiteArray(s,key,arr);
+      if(!(await updateSiteArray(s,key,arr))){ editingSiteRecordId=prevEditing; siteAddFormOpen=prevOpen; return; }
       if(key==='toolboxTalks' && saved) syncToolboxToReport(s, saved);
     }
   });
@@ -8859,7 +8896,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const removed=(s[key]||[]).find(r=>r.id===rid);
       const arr=(s[key]||[]).filter(r=>r.id!==rid);
       const saved=await updateSiteArray(s,key,arr);
-      if(saved && removed && removed.attachment && removed.attachment.path) deleteStorageFile(removed.attachment.path);
+      if(!saved) return;
+      if(removed && removed.attachment && removed.attachment.path) deleteStorageFile(removed.attachment.path);
       if(key==='toolboxTalks') removeToolboxFromReport(s.id, rid);
       return;
     }
@@ -8890,8 +8928,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const file=e.target.files[0]; if(!file) return;
     const target=e.target.dataset.attachFor;
     try{
+      const sid=activeSiteId;
       const att=await uploadToStorage(file);
-      const s=currentSite(); if(!s) return;
+      const s=siteEquipmentList.find(x=>x.id===sid); if(!s){ if(att && att.path) deleteStorageFile(att.path); return; }
       const [key,rid]=target.split(':');
       const arr=(s[key]||[]).slice();
       const idx=arr.findIndex(r=>r.id===rid);
