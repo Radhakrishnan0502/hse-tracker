@@ -3664,7 +3664,7 @@ function regRowYear(cfg, r){ return String(r[cfg.dateField||'date']||'').slice(0
 function regMatches(key, r){
   const cfg=REG[key], f=regState[key].f;
   if(r.deleted) return false;
-  if(cfg.yearFilter && f.year!=='all' && regRowYear(cfg,r)!==f.year) return false;
+  if(cfg.yearFilter && f.year!=='all' && regRowYear(cfg,r) && regRowYear(cfg,r)!==f.year) return false;   // records without a date show in every year
   if(f.status!=='all' && (cfg.statusOf?cfg.statusOf(r):r.status)!==f.status) return false;
   if(cfg.segs && f.seg!=='all'){ const s=cfg.segs.find(x=>x.key===f.seg); if(s && !s.match(r)) return false; }
   const q=f.q.trim().toLowerCase(); if(q && !cfg.searchText(r).toLowerCase().includes(q)) return false;
@@ -7361,8 +7361,10 @@ async function compressImageIfUseful(file){
     return out;
   }catch(e){ console.warn('compression skipped', e); return file; }
 }
+const MAX_UPLOAD_MB = 25;   // keep in step with storage.rules
 async function uploadToStorage(file){
   file = await compressImageIfUseful(file);
+  if(file && file.size > MAX_UPLOAD_MB*1024*1024){ const e=new Error('too big'); e.userMsg=`That file is ${fmtBytes(file.size)} — the limit is ${MAX_UPLOAD_MB} MB. Save it as a smaller PDF or photo and try again.`; throw e; }
   const safeName = (file.name||'file').replace(/[^a-zA-Z0-9._-]/g,'_');
   const path = 'attachments/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '_' + safeName;
   const ref = storage.ref().child(path);
@@ -7451,7 +7453,7 @@ function wireSignaturePad(){
         if(!(await updateWorker(w.id, {signature:att}))) return;
         if(old && old.path) deleteStorageFile(old.path);
         toast('Signature saved');
-      }catch(e){ console.error(e); toast('Could not save signature'); }
+      }catch(e){ console.error(e); toast((e&&e.userMsg)||'Could not save signature'); }
     }, 'image/png');
   });
 }
@@ -8474,7 +8476,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
         }
       }
       toast('File attached');
-    }catch(err){ console.error(err); toast('Upload failed'); }
+    }catch(err){ console.error(err); toast((err&&err.userMsg)||'Upload failed'); }
   });
 
   /* ---------------- light / dark switch (remembered on this device) ---------------- */
@@ -8687,7 +8689,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
         if(saved && old && old.path) deleteStorageFile(old.path);
       }
       toast('File attached');
-    }catch(err){ console.error(err); toast('Upload failed'); }
+    }catch(err){ console.error(err); toast((err&&err.userMsg)||'Upload failed'); }
   });
 
   /* ---------------- site: add / search / table ---------------- */
@@ -8941,7 +8943,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
         if(saved && old && old.path) deleteStorageFile(old.path);
       }
       toast('File attached');
-    }catch(err){ console.error(err); toast('Upload failed'); }
+    }catch(err){ console.error(err); toast((err&&err.userMsg)||'Upload failed'); }
   });
 
   /* ---------------- plant & equipment: tabs / add / filters / table ---------------- */
@@ -9042,7 +9044,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const saved=await updateEquip(item.id, {attachment:att});
       if(saved && old && old.path) deleteStorageFile(old.path);
       toast('File attached');
-    }catch(err){ console.error(err); toast('Upload failed'); }
+    }catch(err){ console.error(err); toast((err&&err.userMsg)||'Upload failed'); }
   });
 
   /* ---------------- plant & equipment: trash ---------------- */
@@ -9622,7 +9624,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const inp=e.target; if(!inp.matches('[data-aud-file]')) return; const a=currentAud(); if(!a || !inp.files[0]) return;
     const key=inp.dataset.audFile, old=a[key]; audBusy=true; toast('Uploading…');
     try{ const up=await uploadToStorage(inp.files[0]); audBusy=false; if(await updateAud(a.id, {[key]:up}, true)){ toast('File uploaded'); if(old&&old.path) deleteStorageFile(old.path); } }
-    catch(err){ console.error(err); toast('Upload failed'); } finally{ audBusy=false; renderAudDrawer(); }
+    catch(err){ console.error(err); toast((err&&err.userMsg)||'Upload failed'); } finally{ audBusy=false; renderAudDrawer(); }
   });
   $('audTrashBtn').addEventListener('click', openAudTrash);
   $('audTrashClose').addEventListener('click', closeAudTrash);
@@ -9728,11 +9730,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
       if(await regUpdate(activeReg, r.id, {deleted:true, deletedAt:new Date().toISOString()}, true)){ toast('Moved to trash'); closeRegDrawer(); } return; }
   });
   body.addEventListener('change', async e=>{
-    const inp=e.target, r=regCurrent(); if(!r) return;
+    const inp=e.target, r=regCurrent(), rk=activeReg; if(!r) return;
     if(inp.matches('[data-reg-file]') && inp.files[0]){ const key=inp.dataset.regFile, old=r[key]; regBusy=true; toast('Uploading…');
-      try{ const up=await uploadToStorage(inp.files[0]); regBusy=false; if(await regUpdate(activeReg, r.id, {[key]:up}, true)){ toast('File uploaded'); if(old&&old.path) deleteStorageFile(old.path, r.id); } } catch(err){ console.error(err); toast('Upload failed'); } finally{ regBusy=false; renderRegDrawer(); } }
+      try{ const up=await uploadToStorage(inp.files[0]); regBusy=false; if(await regUpdate(rk, r.id, {[key]:up}, true)){ toast('File uploaded'); if(old&&old.path) deleteStorageFile(old.path, r.id); } } catch(err){ console.error(err); toast((err&&err.userMsg)||'Upload failed'); } finally{ regBusy=false; renderRegDrawer(); } }
     if(inp.matches('[data-reg-files]') && inp.files.length){ const key=inp.dataset.regFiles; regBusy=true; toast('Uploading…');
-      try{ const ups=[]; for(const f of [...inp.files]) ups.push(await uploadToStorage(f)); regBusy=false; if(await regUpdate(activeReg, r.id, {[key]:(r[key]||[]).concat(ups)}, true)) toast(`${ups.length} file${ups.length===1?'':'s'} added`); } catch(err){ console.error(err); toast('Upload failed'); } finally{ regBusy=false; renderRegDrawer(); } }
+      try{ const ups=[]; for(const f of [...inp.files]) ups.push(await uploadToStorage(f)); regBusy=false; if(await regUpdate(rk, r.id, {[key]:(r[key]||[]).concat(ups)}, true)) toast(`${ups.length} file${ups.length===1?'':'s'} added`); } catch(err){ console.error(err); toast((err&&err.userMsg)||'Upload failed'); } finally{ regBusy=false; renderRegDrawer(); } }
   });
   // trash
   $('regTrashClose').addEventListener('click', closeRegTrash); $('regTrashOverlay').addEventListener('click', closeRegTrash);
