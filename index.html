@@ -443,6 +443,13 @@ label.chk input{width:auto; flex:none;}
 .cc-orb-big{font-family:var(--font-num); font-weight:700; font-size:58px; line-height:.95; font-variant-numeric:tabular-nums;}
 :root:not([data-theme="light"]) .cc-orb-big{text-shadow:0 0 16px var(--cc-red-glow), 0 0 26px var(--glow);}
 .cc-orb-s{font-size:11.5px; color:var(--ink-muted); margin-top:3px; line-height:1.3;}
+.cc-orb:has(.cc-orb-mh) .cc-orb-big{font-size:50px;}
+.cc-orb:has(.cc-orb-mh) .cc-orb-s{font-size:10.5px; margin-top:2px;}
+.cc-orb-mh{font-family:var(--font-num); font-weight:700; font-size:16px; line-height:1.1; margin-top:2px; font-variant-numeric:tabular-nums; color:var(--accent);}
+.cc-orb-mh span{display:block; font-family:var(--font-body); font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-muted);}
+.cc-title #ltiBaseEdit{margin-left:8px;}
+.lti-base{padding:12px 16px 14px; border-bottom:1px solid var(--line); background:var(--surface-2);}
+body.read-only #ltiBaseEdit, body.read-only #ltiBaseForm{display:none !important;}
 .cc-chart{padding:10px 12px 8px;}
 .cc-chart svg{display:block; width:100%; height:auto;}
 .cc-axis{fill:var(--ink-muted); font-family:var(--font-body); font-size:10px;}
@@ -1085,7 +1092,17 @@ body.read-only #ckTemplatesBtn{display:none !important;}
       <section class="cc" id="commandCentre" aria-label="HSE Command Centre">
         <div class="cc-stack">
           <div class="cc-panel">
-            <div class="cc-title">Safety performance <small id="ccScope"></small></div>
+            <div class="cc-title">Safety performance <small id="ccScope"></small><button type="button" class="btn btn-sm" id="ltiBaseEdit" hidden><svg class="ic" aria-hidden="true"><use href="#i-gear"/></svg> LTI record</button></div>
+            <form class="lti-base" id="ltiBaseForm" hidden>
+              <div class="subhead" style="margin-top:0;">Company LTI record before the tracker</div>
+              <div class="form-grid">
+                <label>Company last LTI date<input type="date" data-ltib="ltiBaseDate"></label>
+                <label>LTI-free man-hours brought forward<input type="number" min="0" step="1" data-ltib="ltiBaseHours" placeholder="optional, e.g. 1250000"></label>
+                <label>…up to the end of (month)<input type="month" data-ltib="ltiBaseHoursAsOf"></label>
+              </div>
+              <p class="wsub" style="margin:6px 0 0;">Enter the date of Burhan's last lost-time injury (or the date your LTI-free record starts). The counter uses it until a newer LTI is recorded in the tracker, then restarts from that LTI automatically. If you know the LTI-free man-hours up to a month end, enter them — man-hours logged in the tracker after that month are added on top.</p>
+              <div class="form-actions" style="margin-top:10px;"><button type="button" class="btn btn-sm" id="ltiBaseCancel">Cancel</button><button type="submit" class="btn btn-primary btn-sm">Save LTI record</button></div>
+            </form>
             <div class="cc-cluster" id="ccCluster"></div>
           </div>
           <div class="cc-panel">
@@ -4800,8 +4817,9 @@ async function buildClientPack(opts){
   // ---- 1 statistics ----
   const monthEnd=new Date(Number(year), Number(month.slice(5,7)), 0), monthEndKey=`${month}-${String(monthEnd.getDate()).padStart(2,'0')}`;
   const refDay = monthEndKey<localToday() ? monthEndKey : localToday();
-  const lastLti=reportEntries.filter(e=>e.category==='lti' && reportProjectMatch(e, proj) && String(e.date||'')<=refDay).map(e=>e.date).sort().pop();
-  const daysSince=lastLti?Math.max(0,Math.round((new Date(refDay+'T00:00:00Z')-new Date(String(lastLti).slice(0,10)+'T00:00:00Z'))/86400000)):null;
+  const ltiRec=ccLtiStreak('all', proj, refDay);
+  const lastLti=ltiRec && ltiRec.lastLti;
+  const daysSince=lastLti ? ltiRec.days : null;
   const fatal=i=>i.injuryClass==='Fatality' && inProj(i) && !i.deleted;
   const fatM=activeIncidents().filter(i=>fatal(i) && String(i.date||'').startsWith(month)).reduce((n,i)=>n+Math.max(1,(i.persons||[]).filter(p=>/fatal/i.test(p.treatment||p.injuryNature||'')).length||1),0);
   const fatY=activeIncidents().filter(i=>fatal(i) && String(i.date||'').startsWith(year) && String(i.date)<=monthEndKey).reduce((n,i)=>n+Math.max(1,(i.persons||[]).filter(p=>/fatal/i.test(p.treatment||p.injuryNature||'')).length||1),0);
@@ -4815,6 +4833,7 @@ async function buildClientPack(opts){
     ['LTIF (per 1,000,000 man-hours)', rate(m.lti, m.manHours), rate(y.lti, y.manHours)],
     ['TRCF (per 1,000,000 man-hours)', rate(m.lti+m.mti, m.manHours), rate(y.lti+y.mti, y.manHours)],
     ['Days since last LTI (at month end)', '', daysSince===null?'No LTI recorded':daysSince],
+    ['LTI-free man-hours (at month end)', '', ltiRec ? ltiRec.hours.toLocaleString() : '—'],
   ], [270, 110, 135], {right:true});
   // ---- 2 proactive ----
   const obsM=regActive('obs').filter(r=>String(r.date||'').startsWith(month) && inProj(r)), inspM=regActive('insp').filter(r=>String(r.date||'').startsWith(month) && inProj(r));
@@ -6634,19 +6653,40 @@ function ccMonthKeys(endKey, n){
 }
 function ccMonthLabel(k){ const [y,m]=k.split('-').map(Number); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]; }
 // Days since the last LTI (or since records began) + best streak, for the current division / project filter
-function ccLtiStreak(division, project){
+// Days and man-hours since the last LTI. Uses the LTIs recorded in the tracker AND the company's
+// last LTI before the tracker (Monthly Report → Safety performance → LTI record), whichever is later.
+// refDay lets the client pack measure "at month end".
+function ccLtiStreak(division, project, refDay){
+  const today=refDay || localToday();
   const list=reportEntries.filter(e=>(division==='all' || e.division===division) && reportProjectMatch(e, project));
   const firstDay=e=>{ const d=String(e.date||''); return d.length===7 ? d+'-01' : d.slice(0,10); };
-  const dates=list.map(firstDay).filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
-  if(!dates.length) return null;
-  const ltis=list.filter(e=>e.category==='lti').map(firstDay).filter(Boolean).sort();
-  const today=localToday();
+  const valid=d=>/^\d{4}-\d{2}-\d{2}$/.test(d) && d<=today;
+  const dates=list.map(firstDay).filter(valid).sort();
+  const base=/^\d{4}-\d{2}-\d{2}$/.test(appSettings.ltiBaseDate||'') && appSettings.ltiBaseDate<=today ? appSettings.ltiBaseDate : null;
+  const trackerLtis=list.filter(e=>e.category==='lti').map(firstDay).filter(valid).sort();
+  const ltis=[...new Set([...(base?[base]:[]), ...trackerLtis])].sort();
+  if(!dates.length && !ltis.length) return null;
   const dayDiff=(a,b)=>Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/86400000);
+  const since = ltis.length ? null : dates[0];
   const start = ltis.length ? ltis[ltis.length-1] : dates[0];
   const current = Math.max(0, dayDiff(start, today));
-  let best=current, prev=dates[0];
-  for(const d of ltis){ best=Math.max(best, dayDiff(prev, d)); prev=d; }
-  return {days:current, best, lastLti: ltis.length ? ltis[ltis.length-1] : null, since:dates[0]};
+  let best=current, prev=ltis.length ? ltis[0] : dates[0];
+  for(const d of ltis.slice(1)){ best=Math.max(best, dayDiff(prev, d)); prev=d; }
+  // LTI-free man-hours: monthly man-hours after the start (the LTI month is pro-rated by the days left after the LTI)
+  const upto=today.slice(0,7), sMonth=start.slice(0,7);
+  const mhBy={}; for(const e of list) if(e.category==='manHours'){ const k=entryMonth(e); if(k && k<=upto) mhBy[k]=(mhBy[k]||0)+(Number(e.hours)||0); }
+  const company = division==='all' && (!project || project==='all');
+  const carry = Number(appSettings.ltiBaseHours)||0, asOf=String(appSettings.ltiBaseHoursAsOf||'');
+  let hours=0, carried=false;
+  if(company && base && start===base && carry>0 && /^\d{4}-\d{2}$/.test(asOf) && asOf>=sMonth){
+    hours=carry; carried=true; for(const [k,h] of Object.entries(mhBy)) if(k>asOf) hours+=h;
+  } else {
+    for(const [k,h] of Object.entries(mhBy)){
+      if(k>sMonth) hours+=h;
+      else if(k===sMonth){ if(!ltis.length) hours+=h; else { const [y,m,d]=start.split('-').map(Number), dim=new Date(y, m, 0).getDate(); hours+=h*Math.max(0, dim-d)/dim; } }
+    }
+  }
+  return {days:current, best, lastLti: ltis.length ? ltis[ltis.length-1] : null, lastFromBase: !!(base && start===base && ltis.length), since, hours:Math.round(hours), carried, company};
 }
 function ccDial(v, size, stroke, label){
   const r=(size-stroke)/2-2, c=size/2, C=2*Math.PI*r, arc=C*0.75, col=ccStatusColor(v), to=v===null?arc:arc*(1-v/100);
@@ -6726,14 +6766,16 @@ function renderCommandCentre(entries, m, key){
   const ca={ico:ic('clipcheck'), label:'Open<br>actions', count:openActs.length, text:openActs.length, sub:overdueActs.length?`${overdueActs.length} overdue`:(openActs.length?'all on track':'nothing open'), st:overdueActs.length?'bad':(openActs.length?'watch':'good')};
   const streak=ccLtiStreak(division, project);
   const orbNum = streak ? streak.days : null;
-  const orbSub = !streak ? 'no entries yet' : streak.lastLti ? `last LTI ${streak.lastLti} · best ${streak.best} days` : `no LTI since ${streak.since}`;
+  const orbSub = !streak ? 'no entries yet' : streak.lastLti ? `last LTI ${streak.lastLti}${streak.best>streak.days?` · best ${streak.best} days`:''}` : `no LTI since ${streak.since}`;
+  const orbMh = streak ? `<div class="cc-orb-mh" title="${streak.carried?'Includes the LTI-free man-hours brought forward in the LTI record':'Man-hours logged in the tracker since the last LTI'}">${streak.hours.toLocaleString()}<span>LTI-free man-hours</span></div>` : '';
   const scope = [division==='all'?'All divisions':divLabel(division), project==='all'?'':(project==='none'?'no project':projectName(project))].filter(Boolean).join(' · ');
   document.getElementById('ccScope').textContent = `${scope} · ${periodLabel(key)}`;
+  { const lb=document.getElementById('ltiBaseEdit'); if(lb) lb.hidden = !canEdit() || !document.getElementById('ltiBaseForm').hidden; }
   document.getElementById('ccCluster').innerHTML = `
     <div class="cc-col">${tilesL.map(ccTile).join('')}</div>
     <div class="cc-mid">${ccTile(mh)}
       <div class="cc-orb"><span class="cc-ring r4"></span><span class="cc-ring r1"></span><span class="cc-ring r2"></span><span class="cc-ring r3"></span><span class="cc-core"></span>
-        <div class="cc-orb-txt"><div class="cc-orb-k">Days without LTI</div><div class="cc-orb-big" ${orbNum!==null?`data-cc-count="${orbNum}"`:''}>${orbNum!==null?orbNum:'—'}</div><div class="cc-orb-s">${esc(orbSub)}</div></div>
+        <div class="cc-orb-txt"><div class="cc-orb-k">Days without LTI</div><div class="cc-orb-big" ${orbNum!==null?`data-cc-count="${orbNum}"`:''}>${orbNum!==null?orbNum:'—'}</div>${orbMh}<div class="cc-orb-s">${esc(orbSub)}</div></div>
       </div>${ccTile(ca)}</div>
     <div class="cc-col">${tilesR.map(ccTile).join('')}</div>`;
   // 12-month trends ending at the period in view
@@ -9429,6 +9471,25 @@ document.addEventListener('DOMContentLoaded', ()=>{
         toast('Incident permanently removed');
       }catch(err){ console.error(err); toast('Could not remove — '+((err&&err.code)||'error')); }
     }
+  });
+
+  // ---- company LTI record (baseline before the tracker) ----
+  document.getElementById('ltiBaseEdit').addEventListener('click', ()=>{
+    const f=document.getElementById('ltiBaseForm');
+    f.querySelectorAll('[data-ltib]').forEach(el=>{ el.value=appSettings[el.dataset.ltib]||''; });
+    f.hidden=false; document.getElementById('ltiBaseEdit').hidden=true; f.querySelector('input').focus();
+  });
+  document.getElementById('ltiBaseCancel').addEventListener('click', ()=>{ document.getElementById('ltiBaseForm').hidden=true; document.getElementById('ltiBaseEdit').hidden=!canEdit(); });
+  document.getElementById('ltiBaseForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const d={}; e.target.querySelectorAll('[data-ltib]').forEach(el=>{ d[el.dataset.ltib]=el.value.trim(); });
+    if(d.ltiBaseDate && d.ltiBaseDate>localToday()){ toast('The last LTI date cannot be in the future'); return; }
+    if(d.ltiBaseHours && !(Number(d.ltiBaseHours)>=0)){ toast('Enter the man-hours as a number'); return; }
+    if(d.ltiBaseHours && !d.ltiBaseHoursAsOf){ toast('Choose the month the brought-forward man-hours run up to'); return; }
+    if(d.ltiBaseHours && d.ltiBaseDate && d.ltiBaseHoursAsOf<d.ltiBaseDate.slice(0,7)){ toast('The man-hours month must be on or after the last LTI date'); return; }
+    if(d.ltiBaseHours && !d.ltiBaseDate){ toast('Enter the company last LTI date too'); return; }
+    d.ltiBaseHours = d.ltiBaseHours ? String(Math.round(Number(d.ltiBaseHours))) : '';
+    if(await saveSettings('app', d)){ e.target.hidden=true; document.getElementById('ltiBaseEdit').hidden=!canEdit(); }
   });
 
   // ---- HSE targets ----
