@@ -870,7 +870,7 @@ body.read-only #ckTemplatesBtn{display:none !important;}
             <tbody id="matrixRows"><tr><td class="empty-state">Sign in to load the training matrix…</td></tr></tbody>
           </table>
         </div>
-        <p class="wsub" style="margin-top:8px;">Each worker needs the trainings of <strong>all</strong> their roles (main role + extra roles, set in their Profile). “—” means not required for that person. A training counts when the course name on the worker's Training record contains the required name — e.g. “Working at Height – Level 2” counts for “Working at Height”. Click a row to open that worker's Training tab.</p>
+        <p class="wsub" style="margin-top:8px;">Each worker needs the trainings of their <strong>Designation</strong> plus any <strong>extra roles</strong> (set in their Profile). “—” means not required for that person. A training counts when the course name on the worker's Training record contains the required name — e.g. “Working at Height – Level 2” counts for “Working at Height”. Click a row to open that worker's Training tab.</p>
       </div>
     </main>
 
@@ -1826,11 +1826,16 @@ function tradeSelectHtml(current){
   return `<option value="">Select…</option>` + opts.map(o=>`<option value="${esc(o)}" ${o===current?'selected':''}>${esc(o)}</option>`).join('');
 }
 
+// Batch 22: inductions are either the company onboarding induction or a project (site) induction
+const INDUCTION_TYPES = ['Onboarding induction','Project induction'];
+function inductionTypeOf(r){ if(INDUCTION_TYPES.includes(r.inductionType)) return r.inductionType; return /onboard|company|general/i.test(String(r.site||'')) ? 'Onboarding induction' : (r.site ? 'Project induction' : ''); }
+function inductionTitle(r){ const t=inductionTypeOf(r); return t==='Onboarding induction' ? 'Onboarding induction' : t==='Project induction' ? `Project induction — ${r.site||'project not set'}` : (r.site||'Induction'); }
 const RECORD_TYPES = {
   inductions:{
     title:'Induction records', addLabel:'+ Add induction record', hasExpiry:true, hasAttachment:true, attachLabel:'induction certificate',
     fields:[
-      {key:'site', label:'Site / project', type:'text', required:true, placeholder:'e.g. Marina Tower Phase 2'},
+      {key:'inductionType', label:'Induction type', type:'select', required:true, options:INDUCTION_TYPES},
+      {key:'site', label:'Project', type:'select', get options(){ return activeSites().map(x=>x.siteName||'Project').filter(Boolean); }, showWhen:['Project induction']},
       {key:'date', label:'Induction date', type:'date', required:true},
       {key:'expiry', label:'Valid until', type:'date'},
       {key:'conductedBy', label:'Conducted by', type:'text', placeholder:'e.g. HSE Officer name'},
@@ -2322,9 +2327,13 @@ function trainingCatalogue(){
   trainingRoles().forEach(r=>(r.trainings||[]).forEach(add));
   return out;
 }
+// Batch 22: the worker's Designation IS their main role (picked from the role list); extra roles are ticked on top.
+// (Workers saved in Batch 20–21 may still have a separate mainRole — it is used only if the designation isn't in the role list.)
+function knownRole(x){ const k=roleKey(x); return k ? roleNamesList().find(r=>roleKey(r)===k) : undefined; }
+function workerMainRole(w){ return knownRole(w && w.designation) || knownRole(w && w.mainRole) || ''; }
 function workerRoles(w){
   const out=[], seen=new Set();
-  for(const x of [w && w.mainRole, ...((w && w.extraRoles)||[])]){ const n=String(x||'').trim(), k=roleKey(n); if(n && !seen.has(k)){ seen.add(k); out.push(n); } }
+  for(const x of [workerMainRole(w), ...((w && w.extraRoles)||[])]){ const n=String(x||'').trim(), k=roleKey(n); if(n && !seen.has(k)){ seen.add(k); out.push(n); } }
   return out;
 }
 function requiredForWorker(w){
@@ -2378,7 +2387,7 @@ function renderMatrix(){
   divSel.value = opts.includes(matrixFilters.division) ? matrixFilters.division : 'all';
   matrixFilters.division=divSel.value;
   const roles=roleNamesList();
-  roleSel.innerHTML='<option value="all">All roles</option>'+roles.map(r=>`<option value="${esc(r)}">${esc(r)}</option>`).join('')+'<option value="__none">No role set</option>';
+  roleSel.innerHTML='<option value="all">All roles</option>'+roles.map(r=>`<option value="${esc(r)}">${esc(r)}</option>`).join('')+'<option value="__none">No role / designation not in list</option>';
   roleSel.value = (matrixFilters.role==='__none' || roles.includes(matrixFilters.role)) ? matrixFilters.role : 'all';
   matrixFilters.role=roleSel.value;
   const head=document.getElementById('matrixHead'), body=document.getElementById('matrixRows'), tiles=document.getElementById('matrixTiles');
@@ -2423,14 +2432,14 @@ function renderMatrix(){
   ].map(t=>`<div class="tile" style="--tile-accent:var(${t.cat})"><div class="tile-head"><div class="tile-icon">${t.icon}</div><div class="tile-label">${t.label}</div></div><div class="tile-num ${t.cls}">${t.num}</div><div class="tile-sub">${t.sub}</div></div>`).join('');
   if(noRole.length && matrixFilters.role!=='__none'){
     note.hidden=false;
-    note.innerHTML=`${ic('alert')} <strong>${noRole.length} active worker${noRole.length===1?' has':'s have'} no role yet</strong> — ${noRole.length===1?'their':'their'} trainings can't be checked. Open the worker → Profile → <em>Main role / Extra roles</em>. <button type="button" class="btn btn-sm btn-ghost" data-mx-norole="1">Show them</button>`;
+    note.innerHTML=`${ic('alert')} <strong>${noRole.length} active worker${noRole.length===1?' has':'s have'} no role yet</strong> — ${noRole.length===1?'their':'their'} trainings can't be checked. Open the worker → Profile → pick their <em>Designation</em> (and any Extra roles). <button type="button" class="btn btn-sm btn-ghost" data-mx-norole="1">Show them</button>`;
   }
   if(matrixFilters.gaps==='gaps') rows=rows.filter(r=>r.cells.some(c=>c && c.st.status!=='valid'));
   rows.sort((a,b)=>(a.w.trade||'').localeCompare(b.w.trade||'') || (a.w.fullName||'').localeCompare(b.w.fullName||''));
   head.innerHTML = `<tr><th class="mx-sticky">Worker</th>${cols.map(t=>`<th class="mx-col">${esc(t)}</th>`).join('')}</tr>`;
   if(!rows.length){ body.innerHTML=`<tr><td class="empty-state" colspan="${cols.length+1}">${matrixFilters.gaps==='gaps' ? ic('checkcircle')+' No gaps — every worker shown has all required trainings in date.' : 'No active workers match.'}</td></tr>`; return; }
   body.innerHTML = rows.map(r=>`<tr data-mx-worker="${r.w.id}">
-      <td class="mx-sticky"><div class="wname">${esc(r.w.fullName||'—')}</div><div class="wsub">${r.roles.length ? esc(r.roles.join(' + ')) : '<span class="badge muted">No role set</span>'}${r.w.trade?' · '+esc(r.w.trade):''}</div></td>
+      <td class="mx-sticky"><div class="wname">${esc(r.w.fullName||'—')}</div><div class="wsub">${r.roles.length ? esc(r.roles.join(' + ')) : `<span class="badge muted">${esc(r.w.designation?r.w.designation+' — not in role list':'No designation')}</span>`}${r.w.trade?' · '+esc(r.w.trade):''}</div></td>
       ${r.cells.map((c,i)=>`<td class="mx-cell"${c && c.st.status!=='valid' ? ` data-mx-train="${esc(cols[i])}" title="Click to add this training record"` : ''}>${c ? matrixCellHtml(c.st, c.roles) : matrixCellHtml(null)}</td>`).join('')}
     </tr>`).join('') + (cols.length ? '' : `<tr><td class="empty-state" colspan="1">No required trainings for the roles shown — tick them in <strong>Roles &amp; required trainings</strong>.</td></tr>`);
 }
@@ -2476,7 +2485,7 @@ function renderRoleRequirements(q){
     {label:'Workers with a role', num:activeWorkers().filter(w=>(w.status||'active')==='active' && workerRoles(w).length).length, sub:'active workers', cat:'--cat-3', icon:ic('checkcircle')},
     {label:'No role yet', num:noRole, cls:noRole?'warn':'ok', sub:'set in each worker\'s Profile', cat:'--cat-2', icon:ic('alert')},
   ].map(t=>`<div class="tile" style="--tile-accent:var(${t.cat})"><div class="tile-head"><div class="tile-icon">${t.icon}</div><div class="tile-label">${t.label}</div></div><div class="tile-num ${t.cls||''}">${t.num}</div><div class="tile-sub">${t.sub}</div></div>`).join('');
-  if(noRole){ note.hidden=false; note.innerHTML=`${ic('alert')} Next step: give each worker their role(s) — open the worker → <strong>Profile</strong> → <em>Main role / Extra roles</em> → Save. The <strong>Workers</strong> view then shows who has which training.`; }
+  if(noRole){ note.hidden=false; note.innerHTML=`${ic('alert')} Next step: give each worker their role(s) — open the worker → <strong>Profile</strong> → pick their <em>Designation</em> (and any Extra roles) → Save. The <strong>Workers</strong> view then shows who has which training.`; }
   const cols=cat.filter(t=>!q || t.toLowerCase().includes(q) || roles.some(r=>r.name.toLowerCase().includes(q)));
   const rows=roles.filter(r=>!q || r.name.toLowerCase().includes(q) || (r.trainings||[]).some(t=>String(t).toLowerCase().includes(q)));
   head.innerHTML=`<tr><th class="mx-sticky">Role</th><th class="mx-col">Workers</th>${cols.map(t=>`<th class="mx-col">${esc(t)}</th>`).join('')}</tr>`;
@@ -2523,7 +2532,7 @@ function renderReqPanel(){
   const names=[...new Set(activeWorkers().flatMap(w=>(w.trainings||[]).map(r=>String(r.name||'').trim())).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
   const cat=reqEdit.catalogue;
   panel.innerHTML = `<h3>Roles &amp; required trainings</h3>
-    <p class="wsub" style="margin:-6px 0 10px;"><strong>1.</strong> List the trainings. <strong>2.</strong> Add your company roles (designations). <strong>3.</strong> Tick the trainings each role needs. A person with more than one role — e.g. a driver who also works as a scaffolder — needs the trainings of all their roles. Training records are matched by course name (“Working at Height – Level 2” counts for “Working at Height”).</p>
+    <p class="wsub" style="margin:-6px 0 10px;"><strong>1.</strong> List the trainings. <strong>2.</strong> Add your company roles — these become the <em>Designation</em> pick-list on every worker's profile. <strong>3.</strong> Tick the trainings each role needs. A person with more than one role — e.g. a driver who also works as a scaffolder — needs the trainings of all their roles. Training records are matched by course name (“Working at Height – Level 2” counts for “Working at Height”).</p>
     <form id="reqForm">
       <div class="subhead" style="margin-top:0;">Trainings (${cat.length})</div>
       <div class="req-chips">${cat.length ? cat.map((t,i)=>`<span class="req-chip">${esc(t)}<button type="button" data-cat-remove="${i}" aria-label="Remove ${esc(t)}" title="Remove">${ic('close')}</button></span>`).join('') : '<span class="wsub">No trainings yet — add them below, or use the suggested list.</span>'}</div>
@@ -2573,31 +2582,54 @@ async function saveReqEditor(){
   if(renames.size){
     const batch=db.batch(); let n=0;
     for(const w of workers){
-      const main=renames.get(roleKey(w.mainRole)), ex=(w.extraRoles||[]);
+      const des=renames.get(roleKey(w.designation)), main=renames.get(roleKey(w.mainRole)), ex=(w.extraRoles||[]);
       const newEx=ex.map(x=>renames.get(roleKey(x))||x);
-      if(main || newEx.some((x,i)=>x!==ex[i])){ batch.update(db.collection('workers').doc(w.id), stamp({mainRole:main||w.mainRole||'', extraRoles:newEx})); n++; }
+      if(des || main || newEx.some((x,i)=>x!==ex[i])){ const upd={extraRoles:newEx}; if(des) upd.designation=des; if(main) upd.mainRole=main; batch.update(db.collection('workers').doc(w.id), stamp(upd)); n++; }
       if(n>=450) break;
     }
     if(n){ try{ await batch.commit(); toast(`Role renamed on ${n} worker${n===1?'':'s'}`); }catch(e){ console.error(e); toast('Roles saved, but the workers could not be updated — re-pick the renamed role in their profiles'); } }
   }
   return true;
 }
-// Worker profile: main role + extra roles
+// Worker profile: Designation (= main role, from the role list) + extra roles
+function designationFieldHtml(w){
+  const roles=roleNamesList(), d=String(w.designation||'').trim();
+  if(!roles.length) return `<label>Designation<input data-field="designation" value="${esc(d)}" placeholder="e.g. Foreman, Supervisor"></label>`;
+  const sel=workerMainRole(w) || d;
+  const opts=roles.slice(); if(sel && !knownRole(sel)) opts.unshift(sel);
+  return `<label>Designation (role)<select data-field="designation"><option value="">Select…</option>${opts.map(r=>`<option value="${esc(r)}" ${roleKey(r)===roleKey(sel)?'selected':''}>${esc(r)}${knownRole(r)?'':' — not in the role list'}</option>`).join('')}</select></label>`;
+}
 function workerRolesFormHtml(w){
   const roles=roleNamesList();
-  if(!roles.length) return `<div class="span-all wsub">Roles: none set up yet${canEdit()?' — add them in <strong>Workforce → Training matrix → Roles &amp; required trainings</strong>, then pick this person\'s role(s) here.':'.'}</div>`;
-  const main=String(w.mainRole||'').trim(), extra=new Set((w.extraRoles||[]).map(roleKey));
-  const mainOpts=roles.slice(); if(main && !roles.some(r=>roleKey(r)===roleKey(main))) mainOpts.unshift(main);
-  const extraOpts=roles.slice(); for(const x of (w.extraRoles||[])) if(x && !extraOpts.some(r=>roleKey(r)===roleKey(x))) extraOpts.push(x);
-  return `<label>Main role<select data-field="mainRole"><option value="">Select…</option>${mainOpts.map(r=>`<option value="${esc(r)}" ${roleKey(r)===roleKey(main)?'selected':''}>${esc(r)}</option>`).join('')}</select></label>
-    <div class="span-all"><div class="pick-label">Extra roles <span class="wsub">— tick every other job this person also does (e.g. a driver who also works as a scaffolder). Their training needs add up.</span></div>
-      <div class="cause-list">${extraOpts.map(r=>`<label class="chk"><input type="checkbox" data-extra-role value="${esc(r)}" ${extra.has(roleKey(r))?'checked':''}>${esc(r)}</label>`).join('')}</div></div>`;
+  if(!roles.length) return `<div class="span-all wsub">Roles: none set up yet${canEdit()?' — add them in <strong>Workforce → Training matrix → Roles &amp; required trainings</strong>; the Designation then becomes a pick-list of those roles.':'.'}</div>`;
+  const extra=new Set((w.extraRoles||[]).map(roleKey));
+  const main=roleKey(workerMainRole(w));
+  const opts=roles.filter(r=>roleKey(r)!==main); for(const x of (w.extraRoles||[])) if(x && roleKey(x)!==main && !opts.some(r=>roleKey(r)===roleKey(x))) opts.push(x);
+  return `<div class="span-all"><div class="pick-label">Extra roles <span class="wsub">— only if this person also does another job (e.g. a driver who also works as a scaffolder). Their training needs add up with the Designation.</span></div>
+      <div class="cause-list">${opts.map(r=>`<label class="chk"><input type="checkbox" data-extra-role value="${esc(r)}" ${extra.has(roleKey(r))?'checked':''}>${esc(r)}</label>`).join('')}</div></div>`;
+}
+// Worker → Induction tab: onboarding induction + induction for the project they are assigned to
+function workerInductionStatusHtml(w){
+  const recs=(w.inductions||[]).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  const line=(label, r, emptyText)=>{
+    let badge, txt;
+    if(!r){ badge='<span class="badge danger">Missing</span>'; txt=emptyText; }
+    else { const st=r.expiry ? statusFor(r.expiry) : 'valid'; badge=badgeHtml(st); txt=`done ${esc(r.date||'—')}${r.expiry?` · valid until ${esc(r.expiry)}`:''}${r.conductedBy?` · by ${esc(r.conductedBy)}`:''}`; }
+    return `<div class="rf"><span class="rf-k">${badge}</span><span class="rf-v"><strong>${esc(label)}</strong> · ${txt}</span></div>`;
+  };
+  const onb=recs.find(r=>inductionTypeOf(r)==='Onboarding induction');
+  const site=w.projectId ? siteEquipmentList.find(x=>x.id===w.projectId && !x.deleted) : null;
+  let proj='';
+  if(site){ const nm=renewNorm(site.siteName); const r=recs.find(x=>inductionTypeOf(x)==='Project induction' && renewNorm(x.site)===nm); proj=line(`Project induction — ${site.siteName||'project'}`, r, 'not recorded for the project this worker is assigned to'); }
+  else { const last=recs.find(x=>inductionTypeOf(x)==='Project induction');
+    proj = last ? line(`Last project induction — ${last.site||'project'}`, last, '') : `<div class="rf"><span class="rf-k"><span class="badge muted">—</span></span><span class="rf-v"><strong>Project induction</strong> · not assigned to a project</span></div>`; }
+  return `<div class="panel req-box" style="margin-bottom:16px;"><div class="subhead" style="margin-top:0;">Induction required</div>${line('Onboarding induction', onb, 'no onboarding induction recorded')}${proj}</div>`;
 }
 // Worker → Training tab: what their roles require and where they stand
 function workerRequiredHtml(w){
   if(!trainingRoles().length) return '';
   const roles=workerRoles(w);
-  if(!roles.length) return `<div class="notice" style="margin-bottom:14px;">${ic('alert')} No role set for this worker — pick their main role (and any extra roles) in the <strong>Profile</strong> tab to see which trainings they need.</div>`;
+  if(!roles.length) return `<div class="notice" style="margin-bottom:14px;">${ic('alert')} No role for this worker yet — pick their <strong>Designation</strong> from the role list (and any extra roles) in the <strong>Profile</strong> tab to see which trainings they need.</div>`;
   const c=workerTrainingCompliance(w);
   if(!c.need) return `<p class="wsub" style="margin:0 0 14px;">Roles: <strong>${esc(roles.join(' + '))}</strong> — no trainings are set as required for these roles yet.</p>`;
   return `<div class="panel req-box" style="margin-bottom:16px;">
@@ -7570,7 +7602,7 @@ function renderDrawerBody(){
   const body=document.getElementById('drawerBody');
   if(activeTab==='profile'){ body.innerHTML=profileTabHtml(w); wireSignaturePad(); return; }
   const cfg=RECORD_TYPES[activeTab];
-  body.innerHTML=(activeTab==='trainings' ? workerRequiredHtml(w) : '') + recordTabHtml(w, activeTab, cfg) + (activeTab==='trainings' ? workerToolboxHtml(w) : '');
+  body.innerHTML=(activeTab==='trainings' ? workerRequiredHtml(w) : activeTab==='inductions' ? workerInductionStatusHtml(w) : '') + recordTabHtml(w, activeTab, cfg) + (activeTab==='trainings' ? workerToolboxHtml(w) : '');
 }
 function toolboxTalksForWorker(wid){
   const out=[];
@@ -7756,15 +7788,14 @@ function profileTabHtml(w){
 
     <div class="subhead">Employment</div>
     <div class="form-grid">
-      <label>Designation<input data-field="designation" value="${esc(w.designation||'')}" placeholder="e.g. Foreman, Supervisor"></label>
+      ${designationFieldHtml(w)}
       <label>Trade / occupation *<select data-field="trade" required>${tradeSelectHtml(w.trade||'')}</select></label>
       <label>Subcontractor / company<input data-field="contractor" value="${esc(w.contractor||'')}"></label>
       <label>Date of joining<input type="date" data-field="dateOfJoining" value="${esc(w.dateOfJoining||'')}"></label>
       <label>Employment status<select data-field="status"><option value="active" ${(w.status||'active')==='active'?'selected':''}>Active</option><option value="inactive" ${w.status==='inactive'?'selected':''}>Inactive</option></select></label>
     </div>
 
-    <div class="subhead">Roles &amp; training needs</div>
-    <div class="form-grid">${workerRolesFormHtml(w)}</div>
+    <div class="form-grid" style="margin-top:10px;">${workerRolesFormHtml(w)}</div>
 
     <div class="subhead">Work experience</div>
     <div class="form-grid">
@@ -7838,6 +7869,7 @@ function recordTabHtml(w,key,cfg){
     const resultBadge = r.result==='Unfit' ? `<span class="badge danger">Unfit</span>` : (r.result==='Fit with restrictions' ? `<span class="badge warn">Fit with restrictions</span>` : (r.result==='Fit' ? `<span class="badge ok">Fit</span>` : ''));
     const expiryBadge = cfg.cardBadge ? cfg.cardBadge(r) : cfg.hasExpiry ? (isRenewed(w[key], key, r) ? `<span class="badge muted" title="A newer record replaces this one">Renewed</span>` : r.expiry? badgeHtml(statusFor(r.expiry)) : `<span class="badge muted">No expiry set</span>`) : (r.level==='Final warning' ? `<span class="badge danger">Final warning</span>` : (r.severity? `<span class="badge ${r.severity==='Critical'?'danger':r.severity==='Major'?'warn':'muted'}">${esc(r.severity)}</span>` : ''));
     const fieldsHtml = cfg.fields.slice(1).map(f=>{
+      if(key==='inductions' && f.key==='site') return '';   // already in the title
       if(f.type==='workers'){
         const ids=r[f.key]||[]; if(!ids.length) return '';
         const names=ids.map(id=>{ const x=workers.find(q=>q.id===id); return x ? (x.fullName||'—') : '(removed worker)'; });
@@ -7848,7 +7880,7 @@ function recordTabHtml(w,key,cfg){
     const attach = cfg.hasAttachment ? attachmentBlock(w,key,r,cfg.attachLabel) : '';
     return `<div class="record-card">
       <div class="record-card-top">
-        <div class="record-card-title">${esc(r[titleField]||'')} ${key==='medical'?resultBadge:''} ${expiryBadge}</div>
+        <div class="record-card-title">${esc(key==='inductions' && cfg===RECORD_TYPES.inductions ? inductionTitle(r) : (r[titleField]||''))} ${key==='medical'?resultBadge:''} ${expiryBadge}</div>
         <div class="record-card-actions">
           <button type="button" class="icon-btn" data-edit="${key}:${r.id}" aria-label="Edit">${ic('pencil')}</button>
           <button type="button" class="icon-btn danger" data-del="${key}:${r.id}" data-armed="0" aria-label="Delete">${ic('trash')}</button>
@@ -7861,12 +7893,13 @@ function recordTabHtml(w,key,cfg){
 
   const editing = editingRecordId ? recs.find(r=>r.id===editingRecordId) : null;
   const formFields = cfg.fields.map(f=>{
-    const val = editing ? (editing[f.key]||'') : (key==='trainings' && recordPrefill && recordPrefill[f.key]!=null ? recordPrefill[f.key] : (f.default||''));
+    const val = editing ? (editing[f.key] || (key==='inductions' && f.key==='inductionType' ? inductionTypeOf(editing) : '')) : (recordPrefill && recordPrefill.__tab===key && recordPrefill[f.key]!=null ? recordPrefill[f.key] : (f.default||''));
     if(f.type==='workers') return workerPickFieldHtml(f, editing, w);
     if(key==='trainings' && f.key==='name'){ const names=trainingCatalogue(); return `<label>${esc(f.label)} *<input type="text" data-field="name" value="${esc(val)}" required list="reqTrainingNames" placeholder="${esc(f.placeholder||'')}"><datalist id="reqTrainingNames">${names.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist></label>`; }
-    const sw = f.showWhen ? ` data-show-when="${esc(f.showWhen.join('|'))}" ${f.showWhen.includes(editing?editing[cfg.fields[0].key]:'')?'':'hidden'}` : '';
+    const firstVal = editing ? (editing[cfg.fields[0].key] || (key==='inductions' ? inductionTypeOf(editing) : '')) : '';
+    const sw = f.showWhen ? ` data-show-when="${esc(f.showWhen.join('|'))}" ${f.showWhen.includes(firstVal)?'':'hidden'}` : '';
     if(f.type==='textarea') return `<label${sw}>${esc(f.label)}${f.required?' *':''}<textarea data-field="${f.key}" ${f.required?'required':''}>${esc(val)}</textarea></label>`;
-    if(f.type==='select') return `<label${sw}>${esc(f.label)}${f.required?' *':''}<select data-field="${f.key}" ${f.required?'required':''}><option value="">Select…</option>${f.options.map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
+    if(f.type==='select'){ const opts=f.options.slice(); if(val && !opts.includes(val)) opts.unshift(val); return `<label${sw}>${esc(f.label)}${(f.required||(key==='inductions'&&f.key==='site'))?' *':''}<select data-field="${f.key}" ${f.required?'required':''}><option value="">Select…</option>${opts.map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`; }
     return `<label${sw}>${esc(f.label)}${f.required?' *':''}<input type="${f.type}" data-field="${f.key}" value="${esc(val)}" ${f.required?'required':''} ${f.placeholder?`placeholder="${esc(f.placeholder)}"`:''} ${f.type==='number'?'min="0" step="any"':''}></label>`;
   }).join('');
 
@@ -8251,8 +8284,8 @@ const IMPORT_TYPES = {
     {key:'dateOfBirth', h:'Date of birth', date:true, ex:'15/04/1990'},
     {key:'bloodGroup', h:'Blood group', help:'A+, A-, B+, B-, AB+, AB-, O+, O-', ex:'O+'},
     {key:'mobileNumber', h:'Mobile number', ex:'+968 9123 4567'},
-    {key:'designation', h:'Designation', ex:'Foreman'},
-    {key:'roles', h:'Roles', help:'Optional — role names from Training matrix → Roles, separated by commas. The first one is the main role, e.g. Light Vehicle Driver, Scaffolder', ex:'Scaffolder'},
+    {key:'designation', h:'Designation', help:'Use the role names from Training matrix → Roles (e.g. Scaffolder, Light Vehicle Driver) so the right trainings are required', ex:'Scaffolder'},
+    {key:'roles', h:'Extra roles', help:'Optional — only if the person also does another job: role names from Training matrix → Roles, separated by commas, e.g. Scaffolder', ex:''},
     {key:'trade', h:'Trade / division', req:true, help:'One of: Office Staff, Scaffolding Division, Civil Division, Logistics & Rental Division, Sub Contractor', ex:'Scaffolding Division'},
     {key:'contractor', h:'Subcontractor / company', ex:'Burhan Oil & Trade Services'},
     {key:'dateOfJoining', h:'Date of joining', date:true, ex:'01/02/2024'},
@@ -8316,11 +8349,10 @@ function importDivKey(v){
   if(s.includes('rental') || s.includes('logistic')) return 'Rental';
   return '';
 }
-function importRoles(v){
-  const known=roleNamesList();
-  const list=String(v||'').split(/[,;+\n]/).map(x=>x.trim()).filter(Boolean).map(x=>known.find(r=>roleKey(r)===roleKey(x))||x);
-  const uniq=[]; for(const x of list) if(!uniq.some(y=>roleKey(y)===roleKey(x))) uniq.push(x);
-  return {mainRole:uniq[0]||'', extraRoles:uniq.slice(1)};
+function importRoles(v, designation){
+  const list=String(v||'').split(/[,;+\n]/).map(x=>x.trim()).filter(Boolean).map(x=>knownRole(x)||x);
+  const uniq=[]; for(const x of list) if(roleKey(x)!==roleKey(designation) && !uniq.some(y=>roleKey(y)===roleKey(x))) uniq.push(x);
+  return {extraRoles:uniq};
 }
 function mapTrade(v){
   const s=String(v||'').toLowerCase();
@@ -8380,7 +8412,7 @@ function validateImportRows(rows){
       if(txt('trade') && trade===null) errors.push(`Trade / division "${txt('trade')}" not recognised`);
       label=txt('fullName'); key=txt('civilId'); dupKey=normKey(key);
       doc={fullName:label, civilId:key, civilIdExpiry:dates.civilIdExpiry||'', nationality:txt('nationality'), dateOfBirth:dates.dateOfBirth||'', bloodGroup:(BLOOD_GROUPS.find(b=>b.toLowerCase()===txt('bloodGroup').trim().toLowerCase())||''),
-        mobileNumber:txt('mobileNumber'), designation:txt('designation'), ...importRoles(txt('roles')), trade:trade||'', contractor:txt('contractor'), dateOfJoining:dates.dateOfJoining||'',
+        mobileNumber:txt('mobileNumber'), designation:(knownRole(txt('designation'))||txt('designation')), ...importRoles(txt('roles'), txt('designation')), trade:trade||'', contractor:txt('contractor'), dateOfJoining:dates.dateOfJoining||'',
         status:/^inact/i.test(txt('status'))?'inactive':'active', experienceGCCYears:txt('experienceGCCYears'), experienceOtherYears:txt('experienceOtherYears'),
         emergencyContactName:txt('emergencyContactName'), emergencyContactRelation:txt('emergencyContactRelation'), emergencyContactPhone:txt('emergencyContactPhone'),
         inductions:[], trainings:[], competency:[], medical:[], licenses:[], warnings:[], violations:[]};
@@ -8682,8 +8714,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
       e.preventDefault();
       const w=currentWorker(); if(!w) return;
       const data={}; e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
-      if(e.target.querySelector('[data-field="mainRole"]')){
-        data.extraRoles=[...e.target.querySelectorAll('[data-extra-role]:checked')].map(x=>x.value).filter(x=>roleKey(x)!==roleKey(data.mainRole));
+      if(e.target.querySelector('[data-extra-role]')){
+        data.extraRoles=[...e.target.querySelectorAll('[data-extra-role]:checked')].map(x=>x.value).filter(x=>roleKey(x)!==roleKey(data.designation));
+        if(w.mainRole) data.mainRole='';   // the Designation is the main role now
       }
       await updateWorker(w.id,data);
     }
@@ -8691,7 +8724,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
       e.preventDefault();
       const w=currentWorker(); if(!w) return;
       const cfg=RECORD_TYPES[activeTab];
-      const data={}; e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
+      const data={}; e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]= el.closest('label[hidden]') ? '' : el.value; });
+      if(activeTab==='inductions'){
+        if(data.inductionType==='Project induction' && !data.site){ toast('Pick the project for this induction'); const f=e.target.querySelector('[data-field="site"]'); if(f) f.focus(); return; }
+        if(data.inductionType==='Onboarding induction') data.site='Onboarding induction';
+      }
       const arr=(w[activeTab]||[]).slice();
       if(editingRecordId){
         const idx=arr.findIndex(r=>r.id===editingRecordId);
@@ -8767,6 +8804,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   });
 
+  document.getElementById('drawerBody').addEventListener('change', e=>{
+    const sel=e.target.closest('#recordForm [data-field="inductionType"]'); if(!sel) return;
+    sel.form.querySelectorAll('label[data-show-when]').forEach(l=>{ l.hidden=!l.dataset.showWhen.split('|').includes(sel.value); });
+  });
   document.getElementById('drawerBody').addEventListener('change', async e=>{
     if(!e.target.matches('[data-attach-for]')) return;
     const file=e.target.files[0]; if(!file) return;
@@ -9522,7 +9563,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const tr=e.target.closest('[data-mx-worker]'); if(!tr) return;
     const cell=e.target.closest('[data-mx-train]');
     openDrawer(tr.dataset.mxWorker); activeTab='trainings';
-    if(cell && canEdit()){ addFormOpen=true; editingRecordId=null; recordPrefill={name:cell.dataset.mxTrain}; }   // missing / expired → open "add training record" with the name filled in
+    if(cell && canEdit()){ addFormOpen=true; editingRecordId=null; recordPrefill={__tab:'trainings', name:cell.dataset.mxTrain}; }   // missing / expired → open "add training record" with the name filled in
     renderDrawer();
   });
   document.getElementById('matrixModeTabs').addEventListener('click', e=>{ const b=e.target.closest('[data-mxmode]'); if(!b) return; matrixFilters.mode=b.dataset.mxmode; renderMatrix(); });
