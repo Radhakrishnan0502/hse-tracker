@@ -388,6 +388,9 @@ label.chk{flex-direction:row; align-items:center; gap:6px; color:var(--ink); fon
 label.chk input{width:auto; flex:none;}
 @media (max-width:700px){ .req-row{grid-template-columns:1fr auto;} .req-divs{grid-column:1 / -1; grid-row:2;} }
 .report-category-fields .span-all{margin-top:12px;}
+.wmove{display:grid; grid-template-columns:minmax(180px,2fr) auto minmax(140px,1fr) auto; gap:10px; margin-top:10px; align-items:end;}
+@media (max-width:620px){ .wmove{grid-template-columns:1fr 1fr;} .wmove label:first-child{grid-column:1 / -1;} }
+#moveNote .att-link{margin:0 2px;}
 /* Batch 20: IVMS / DFMS portal list */
 .ml-row{padding:10px 0; border-bottom:1px dashed var(--line);}
 .ml-main{display:grid; grid-template-columns:minmax(160px,1.2fr) 110px minmax(200px,2fr) auto; gap:10px; align-items:end; margin-bottom:6px;}
@@ -797,6 +800,7 @@ body.read-only #ckTemplatesBtn{display:none !important;}
 
       <div id="workforceRegisterPane">
       <div class="tiles" id="tiles"></div>
+      <div class="notice" id="moveNote" hidden></div>
       <div class="div-strip" id="divStrip" aria-label="Workers by division"></div>
 
       <div class="panel" id="addWorkerPanel" hidden>
@@ -5781,6 +5785,7 @@ function startReportData(){
 /* ---------------- render ---------------- */
 function renderAll(){
   renderTiles();
+  renderMoveNote();
   renderTradeFilter();
   renderTable();
   document.getElementById('clearSampleBtn').hidden = !workers.some(w=>w.isSample);
@@ -5999,6 +6004,82 @@ function siteEquipSummary(siteId){
 }
 
 function workersAtSite(siteId){ return activeWorkers().filter(w=>w.projectId===siteId); }
+/* ---- Batch 24: moving workers between projects + project history ----
+   worker.projectHistory = [{projectId, name, from:'YYYY-MM-DD', to:'YYYY-MM-DD' | ''(= still there)}]
+   worker.returnDate / returnProjectId = a temporary move: reminder to bring them back (never moved automatically). */
+function projHistory(w){ return Array.isArray(w && w.projectHistory) ? w.projectHistory.filter(h=>h && h.projectId).map(h=>({...h})) : []; }
+function moveWorkerUpdate(w, newId, opts){
+  opts=opts||{};
+  const today=localToday(), hist=projHistory(w), cur=(w && w.projectId)||null; newId=newId||null;
+  // an assignment made before history existed: start its line from when it was assigned
+  if(cur && !hist.some(h=>h.projectId===cur && !h.to)) hist.push({projectId:cur, name:projectName(cur), from:String(w.projectAssignedAt||'').slice(0,10), to:''});
+  const upd={};
+  if(cur!==newId){
+    hist.forEach(h=>{ if(!h.to) h.to=today; });
+    if(newId) hist.push({projectId:newId, name:projectName(newId), from:today, to:''});
+    upd.projectId=newId; upd.projectAssignedAt=newId ? new Date().toISOString() : null;
+  }
+  upd.projectHistory=hist.slice(-200);
+  if(opts.returnDate && newId && opts.returnProjectId && opts.returnProjectId!==newId){ upd.returnDate=opts.returnDate; upd.returnProjectId=opts.returnProjectId; }
+  else { upd.returnDate=''; upd.returnProjectId=''; }
+  return upd;
+}
+async function moveWorker(wid, newId, opts){
+  const w=workers.find(x=>x.id===wid); if(!w) return false;
+  try{ await db.collection('workers').doc(wid).update(stamp(moveWorkerUpdate(w, newId, opts))); return true; }
+  catch(e){ console.error(e); toast('Could not move — '+(e.code||'error')); return false; }
+}
+function daysBetween(a,b){ const x=new Date(a+'T00:00:00'), y=new Date(b+'T00:00:00'); return Math.round((y-x)/86400000); }
+function histDays(h){ if(!h.from) return ''; const n=daysBetween(h.from, h.to||localToday())+1; return n>0 ? `${n} day${n===1?'':'s'}` : ''; }
+function histName(h){ const s=siteEquipmentList.find(x=>x.id===h.projectId); return s ? (s.siteName||h.name||'Project')+(s.deleted?' (deleted project)':'') : (h.name||'Removed project'); }
+// workers whose temporary move is due (today or past)
+function workersDueBack(){ const t=localToday(); return activeWorkers().filter(w=>w.returnDate && w.returnProjectId && w.returnDate<=t && w.projectId!==w.returnProjectId); }
+function workerProjectHtml(w){
+  const cur=w.projectId ? siteEquipmentList.find(x=>x.id===w.projectId) : null;
+  const hist=projHistory(w).sort((a,b)=>String(b.from||'').localeCompare(String(a.from||'')));
+  const open=hist.find(h=>h.projectId===w.projectId && !h.to);
+  const since = open && open.from ? ` since ${esc(open.from)}` : (w.projectAssignedAt ? ` since ${esc(String(w.projectAssignedAt).slice(0,10))}` : '');
+  let back='';
+  if(w.returnDate && w.returnProjectId && w.projectId!==w.returnProjectId){
+    const due=w.returnDate<=localToday();
+    back=`<div class="notice" style="margin:8px 0 0;${due?'':'background:var(--surface-2); color:var(--ink); border-color:var(--line);'}">${ic('clock')} Temporary move — due back to <strong>${esc(projectName(w.returnProjectId))}</strong> on <strong>${esc(w.returnDate)}</strong>${due?' (due now)':''}.
+      ${canEdit()?`<button type="button" class="btn btn-sm" data-move-back="${w.id}">Move back now</button>`:''}</div>`;
+  }
+  const sites=activeSites().filter(s=>projectStatus(s)!=='Completed' || s.id===w.projectId).sort((a,b)=>(a.siteName||'').localeCompare(b.siteName||''));
+  const mover = canEdit() ? `<div class="wmove" id="workerMoveBox">
+      <label>Move to<select id="wmTo"><option value="">— Not assigned (in store / office) —</option>${sites.map(s=>`<option value="${esc(s.id)}" ${s.id===w.projectId?'selected':''}>${esc(s.siteName||'Project')}</option>`).join('')}</select></label>
+      <label class="chk" style="align-self:end;"><input type="checkbox" id="wmTemp"> Temporary move</label>
+      <label id="wmBackWrap" hidden>Comes back on<input type="date" id="wmBack" min="${esc(localToday())}"></label>
+      <button type="button" class="btn btn-sm btn-primary" id="wmGo" style="align-self:end;">Move</button>
+    </div>` : '';
+  const rows = hist.length ? hist.slice(0,30).map(h=>`<div class="rf"><span class="rf-k mono">${esc(h.from||'—')} → ${h.to?esc(h.to):'<strong>now</strong>'}</span><span class="rf-v"><strong>${esc(histName(h))}</strong>${histDays(h)?` · ${histDays(h)}`:''}</span></div>`).join('')
+    : '<p class="wsub" style="margin:4px 0 0;">No moves recorded yet — every move from now on is listed here.</p>';
+  return `<div class="panel req-box" style="margin-bottom:16px;">
+    <div class="subhead" style="margin-top:0;">Project</div>
+    <div class="rf"><span class="rf-k">${cur && !cur.deleted ? '<span class="badge ok">Assigned</span>' : '<span class="badge muted">Not assigned</span>'}</span><span class="rf-v"><strong>${cur ? esc(locLabel(w.projectId)) : 'No project'}</strong>${cur?since:''}</span></div>
+    ${back}${mover}
+    <div class="subhead">Project history</div>${rows}
+  </div>`;
+}
+// Project → Team tab: people who worked here before, and people away on a temporary move
+function sitePastTeamHtml(s){
+  const t=localToday();
+  const away=activeWorkers().filter(w=>w.returnProjectId===s.id && w.projectId!==s.id && w.returnDate);
+  const past=activeWorkers().filter(w=>w.projectId!==s.id && !away.includes(w) && projHistory(w).some(h=>h.projectId===s.id && h.to))
+    .map(w=>({w, last:projHistory(w).filter(h=>h.projectId===s.id && h.to).sort((a,b)=>String(b.to).localeCompare(String(a.to)))[0]}))
+    .sort((a,b)=>String(b.last.to).localeCompare(String(a.last.to)));
+  if(!away.length && !past.length) return '';
+  const btn=w=>canEdit()?`<button type="button" class="btn btn-sm" data-bring-back="${w.id}">Bring back</button>`:'';
+  return `${away.length?`<div class="subhead">Away on a temporary move (${away.length})</div>${away.map(w=>`<div class="equip-line" data-open-worker="${w.id}"><div class="equip-line-main"><div class="equip-line-title">${esc(w.fullName||'—')}</div><div class="wsub">now at ${esc(locLabel(w.projectId))} · due back ${esc(w.returnDate)}</div></div><div class="equip-line-badges">${w.returnDate<=t?'<span class="badge warn">Due back</span>':''}${btn(w)}</div></div>`).join('')}`:''}
+    ${past.length?`<div class="subhead">Previously on this project (${past.length})</div>${past.slice(0,40).map(({w,last})=>`<div class="equip-line" data-open-worker="${w.id}"><div class="equip-line-main"><div class="equip-line-title">${esc(w.fullName||'—')}</div><div class="wsub">${esc([w.designation, w.trade].filter(Boolean).join(' · ')||'—')} · here ${esc(last.from||'?')} → ${esc(last.to)} · now ${w.projectId?'at '+esc(locLabel(w.projectId)):'not assigned'}</div></div><div class="equip-line-badges">${btn(w)}</div></div>`).join('')}`:''}`;
+}
+function renderMoveNote(){
+  const el=document.getElementById('moveNote'); if(!el) return;
+  const due=auth.currentUser ? workersDueBack() : [];
+  el.hidden=!due.length;
+  el.innerHTML = due.length ? `${ic('clock')} <strong>${due.length} worker${due.length===1?' is':'s are'} due back</strong> from a temporary move: ${due.slice(0,6).map(w=>`<button type="button" class="att-link" data-open-due="${w.id}">${esc(w.fullName||'Worker')}</button> → ${esc(projectName(w.returnProjectId))}`).join(' · ')}${due.length>6?' …':''}` : '';
+}
+
 function vehiclesAtSite(siteId){ return activeVehicles().filter(v=>v.projectId===siteId); }
 // What's wrong with a worker's paperwork, in plain words (empty list = all good)
 function workerIssues(w){
@@ -6620,7 +6701,7 @@ function siteTeamTabHtml(s){
         <button type="button" class="icon-btn danger" data-unassign-worker="${w.id}" title="Remove from this project" aria-label="Remove from project">${ic('close')}</button></div>
     </div>`;
   }).join('') : '<p class="wsub">No workers assigned yet.</p>';
-  return head + note + picker + list;
+  return head + note + picker + list + sitePastTeamHtml(s);
 }
 
 function siteVehiclesTabHtml(s){
@@ -7785,6 +7866,7 @@ function profileTabHtml(w){
   const gcc=parseFloat(w.experienceGCCYears)||0, other=parseFloat(w.experienceOtherYears)||0;
   const total=(gcc+other);
   return `${updatedNote}
+  ${workerProjectHtml(w)}
   <form id="profileForm">
     <div class="subhead">Personal details</div>
     <div class="form-grid">
@@ -8026,6 +8108,9 @@ async function buildProfilePdf(w){
   kv('Designation', w.designation); kv('Trade / occupation', w.trade); kv('Subcontractor / company', w.contractor);
   kv('Date of joining', w.dateOfJoining); kv('Employment status', (w.status||'active')==='inactive'?'Inactive':'Active');
   { const rl=workerRoles(w); if(rl.length) kv('Roles', rl.join(' + ')); }
+  kv('Current project', w.projectId ? locLabel(w.projectId) : 'Not assigned');
+  { const hist=projHistory(w).sort((a,b)=>String(b.from||'').localeCompare(String(a.from||'')));
+    if(hist.length){ h2('Project history'); hist.slice(0,40).forEach(h=>kv(`${h.from||'—'} → ${h.to||'now'}`, `${histName(h)}${histDays(h)?'  ·  '+histDays(h):''}`)); } }
 
   { const c=workerTrainingCompliance(w);
     if(c.need){
@@ -8749,6 +8834,28 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   });
 
+  document.getElementById('drawerBody').addEventListener('change', e=>{
+    if(e.target.id==='wmTemp'){ const b=document.getElementById('wmBackWrap'); if(b) b.hidden=!e.target.checked; }
+  });
+  document.getElementById('drawerBody').addEventListener('click', async e=>{
+    const w=currentWorker(); if(!w) return;
+    if(e.target.closest('#wmGo')){
+      const to=document.getElementById('wmTo').value||null, temp=document.getElementById('wmTemp').checked, back=document.getElementById('wmBack').value;
+      if(to===(w.projectId||null) && !temp){ toast('Already there — pick a different project'); return; }
+      let opts={};
+      if(temp){
+        if(!w.projectId){ toast('A temporary move needs a current project to come back to'); return; }
+        if(!to || to===w.projectId){ toast('Pick the project they are going to'); return; }
+        if(!back){ toast('Pick the date they come back'); document.getElementById('wmBack').focus(); return; }
+        opts={returnDate:back, returnProjectId:w.projectId};
+      }
+      if(await moveWorker(w.id, to, opts)){ toast(to ? `Moved to ${projectName(to)}${temp?' until '+back:''}` : 'Removed from project'); }
+      return;
+    }
+    const mb=e.target.closest('[data-move-back]');
+    if(mb){ if(await moveWorker(w.id, w.returnProjectId)) toast('Moved back to '+projectName(w.returnProjectId)); return; }
+  });
+  document.getElementById('moveNote').addEventListener('click', e=>{ const b=e.target.closest('[data-open-due]'); if(b){ openDrawer(b.dataset.openDue); } });
   document.getElementById('drawerBody').addEventListener('click', async e=>{
     if(e.target.id==='toggleRecordForm'){
       addFormOpen = !addFormOpen; recordPrefill=null;
@@ -9122,7 +9229,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
           const hist=(item.history||[]).concat([{kind:'move', date:today, from:purgeBtn.dataset.spurge, to:'store', fromLabel:(s&&s.siteName)||'Project', toLabel:'In store', note:'Project was permanently removed'}]);
           await db.collection('equipment').doc(item.id).update({location:'store', history:hist});
         }
-        for(const w of workers.filter(x=>x.projectId===purgeBtn.dataset.spurge)) await db.collection('workers').doc(w.id).update({projectId:null});
+        for(const w of workers.filter(x=>x.projectId===purgeBtn.dataset.spurge)) await db.collection('workers').doc(w.id).update(moveWorkerUpdate(w, null));
         for(const v of vehicles.filter(x=>x.projectId===purgeBtn.dataset.spurge)) await db.collection('vehicles').doc(v.id).update({projectId:null});
         await db.collection('siteEquipment').doc(purgeBtn.dataset.spurge).delete();
         toast('Project permanently removed — equipment returned to store, team and vehicles un-assigned');
@@ -9208,14 +9315,16 @@ document.addEventListener('DOMContentLoaded', ()=>{
       if(!ids.length){ toast('Tick at least one first'); return; }
       const coll = sitePickerOpen==='team' ? 'workers' : 'vehicles';
       try{
-        for(const id of ids) await db.collection(coll).doc(id).update(stamp({projectId:s0.id, projectAssignedAt:new Date().toISOString()}));
+        for(const id of ids){ if(coll==='workers'){ const w=workers.find(x=>x.id===id); await db.collection('workers').doc(id).update(stamp(moveWorkerUpdate(w, s0.id))); } else await db.collection(coll).doc(id).update(stamp({projectId:s0.id, projectAssignedAt:new Date().toISOString()})); }
         toast(`${ids.length} ${sitePickerOpen==='team'?'worker(s)':'vehicle(s)'} assigned to ${s0.siteName||'this project'}`);
       }catch(err){ console.error(err); toast('Could not assign — '+(err.code||'error')); }
       sitePickerOpen=null; sitePickerQuery=''; renderSiteDrawerBody();
       return;
     }
     const unW=e.target.closest('[data-unassign-worker]');
-    if(unW){ e.stopPropagation(); try{ await db.collection('workers').doc(unW.dataset.unassignWorker).update({projectId:null}); toast('Removed from this project'); }catch(err){ toast('Could not update'); } return; }
+    if(unW){ e.stopPropagation(); if(await moveWorker(unW.dataset.unassignWorker, null)) toast('Removed from this project'); return; }
+    const bb=e.target.closest('[data-bring-back]');
+    if(bb && s0){ e.stopPropagation(); if(await moveWorker(bb.dataset.bringBack, s0.id)) toast('Moved back to '+(s0.siteName||'this project')); return; }
     const unV=e.target.closest('[data-unassign-vehicle]');
     if(unV){ e.stopPropagation(); try{ await db.collection('vehicles').doc(unV.dataset.unassignVehicle).update({projectId:null}); toast('Removed from this project'); }catch(err){ toast('Could not update'); } return; }
     const openW=e.target.closest('[data-open-worker]');
