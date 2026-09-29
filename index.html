@@ -387,6 +387,7 @@ table.matrix-table td.mx-cell{text-align:center;}
 label.chk{flex-direction:row; align-items:center; gap:6px; color:var(--ink); font-weight:500; font-size:12.5px;}
 label.chk input{width:auto; flex:none;}
 @media (max-width:700px){ .req-row{grid-template-columns:1fr auto;} .req-divs{grid-column:1 / -1; grid-row:2;} }
+.report-category-fields .span-all{margin-top:12px;}
 /* Batch 20: IVMS / DFMS portal list */
 .ml-row{padding:10px 0; border-bottom:1px dashed var(--line);}
 .ml-main{display:grid; grid-template-columns:minmax(160px,1.2fr) 110px minmax(200px,2fr) auto; gap:10px; align-items:end; margin-bottom:6px;}
@@ -1826,7 +1827,8 @@ function tradeSelectHtml(current){
   return `<option value="">Select…</option>` + opts.map(o=>`<option value="${esc(o)}" ${o===current?'selected':''}>${esc(o)}</option>`).join('');
 }
 
-// Batch 22: inductions are either the company onboarding induction or a project (site) induction
+// Worker profile = company ONBOARDING induction only (Batch 23). Project / site inductions are logged as sessions in
+// Monthly Report → Log an entry → Induction (with the workers ticked). Older project-induction records stay as history.
 const INDUCTION_TYPES = ['Onboarding induction','Project induction'];
 function inductionTypeOf(r){ if(INDUCTION_TYPES.includes(r.inductionType)) return r.inductionType; return /onboard|company|general/i.test(String(r.site||'')) ? 'Onboarding induction' : (r.site ? 'Project induction' : ''); }
 function inductionTitle(r){ const t=inductionTypeOf(r); return t==='Onboarding induction' ? 'Onboarding induction' : t==='Project induction' ? `Project induction — ${r.site||'project not set'}` : (r.site||'Induction'); }
@@ -1834,8 +1836,7 @@ const RECORD_TYPES = {
   inductions:{
     title:'Induction records', addLabel:'+ Add induction record', hasExpiry:true, hasAttachment:true, attachLabel:'induction certificate',
     fields:[
-      {key:'inductionType', label:'Induction type', type:'select', required:true, options:INDUCTION_TYPES},
-      {key:'site', label:'Project', type:'select', get options(){ return activeSites().map(x=>x.siteName||'Project').filter(Boolean); }, showWhen:['Project induction']},
+      {key:'site', label:'Induction', type:'select', required:true, options:['Onboarding induction'], default:'Onboarding induction'},
       {key:'date', label:'Induction date', type:'date', required:true},
       {key:'expiry', label:'Valid until', type:'date'},
       {key:'conductedBy', label:'Conducted by', type:'text', placeholder:'e.g. HSE Officer name'},
@@ -2608,22 +2609,29 @@ function workerRolesFormHtml(w){
   return `<div class="span-all"><div class="pick-label">Extra roles <span class="wsub">— only if this person also does another job (e.g. a driver who also works as a scaffolder). Their training needs add up with the Designation.</span></div>
       <div class="cause-list">${opts.map(r=>`<label class="chk"><input type="checkbox" data-extra-role value="${esc(r)}" ${extra.has(roleKey(r))?'checked':''}>${esc(r)}</label>`).join('')}</div></div>`;
 }
-// Worker → Induction tab: onboarding induction + induction for the project they are assigned to
+// Worker → Induction tab: onboarding induction (here) + project inductions attended (from Monthly Report sessions)
+function projectInductionsForWorker(wid){
+  return liveReportEntries().filter(e=>e.category==='induction' && (e.attendeeIds||[]).includes(wid))
+    .map(e=>({date:String(e.date||'').slice(0,10), projectId:e.projectId||'', project:e.projectId?projectName(e.projectId):'No specific project', by:e.conductedBy||'', id:e.id}))
+    .sort((a,b)=>b.date.localeCompare(a.date));
+}
 function workerInductionStatusHtml(w){
   const recs=(w.inductions||[]).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
-  const line=(label, r, emptyText)=>{
-    let badge, txt;
-    if(!r){ badge='<span class="badge danger">Missing</span>'; txt=emptyText; }
-    else { const st=r.expiry ? statusFor(r.expiry) : 'valid'; badge=badgeHtml(st); txt=`done ${esc(r.date||'—')}${r.expiry?` · valid until ${esc(r.expiry)}`:''}${r.conductedBy?` · by ${esc(r.conductedBy)}`:''}`; }
-    return `<div class="rf"><span class="rf-k">${badge}</span><span class="rf-v"><strong>${esc(label)}</strong> · ${txt}</span></div>`;
-  };
   const onb=recs.find(r=>inductionTypeOf(r)==='Onboarding induction');
+  const line=(label, badge, txt)=>`<div class="rf"><span class="rf-k">${badge}</span><span class="rf-v"><strong>${esc(label)}</strong> · ${txt}</span></div>`;
+  const onbLine = onb ? line('Onboarding induction', badgeHtml(onb.expiry?statusFor(onb.expiry):'valid'), `done ${esc(onb.date||'—')}${onb.expiry?` · valid until ${esc(onb.expiry)}`:''}${onb.conductedBy?` · by ${esc(onb.conductedBy)}`:''}`)
+    : line('Onboarding induction', '<span class="badge danger">Missing</span>', 'not recorded yet — add it below');
+  const att=projectInductionsForWorker(w.id);
   const site=w.projectId ? siteEquipmentList.find(x=>x.id===w.projectId && !x.deleted) : null;
-  let proj='';
-  if(site){ const nm=renewNorm(site.siteName); const r=recs.find(x=>inductionTypeOf(x)==='Project induction' && renewNorm(x.site)===nm); proj=line(`Project induction — ${site.siteName||'project'}`, r, 'not recorded for the project this worker is assigned to'); }
-  else { const last=recs.find(x=>inductionTypeOf(x)==='Project induction');
-    proj = last ? line(`Last project induction — ${last.site||'project'}`, last, '') : `<div class="rf"><span class="rf-k"><span class="badge muted">—</span></span><span class="rf-v"><strong>Project induction</strong> · not assigned to a project</span></div>`; }
-  return `<div class="panel req-box" style="margin-bottom:16px;"><div class="subhead" style="margin-top:0;">Induction required</div>${line('Onboarding induction', onb, 'no onboarding induction recorded')}${proj}</div>`;
+  let projLine='';
+  if(site){
+    const hit=att.find(a=>a.projectId===site.id) || recs.find(r=>inductionTypeOf(r)==='Project induction' && renewNorm(r.site)===renewNorm(site.siteName));
+    projLine = hit ? line(`Project induction — ${site.siteName||'project'}`, '<span class="badge ok">Done</span>', `attended ${esc(hit.date||'—')}`)
+      : line(`Project induction — ${site.siteName||'project'}`, '<span class="badge warn">Not recorded</span>', 'log it in <strong>Monthly Report → Log an entry → Induction</strong> and tick this worker');
+  }
+  const list = att.length ? `<div class="subhead">Project inductions attended (${att.length})</div>${att.slice(0,25).map(a=>`<div class="rf"><span class="rf-k mono">${esc(a.date||'—')}</span><span class="rf-v"><strong>${esc(a.project)}</strong>${a.by?` · by ${esc(a.by)}`:''}</span></div>`).join('')}` : '';
+  return `<div class="panel req-box" style="margin-bottom:16px;"><div class="subhead" style="margin-top:0;">Induction status</div>${onbLine}${projLine}${list}
+    <p class="wsub" style="margin:8px 0 0;">Project / site inductions are logged once as a session in <strong>Monthly Report → Log an entry → Induction</strong> — tick the workers there and they appear here.</p></div>`;
 }
 // Worker → Training tab: what their roles require and where they stand
 function workerRequiredHtml(w){
@@ -7294,7 +7302,7 @@ function reportEntrySummary(e){
   if(e.severity) parts.push(e.severity);
   if(e.type) parts.push(e.type);
   if(e.result) parts.push(e.result);
-  if(e.count) parts.push(e.count+' workers');
+  if(e.count) parts.push(e.count+' workers'+((e.attendeeIds||[]).length?` (${e.attendeeIds.length} named)`:''));
   if(e.attendees) parts.push(e.attendees+' attendees');
   if(e.participants) parts.push(e.participants+' participants');
   if(e.item) parts.push(e.item);
@@ -7345,12 +7353,15 @@ function reportDateFieldHtml(category, value){
 }
 function reportCategoryFieldsHtml(category, editing){
   const cfg=REPORT_CATEGORIES[category];
+  const extra = category==='induction'
+    ? workerPickFieldHtml({key:'attendeeIds', label:'Workers inducted — optional: tick them so it shows on each worker\'s profile'}, editing ? {attendeeIds:editing.attendeeIds||[]} : {attendeeIds:[]}, (()=>{ const pid=(document.getElementById('reportProjectSelect')||{}).value || (editing&&editing.projectId); return pid ? siteEquipmentList.find(x=>x.id===pid) : null; })())
+    : '';
   return cfg.fields.map(f=>{
     const val = editing ? (editing[f.key]!=null?editing[f.key]:'') : '';
     if(f.type==='textarea') return `<label>${esc(f.label)}${f.required?' *':''}<textarea data-rfield="${f.key}" ${f.required?'required':''}>${esc(val)}</textarea></label>`;
     if(f.type==='select') return `<label>${esc(f.label)}${f.required?' *':''}<select data-rfield="${f.key}" ${f.required?'required':''}><option value="">Select…</option>${f.options.map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
     return `<label>${esc(f.label)}${f.required?' *':''}<input type="${f.type}" data-rfield="${f.key}" value="${esc(val)}" ${f.required?'required':''}></label>`;
-  }).join('');
+  }).join('') + extra;
 }
 function renderReportCategorySelect(selected){
   const sel=document.getElementById('reportCategorySelect');
@@ -7381,7 +7392,6 @@ function setReportProject(id){
 function renderReportEntryForm(category, editing, setDivision, presetProjectId){
   renderReportCategorySelect(category);
   document.getElementById('reportDateFieldWrap').innerHTML = reportDateFieldHtml(category, editing?editing.date:null);
-  document.getElementById('reportCategoryFields').innerHTML = reportCategoryFieldsHtml(category, editing);
   if(setDivision){
     const divSel=document.querySelector('#addReportEntryForm [data-rfield="division"]');
     const projSel=document.getElementById('reportProjectSelect');
@@ -7390,6 +7400,7 @@ function renderReportEntryForm(category, editing, setDivision, presetProjectId){
     const proj = projId ? siteEquipmentList.find(s=>s.id===projId) : null;
     if(divSel) divSel.value = editing ? (editing.division||'Civil') : (proj ? (proj.division||'Civil') : (reportDivision!=='all'?reportDivision:'Civil'));
   }
+  document.getElementById('reportCategoryFields').innerHTML = reportCategoryFieldsHtml(category, editing);
   document.getElementById('reportEntryPanelTitle').textContent = editing ? 'Edit HSE activity' : 'Log an HSE activity';
   document.getElementById('saveReportEntryBtn').textContent = editing ? 'Save changes' : 'Save entry';
 }
@@ -7869,7 +7880,7 @@ function recordTabHtml(w,key,cfg){
     const resultBadge = r.result==='Unfit' ? `<span class="badge danger">Unfit</span>` : (r.result==='Fit with restrictions' ? `<span class="badge warn">Fit with restrictions</span>` : (r.result==='Fit' ? `<span class="badge ok">Fit</span>` : ''));
     const expiryBadge = cfg.cardBadge ? cfg.cardBadge(r) : cfg.hasExpiry ? (isRenewed(w[key], key, r) ? `<span class="badge muted" title="A newer record replaces this one">Renewed</span>` : r.expiry? badgeHtml(statusFor(r.expiry)) : `<span class="badge muted">No expiry set</span>`) : (r.level==='Final warning' ? `<span class="badge danger">Final warning</span>` : (r.severity? `<span class="badge ${r.severity==='Critical'?'danger':r.severity==='Major'?'warn':'muted'}">${esc(r.severity)}</span>` : ''));
     const fieldsHtml = cfg.fields.slice(1).map(f=>{
-      if(key==='inductions' && f.key==='site') return '';   // already in the title
+      if(key==='inductions' && f.key==='site' && cfg===RECORD_TYPES.inductions) return '';   // already in the title
       if(f.type==='workers'){
         const ids=r[f.key]||[]; if(!ids.length) return '';
         const names=ids.map(id=>{ const x=workers.find(q=>q.id===id); return x ? (x.fullName||'—') : '(removed worker)'; });
@@ -7893,13 +7904,13 @@ function recordTabHtml(w,key,cfg){
 
   const editing = editingRecordId ? recs.find(r=>r.id===editingRecordId) : null;
   const formFields = cfg.fields.map(f=>{
-    const val = editing ? (editing[f.key] || (key==='inductions' && f.key==='inductionType' ? inductionTypeOf(editing) : '')) : (recordPrefill && recordPrefill.__tab===key && recordPrefill[f.key]!=null ? recordPrefill[f.key] : (f.default||''));
+    const val = editing ? (editing[f.key]||'') : (recordPrefill && recordPrefill.__tab===key && recordPrefill[f.key]!=null ? recordPrefill[f.key] : (f.default||''));
     if(f.type==='workers') return workerPickFieldHtml(f, editing, w);
     if(key==='trainings' && f.key==='name'){ const names=trainingCatalogue(); return `<label>${esc(f.label)} *<input type="text" data-field="name" value="${esc(val)}" required list="reqTrainingNames" placeholder="${esc(f.placeholder||'')}"><datalist id="reqTrainingNames">${names.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist></label>`; }
-    const firstVal = editing ? (editing[cfg.fields[0].key] || (key==='inductions' ? inductionTypeOf(editing) : '')) : '';
+    const firstVal = editing ? (editing[cfg.fields[0].key]||'') : '';
     const sw = f.showWhen ? ` data-show-when="${esc(f.showWhen.join('|'))}" ${f.showWhen.includes(firstVal)?'':'hidden'}` : '';
     if(f.type==='textarea') return `<label${sw}>${esc(f.label)}${f.required?' *':''}<textarea data-field="${f.key}" ${f.required?'required':''}>${esc(val)}</textarea></label>`;
-    if(f.type==='select'){ const opts=f.options.slice(); if(val && !opts.includes(val)) opts.unshift(val); return `<label${sw}>${esc(f.label)}${(f.required||(key==='inductions'&&f.key==='site'))?' *':''}<select data-field="${f.key}" ${f.required?'required':''}><option value="">Select…</option>${opts.map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`; }
+    if(f.type==='select'){ const opts=f.options.slice(); if(val && !opts.includes(val)) opts.unshift(val); return `<label${sw}>${esc(f.label)}${f.required?' *':''}<select data-field="${f.key}" ${f.required?'required':''}><option value="">Select…</option>${opts.map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`; }
     return `<label${sw}>${esc(f.label)}${f.required?' *':''}<input type="${f.type}" data-field="${f.key}" value="${esc(val)}" ${f.required?'required':''} ${f.placeholder?`placeholder="${esc(f.placeholder)}"`:''} ${f.type==='number'?'min="0" step="any"':''}></label>`;
   }).join('');
 
@@ -8725,10 +8736,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const w=currentWorker(); if(!w) return;
       const cfg=RECORD_TYPES[activeTab];
       const data={}; e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]= el.closest('label[hidden]') ? '' : el.value; });
-      if(activeTab==='inductions'){
-        if(data.inductionType==='Project induction' && !data.site){ toast('Pick the project for this induction'); const f=e.target.querySelector('[data-field="site"]'); if(f) f.focus(); return; }
-        if(data.inductionType==='Onboarding induction') data.site='Onboarding induction';
-      }
+      if(activeTab==='inductions') data.inductionType = data.site==='Onboarding induction' ? 'Onboarding induction' : 'Project induction';
       const arr=(w[activeTab]||[]).slice();
       if(editingRecordId){
         const idx=arr.findIndex(r=>r.id===editingRecordId);
@@ -8804,10 +8812,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   });
 
-  document.getElementById('drawerBody').addEventListener('change', e=>{
-    const sel=e.target.closest('#recordForm [data-field="inductionType"]'); if(!sel) return;
-    sel.form.querySelectorAll('label[data-show-when]').forEach(l=>{ l.hidden=!l.dataset.showWhen.split('|').includes(sel.value); });
-  });
   document.getElementById('drawerBody').addEventListener('change', async e=>{
     if(!e.target.matches('[data-attach-for]')) return;
     const file=e.target.files[0]; if(!file) return;
@@ -9469,6 +9473,15 @@ document.addEventListener('DOMContentLoaded', ()=>{
   /* ---------------- monthly report: add / edit entry ---------------- */
   document.getElementById('addReportEntryBtn').addEventListener('click', ()=> openReportEntryForm(null));
   document.getElementById('cancelAddReportEntry').addEventListener('click', closeReportEntryForm);
+  document.getElementById('addReportEntryForm').addEventListener('change', e=>{
+    if(!e.target.matches('[data-multi="attendeeIds"]')) return;
+    const n=e.currentTarget.querySelectorAll('[data-multi="attendeeIds"]:checked').length, c=e.currentTarget.querySelector('[data-rfield="count"]');
+    if(c && n && !(Number(c.value)>=n)) c.value=n;
+  });
+  document.getElementById('addReportEntryForm').addEventListener('click', e=>{
+    if(!e.target.closest('[data-pick-all="attendeeIds"],[data-pick-none="attendeeIds"]')) return;
+    setTimeout(()=>{ const f=document.getElementById('addReportEntryForm'), n=f.querySelectorAll('[data-multi="attendeeIds"]:checked').length, c=f.querySelector('[data-rfield="count"]'); if(c && n && !(Number(c.value)>=n)) c.value=n; },0);
+  });
   document.getElementById('reportCategorySelect').addEventListener('change', e=>{
     renderReportEntryForm(e.target.value, editingReportEntryId ? reportEntries.find(x=>x.id===editingReportEntryId) : null, false);
   });
@@ -9480,6 +9493,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
       data[key] = el.type==='number' ? (el.value===''?null:Number(el.value)) : el.value;
     });
     if(!data.projectId) data.projectId=null;
+    if(data.category==='induction'){
+      data.attendeeIds=[...e.target.querySelectorAll('[data-multi="attendeeIds"]:checked')].map(x=>x.value);
+      if(data.attendeeIds.length && !(Number(data.count)>=data.attendeeIds.length)) data.count=data.attendeeIds.length;
+    }
     try{
       if(editingReportEntryId){
         const prev=reportEntries.find(x=>x.id===editingReportEntryId);
