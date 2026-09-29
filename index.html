@@ -847,15 +847,17 @@ body.read-only #ckTemplatesBtn{display:none !important;}
             <h2>Training matrix</h2>
           </div>
           <div class="topbar-actions">
+            <button class="btn btn-sm" id="exportMatrixBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg> Export Excel</button>
             <button class="btn btn-sm" id="editReqBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-gear"/></svg> Roles &amp; required trainings</button>
           </div>
         </div>
         <div class="panel" id="reqPanel" hidden></div>
+        <div class="seg-tabs" id="matrixModeTabs"><button type="button" class="seg-btn active" data-mxmode="workers">Workers</button><button type="button" class="seg-btn" data-mxmode="roles">Role requirements</button></div>
         <div class="tiles tiles-4" id="matrixTiles"></div>
         <div class="notice" id="matrixNote" hidden></div>
         <div class="toolbar">
           <input type="search" id="matrixSearch" placeholder="Search worker…">
-          <select id="matrixDivision"><option value="all">All divisions</option></select>
+          <select id="matrixDivision" aria-label="Filter by division"><option value="all">All divisions</option></select>
           <select id="matrixRole" aria-label="Filter by role"><option value="all">All roles</option></select>
           <select id="matrixGaps">
             <option value="all">All active workers</option>
@@ -923,17 +925,18 @@ body.read-only #ckTemplatesBtn{display:none !important;}
           <option value="Rental">Rental</option>
         </select>
         <select id="vehicleTypeFilter" aria-label="Filter by vehicle type"><option value="all">All vehicle types</option></select>
+        <select id="vehicleDivisionFilter" aria-label="Filter by division"><option value="all">All divisions</option></select>
       </div>
 
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Vehicle number</th><th>Model / type</th><th>Ownership</th><th>Documents</th><th>PPE</th><th>Service</th><th>IVMS / DFMS</th>
+              <th>Vehicle number</th><th>Model / type</th><th>Division</th><th>Ownership</th><th>Documents</th><th>PPE</th><th>Service</th><th>IVMS / DFMS</th>
             </tr>
           </thead>
           <tbody id="vehicleRows">
-            <tr><td colspan="7" class="empty-state">Sign in to load vehicle data…</td></tr>
+            <tr><td colspan="8" class="empty-state">Sign in to load vehicle data…</td></tr>
           </tbody>
         </table>
       </div>
@@ -1915,7 +1918,7 @@ const RECORD_TYPES = {
 };
 
 let workers=[];
-let activeWorkerId=null, activeTab='profile', editingRecordId=null, addFormOpen=false;
+let activeWorkerId=null, activeTab='profile', editingRecordId=null, addFormOpen=false, recordPrefill=null;
 let filters={q:'', trade:'all', status:'all'};
 let unsubscribeWorkers=null;
 let pendingWorkerOpen = new URLSearchParams(location.search).get('worker');
@@ -1979,7 +1982,7 @@ const VEHICLE_COUNT_FIELDS = [
 
 let vehicles=[];
 let activeVehicleId=null, activeVehicleTab='profile', editingVehicleRecordId=null, vehicleAddFormOpen=false;
-let vehicleFilters={q:'', ownership:'all', type:'all'};
+let vehicleFilters={q:'', ownership:'all', type:'all', division:'all'};
 let unsubscribeVehicles=null;
 
 function activeVehicles(){ return vehicles.filter(v=>!v.deleted); }
@@ -2301,7 +2304,7 @@ function vehicleMonitorBlock(v){
 
 /* ---------------- training matrix (Workforce) ---------------- */
 let workforceView='register';
-let matrixFilters={q:'', division:'all', role:'all', gaps:'all'};
+let matrixFilters={q:'', division:'all', role:'all', gaps:'all', mode:null};
 let reqEdit=null;   // editor state for "Roles & required trainings"
 function normTraining(x){ return String(x||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); }
 // legacy (before Batch 20): requirements per division — kept only to pre-fill the training list
@@ -2380,6 +2383,14 @@ function renderMatrix(){
   matrixFilters.role=roleSel.value;
   const head=document.getElementById('matrixHead'), body=document.getElementById('matrixRows'), tiles=document.getElementById('matrixTiles');
   note.hidden=true; note.innerHTML='';
+  // which view: Workers (who has what) or Role requirements (what each role needs). Until chosen, show the
+  // role requirements while no worker has a role yet — so newly added roles & trainings are visible straight away.
+  const anyRoleSet=activeWorkers().some(w=>workerRoles(w).length);
+  const mode=matrixFilters.mode || (roles.length && !anyRoleSet ? 'roles' : 'workers');
+  document.querySelectorAll('#matrixModeTabs [data-mxmode]').forEach(b=>b.classList.toggle('active', b.dataset.mxmode===mode));
+  ['matrixRole','matrixGaps'].forEach(id=>{ document.getElementById(id).hidden = mode==='roles'; });
+  divSel.hidden = mode==='roles';
+  document.getElementById('matrixSearch').placeholder = mode==='roles' ? 'Search role or training…' : 'Search worker…';
   if(settingsLoadError==='rules'){ tiles.innerHTML=''; head.innerHTML=''; body.innerHTML=`<tr><td class="empty-state">${esc(RULES_UPDATE_MSG)}</td></tr>`; return; }
   if(!roles.length){
     tiles.innerHTML=''; head.innerHTML='';
@@ -2387,6 +2398,7 @@ function renderMatrix(){
     return;
   }
   const q=matrixFilters.q.trim().toLowerCase();
+  if(mode==='roles'){ renderRoleRequirements(q); return; }
   const all=activeWorkers().filter(w=>(w.status||'active')==='active')
     .filter(w=> matrixFilters.division==='all' || w.trade===matrixFilters.division)
     .filter(w=> !q || ((w.fullName||'')+' '+(w.civilId||'')+' '+(w.designation||'')+' '+workerRoles(w).join(' ')).toLowerCase().includes(q));
@@ -2419,8 +2431,58 @@ function renderMatrix(){
   if(!rows.length){ body.innerHTML=`<tr><td class="empty-state" colspan="${cols.length+1}">${matrixFilters.gaps==='gaps' ? ic('checkcircle')+' No gaps — every worker shown has all required trainings in date.' : 'No active workers match.'}</td></tr>`; return; }
   body.innerHTML = rows.map(r=>`<tr data-mx-worker="${r.w.id}">
       <td class="mx-sticky"><div class="wname">${esc(r.w.fullName||'—')}</div><div class="wsub">${r.roles.length ? esc(r.roles.join(' + ')) : '<span class="badge muted">No role set</span>'}${r.w.trade?' · '+esc(r.w.trade):''}</div></td>
-      ${r.cells.map(c=>`<td class="mx-cell">${c ? matrixCellHtml(c.st, c.roles) : matrixCellHtml(null)}</td>`).join('')}
+      ${r.cells.map((c,i)=>`<td class="mx-cell"${c && c.st.status!=='valid' ? ` data-mx-train="${esc(cols[i])}" title="Click to add this training record"` : ''}>${c ? matrixCellHtml(c.st, c.roles) : matrixCellHtml(null)}</td>`).join('')}
     </tr>`).join('') + (cols.length ? '' : `<tr><td class="empty-state" colspan="1">No required trainings for the roles shown — tick them in <strong>Roles &amp; required trainings</strong>.</td></tr>`);
+}
+// Excel export: worker matrix, role requirements, and a gap list
+async function exportTrainingMatrix(){
+  const roles=trainingRoles(), cat=trainingCatalogue();
+  if(!roles.length){ toast('Set up the roles and their trainings first (Roles & required trainings)'); return; }
+  try{ await loadScriptOnce(XLSX_URL); }catch(e){ toast('Could not load the Excel tools — check your internet connection and try again'); return; }
+  const word={valid:'Valid', expiring:'Expiring soon', expired:'EXPIRED', missing:'MISSING'};
+  const ws=activeWorkers().filter(w=>(w.status||'active')==='active').sort((a,b)=>(a.trade||'').localeCompare(b.trade||'') || (a.fullName||'').localeCompare(b.fullName||''));
+  const reqs=ws.map(w=>({w, c:workerTrainingCompliance(w)}));
+  const used=new Set(); reqs.forEach(x=>x.c.cells.forEach(t=>used.add(normTraining(t.name))));
+  const cols=cat.filter(t=>used.has(normTraining(t))).concat(cat.filter(t=>!used.has(normTraining(t))));
+  const m1=[['Worker','Civil ID','Division','Designation','Roles','Required','In date','Compliance %', ...cols]];
+  const gaps=[['Worker','Civil ID','Division','Roles','Training','Status','Valid until','Required for']];
+  for(const {w,c} of reqs){
+    const by=new Map(c.cells.map(t=>[normTraining(t.name), t]));
+    m1.push([w.fullName||'', w.civilId||'', w.trade||'', w.designation||'', workerRoles(w).join(' + ')||'No role set', c.need, c.ok, c.need?Math.round(c.ok*100/c.need):'',
+      ...cols.map(t=>{ const x=by.get(normTraining(t)); return x ? (word[x.st.status]||x.st.status)+(x.st.expiry?` (${x.st.expiry})`:'') : '—'; })]);
+    for(const x of c.cells) if(x.st.status!=='valid') gaps.push([w.fullName||'', w.civilId||'', w.trade||'', workerRoles(w).join(' + '), x.name, word[x.st.status]||x.st.status, x.st.expiry||'', x.roles.join(', ')]);
+  }
+  const counts=new Map(); ws.forEach(w=>workerRoles(w).forEach(r=>{ const k=roleKey(r); counts.set(k,(counts.get(k)||0)+1); }));
+  const m2=[['Role','Workers with this role', ...cat], ...roles.map(r=>{ const need=new Set((r.trainings||[]).map(normTraining)); return [r.name, counts.get(roleKey(r.name))||0, ...cat.map(t=>need.has(normTraining(t))?'✓':'')]; })];
+  const wb=XLSX.utils.book_new();
+  const s1=XLSX.utils.aoa_to_sheet(m1); s1['!cols']=[{wch:26},{wch:16},{wch:24},{wch:18},{wch:30},{wch:9},{wch:8},{wch:12}, ...cols.map(t=>({wch:Math.max(14, Math.min(28, t.length+2))}))]; s1['!freeze']={xSplit:1, ySplit:1};
+  const s2=XLSX.utils.aoa_to_sheet(m2); s2['!cols']=[{wch:30},{wch:12}, ...cat.map(t=>({wch:Math.max(12, Math.min(26, t.length+2))}))];
+  const s3=XLSX.utils.aoa_to_sheet(gaps.length>1 ? gaps : [...gaps, ['No gaps — every required training is in date.']]); s3['!cols']=[{wch:26},{wch:16},{wch:24},{wch:30},{wch:26},{wch:14},{wch:12},{wch:30}];
+  XLSX.utils.book_append_sheet(wb, s1, 'Worker training matrix');
+  XLSX.utils.book_append_sheet(wb, s2, 'Role requirements');
+  XLSX.utils.book_append_sheet(wb, s3, 'Gaps to close');
+  XLSX.writeFile(wb, `Burhan_Training_Matrix_${localToday()}.xlsx`);
+  toast('Excel downloaded');
+}
+// Role requirements view: roles down the side, trainings across, ✓ where the role needs it
+function renderRoleRequirements(q){
+  const head=document.getElementById('matrixHead'), body=document.getElementById('matrixRows'), tiles=document.getElementById('matrixTiles'), note=document.getElementById('matrixNote');
+  const roles=trainingRoles(), cat=trainingCatalogue();
+  const counts=new Map(); activeWorkers().filter(w=>(w.status||'active')==='active').forEach(w=>workerRoles(w).forEach(r=>{ const k=roleKey(r); counts.set(k,(counts.get(k)||0)+1); }));
+  const noRole=activeWorkers().filter(w=>(w.status||'active')==='active' && !workerRoles(w).length).length;
+  tiles.innerHTML=[
+    {label:'Roles', num:roles.length, sub:'set up in Roles & required trainings', cat:'--cat-4', icon:ic('users')},
+    {label:'Trainings', num:cat.length, sub:'in the training list', cat:'--cat-5', icon:ic('cap')},
+    {label:'Workers with a role', num:activeWorkers().filter(w=>(w.status||'active')==='active' && workerRoles(w).length).length, sub:'active workers', cat:'--cat-3', icon:ic('checkcircle')},
+    {label:'No role yet', num:noRole, cls:noRole?'warn':'ok', sub:'set in each worker\'s Profile', cat:'--cat-2', icon:ic('alert')},
+  ].map(t=>`<div class="tile" style="--tile-accent:var(${t.cat})"><div class="tile-head"><div class="tile-icon">${t.icon}</div><div class="tile-label">${t.label}</div></div><div class="tile-num ${t.cls||''}">${t.num}</div><div class="tile-sub">${t.sub}</div></div>`).join('');
+  if(noRole){ note.hidden=false; note.innerHTML=`${ic('alert')} Next step: give each worker their role(s) — open the worker → <strong>Profile</strong> → <em>Main role / Extra roles</em> → Save. The <strong>Workers</strong> view then shows who has which training.`; }
+  const cols=cat.filter(t=>!q || t.toLowerCase().includes(q) || roles.some(r=>r.name.toLowerCase().includes(q)));
+  const rows=roles.filter(r=>!q || r.name.toLowerCase().includes(q) || (r.trainings||[]).some(t=>String(t).toLowerCase().includes(q)));
+  head.innerHTML=`<tr><th class="mx-sticky">Role</th><th class="mx-col">Workers</th>${cols.map(t=>`<th class="mx-col">${esc(t)}</th>`).join('')}</tr>`;
+  if(!rows.length){ body.innerHTML=`<tr><td class="empty-state" colspan="${cols.length+2}">No roles match.</td></tr>`; return; }
+  body.innerHTML=rows.map(r=>{ const need=new Set((r.trainings||[]).map(normTraining)); const n=counts.get(roleKey(r.name))||0;
+    return `<tr><td class="mx-sticky"><div class="wname">${esc(r.name)}</div><div class="wsub">${need.size} training${need.size===1?'':'s'} required</div></td><td class="mx-cell">${n}</td>${cols.map(t=>`<td class="mx-cell">${need.has(normTraining(t))?'<span class="badge ok" title="Required">✓</span>':'<span class="mx-na">—</span>'}</td>`).join('')}</tr>`; }).join('');
 }
 function setWorkforceView(v){
   workforceView=v;
@@ -2496,6 +2558,7 @@ function reqAddTrainingName(n){
 }
 async function saveReqEditor(){
   readReqGrid();
+  { const inp=document.getElementById('reqNewTraining'); if(inp && inp.value.trim()) reqAddTrainingName(inp.value); }
   const seen=new Set(), roles=[], renames=new Map();
   for(const r of reqEdit.roles){
     const name=String(r.name||'').trim();
@@ -2505,6 +2568,8 @@ async function saveReqEditor(){
     if(r.orig && roleKey(r.orig)!==k && !reqEdit.roles.some(x=>x!==r && roleKey(x.orig)===k)) renames.set(roleKey(r.orig), name);
   }
   if(!(await saveSettings('trainingMatrix', {catalogue:reqEdit.catalogue.slice(), roles}))) return false;
+  toast(`Saved — ${reqEdit.catalogue.length} training${reqEdit.catalogue.length===1?'':'s'} and ${roles.length} role${roles.length===1?'':'s'}`);
+  matrixFilters.mode=null;
   if(renames.size){
     const batch=db.batch(); let n=0;
     for(const w of workers){
@@ -5839,6 +5904,7 @@ function vehicleMatches(v){
   if(q && !((v.vehicleNumber||'')+' '+(v.model||'')+' '+(v.ivmsUnitId||'')+' '+(v.dfmsUnitId||'')).toLowerCase().includes(q)) return false;
   if(vehicleFilters.ownership!=='all' && (v.ownership||'Own')!==vehicleFilters.ownership) return false;
   if(vehicleFilters.type!=='all' && (v.vehicleType||'')!==(vehicleFilters.type==='__none'?'':vehicleFilters.type)) return false;
+  if(vehicleFilters.division!=='all' && (v.division||'')!==(vehicleFilters.division==='__none'?'':vehicleFilters.division)) return false;
   return true;
 }
 
@@ -5848,14 +5914,18 @@ function renderVehicleTable(){
   { const sel=document.getElementById('vehicleTypeFilter'); if(sel){ const ts=[...new Set([...VEHICLE_TYPES, ...activeVehicles().map(v=>v.vehicleType).filter(Boolean)])];
     sel.innerHTML='<option value="all">All vehicle types</option>'+ts.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('')+'<option value="__none">Type not set</option>';
     sel.value=(vehicleFilters.type==='__none'||ts.includes(vehicleFilters.type))?vehicleFilters.type:'all'; vehicleFilters.type=sel.value; } }
-  if(activeVehicles().length===0){ tbody.innerHTML='<tr><td colspan="7" class="empty-state">No vehicles yet — click “Add vehicle” to get started.</td></tr>'; return; }
+  { const sel=document.getElementById('vehicleDivisionFilter'); if(sel){ const av=activeVehicles();
+    sel.innerHTML=`<option value="all">All divisions (${av.length})</option>`+DIVISIONS.map(d=>`<option value="${esc(d)}">${esc(divLabel(d))} (${av.filter(v=>v.division===d).length})</option>`).join('')+`<option value="__none">Division not set (${av.filter(v=>!v.division).length})</option>`;
+    sel.value=(vehicleFilters.division==='__none'||DIVISIONS.includes(vehicleFilters.division))?vehicleFilters.division:'all'; vehicleFilters.division=sel.value; } }
+  if(activeVehicles().length===0){ tbody.innerHTML='<tr><td colspan="8" class="empty-state">No vehicles yet — click “Add vehicle” to get started.</td></tr>'; return; }
   const list=vehicles.filter(vehicleMatches);
-  if(list.length===0){ tbody.innerHTML='<tr><td colspan="7" class="empty-state">No vehicles match your filters.</td></tr>'; return; }
+  if(list.length===0){ tbody.innerHTML='<tr><td colspan="8" class="empty-state">No vehicles match your filters.</td></tr>'; return; }
   tbody.innerHTML=list.map(v=>{
     const doc=vehicleAggFor(v,'documents'), ppe=vehicleAggFor(v,'ppe');
     return `<tr data-id="${v.id}">
       <td class="mono">${esc(v.vehicleNumber)}</td>
-      <td>${esc(v.model||'—')}${(v.vehicleType||v.division)?`<div class="wsub">${esc([v.vehicleType, v.division?divLabel(v.division):''].filter(Boolean).join(' · '))}</div>`:''}</td>
+      <td>${esc(v.model||'—')}${v.vehicleType?`<div class="wsub">${esc(v.vehicleType)}</div>`:''}</td>
+      <td>${v.division?esc(divLabel(v.division)):'<span class="wsub">Not set</span>'}</td>
       <td>${(v.ownership||'Own')==='Rental'?'<span class="badge warn">Rental</span>':'<span class="badge ok">Own</span>'}</td>
       <td>${badgeHtml(doc.status)}</td>
       <td>${badgeHtml(ppe.status)}</td>
@@ -7442,7 +7512,7 @@ async function downloadReportPdf(){
 /* ---------------- drawer ---------------- */
 function openDrawer(id){
   raiseDrawer('drawerOverlay','drawer');
-  activeWorkerId=id; activeTab='profile'; editingRecordId=null; addFormOpen=false;
+  activeWorkerId=id; activeTab='profile'; editingRecordId=null; addFormOpen=false; recordPrefill=null;
   document.getElementById('drawerOverlay').hidden=false;
   document.getElementById('drawer').hidden=false;
   renderDrawer();
@@ -7791,8 +7861,9 @@ function recordTabHtml(w,key,cfg){
 
   const editing = editingRecordId ? recs.find(r=>r.id===editingRecordId) : null;
   const formFields = cfg.fields.map(f=>{
-    const val = editing ? (editing[f.key]||'') : (f.default||'');
+    const val = editing ? (editing[f.key]||'') : (key==='trainings' && recordPrefill && recordPrefill[f.key]!=null ? recordPrefill[f.key] : (f.default||''));
     if(f.type==='workers') return workerPickFieldHtml(f, editing, w);
+    if(key==='trainings' && f.key==='name'){ const names=trainingCatalogue(); return `<label>${esc(f.label)} *<input type="text" data-field="name" value="${esc(val)}" required list="reqTrainingNames" placeholder="${esc(f.placeholder||'')}"><datalist id="reqTrainingNames">${names.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist></label>`; }
     const sw = f.showWhen ? ` data-show-when="${esc(f.showWhen.join('|'))}" ${f.showWhen.includes(editing?editing[cfg.fields[0].key]:'')?'':'hidden'}` : '';
     if(f.type==='textarea') return `<label${sw}>${esc(f.label)}${f.required?' *':''}<textarea data-field="${f.key}" ${f.required?'required':''}>${esc(val)}</textarea></label>`;
     if(f.type==='select') return `<label${sw}>${esc(f.label)}${f.required?' *':''}<select data-field="${f.key}" ${f.required?'required':''}><option value="">Select…</option>${f.options.map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
@@ -8603,7 +8674,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   document.getElementById('drawerTabs').addEventListener('click', e=>{
     const b=e.target.closest('[data-tab]'); if(!b) return;
-    activeTab=b.dataset.tab; editingRecordId=null; addFormOpen=false; renderDrawer();
+    activeTab=b.dataset.tab; editingRecordId=null; addFormOpen=false; recordPrefill=null; renderDrawer();
   });
 
   document.getElementById('drawerBody').addEventListener('submit', async e=>{
@@ -8628,14 +8699,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
       } else {
         arr.push({id:genId(), ...data});
       }
-      editingRecordId=null; addFormOpen=false;
+      editingRecordId=null; addFormOpen=false; recordPrefill=null;
       await updateWorkerArray(w,activeTab,arr);
     }
   });
 
   document.getElementById('drawerBody').addEventListener('click', async e=>{
     if(e.target.id==='toggleRecordForm'){
-      addFormOpen = !addFormOpen;
+      addFormOpen = !addFormOpen; recordPrefill=null;
       editingRecordId = null;
       renderDrawerBody();
       return;
@@ -8776,6 +8847,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('vehicleSearchInput').addEventListener('input', e=>{ vehicleFilters.q=e.target.value; renderVehicleTable(); });
   document.getElementById('vehicleOwnershipFilter').addEventListener('change', e=>{ vehicleFilters.ownership=e.target.value; renderVehicleTable(); });
   document.getElementById('vehicleTypeFilter').addEventListener('change', e=>{ vehicleFilters.type=e.target.value; renderVehicleTable(); });
+  document.getElementById('vehicleDivisionFilter').addEventListener('change', e=>{ vehicleFilters.division=e.target.value; renderVehicleTable(); });
   document.getElementById('vehicleRows').addEventListener('click', e=>{
     if(e.target.closest('a')) return;   // IVMS / DFMS links open in a new tab
     const tr=e.target.closest('tr[data-id]'); if(tr) openVehicleDrawer(tr.dataset.id);
@@ -9448,8 +9520,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('matrixGaps').addEventListener('change', e=>{ matrixFilters.gaps=e.target.value; renderMatrix(); });
   document.getElementById('matrixRows').addEventListener('click', e=>{
     const tr=e.target.closest('[data-mx-worker]'); if(!tr) return;
-    openDrawer(tr.dataset.mxWorker); activeTab='trainings'; renderDrawer();
+    const cell=e.target.closest('[data-mx-train]');
+    openDrawer(tr.dataset.mxWorker); activeTab='trainings';
+    if(cell && canEdit()){ addFormOpen=true; editingRecordId=null; recordPrefill={name:cell.dataset.mxTrain}; }   // missing / expired → open "add training record" with the name filled in
+    renderDrawer();
   });
+  document.getElementById('matrixModeTabs').addEventListener('click', e=>{ const b=e.target.closest('[data-mxmode]'); if(!b) return; matrixFilters.mode=b.dataset.mxmode; renderMatrix(); });
+  document.getElementById('exportMatrixBtn').addEventListener('click', exportTrainingMatrix);
   document.getElementById('editReqBtn').addEventListener('click', ()=>{
     if(!document.getElementById('reqPanel').hidden){ closeReqEditor(); return; }
     openReqEditor();
