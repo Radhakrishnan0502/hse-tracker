@@ -387,6 +387,22 @@ table.matrix-table td.mx-cell{text-align:center;}
 label.chk{flex-direction:row; align-items:center; gap:6px; color:var(--ink); font-weight:500; font-size:12.5px;}
 label.chk input{width:auto; flex:none;}
 @media (max-width:700px){ .req-row{grid-template-columns:1fr auto;} .req-divs{grid-column:1 / -1; grid-row:2;} }
+/* Batch 20: IVMS / DFMS portal list */
+.ml-row{padding:10px 0; border-bottom:1px dashed var(--line);}
+.ml-main{display:grid; grid-template-columns:minmax(160px,1.2fr) 110px minmax(200px,2fr) auto; gap:10px; align-items:end; margin-bottom:6px;}
+@media (max-width:700px){ .ml-main{grid-template-columns:1fr 1fr auto;} .ml-main label:nth-child(3){grid-column:1 / -1; grid-row:2;} }
+/* Batch 20: roles & required trainings editor */
+.req-chips{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;}
+.req-chip{display:inline-flex; align-items:center; gap:4px; padding:4px 6px 4px 10px; border:1px solid var(--line); border-radius:999px; background:var(--surface-2); font-size:12.5px; color:var(--ink);}
+.req-chip button{border:0; background:transparent; color:var(--muted); cursor:pointer; padding:2px; line-height:0; border-radius:50%;}
+.req-chip button:hover{color:var(--danger); background:var(--danger-bg);}
+.req-chip .ic{width:13px; height:13px;}
+.req-add{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+.req-add input{flex:1 1 220px; min-width:0;}
+table.req-grid td.mx-sticky input{min-width:230px;}
+table.req-grid td.mx-cell input{width:18px; height:18px; cursor:pointer;}
+.req-box .rf{align-items:center;}
+#matrixNote .btn{margin-left:6px;}
 /* ---- line icons (sprite) ---- */
 .ic{width:1.15em; height:1.15em; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; vertical-align:-.2em; flex:none; overflow:visible;}
 .btn .ic, .division-tab .ic, a.link-chip .ic, .equip-group h4 .ic, .att-file-icon .ic, .notice .ic, .wsub .ic{color:var(--brand); filter:drop-shadow(0 0 3px var(--brand-glow));}
@@ -765,7 +781,7 @@ body.read-only #ckTemplatesBtn{display:none !important;}
         </div>
         <div class="topbar-actions">
           <button class="btn btn-ghost btn-sm" id="clearSampleBtn" hidden>Remove sample data</button>
-          <button class="btn btn-sm" id="printQrCardsBtn" type="button" title="Print QR ID cards for the workers currently shown"><svg class="ic" aria-hidden="true"><use href="#i-qr"/></svg> QR ID cards</button>
+          <button class="btn btn-sm" id="printQrCardsBtn" type="button" hidden title="Print QR ID cards for the workers currently shown"><svg class="ic" aria-hidden="true"><use href="#i-qr"/></svg> QR ID cards</button>
           <button class="btn btn-sm import-btn" id="importWorkersBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-upload"/></svg> Import Excel</button>
           <button class="btn btn-sm" id="trashBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg> Deleted workers (0)</button>
           <button class="btn btn-primary" id="addWorkerBtn">+ Add worker</button>
@@ -789,7 +805,7 @@ body.read-only #ckTemplatesBtn{display:none !important;}
             <label>Full name *<input data-field="fullName" required placeholder="e.g. Ramesh Kumar"></label>
             <label>Civil ID *<input class="mono" data-field="civilId" required placeholder="e.g. 784-1990-1234567-1"></label>
             <label>Nationality<input data-field="nationality" placeholder="e.g. Indian"></label>
-            <label>Trade / occupation *<select data-field="trade" required><option value="">Select…</option><option value="Office Staff">Office Staff</option><option value="Scaffolding Division">Scaffolding Division</option><option value="Civil Division">Civil Division</option><option value="Rental Division">Rental Division</option><option value="Sub Contractor">Sub Contractor</option></select></label>
+            <label>Trade / occupation *<select data-field="trade" required><option value="">Select…</option><option value="Office Staff">Office Staff</option><option value="Scaffolding Division">Scaffolding Division</option><option value="Civil Division">Civil Division</option><option value="Logistics &amp; Rental Division">Logistics &amp; Rental Division</option><option value="Sub Contractor">Sub Contractor</option></select></label>
             <label>Subcontractor / company<input data-field="contractor" placeholder="e.g. Al Futtaim Contracting"></label>
             <label>Date of joining<input type="date" data-field="dateOfJoining"></label>
           </div>
@@ -831,14 +847,16 @@ body.read-only #ckTemplatesBtn{display:none !important;}
             <h2>Training matrix</h2>
           </div>
           <div class="topbar-actions">
-            <button class="btn btn-sm" id="editReqBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-gear"/></svg> Required trainings</button>
+            <button class="btn btn-sm" id="editReqBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-gear"/></svg> Roles &amp; required trainings</button>
           </div>
         </div>
         <div class="panel" id="reqPanel" hidden></div>
         <div class="tiles tiles-4" id="matrixTiles"></div>
+        <div class="notice" id="matrixNote" hidden></div>
         <div class="toolbar">
           <input type="search" id="matrixSearch" placeholder="Search worker…">
           <select id="matrixDivision"><option value="all">All divisions</option></select>
+          <select id="matrixRole" aria-label="Filter by role"><option value="all">All roles</option></select>
           <select id="matrixGaps">
             <option value="all">All active workers</option>
             <option value="gaps">Only workers with gaps</option>
@@ -850,7 +868,7 @@ body.read-only #ckTemplatesBtn{display:none !important;}
             <tbody id="matrixRows"><tr><td class="empty-state">Sign in to load the training matrix…</td></tr></tbody>
           </table>
         </div>
-        <p class="wsub" style="margin-top:8px;">A training counts when the course name on the worker's Training record contains the required name — e.g. “Working at Height – Level 2” counts for “Working at Height”. Click a cell to open that worker's Training tab.</p>
+        <p class="wsub" style="margin-top:8px;">Each worker needs the trainings of <strong>all</strong> their roles (main role + extra roles, set in their Profile). “—” means not required for that person. A training counts when the course name on the worker's Training record contains the required name — e.g. “Working at Height – Level 2” counts for “Working at Height”. Click a row to open that worker's Training tab.</p>
       </div>
     </main>
 
@@ -887,6 +905,8 @@ body.read-only #ckTemplatesBtn{display:none !important;}
             <label>Vehicle number *<input class="mono" data-field="vehicleNumber" required placeholder="e.g. RSA 12345"></label>
             <label>Model<input data-field="model" placeholder="e.g. Toyota Hilux 2022"></label>
             <label>Ownership<select data-field="ownership"><option value="Own">Own</option><option value="Rental">Rental</option></select></label>
+            <label>Vehicle type<select data-field="vehicleType" id="addVehicleType"></select></label>
+            <label>Division<select data-field="division" id="addVehicleDivision"></select></label>
           </div>
           <div class="form-actions">
             <button type="button" class="btn" id="cancelAddVehicle">Cancel</button>
@@ -902,13 +922,14 @@ body.read-only #ckTemplatesBtn{display:none !important;}
           <option value="Own">Own</option>
           <option value="Rental">Rental</option>
         </select>
+        <select id="vehicleTypeFilter" aria-label="Filter by vehicle type"><option value="all">All vehicle types</option></select>
       </div>
 
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Vehicle number</th><th>Model</th><th>Ownership</th><th>Documents</th><th>PPE</th><th>Service</th><th>IVMS / DFMS</th>
+              <th>Vehicle number</th><th>Model / type</th><th>Ownership</th><th>Documents</th><th>PPE</th><th>Service</th><th>IVMS / DFMS</th>
             </tr>
           </thead>
           <tbody id="vehicleRows">
@@ -993,7 +1014,7 @@ body.read-only #ckTemplatesBtn{display:none !important;}
         <form id="addSiteForm">
           <div class="form-grid">
             <label>Project name *<input data-field="siteName" required placeholder="e.g. Marina Tower Phase 2"></label>
-            <label>Division<select data-field="division"><option value="Civil">Civil Division</option><option value="Scaffolding">Scaffolding Division</option><option value="Rental">Rental Division</option><option value="Office staff">Office Staff</option></select></label>
+            <label>Division<select data-field="division"><option value="Civil">Civil Division</option><option value="Scaffolding">Scaffolding Division</option><option value="Rental">Logistics &amp; Rental Division</option><option value="Office staff">Office Staff</option></select></label>
             <label>Location<input data-field="location" placeholder="e.g. Muscat, Oman"></label>
           </div>
           <div class="form-actions">
@@ -1009,7 +1030,7 @@ body.read-only #ckTemplatesBtn{display:none !important;}
           <option value="all">All divisions</option>
           <option value="Civil">Civil Division</option>
           <option value="Scaffolding">Scaffolding Division</option>
-          <option value="Rental">Rental Division</option>
+          <option value="Rental">Logistics &amp; Rental Division</option>
           <option value="Office staff">Office Staff</option>
         </select>
         <select id="siteStatusFilter">
@@ -1056,7 +1077,7 @@ body.read-only #ckTemplatesBtn{display:none !important;}
         <button type="button" class="division-tab active" data-rdiv="all">All divisions</button>
         <button type="button" class="division-tab" data-rdiv="Civil">Civil Division</button>
         <button type="button" class="division-tab" data-rdiv="Scaffolding">Scaffolding Division</button>
-        <button type="button" class="division-tab" data-rdiv="Rental">Rental Division</button>
+        <button type="button" class="division-tab" data-rdiv="Rental">Logistics &amp; Rental Division</button>
         <button type="button" class="division-tab" data-rdiv="Office staff">Office Staff</button>
         <div id="reportPeriodCtl" style="margin-left:auto;"></div>
       </div>
@@ -1075,7 +1096,7 @@ body.read-only #ckTemplatesBtn{display:none !important;}
             <label>Division *<select data-rfield="division" required>
               <option value="Civil">Civil Division</option>
               <option value="Scaffolding">Scaffolding Division</option>
-              <option value="Rental">Rental Division</option>
+              <option value="Rental">Logistics &amp; Rental Division</option>
               <option value="Office staff">Office Staff</option>
             </select></label>
             <label>Category *<select id="reportCategorySelect" data-rfield="category" required></select></label>
@@ -1106,7 +1127,7 @@ body.read-only #ckTemplatesBtn{display:none !important;}
             <div class="cc-cluster" id="ccCluster"></div>
           </div>
           <div class="cc-panel">
-            <div class="cc-title">Training compliance by division <small>required trainings in date</small></div>
+            <div class="cc-title">Training compliance <small>required trainings in date — from each worker's roles</small></div>
             <div class="cc-gauges" id="ccGauges"></div>
           </div>
           <div class="cc-panel">
@@ -1117,7 +1138,7 @@ body.read-only #ckTemplatesBtn{display:none !important;}
         <div class="cc-stack">
           <div class="cc-panel"><div class="cc-title">Safe man-hours <small>last 12 months</small></div><div class="cc-chart" id="ccLine"></div></div>
           <div class="cc-panel"><div class="cc-title">Proactive activities <small>TBTs, training, inductions, visits, audits, inspections</small></div><div class="cc-chart" id="ccBars"></div></div>
-          <div class="cc-panel"><div class="cc-title">Compliance now <small>company-wide</small></div><div class="cc-mini" id="ccMini"></div></div>
+          <div class="cc-panel"><div class="cc-title">Compliance now <small id="ccMiniScope">company-wide</small></div><div class="cc-mini" id="ccMini"></div></div>
         </div>
       </section>
 
@@ -1331,7 +1352,7 @@ body.read-only #ckTemplatesBtn{display:none !important;}
       <div class="wsub mono" id="drawerSub"></div>
     </div>
     <div style="display:flex; gap:8px; align-items:flex-start; flex:none;">
-      <button type="button" class="btn btn-sm" id="workerQrBtn">QR code</button>
+      <button type="button" class="btn btn-sm" id="workerQrBtn" hidden>QR code</button>
       <button type="button" class="btn btn-sm" id="downloadPdfBtn"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg> PDF profile</button>
       <button class="icon-btn" id="drawerClose" aria-label="Close panel"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
     </div>
@@ -1769,7 +1790,33 @@ const TABS = [
   {key:'violations', label:'Violations'},
 ];
 
-const TRADE_CATEGORIES = ['Office Staff','Scaffolding Division','Civil Division','Rental Division','Sub Contractor'];
+const TRADE_CATEGORIES = ['Office Staff','Scaffolding Division','Civil Division','Logistics & Rental Division','Sub Contractor'];
+// Batch 20: "Rental Division" was renamed "Logistics & Rental Division". Older records keep working —
+// the old name is read as the new one when the data loads (nothing is rewritten in the database).
+const RENAMED_LABELS = new Map([['Rental Division','Logistics & Rental Division']]);
+function canonTrade(t){ return RENAMED_LABELS.has(t) ? RENAMED_LABELS.get(t) : t; }
+function renameOldLabels(o){
+  if(!o || typeof o!=='object') return o;
+  for(const k of Object.keys(o)){
+    const v=o[k];
+    if(typeof v==='string' && RENAMED_LABELS.has(v)) o[k]=RENAMED_LABELS.get(v);
+    else if(Array.isArray(v) && v.some(x=>typeof x==='string' && RENAMED_LABELS.has(x))) o[k]=v.map(x=>(typeof x==='string' && RENAMED_LABELS.has(x)) ? RENAMED_LABELS.get(x) : x);
+  }
+  return o;
+}
+// Which report division (Civil / Scaffolding / Rental / Office staff) a worker belongs to.
+// Sub-contractor workers count under the division of the project they are assigned to.
+const TRADE_TO_DIV = new Map([['Office Staff','Office staff'],['Scaffolding Division','Scaffolding'],['Civil Division','Civil'],['Logistics & Rental Division','Rental']]);
+function workerDivKey(w){
+  const t=canonTrade((w && w.trade)||'');
+  if(TRADE_TO_DIV.has(t)) return TRADE_TO_DIV.get(t);
+  if(w && w.projectId){ const s=siteEquipmentList.find(x=>x.id===w.projectId); if(s && !s.deleted) return s.division||'Civil'; }
+  return null;
+}
+function workerInScope(w, division, project){
+  if(project && project!=='all'){ if(project==='none'){ if(w.projectId) return false; } else if(w.projectId!==project) return false; }
+  return !division || division==='all' || workerDivKey(w)===division;
+}
 function tradeSelectHtml(current){
   const opts = TRADE_CATEGORIES.slice();
   if(current && !opts.includes(current)) opts.unshift(current); // keep an older/custom value visible instead of silently losing it
@@ -1932,7 +1979,7 @@ const VEHICLE_COUNT_FIELDS = [
 
 let vehicles=[];
 let activeVehicleId=null, activeVehicleTab='profile', editingVehicleRecordId=null, vehicleAddFormOpen=false;
-let vehicleFilters={q:'', ownership:'all'};
+let vehicleFilters={q:'', ownership:'all', type:'all'};
 let unsubscribeVehicles=null;
 
 function activeVehicles(){ return vehicles.filter(v=>!v.deleted); }
@@ -1961,7 +2008,7 @@ const SITE_TABS = [
 const PROJECT_STATUSES = ['Active','On hold','Completed'];
 // Stored division values stay short (the Monthly Report groups by them);
 // these are the names shown on screen and in PDFs.
-const DIVISION_LABELS = {Civil:'Civil Division', Scaffolding:'Scaffolding Division', Rental:'Rental Division', 'Office staff':'Office Staff'};
+const DIVISION_LABELS = {Civil:'Civil Division', Scaffolding:'Scaffolding Division', Rental:'Logistics & Rental Division', 'Office staff':'Office Staff'};
 function divLabel(d){ return DIVISION_LABELS[d] || d || '—'; }
 function divisionOptionsHtml(selected){
   return Object.keys(DIVISION_LABELS).map(v=>`<option value="${esc(v)}" ${v===selected?'selected':''}>${esc(DIVISION_LABELS[v])}</option>`).join('');
@@ -2173,62 +2220,130 @@ function safeUrl(u){
   if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(x)) x='https://'+x;
   try{ const url=new URL(x); return (url.protocol==='https:' || url.protocol==='http:') && url.hostname.includes('.') ? url.href : ''; }catch(e){ return ''; }
 }
+// Batch 20: several company IVMS / DFMS portals, each for chosen vehicle types (e.g. Cranes → one provider, Cars → another).
+// settings/app.monitorLinks = [{name, kind:'IVMS'|'DFMS', url, types:[vehicle types]}]  — no types ticked = all vehicles.
+const VEHICLE_TYPES = ['Car / SUV','Pickup','Bus','Truck','Trailer','Crane','Forklift','Other'];
+function vehicleTypeOptionsHtml(sel){ return `<option value="">Not set</option>`+VEHICLE_TYPES.map(t=>`<option value="${esc(t)}" ${t===sel?'selected':''}>${esc(t)}</option>`).join('') + (sel && !VEHICLE_TYPES.includes(sel) ? `<option value="${esc(sel)}" selected>${esc(sel)}</option>` : ''); }
+function vehicleDivisionOptionsHtml(sel){ return `<option value="">Not set</option>`+divisionOptionsHtml(sel||''); }
+function monitorLinkList(){
+  if(Array.isArray(appSettings.monitorLinks)) return appSettings.monitorLinks.filter(l=>l && safeUrl(l.url)).map(l=>({name:String(l.name||'').trim()||(l.kind||'IVMS')+' portal', kind:l.kind==='DFMS'?'DFMS':'IVMS', url:safeUrl(l.url), types:(l.types||[]).filter(Boolean)}));
+  const out=[], iv=safeUrl(appSettings.ivmsPortalUrl), df=safeUrl(appSettings.dfmsPortalUrl);   // older single-link setup
+  if(iv) out.push({name:'IVMS portal'+(appSettings.ivmsProvider?' · '+appSettings.ivmsProvider:''), kind:'IVMS', url:iv, types:[]});
+  if(df) out.push({name:'DFMS portal'+(appSettings.dfmsProvider?' · '+appSettings.dfmsProvider:''), kind:'DFMS', url:df, types:[]});
+  return out;
+}
+function portalFor(v, kind){
+  const list=monitorLinkList().filter(l=>l.kind===kind), t=v && v.vehicleType;
+  return (t && list.find(l=>l.types.includes(t))) || list.find(l=>!l.types.length) || null;
+}
 function vehicleMonitorLinks(v){
+  const pi=portalFor(v,'IVMS'), pd=portalFor(v,'DFMS');
   return {
-    ivms: safeUrl(v && v.ivmsLink) || safeUrl(appSettings.ivmsPortalUrl),
-    dfms: safeUrl(v && v.dfmsLink) || safeUrl(appSettings.dfmsPortalUrl),
+    ivms: safeUrl(v && v.ivmsLink) || (pi ? pi.url : ''), ivmsName: (v && safeUrl(v.ivmsLink)) ? 'this vehicle\'s link' : (pi ? pi.name : ''),
+    dfms: safeUrl(v && v.dfmsLink) || (pd ? pd.url : ''), dfmsName: (v && safeUrl(v.dfmsLink)) ? 'this vehicle\'s link' : (pd ? pd.name : ''),
   };
 }
-let monitorEditOpen=false;
+let monitorEditOpen=false, monitorEditRows=null;
+function readMonitorRows(){
+  const el=document.getElementById('monitorBar'); if(!monitorEditRows || !el) return;
+  monitorEditRows=monitorEditRows.map((r,i)=>({
+    name:(el.querySelector(`[data-ml-name="${i}"]`)||{}).value ?? r.name,
+    kind:(el.querySelector(`[data-ml-kind="${i}"]`)||{}).value || r.kind,
+    url:(el.querySelector(`[data-ml-url="${i}"]`)||{}).value ?? r.url,
+    types:el.querySelector(`[data-ml-type="${i}"]`) ? [...el.querySelectorAll(`[data-ml-type="${i}"]:checked`)].map(x=>x.value) : r.types,
+  }));
+}
 function renderMonitorBar(){
   const el=document.getElementById('monitorBar'); if(!el) return;
   if(!auth.currentUser){ el.innerHTML=''; return; }
   if(monitorEditOpen && canEdit()){
+    if(!monitorEditRows){ monitorEditRows=monitorLinkList().map(l=>({...l, types:l.types.slice()})); if(!monitorEditRows.length) monitorEditRows=[{name:'', kind:'IVMS', url:'', types:[]}]; }
     el.innerHTML = `<form id="monitorForm">
       <div class="subhead" style="margin-top:0;">Company IVMS &amp; DFMS portals</div>
-      <div class="form-grid">
-        <label>IVMS portal link<input data-mfield="ivmsPortalUrl" value="${esc(appSettings.ivmsPortalUrl||'')}" placeholder="https://… (your IVMS provider's login page)"></label>
-        <label>IVMS provider<input data-mfield="ivmsProvider" value="${esc(appSettings.ivmsProvider||'')}" placeholder="optional, e.g. provider name"></label>
-        <span></span>
-        <label>DFMS portal link<input data-mfield="dfmsPortalUrl" value="${esc(appSettings.dfmsPortalUrl||'')}" placeholder="https://… (your DFMS provider's login page)"></label>
-        <label>DFMS provider<input data-mfield="dfmsProvider" value="${esc(appSettings.dfmsProvider||'')}" placeholder="optional"></label>
-      </div>
-      <p class="wsub" style="margin:8px 0 0;">These open for every vehicle. A vehicle can also have its own direct link (open the vehicle → Profile → IVMS &amp; DFMS).</p>
+      <p class="wsub" style="margin:-4px 0 8px;">Add one line per portal. Tick the vehicle types that use it (e.g. Crane, Trailer) — leave all unticked for “all other vehicles”. Each vehicle then shows its own portal. A vehicle can still have its own direct link (open the vehicle → Profile).</p>
+      ${monitorEditRows.map((r,i)=>`<div class="ml-row">
+        <div class="ml-main">
+          <label>Name<input data-ml-name="${i}" value="${esc(r.name||'')}" placeholder="e.g. Crane IVMS — provider name"></label>
+          <label>Type<select data-ml-kind="${i}"><option value="IVMS" ${r.kind!=='DFMS'?'selected':''}>IVMS</option><option value="DFMS" ${r.kind==='DFMS'?'selected':''}>DFMS</option></select></label>
+          <label>Link<input data-ml-url="${i}" value="${esc(r.url||'')}" placeholder="https://… (provider's login page)"></label>
+          <button type="button" class="icon-btn danger" data-ml-remove="${i}" aria-label="Remove portal" title="Remove">${ic('close')}</button>
+        </div>
+        <div class="req-divs"><span class="wsub">For:</span>${VEHICLE_TYPES.map(t=>`<label class="chk"><input type="checkbox" data-ml-type="${i}" value="${esc(t)}" ${(r.types||[]).includes(t)?'checked':''}>${esc(t)}</label>`).join('')}</div>
+      </div>`).join('')}
+      <div style="margin-top:10px;"><button type="button" class="btn btn-sm" id="monitorAddRow">+ Add portal</button></div>
       <div class="form-actions"><button type="button" class="btn btn-sm" id="monitorCancel">Cancel</button><button type="submit" class="btn btn-primary btn-sm">Save links</button></div>
     </form>`;
     return;
   }
-  const iv=safeUrl(appSettings.ivmsPortalUrl), df=safeUrl(appSettings.dfmsPortalUrl);
+  const list=monitorLinkList();
   const warn = settingsLoadError==='rules' ? `<span class="badge warn" title="${esc(RULES_UPDATE_MSG)}">Firebase rules update needed</span>` : '';
   el.innerHTML = `<span class="monitor-bar-label">Vehicle monitoring</span>
-    ${iv ? `<a class="btn btn-sm" href="${esc(iv)}" target="_blank" rel="noopener noreferrer">IVMS portal${appSettings.ivmsProvider?' · '+esc(appSettings.ivmsProvider):''} ${ic('external')}</a>` : '<span class="badge muted">IVMS link not set</span>'}
-    ${df ? `<a class="btn btn-sm" href="${esc(df)}" target="_blank" rel="noopener noreferrer">DFMS portal${appSettings.dfmsProvider?' · '+esc(appSettings.dfmsProvider):''} ${ic('external')}</a>` : '<span class="badge muted">DFMS link not set</span>'}
+    ${list.length ? list.map(l=>`<a class="btn btn-sm" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" title="${esc(l.kind+' · '+(l.types.length?'for '+l.types.join(', '):'all vehicles'))}">${esc(l.name)}${l.types.length?` <span class="wsub">(${esc(l.types.join(', '))})</span>`:''} ${ic('external')}</a>`).join('') : '<span class="badge muted">No IVMS / DFMS links set</span>'}
     ${warn}
-    <button type="button" class="btn btn-sm btn-ghost" id="monitorEditBtn">${ic('gear')} ${iv||df?'Edit links':'Set links'}</button>`;
+    ${canEdit() ? `<button type="button" class="btn btn-sm btn-ghost" id="monitorEditBtn">${ic('gear')} ${list.length?'Edit links':'Set links'}</button>` : ''}`;
 }
 function vehicleMonitorCell(v){
   const l=vehicleMonitorLinks(v);
-  const iv = l.ivms ? `<a class="link-chip" href="${esc(l.ivms)}" target="_blank" rel="noopener noreferrer" title="${esc(v.ivmsUnitId?'IVMS unit '+v.ivmsUnitId:'Open IVMS')}">IVMS ${ic('external')}</a>` : '';
-  const df = l.dfms ? `<a class="link-chip" href="${esc(l.dfms)}" target="_blank" rel="noopener noreferrer" title="${esc(v.dfmsUnitId?'DFMS device '+v.dfmsUnitId:'Open DFMS')}">DFMS ${ic('external')}</a>` : '';
+  const iv = l.ivms ? `<a class="link-chip" href="${esc(l.ivms)}" target="_blank" rel="noopener noreferrer" title="${esc((v.ivmsUnitId?'IVMS unit '+v.ivmsUnitId+' · ':'')+'Opens '+l.ivmsName)}">IVMS ${ic('external')}</a>` : '';
+  const df = l.dfms ? `<a class="link-chip" href="${esc(l.dfms)}" target="_blank" rel="noopener noreferrer" title="${esc((v.dfmsUnitId?'DFMS device '+v.dfmsUnitId+' · ':'')+'Opens '+l.dfmsName)}">DFMS ${ic('external')}</a>` : '';
   return (iv||df) ? iv+df : '<span class="wsub">—</span>';
 }
 function vehicleMonitorBlock(v){
   const l=vehicleMonitorLinks(v);
   const ids=[v.ivmsUnitId?`IVMS unit <span class="mono">${esc(v.ivmsUnitId)}</span>`:'', v.dfmsUnitId?`DFMS device <span class="mono">${esc(v.dfmsUnitId)}</span>`:''].filter(Boolean).join(' · ');
   return `<div class="monitor-links">
-    ${l.ivms ? `<a class="btn btn-sm" href="${esc(l.ivms)}" target="_blank" rel="noopener noreferrer">${ic('external')} Open IVMS</a>` : ''}
-    ${l.dfms ? `<a class="btn btn-sm" href="${esc(l.dfms)}" target="_blank" rel="noopener noreferrer">${ic('external')} Open DFMS</a>` : ''}
-    ${(!l.ivms && !l.dfms) ? '<span class="wsub">No IVMS / DFMS link yet — add this vehicle\'s links below, or set the company portals on the Fleet page.</span>' : ''}
+    ${l.ivms ? `<a class="btn btn-sm" href="${esc(l.ivms)}" target="_blank" rel="noopener noreferrer" title="${esc(l.ivmsName)}">${ic('external')} Open IVMS</a>` : ''}
+    ${l.dfms ? `<a class="btn btn-sm" href="${esc(l.dfms)}" target="_blank" rel="noopener noreferrer" title="${esc(l.dfmsName)}">${ic('external')} Open DFMS</a>` : ''}
+    ${(!l.ivms && !l.dfms) ? `<span class="wsub">No IVMS / DFMS link for this vehicle${v.vehicleType?` (${esc(v.vehicleType)})`:''} — set its vehicle type below so the right company portal opens, or add a direct link.</span>` : `<span class="wsub">${esc([l.ivms?'IVMS: '+l.ivmsName:'', l.dfms?'DFMS: '+l.dfmsName:''].filter(Boolean).join(' · '))}</span>`}
     ${ids ? `<span class="wsub">${ids}</span>` : ''}
   </div>`;
 }
 
 /* ---------------- training matrix (Workforce) ---------------- */
 let workforceView='register';
-let matrixFilters={q:'', division:'all', gaps:'all'};
-let reqEditRows=null;
+let matrixFilters={q:'', division:'all', role:'all', gaps:'all'};
+let reqEdit=null;   // editor state for "Roles & required trainings"
 function normTraining(x){ return String(x||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); }
+// legacy (before Batch 20): requirements per division — kept only to pre-fill the training list
 function requiredTrainings(){ return (trainingReq.trainings||[]).filter(t=>t && String(t.name||'').trim()); }
+/* ---- Batch 20: role-based training requirements ----
+   settings/trainingMatrix = { catalogue:[training names], roles:[{name, trainings:[names]}] }
+   A worker has a main role + extra roles; they need every training of every role they hold. */
+function roleKey(n){ return String(n||'').trim().toLowerCase(); }
+function trainingRoles(){ return (trainingReq.roles||[]).filter(r=>r && String(r.name||'').trim()); }
+function roleNamesList(){ return trainingRoles().map(r=>String(r.name).trim()); }
+function trainingCatalogue(){
+  const out=[], seen=new Set();
+  const add=n=>{ n=String(n||'').trim(); const k=normTraining(n); if(k && !seen.has(k)){ seen.add(k); out.push(n); } };
+  (trainingReq.catalogue||[]).forEach(add);
+  trainingRoles().forEach(r=>(r.trainings||[]).forEach(add));
+  return out;
+}
+function workerRoles(w){
+  const out=[], seen=new Set();
+  for(const x of [w && w.mainRole, ...((w && w.extraRoles)||[])]){ const n=String(x||'').trim(), k=roleKey(n); if(n && !seen.has(k)){ seen.add(k); out.push(n); } }
+  return out;
+}
+function requiredForWorker(w){
+  const mine=new Set(workerRoles(w).map(roleKey)); const map=new Map();
+  if(!mine.size) return [];
+  for(const r of trainingRoles()){
+    if(!mine.has(roleKey(r.name))) continue;
+    for(const t of (r.trainings||[])){ const k=normTraining(t); if(!k) continue; if(!map.has(k)) map.set(k,{name:String(t).trim(), roles:[]}); map.get(k).roles.push(String(r.name).trim()); }
+  }
+  return [...map.values()];
+}
+function workerTrainingCompliance(w){
+  const req=requiredForWorker(w); let ok=0;
+  const cells=req.map(t=>{ const st=trainingStatusFor(w, t.name); if(st.status==='valid'||st.status==='expiring') ok++; return {...t, st}; });
+  return {need:req.length, ok, cells};
+}
+// totals for a group of workers: required slots in date, fully trained workers
+function trainingComplianceFor(ws){
+  let need=0, ok=0, full=0, counted=0;
+  for(const w of ws){ const c=workerTrainingCompliance(w); if(!c.need) continue; counted++; need+=c.need; ok+=c.ok; if(c.ok===c.need) full++; }
+  return {need, ok, full, counted, pct: need ? Math.round(ok*100/need) : null};
+}
 function trainingStatusFor(w, reqName){
   const key=normTraining(reqName); if(!key) return {status:'na'};
   const recs=(w.trainings||[]).filter(r=>{ const n=normTraining(r.name); return n && (n===key || (' '+n+' ').includes(' '+key+' ')); });
@@ -2241,10 +2356,11 @@ function trainingStatusFor(w, reqName){
   }
   return best;
 }
-function matrixCellHtml(c){
-  if(!c) return '<span class="mx-na" title="Not required for this division">—</span>';
-  if(c.status==='missing') return '<span class="badge danger">Missing</span>';
-  const title = c.expiry ? `${c.name} — valid until ${c.expiry}` : `${c.name} — no expiry`;
+function matrixCellHtml(c, roles){
+  if(!c) return '<span class="mx-na" title="Not required for this worker\'s roles">—</span>';
+  const why = roles && roles.length ? ` — required for ${roles.join(', ')}` : '';
+  if(c.status==='missing') return `<span class="badge danger" title="${esc('Not recorded'+why)}">Missing</span>`;
+  const title = (c.expiry ? `${c.name} — valid until ${c.expiry}` : `${c.name} — no expiry`) + why;
   if(c.status==='expired') return `<span class="badge danger" title="${esc(title)}">Expired</span>`;
   if(c.status==='expiring') return `<span class="badge warn" title="${esc(title)}">Expiring</span>`;
   return `<span class="badge ok" title="${esc(title)}">Valid</span>`;
@@ -2252,29 +2368,40 @@ function matrixCellHtml(c){
 function renderMatrix(){
   const pane=document.getElementById('trainingMatrixPane');
   if(!pane || pane.hidden || !auth.currentUser) return;
-  const divSel=document.getElementById('matrixDivision');
+  const divSel=document.getElementById('matrixDivision'), roleSel=document.getElementById('matrixRole'), note=document.getElementById('matrixNote');
   const opts=TRADE_CATEGORIES.slice();
   for(const w of activeWorkers()) if(w.trade && !opts.includes(w.trade)) opts.push(w.trade);
   divSel.innerHTML='<option value="all">All divisions</option>'+opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
   divSel.value = opts.includes(matrixFilters.division) ? matrixFilters.division : 'all';
   matrixFilters.division=divSel.value;
+  const roles=roleNamesList();
+  roleSel.innerHTML='<option value="all">All roles</option>'+roles.map(r=>`<option value="${esc(r)}">${esc(r)}</option>`).join('')+'<option value="__none">No role set</option>';
+  roleSel.value = (matrixFilters.role==='__none' || roles.includes(matrixFilters.role)) ? matrixFilters.role : 'all';
+  matrixFilters.role=roleSel.value;
   const head=document.getElementById('matrixHead'), body=document.getElementById('matrixRows'), tiles=document.getElementById('matrixTiles');
-  const reqs=requiredTrainings();
+  note.hidden=true; note.innerHTML='';
   if(settingsLoadError==='rules'){ tiles.innerHTML=''; head.innerHTML=''; body.innerHTML=`<tr><td class="empty-state">${esc(RULES_UPDATE_MSG)}</td></tr>`; return; }
-  if(!reqs.length){
+  if(!roles.length){
     tiles.innerHTML=''; head.innerHTML='';
-    body.innerHTML=`<tr><td class="empty-state">${canEdit() ? 'No required trainings set yet — click “Required trainings” to choose which trainings each division needs.' : 'The HSE team has not set the required trainings yet.'}</td></tr>`;
+    body.innerHTML=`<tr><td class="empty-state">${canEdit() ? 'No roles set yet — click <strong>Roles &amp; required trainings</strong> to add your company roles (e.g. HSE Engineer, Scaffolder, Driver) and tick the trainings each one needs. Then give each worker their role(s) in their Profile tab.' : 'The HSE team has not set the roles and required trainings yet.'}</td></tr>`;
     return;
   }
-  const cols = matrixFilters.division==='all' ? reqs : reqs.filter(t=>(t.divisions||[]).includes(matrixFilters.division));
   const q=matrixFilters.q.trim().toLowerCase();
-  let rows=activeWorkers().filter(w=>(w.status||'active')==='active')
+  const all=activeWorkers().filter(w=>(w.status||'active')==='active')
     .filter(w=> matrixFilters.division==='all' || w.trade===matrixFilters.division)
-    .filter(w=> !q || ((w.fullName||'')+' '+(w.civilId||'')+' '+(w.designation||'')).toLowerCase().includes(q))
-    .map(w=>({w, cells:cols.map(t=> (t.divisions||[]).includes(w.trade) ? trainingStatusFor(w, t.name) : null)}));
-  // tiles cover every required slot for the workers shown (before the gaps filter)
+    .filter(w=> !q || ((w.fullName||'')+' '+(w.civilId||'')+' '+(w.designation||'')+' '+workerRoles(w).join(' ')).toLowerCase().includes(q));
+  const noRole=all.filter(w=>!workerRoles(w).length);
+  const ws=all.filter(w=>{
+    if(matrixFilters.role==='all') return true;
+    const rs=workerRoles(w);
+    return matrixFilters.role==='__none' ? !rs.length : rs.some(r=>roleKey(r)===roleKey(matrixFilters.role));
+  });
+  let rows=ws.map(w=>{ const req=requiredForWorker(w); return {w, roles:workerRoles(w), req:new Map(req.map(t=>[normTraining(t.name), t.roles]))}; });
+  const used=new Set(); rows.forEach(r=>r.req.forEach((_,k)=>used.add(k)));
+  const cols=trainingCatalogue().filter(t=>used.has(normTraining(t)));
+  rows.forEach(r=>{ r.cells=cols.map(t=>{ const k=normTraining(t); return r.req.has(k) ? {st:trainingStatusFor(r.w, t), roles:r.req.get(k)} : null; }); });
   let need=0, valid=0, missing=0, expired=0, expiring=0;
-  for(const r of rows) for(const c of r.cells){ if(!c) continue; need++; if(c.status==='valid') valid++; else if(c.status==='missing') missing++; else if(c.status==='expired') expired++; else if(c.status==='expiring'){ expiring++; valid++; } }
+  for(const r of rows) for(const c of r.cells){ if(!c) continue; need++; const s=c.st.status; if(s==='valid') valid++; else if(s==='missing') missing++; else if(s==='expired') expired++; else if(s==='expiring'){ expiring++; valid++; } }
   const pct = need ? Math.round(valid*100/need) : 100;
   tiles.innerHTML=[
     {label:'Compliance', num:need?pct+'%':'—', cls:need?(pct>=90?'ok':pct>=70?'warn':'danger'):'', sub:`${valid} of ${need} required trainings in date`, cat:'--cat-4', icon:ic('chart')},
@@ -2282,15 +2409,18 @@ function renderMatrix(){
     {label:'Expired', num:expired, cls:expired?'danger':'ok', sub:'past the valid-until date', cat:'--cat-7', icon:ic('stop')},
     {label:'Expiring soon', num:expiring, cls:expiring?'warn':'ok', sub:'within the next 30 days', cat:'--cat-2', icon:ic('hourglass')},
   ].map(t=>`<div class="tile" style="--tile-accent:var(${t.cat})"><div class="tile-head"><div class="tile-icon">${t.icon}</div><div class="tile-label">${t.label}</div></div><div class="tile-num ${t.cls}">${t.num}</div><div class="tile-sub">${t.sub}</div></div>`).join('');
-  if(matrixFilters.gaps==='gaps') rows=rows.filter(r=>r.cells.some(c=>c && c.status!=='valid'));
+  if(noRole.length && matrixFilters.role!=='__none'){
+    note.hidden=false;
+    note.innerHTML=`${ic('alert')} <strong>${noRole.length} active worker${noRole.length===1?' has':'s have'} no role yet</strong> — ${noRole.length===1?'their':'their'} trainings can't be checked. Open the worker → Profile → <em>Main role / Extra roles</em>. <button type="button" class="btn btn-sm btn-ghost" data-mx-norole="1">Show them</button>`;
+  }
+  if(matrixFilters.gaps==='gaps') rows=rows.filter(r=>r.cells.some(c=>c && c.st.status!=='valid'));
   rows.sort((a,b)=>(a.w.trade||'').localeCompare(b.w.trade||'') || (a.w.fullName||'').localeCompare(b.w.fullName||''));
-  head.innerHTML = `<tr><th class="mx-sticky">Worker</th>${cols.map(t=>`<th class="mx-col">${esc(t.name)}</th>`).join('')}</tr>`;
-  if(!cols.length){ body.innerHTML=`<tr><td class="empty-state">No required trainings for ${esc(matrixFilters.division)} yet.</td></tr>`; return; }
+  head.innerHTML = `<tr><th class="mx-sticky">Worker</th>${cols.map(t=>`<th class="mx-col">${esc(t)}</th>`).join('')}</tr>`;
   if(!rows.length){ body.innerHTML=`<tr><td class="empty-state" colspan="${cols.length+1}">${matrixFilters.gaps==='gaps' ? ic('checkcircle')+' No gaps — every worker shown has all required trainings in date.' : 'No active workers match.'}</td></tr>`; return; }
   body.innerHTML = rows.map(r=>`<tr data-mx-worker="${r.w.id}">
-      <td class="mx-sticky"><div class="wname">${esc(r.w.fullName||'—')}</div><div class="wsub">${esc(r.w.trade||'No division')}</div></td>
-      ${r.cells.map(c=>`<td class="mx-cell">${matrixCellHtml(c)}</td>`).join('')}
-    </tr>`).join('');
+      <td class="mx-sticky"><div class="wname">${esc(r.w.fullName||'—')}</div><div class="wsub">${r.roles.length ? esc(r.roles.join(' + ')) : '<span class="badge muted">No role set</span>'}${r.w.trade?' · '+esc(r.w.trade):''}</div></td>
+      ${r.cells.map(c=>`<td class="mx-cell">${c ? matrixCellHtml(c.st, c.roles) : matrixCellHtml(null)}</td>`).join('')}
+    </tr>`).join('') + (cols.length ? '' : `<tr><td class="empty-state" colspan="1">No required trainings for the roles shown — tick them in <strong>Roles &amp; required trainings</strong>.</td></tr>`);
 }
 function setWorkforceView(v){
   workforceView=v;
@@ -2299,48 +2429,117 @@ function setWorkforceView(v){
   document.getElementById('trainingMatrixPane').hidden = v!=='matrix';
   if(v==='matrix') renderMatrix();
 }
-const COMMON_TRAININGS = [
-  {name:'HSE Induction', divisions:['Office Staff','Scaffolding Division','Civil Division','Rental Division','Sub Contractor']},
-  {name:'H2S Awareness', divisions:['Scaffolding Division','Civil Division','Rental Division','Sub Contractor']},
-  {name:'Working at Height', divisions:['Scaffolding Division','Civil Division','Sub Contractor']},
-  {name:'Fire Fighting', divisions:['Scaffolding Division','Civil Division','Rental Division']},
-  {name:'First Aid', divisions:['Scaffolding Division','Civil Division']},
-  {name:'Defensive Driving', divisions:['Rental Division']},
+// Suggested starting point — edit freely (typical oil & gas contractor roles in Oman)
+const SUGGESTED_ROLES = [
+  {name:'HSE Engineer / Officer', trainings:['HSE Induction','H2S Awareness','Working at Height','Fire Fighting','First Aid','Defensive Driving','Permit to Work','Confined Space Entry','Scaffolding Inspection']},
+  {name:'Office Staff', trainings:['HSE Induction','Fire Fighting']},
+  {name:'Site Supervisor / Foreman', trainings:['HSE Induction','H2S Awareness','Working at Height','Permit to Work','First Aid','Fire Fighting']},
+  {name:'Scaffolder', trainings:['HSE Induction','H2S Awareness','Working at Height','Scaffolding Erection','Manual Handling']},
+  {name:'Scaffolding Supervisor / Inspector', trainings:['HSE Induction','H2S Awareness','Working at Height','Scaffolding Inspection','Permit to Work','First Aid']},
+  {name:'Light Vehicle Driver', trainings:['HSE Induction','H2S Awareness','Defensive Driving']},
+  {name:'Heavy Vehicle Driver', trainings:['HSE Induction','H2S Awareness','Heavy Vehicle Defensive Driving']},
+  {name:'Crane Operator', trainings:['HSE Induction','H2S Awareness','Crane Operation','Rigging & Slinging','Heavy Vehicle Defensive Driving']},
+  {name:'Rigger / Banksman', trainings:['HSE Induction','H2S Awareness','Rigging & Slinging','Working at Height']},
+  {name:'Civil Worker', trainings:['HSE Induction','H2S Awareness','Working at Height','Manual Handling']},
 ];
-function readReqRows(){
+function reqEditFromSettings(){
+  const cat=trainingCatalogue();
+  if(!cat.length) requiredTrainings().forEach(t=>{ const n=String(t.name).trim(); if(!cat.some(x=>normTraining(x)===normTraining(n))) cat.push(n); });   // pre-fill from the old division list
+  return {catalogue:cat, roles:trainingRoles().map(r=>({name:String(r.name).trim(), orig:String(r.name).trim(), set:new Set((r.trainings||[]).map(normTraining).filter(Boolean))}))};
+}
+function readReqGrid(){
   const panel=document.getElementById('reqPanel');
-  if(!reqEditRows || panel.hidden) return;
-  reqEditRows = reqEditRows.map((r,i)=>({
-    name: (panel.querySelector(`[data-req-name="${i}"]`)||{}).value || '',
-    divisions: [...panel.querySelectorAll(`[data-req-div="${i}"]:checked`)].map(x=>x.value),
-  }));
+  if(!reqEdit || panel.hidden) return;
+  reqEdit.roles.forEach((r,i)=>{
+    const inp=panel.querySelector(`[data-role-name="${i}"]`); if(inp) r.name=inp.value;
+    const boxes=panel.querySelectorAll(`[data-role-t="${i}"]`);
+    if(boxes.length){ r.set=new Set(); boxes.forEach(b=>{ if(b.checked) r.set.add(normTraining(b.value)); }); }
+  });
 }
 function renderReqPanel(){
   const panel=document.getElementById('reqPanel');
   const names=[...new Set(activeWorkers().flatMap(w=>(w.trainings||[]).map(r=>String(r.name||'').trim())).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-  panel.innerHTML = `<h3>Required trainings by division</h3>
-    <p class="wsub" style="margin:-6px 0 10px;">Add each training once and tick the divisions that need it. Workers are matched by the course name on their Training records.</p>
+  const cat=reqEdit.catalogue;
+  panel.innerHTML = `<h3>Roles &amp; required trainings</h3>
+    <p class="wsub" style="margin:-6px 0 10px;"><strong>1.</strong> List the trainings. <strong>2.</strong> Add your company roles (designations). <strong>3.</strong> Tick the trainings each role needs. A person with more than one role — e.g. a driver who also works as a scaffolder — needs the trainings of all their roles. Training records are matched by course name (“Working at Height – Level 2” counts for “Working at Height”).</p>
     <form id="reqForm">
-      ${reqEditRows.map((r,i)=>`<div class="req-row">
-        <input data-req-name="${i}" value="${esc(r.name)}" list="trainingNameList" placeholder="e.g. Working at Height" aria-label="Training name">
-        <div class="req-divs">${TRADE_CATEGORIES.map(d=>`<label class="chk"><input type="checkbox" data-req-div="${i}" value="${esc(d)}" ${r.divisions.includes(d)?'checked':''}>${esc(d)}</label>`).join('')}</div>
-        <button type="button" class="icon-btn danger" data-req-remove="${i}" aria-label="Remove training">${ic('close')}</button>
-      </div>`).join('')}
+      <div class="subhead" style="margin-top:0;">Trainings (${cat.length})</div>
+      <div class="req-chips">${cat.length ? cat.map((t,i)=>`<span class="req-chip">${esc(t)}<button type="button" data-cat-remove="${i}" aria-label="Remove ${esc(t)}" title="Remove">${ic('close')}</button></span>`).join('') : '<span class="wsub">No trainings yet — add them below, or use the suggested list.</span>'}</div>
+      <div class="req-add"><input id="reqNewTraining" list="trainingNameList" placeholder="Add a training, e.g. Rigging & Slinging" aria-label="New training name"><button type="button" class="btn btn-sm" id="reqAddTraining">+ Add training</button></div>
       <datalist id="trainingNameList">${names.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist>
+      <div class="subhead">Roles — tick what each role needs (${reqEdit.roles.length})</div>
+      ${reqEdit.roles.length ? `<div class="table-wrap"><table class="matrix-table req-grid">
+        <thead><tr><th class="mx-sticky">Role / designation</th>${cat.map(t=>`<th class="mx-col">${esc(t)}</th>`).join('')}<th></th></tr></thead>
+        <tbody>${reqEdit.roles.map((r,i)=>`<tr>
+          <td class="mx-sticky"><input data-role-name="${i}" value="${esc(r.name)}" placeholder="e.g. Scaffolder" aria-label="Role name"></td>
+          ${cat.map(t=>`<td class="mx-cell"><input type="checkbox" data-role-t="${i}" value="${esc(t)}" ${r.set.has(normTraining(t))?'checked':''} aria-label="${esc((r.name||'Role')+' needs '+t)}"></td>`).join('')}
+          <td><button type="button" class="icon-btn danger" data-role-remove="${i}" aria-label="Remove role" title="Remove role">${ic('close')}</button></td>
+        </tr>`).join('')}</tbody></table></div>` : '<p class="wsub">No roles yet — click “+ Add role”, or use the suggested roles.</p>'}
       <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-        <button type="button" class="btn btn-sm" id="reqAddRow">+ Add training</button>
-        <button type="button" class="btn btn-sm btn-ghost" id="reqAddCommon">+ Add common oil &amp; gas trainings</button>
+        <button type="button" class="btn btn-sm" id="reqAddRole">+ Add role</button>
+        <button type="button" class="btn btn-sm btn-ghost" id="reqAddCommon">+ Add suggested roles &amp; trainings</button>
       </div>
-      <div class="form-actions"><button type="button" class="btn" id="reqCancel">Cancel</button><button type="submit" class="btn btn-primary">Save requirements</button></div>
+      <p class="wsub" style="margin:8px 0 0;">Renaming a role here also updates the workers who have it. Removing a role doesn't change any worker — it just stops requiring trainings.</p>
+      <div class="form-actions"><button type="button" class="btn" id="reqCancel">Cancel</button><button type="submit" class="btn btn-primary">Save roles &amp; trainings</button></div>
     </form>`;
 }
 function openReqEditor(){
-  reqEditRows=requiredTrainings().map(t=>({name:t.name, divisions:(t.divisions||[]).slice()}));
-  if(!reqEditRows.length) reqEditRows=[{name:'', divisions:[]}];
+  reqEdit=reqEditFromSettings();
   document.getElementById('reqPanel').hidden=false;
   renderReqPanel();
 }
-function closeReqEditor(){ reqEditRows=null; const p=document.getElementById('reqPanel'); p.hidden=true; p.innerHTML=''; }
+function closeReqEditor(){ reqEdit=null; const p=document.getElementById('reqPanel'); p.hidden=true; p.innerHTML=''; }
+function reqAddTrainingName(n){
+  n=String(n||'').trim(); if(!n) return false;
+  if(reqEdit.catalogue.some(x=>normTraining(x)===normTraining(n))) return false;
+  reqEdit.catalogue.push(n); return true;
+}
+async function saveReqEditor(){
+  readReqGrid();
+  const seen=new Set(), roles=[], renames=new Map();
+  for(const r of reqEdit.roles){
+    const name=String(r.name||'').trim();
+    if(!name){ if(r.set.size){ toast('Give every role a name (or remove the empty row)'); return false; } continue; }
+    const k=roleKey(name); if(seen.has(k)){ toast(`“${name}” is listed twice — keep it once`); return false; } seen.add(k);
+    roles.push({name, trainings:reqEdit.catalogue.filter(t=>r.set.has(normTraining(t)))});
+    if(r.orig && roleKey(r.orig)!==k && !reqEdit.roles.some(x=>x!==r && roleKey(x.orig)===k)) renames.set(roleKey(r.orig), name);
+  }
+  if(!(await saveSettings('trainingMatrix', {catalogue:reqEdit.catalogue.slice(), roles}))) return false;
+  if(renames.size){
+    const batch=db.batch(); let n=0;
+    for(const w of workers){
+      const main=renames.get(roleKey(w.mainRole)), ex=(w.extraRoles||[]);
+      const newEx=ex.map(x=>renames.get(roleKey(x))||x);
+      if(main || newEx.some((x,i)=>x!==ex[i])){ batch.update(db.collection('workers').doc(w.id), stamp({mainRole:main||w.mainRole||'', extraRoles:newEx})); n++; }
+      if(n>=450) break;
+    }
+    if(n){ try{ await batch.commit(); toast(`Role renamed on ${n} worker${n===1?'':'s'}`); }catch(e){ console.error(e); toast('Roles saved, but the workers could not be updated — re-pick the renamed role in their profiles'); } }
+  }
+  return true;
+}
+// Worker profile: main role + extra roles
+function workerRolesFormHtml(w){
+  const roles=roleNamesList();
+  if(!roles.length) return `<div class="span-all wsub">Roles: none set up yet${canEdit()?' — add them in <strong>Workforce → Training matrix → Roles &amp; required trainings</strong>, then pick this person\'s role(s) here.':'.'}</div>`;
+  const main=String(w.mainRole||'').trim(), extra=new Set((w.extraRoles||[]).map(roleKey));
+  const mainOpts=roles.slice(); if(main && !roles.some(r=>roleKey(r)===roleKey(main))) mainOpts.unshift(main);
+  const extraOpts=roles.slice(); for(const x of (w.extraRoles||[])) if(x && !extraOpts.some(r=>roleKey(r)===roleKey(x))) extraOpts.push(x);
+  return `<label>Main role<select data-field="mainRole"><option value="">Select…</option>${mainOpts.map(r=>`<option value="${esc(r)}" ${roleKey(r)===roleKey(main)?'selected':''}>${esc(r)}</option>`).join('')}</select></label>
+    <div class="span-all"><div class="pick-label">Extra roles <span class="wsub">— tick every other job this person also does (e.g. a driver who also works as a scaffolder). Their training needs add up.</span></div>
+      <div class="cause-list">${extraOpts.map(r=>`<label class="chk"><input type="checkbox" data-extra-role value="${esc(r)}" ${extra.has(roleKey(r))?'checked':''}>${esc(r)}</label>`).join('')}</div></div>`;
+}
+// Worker → Training tab: what their roles require and where they stand
+function workerRequiredHtml(w){
+  if(!trainingRoles().length) return '';
+  const roles=workerRoles(w);
+  if(!roles.length) return `<div class="notice" style="margin-bottom:14px;">${ic('alert')} No role set for this worker — pick their main role (and any extra roles) in the <strong>Profile</strong> tab to see which trainings they need.</div>`;
+  const c=workerTrainingCompliance(w);
+  if(!c.need) return `<p class="wsub" style="margin:0 0 14px;">Roles: <strong>${esc(roles.join(' + '))}</strong> — no trainings are set as required for these roles yet.</p>`;
+  return `<div class="panel req-box" style="margin-bottom:16px;">
+    <div class="subhead" style="margin-top:0;">Required for ${esc(roles.join(' + '))} — ${c.ok} of ${c.need} in date</div>
+    ${c.cells.map(x=>`<div class="rf"><span class="rf-k">${matrixCellHtml(x.st, x.roles)}</span><span class="rf-v"><strong>${esc(x.name)}</strong>${x.st.expiry?` · valid until ${esc(x.st.expiry)}`:''} <span class="wsub">· ${esc(x.roles.join(', '))}</span></span></div>`).join('')}
+  </div>`;
+}
 
 /* ---------------- QHSE management library ---------------- */
 // Two groups: the IMS system itself, and the operational HSE documents used on site
@@ -2423,7 +2622,7 @@ function startLibraryData(){
   try{
     unsubscribeLib = db.collection('qhseDocs').onSnapshot(snap=>{
       libLoadError=null;
-      libDocs=snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
+      libDocs=snap.docs.map(d=>renameOldLabels({id:d.id, ...(d.data()||{})}));
       renderLibraryAll(); renderReportAll();
     }, err=>{
       console.error(err); if(!auth.currentUser) return;
@@ -3131,12 +3330,7 @@ let targetsEditOpen=false;
 function targetsFor(year){ const t=(appTargets||{})[year]; return t || null; }
 let appTargets={};
 function allCorrectiveActions(){ return collectAllActions(); }   // same list as the Action Tracker
-function trainingCompliancePct(){
-  const reqs=requiredTrainings(); if(!reqs.length) return null;
-  let need=0, ok=0;
-  for(const w of activeWorkers().filter(w=>(w.status||'active')==='active')) for(const t of reqs){ if(!(t.divisions||[]).includes(w.trade)) continue; need++; const st=trainingStatusFor(w,t.name).status; if(st==='valid'||st==='expiring') ok++; }
-  return need ? Math.round(ok*100/need) : null;
-}
+function trainingCompliancePct(){ return trainingComplianceFor(activeWorkers().filter(w=>(w.status||'active')==='active')).pct; }
 // How much of the year has passed (for averages and pro-rata targets). The month in progress counts only
 // for the days elapsed, so early in a month the figures aren't unfairly "behind". upto = 'YYYY-MM' to stop at a month.
 function kpiMonthsElapsed(year, upto){
@@ -3592,7 +3786,7 @@ function regFieldHtml(f, v, attr){
   const req=f.required?' *':'', cls=f.wide?' class="span-all"':'';
   if(f.type==='project') return `<label${cls}>${esc(f.label)}${req}<select ${attr}="${f.key}">${projectOptionsHtml(v||'')}</select></label>`;
   if(f.type==='pick'){ const opts=regOptions(f); return `<label${cls}>${esc(f.label)}${req}<select ${attr}="${f.key}" ${f.required?'required':''}><option value="">${esc(f.empty||'Select…')}</option>${opts.map(o=>`<option value="${esc(o.value)}" ${o.value===v?'selected':''}>${esc(o.label)}</option>`).join('')}</select></label>`; }
-  if(f.type==='checks'){ const sel=new Set(v||[]); return `<div class="span-all"><div class="pick-label">${esc(f.label)}</div><div class="cause-list">${regOptions(f).map(o=>`<label class="chk"><input type="checkbox" ${attr}="${f.key}" value="${esc(o)}" ${sel.has(o)?'checked':''}>${esc(o)}</label>`).join('')}</div></div>`; }
+  if(f.type==='checks'){ const sel=new Set((v||[]).map(canonTrade)); return `<div class="span-all"><div class="pick-label">${esc(f.label)}</div><div class="cause-list">${regOptions(f).map(o=>`<label class="chk"><input type="checkbox" ${attr}="${f.key}" value="${esc(o)}" ${sel.has(o)?'checked':''}>${esc(o)}</label>`).join('')}</div></div>`; }
   if(f.type==='number') return `<label${cls}>${esc(f.label)}${req}<input type="number" step="any" ${f.min!==undefined?`min="${f.min}"`:''} ${f.max!==undefined?`max="${f.max}"`:''} ${attr}="${f.key}" value="${v===0?'0':esc(v===undefined||v===null?'':String(v))}" ${f.required?'required':''} placeholder="${esc(f.placeholder||'')}"></label>`;
   if(f.type==='select') return incFieldHtml({...f, options:regOptions(f)}, v, attr);
   return incFieldHtml(f, v, attr);
@@ -3621,7 +3815,7 @@ function startRegData(){
   for(const key of Object.keys(REG)){
     const st=regState[key], cfg=REG[key];
     try{
-      st.unsub = db.collection(cfg.collection).onSnapshot(snap=>{ st.err=null; st.list=snap.docs.map(d=>({id:d.id, ...(d.data()||{})})); renderRegAll(key); if(cfg.onData) cfg.onData(); renderActionTracker(); },
+      st.unsub = db.collection(cfg.collection).onSnapshot(snap=>{ st.err=null; st.list=snap.docs.map(d=>renameOldLabels({id:d.id, ...(d.data()||{})})); renderRegAll(key); if(cfg.onData) cfg.onData(); renderActionTracker(); },
         err=>{ console.error(err); if(!auth.currentUser) return; st.err = err&&err.code==='permission-denied'?'rules':'other'; renderRegAll(key); });
     }catch(e){ console.error(e); }
   }
@@ -5369,7 +5563,7 @@ auth.onAuthStateChanged(user=>{
     document.getElementById('vehicleRows').innerHTML='<tr><td colspan="5" class="empty-state">Sign in to load vehicle data…</td></tr>';
     document.getElementById('siteRows').innerHTML='<tr><td colspan="8" class="empty-state">Sign in to load project data…</td></tr>';
     document.getElementById('reportRows').innerHTML='<tr><td colspan="6" class="empty-state">Sign in to load report data…</td></tr>';
-    libDocs=[]; appSettings={}; trainingReq={trainings:[]}; libLoadError=null; settingsLoadError=null; monitorEditOpen=false;
+    libDocs=[]; appSettings={}; trainingReq={trainings:[]}; libLoadError=null; settingsLoadError=null; monitorEditOpen=false; monitorEditRows=null;
     incidentList=[]; appTargets={}; closeIncDrawer();
     document.getElementById('incRows').innerHTML='<tr><td colspan="8" class="empty-state">Sign in to load incidents…</td></tr>';
     closeLibDrawer(); closeReqEditor();
@@ -5381,7 +5575,7 @@ auth.onAuthStateChanged(user=>{
 async function startData(){
   try{
     unsubscribeWorkers = db.collection('workers').orderBy('fullName','asc').onSnapshot(snap=>{
-      workers = snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
+      workers = snap.docs.map(d=>renameOldLabels({id:d.id, ...(d.data()||{})}));
       document.getElementById('dbUnavailableBanner').hidden=true;
       renderAll();
     }, err=>{ console.error(err); if(!auth.currentUser) return; toast('Sync error — some data may be stale.'); document.getElementById('dbUnavailableBanner').hidden=false; });
@@ -5644,12 +5838,16 @@ function vehicleMatches(v){
   const q=vehicleFilters.q.trim().toLowerCase();
   if(q && !((v.vehicleNumber||'')+' '+(v.model||'')+' '+(v.ivmsUnitId||'')+' '+(v.dfmsUnitId||'')).toLowerCase().includes(q)) return false;
   if(vehicleFilters.ownership!=='all' && (v.ownership||'Own')!==vehicleFilters.ownership) return false;
+  if(vehicleFilters.type!=='all' && (v.vehicleType||'')!==(vehicleFilters.type==='__none'?'':vehicleFilters.type)) return false;
   return true;
 }
 
 function renderVehicleTable(){
   const tbody=document.getElementById('vehicleRows');
   if(!auth.currentUser) return;
+  { const sel=document.getElementById('vehicleTypeFilter'); if(sel){ const ts=[...new Set([...VEHICLE_TYPES, ...activeVehicles().map(v=>v.vehicleType).filter(Boolean)])];
+    sel.innerHTML='<option value="all">All vehicle types</option>'+ts.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('')+'<option value="__none">Type not set</option>';
+    sel.value=(vehicleFilters.type==='__none'||ts.includes(vehicleFilters.type))?vehicleFilters.type:'all'; vehicleFilters.type=sel.value; } }
   if(activeVehicles().length===0){ tbody.innerHTML='<tr><td colspan="7" class="empty-state">No vehicles yet — click “Add vehicle” to get started.</td></tr>'; return; }
   const list=vehicles.filter(vehicleMatches);
   if(list.length===0){ tbody.innerHTML='<tr><td colspan="7" class="empty-state">No vehicles match your filters.</td></tr>'; return; }
@@ -5657,7 +5855,7 @@ function renderVehicleTable(){
     const doc=vehicleAggFor(v,'documents'), ppe=vehicleAggFor(v,'ppe');
     return `<tr data-id="${v.id}">
       <td class="mono">${esc(v.vehicleNumber)}</td>
-      <td>${esc(v.model||'—')}</td>
+      <td>${esc(v.model||'—')}${(v.vehicleType||v.division)?`<div class="wsub">${esc([v.vehicleType, v.division?divLabel(v.division):''].filter(Boolean).join(' · '))}</div>`:''}</td>
       <td>${(v.ownership||'Own')==='Rental'?'<span class="badge warn">Rental</span>':'<span class="badge ok">Own</span>'}</td>
       <td>${badgeHtml(doc.status)}</td>
       <td>${badgeHtml(ppe.status)}</td>
@@ -5908,6 +6106,8 @@ function vehicleProfileTabHtml(v){
       <label>Vehicle number *<input class="mono" data-vfield="vehicleNumber" required value="${esc(v.vehicleNumber||'')}"></label>
       <label>Model<input data-vfield="model" value="${esc(v.model||'')}"></label>
       <label>Ownership<select data-vfield="ownership"><option value="Own" ${(v.ownership||'Own')==='Own'?'selected':''}>Own</option><option value="Rental" ${v.ownership==='Rental'?'selected':''}>Rental</option></select></label>
+      <label>Vehicle type<select data-vfield="vehicleType">${vehicleTypeOptionsHtml(v.vehicleType||'')}</select></label>
+      <label>Division<select data-vfield="division">${vehicleDivisionOptionsHtml(v.division||'')}</select></label>
     </div>
     <div class="subhead">IVMS &amp; DFMS monitoring</div>
     <div class="form-grid">
@@ -5917,7 +6117,7 @@ function vehicleProfileTabHtml(v){
       <label>DFMS device ID<input class="mono" data-vfield="dfmsUnitId" value="${esc(v.dfmsUnitId||'')}"></label>
       <label>DFMS link for this vehicle<input data-vfield="dfmsLink" value="${esc(v.dfmsLink||'')}" placeholder="optional — direct link"></label>
     </div>
-    <p class="wsub" style="margin:6px 0 0;">Leave the links empty to use the company IVMS / DFMS portal set on the Fleet page.</p>
+    <p class="wsub" style="margin:6px 0 0;">Leave the links empty to use the company IVMS / DFMS portal for this vehicle type (set on the Fleet page).</p>
     <div class="subhead">Onboard equipment counts</div>
     <div class="form-grid">${countsHtml}</div>
     <div class="form-actions" style="margin-top:16px;"><button type="submit" class="btn btn-primary">Save changes</button></div>
@@ -6818,33 +7018,38 @@ function renderCommandCentre(entries, m, key){
   const monthly=months.map(k=>computeReportMetrics(reportEntriesFor(division, k, project)));
   document.getElementById('ccLine').innerHTML = ccLineSvg(months, monthly.map(x=>x.manHours));
   document.getElementById('ccBars').innerHTML = ccBarSvg(months, monthly.map(x=>x.proactiveTotal));
-  // training compliance by division (from Workforce → Training matrix)
-  const reqs=requiredTrainings();
-  const divRows=TRADE_CATEGORIES.map(d=>{
-    const ws=activeWorkers().filter(w=>(w.status||'active')==='active' && w.trade===d);
-    const rq=reqs.filter(t=>(t.divisions||[]).includes(d));
-    if(!ws.length || !rq.length) return null;
-    let need=0, ok=0, okWorkers=0;
-    for(const w of ws){ let all=true; for(const t of rq){ need++; const st=trainingStatusFor(w,t.name).status; if(st==='valid'||st==='expiring') ok++; else all=false; } if(all) okWorkers++; }
-    return {d, pct:Math.round(ok*100/need), sub:`${okWorkers} of ${ws.length} workers fully trained`};
-  }).filter(Boolean);
+  // training compliance (Workforce → Training matrix, role-based) — follows the division / project in view
+  const scopeWs=activeWorkers().filter(w=>(w.status||'active')==='active' && workerInScope(w, division, project));
+  const gauge=(label, ws)=>{ const c=trainingComplianceFor(ws); return c.need ? {d:label, pct:c.pct, sub:`${c.full} of ${c.counted} workers fully trained`} : null; };
+  let divRows;
+  if(division==='all'){
+    const tot=gauge('Company-wide', scopeWs);
+    divRows=[tot, ...DIVISIONS.map(d=>gauge(divLabel(d), scopeWs.filter(w=>workerDivKey(w)===d)))].filter(Boolean);
+    if(divRows.length===2) divRows=[divRows[0]];   // only one division has data — the company dial says it all
+  } else divRows=[gauge(divLabel(division), scopeWs)].filter(Boolean);
+  const noRoleN=scopeWs.filter(w=>!workerRoles(w).length).length;
   document.getElementById('ccGauges').innerHTML = divRows.length
     ? divRows.map(r=>`<div class="cc-g">${ccDial(r.pct,120,10,r.d)}<div class="cc-gv" style="color:${ccStatusColor(r.pct)}">${r.pct}%</div><div class="cc-gl">${esc(r.d)}</div><div class="cc-gs">${esc(r.sub)}</div></div>`).join('')
-    : `<p class="wsub" style="grid-column:1/-1; margin:6px 4px;">${canEdit()?'Set the required trainings in <strong>Workforce → Training matrix → Required trainings</strong> and each division\'s compliance dial appears here.':'The HSE team has not set the required trainings yet.'}</p>`;
-  // compliance right now (company-wide)
+      + (noRoleN ? `<p class="wsub" style="grid-column:1/-1; margin:6px 4px;">${noRoleN} worker${noRoleN===1?'':'s'} in this view ${noRoleN===1?'has':'have'} no role yet and ${noRoleN===1?'is':'are'} not counted — set roles in each worker's Profile.</p>` : '')
+    : `<p class="wsub" style="grid-column:1/-1; margin:6px 4px;">${!trainingRoles().length ? (canEdit()?'Set the roles and their required trainings in <strong>Workforce → Training matrix → Roles &amp; required trainings</strong>, then give each worker their role(s).':'The HSE team has not set the required trainings yet.') : (scopeWs.length ? 'No worker in this view has a role with required trainings yet — set roles in each worker\'s Profile.' : 'No active workers in this view.')}</p>`;
+  // compliance right now — for the division / project in view (QHSE documents are company-wide)
   const pct=(a,b)=> b ? Math.round(a*100/b) : null;
-  const aw=activeWorkers().filter(w=>(w.status||'active')==='active');
+  const aw=scopeWs;
   const medOk=aw.filter(w=>['valid','expiring'].includes(medicalStatus(w).status)).length;
-  const av=activeVehicles(), vehOk=av.filter(v=>(v.documents||[]).length && vehicleAggFor(v,'documents').status!=='expired').length;
-  const eq=activeEquipment().filter(e=>e.expiry), eqOk=eq.filter(e=>statusFor(e.expiry)!=='expired').length;
+  const vehInScope=v=>{ if(project!=='all') return false; return division==='all' || v.division===division; };
+  const av=activeVehicles().filter(vehInScope), vehOk=av.filter(v=>(v.documents||[]).length && vehicleAggFor(v,'documents').status!=='expired').length;
+  const eqInScope=e=>{ const loc=e.location||'store'; if(project!=='all') return project!=='none' && loc===project; if(division==='all') return true; const st=siteEquipmentList.find(x=>x.id===loc); return !!(st && !st.deleted && (st.division||'Civil')===division); };
+  const eq=activeEquipment().filter(e=>e.expiry && eqInScope(e)), eqOk=eq.filter(e=>statusFor(e.expiry)!=='expired').length;
   const lib=activeLibDocs().filter(d=>(d.status||'Current')!=='Obsolete'), libOk=lib.filter(d=>['ok','due'].includes(libReview(d).key)).length;
+  const vehSub = project!=='all' ? 'fleet is not tied to a project' : (division!=='all' && !av.length && activeVehicles().length ? 'set each vehicle\'s division in its Profile' : `${vehOk} of ${av.length} vehicles`);
   const minis=[
     ['Medical fitness valid', pct(medOk,aw.length), `${medOk} of ${aw.length} workers`],
-    ['Vehicle documents valid', pct(vehOk,av.length), `${vehOk} of ${av.length} vehicles`],
+    ['Vehicle documents valid', pct(vehOk,av.length), vehSub],
     ['Equipment certificates in date', pct(eqOk,eq.length), `${eqOk} of ${eq.length} items`],
-    ['QHSE documents up to date', pct(libOk,lib.length), `${libOk} of ${lib.length} documents`],
+    ['QHSE documents up to date (company-wide)', pct(libOk,lib.length), `${libOk} of ${lib.length} documents`],
   ];
-  document.getElementById('ccMini').innerHTML = minis.map(([n,v,s])=>`<div class="cc-m">${ccDial(v,58,6,n)}<div><div class="cc-mv" style="color:${ccStatusColor(v)}">${v===null?'—':v+'%'}</div><div class="cc-ml">${esc(n)}</div><div class="cc-ms">${esc(v===null?'nothing recorded yet':s)}</div></div></div>`).join('');
+  { const ms=document.getElementById('ccMiniScope'); if(ms) ms.textContent = (division==='all' && project==='all') ? 'company-wide' : scope; }
+  document.getElementById('ccMini').innerHTML = minis.map(([n,v,s])=>`<div class="cc-m">${ccDial(v,58,6,n)}<div><div class="cc-mv" style="color:${ccStatusColor(v)}">${v===null?'—':v+'%'}</div><div class="cc-ml">${esc(n)}</div><div class="cc-ms">${esc(v===null && /^\d/.test(s)?'nothing recorded yet':s)}</div></div></div>`).join('');
   renderTargetsPanel();
   // animate only when the view changes (not on every live update)
   const sig=[key,division,project].join('|');
@@ -7295,7 +7500,7 @@ function renderDrawerBody(){
   const body=document.getElementById('drawerBody');
   if(activeTab==='profile'){ body.innerHTML=profileTabHtml(w); wireSignaturePad(); return; }
   const cfg=RECORD_TYPES[activeTab];
-  body.innerHTML=recordTabHtml(w, activeTab, cfg) + (activeTab==='trainings' ? workerToolboxHtml(w) : '');
+  body.innerHTML=(activeTab==='trainings' ? workerRequiredHtml(w) : '') + recordTabHtml(w, activeTab, cfg) + (activeTab==='trainings' ? workerToolboxHtml(w) : '');
 }
 function toolboxTalksForWorker(wid){
   const out=[];
@@ -7487,6 +7692,9 @@ function profileTabHtml(w){
       <label>Date of joining<input type="date" data-field="dateOfJoining" value="${esc(w.dateOfJoining||'')}"></label>
       <label>Employment status<select data-field="status"><option value="active" ${(w.status||'active')==='active'?'selected':''}>Active</option><option value="inactive" ${w.status==='inactive'?'selected':''}>Inactive</option></select></label>
     </div>
+
+    <div class="subhead">Roles &amp; training needs</div>
+    <div class="form-grid">${workerRolesFormHtml(w)}</div>
 
     <div class="subhead">Work experience</div>
     <div class="form-grid">
@@ -7702,6 +7910,22 @@ async function buildProfilePdf(w){
   h2('Employment');
   kv('Designation', w.designation); kv('Trade / occupation', w.trade); kv('Subcontractor / company', w.contractor);
   kv('Date of joining', w.dateOfJoining); kv('Employment status', (w.status||'active')==='inactive'?'Inactive':'Active');
+  { const rl=workerRoles(w); if(rl.length) kv('Roles', rl.join(' + ')); }
+
+  { const c=workerTrainingCompliance(w);
+    if(c.need){
+      h2(`Required trainings — ${c.ok} of ${c.need} in date`);
+      const word={valid:'Valid', expiring:'Expiring soon', expired:'EXPIRED', missing:'MISSING'};
+      c.cells.forEach(x=>{
+        const lab=doc.splitTextToSize(x.name, 180), val=doc.splitTextToSize(`${word[x.st.status]||x.st.status}${x.st.expiry?' (valid until '+x.st.expiry+')':''}  ·  ${x.roles.join(', ')}`, pageW-2*marginX-190);
+        const n=Math.max(lab.length, val.length); ensure(12*n+4);
+        doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(100,105,98); lab.forEach((l,i)=>doc.text(l, marginX, y+i*12));
+        const bad=x.st.status==='missing'||x.st.status==='expired';
+        doc.setFont('helvetica', bad?'bold':'normal'); doc.setFontSize(9.5); doc.setTextColor(bad?180:20, 20, 20); val.forEach((l,i)=>doc.text(l, marginX+190, y+i*12));
+        doc.setTextColor(20,20,20); y+=12*n+3;
+      });
+    }
+  }
 
   h2('Work experience');
   const gcc=parseFloat(w.experienceGCCYears)||0, other=parseFloat(w.experienceOtherYears)||0;
@@ -7789,7 +8013,7 @@ async function buildVehiclePdf(v){
   doc.setTextColor(20,20,20); y+=22;
 
   h2('Vehicle details');
-  kv('Vehicle number', v.vehicleNumber); kv('Model', v.model); kv('Ownership', v.ownership||'Own');
+  kv('Vehicle number', v.vehicleNumber); kv('Model', v.model); kv('Ownership', v.ownership||'Own'); kv('Vehicle type', v.vehicleType); kv('Division', v.division?divLabel(v.division):'');
 
   h2('Onboard equipment counts');
   for(const f of VEHICLE_COUNT_FIELDS){ kv(f.label, v[f.key]!=null? v[f.key] : '0'); }
@@ -7957,7 +8181,8 @@ const IMPORT_TYPES = {
     {key:'bloodGroup', h:'Blood group', help:'A+, A-, B+, B-, AB+, AB-, O+, O-', ex:'O+'},
     {key:'mobileNumber', h:'Mobile number', ex:'+968 9123 4567'},
     {key:'designation', h:'Designation', ex:'Foreman'},
-    {key:'trade', h:'Trade / division', req:true, help:'One of: Office Staff, Scaffolding Division, Civil Division, Rental Division, Sub Contractor', ex:'Scaffolding Division'},
+    {key:'roles', h:'Roles', help:'Optional — role names from Training matrix → Roles, separated by commas. The first one is the main role, e.g. Light Vehicle Driver, Scaffolder', ex:'Scaffolder'},
+    {key:'trade', h:'Trade / division', req:true, help:'One of: Office Staff, Scaffolding Division, Civil Division, Logistics & Rental Division, Sub Contractor', ex:'Scaffolding Division'},
     {key:'contractor', h:'Subcontractor / company', ex:'Burhan Oil & Trade Services'},
     {key:'dateOfJoining', h:'Date of joining', date:true, ex:'01/02/2024'},
     {key:'status', h:'Status', help:'Active or Inactive (blank = Active)', ex:'Active'},
@@ -7971,6 +8196,8 @@ const IMPORT_TYPES = {
     {key:'vehicleNumber', h:'Vehicle number', req:true, help:'Plate number (used to spot duplicates)', ex:'RSA 12345'},
     {key:'model', h:'Model', ex:'Toyota Hilux 2022'},
     {key:'ownership', h:'Ownership', help:'Own or Rental (blank = Own)', ex:'Own'},
+    {key:'vehicleType', h:'Vehicle type', help:'Optional: Car / SUV, Pickup, Bus, Truck, Trailer, Crane, Forklift, Other', ex:'Pickup'},
+    {key:'division', h:'Division', help:'Optional: Civil, Scaffolding, Logistics & Rental, Office Staff', ex:'Logistics & Rental'},
   ]},
   equipment:{label:'Plant & Equipment items', noun:'item', coll:'equipment', file:'Burhan_HSE_Equipment_template.xlsx', cols:[
     {key:'category', h:'Category', req:true, help:'Power tools, Lifting gear, Harness, Ladders, Fire extinguishers, First aid kits, Specialized PPE', ex:'Power tools'},
@@ -8010,13 +8237,27 @@ function matchOption(value, options){
   const fw=options.filter(o=>lv.split(' ')[0]===o.toLowerCase().split(' ')[0]);
   return fw.length===1 ? fw[0] : '';
 }
+function importDivKey(v){
+  const s=String(v||'').toLowerCase(); if(!s) return '';
+  if(s.includes('office')) return 'Office staff';
+  if(s.includes('scaff')) return 'Scaffolding';
+  if(s.includes('civil')) return 'Civil';
+  if(s.includes('rental') || s.includes('logistic')) return 'Rental';
+  return '';
+}
+function importRoles(v){
+  const known=roleNamesList();
+  const list=String(v||'').split(/[,;+\n]/).map(x=>x.trim()).filter(Boolean).map(x=>known.find(r=>roleKey(r)===roleKey(x))||x);
+  const uniq=[]; for(const x of list) if(!uniq.some(y=>roleKey(y)===roleKey(x))) uniq.push(x);
+  return {mainRole:uniq[0]||'', extraRoles:uniq.slice(1)};
+}
 function mapTrade(v){
   const s=String(v||'').toLowerCase();
   if(!s) return '';
   if(s.includes('office')) return 'Office Staff';
   if(s.includes('scaff')) return 'Scaffolding Division';
   if(s.includes('civil')) return 'Civil Division';
-  if(s.includes('rental')) return 'Rental Division';
+  if(s.includes('rental') || s.includes('logistic')) return 'Logistics & Rental Division';
   if(s.includes('sub')) return 'Sub Contractor';
   return null;
 }
@@ -8068,14 +8309,14 @@ function validateImportRows(rows){
       if(txt('trade') && trade===null) errors.push(`Trade / division "${txt('trade')}" not recognised`);
       label=txt('fullName'); key=txt('civilId'); dupKey=normKey(key);
       doc={fullName:label, civilId:key, civilIdExpiry:dates.civilIdExpiry||'', nationality:txt('nationality'), dateOfBirth:dates.dateOfBirth||'', bloodGroup:(BLOOD_GROUPS.find(b=>b.toLowerCase()===txt('bloodGroup').trim().toLowerCase())||''),
-        mobileNumber:txt('mobileNumber'), designation:txt('designation'), trade:trade||'', contractor:txt('contractor'), dateOfJoining:dates.dateOfJoining||'',
+        mobileNumber:txt('mobileNumber'), designation:txt('designation'), ...importRoles(txt('roles')), trade:trade||'', contractor:txt('contractor'), dateOfJoining:dates.dateOfJoining||'',
         status:/^inact/i.test(txt('status'))?'inactive':'active', experienceGCCYears:txt('experienceGCCYears'), experienceOtherYears:txt('experienceOtherYears'),
         emergencyContactName:txt('emergencyContactName'), emergencyContactRelation:txt('emergencyContactRelation'), emergencyContactPhone:txt('emergencyContactPhone'),
         inductions:[], trainings:[], competency:[], medical:[], licenses:[], warnings:[], violations:[]};
       if(dupKey && workers.some(w=>normKey(w.civilId)===dupKey)) return out.push({rowNo, label, key, status:'skip', msg:'Already in the tracker'+(workers.find(w=>normKey(w.civilId)===dupKey).deleted?' (in Deleted workers)':'')});
     } else if(importType==='vehicles'){
       label=txt('vehicleNumber'); key=label; dupKey=normKey(key);
-      doc={vehicleNumber:label, model:txt('model'), ownership:/^rent/i.test(txt('ownership'))?'Rental':'Own', documents:[], ppe:[], jackCount:0, wheelStopperCount:0, brassHammerCount:0, warningTriangleCount:0};
+      doc={vehicleNumber:label, model:txt('model'), ownership:/^rent/i.test(txt('ownership'))?'Rental':'Own', vehicleType:matchOption(txt('vehicleType'), VEHICLE_TYPES)||(txt('vehicleType')?'Other':''), division:importDivKey(txt('division')), documents:[], ppe:[], jackCount:0, wheelStopperCount:0, brassHammerCount:0, warningTriangleCount:0};
       if(dupKey && vehicles.some(v=>normKey(v.vehicleNumber)===dupKey)) return out.push({rowNo, label, key, status:'skip', msg:'Already in the tracker'});
     } else {
       const cat=mapEquipCategory(txt('category'));
@@ -8370,6 +8611,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
       e.preventDefault();
       const w=currentWorker(); if(!w) return;
       const data={}; e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
+      if(e.target.querySelector('[data-field="mainRole"]')){
+        data.extraRoles=[...e.target.querySelectorAll('[data-extra-role]:checked')].map(x=>x.value).filter(x=>roleKey(x)!==roleKey(data.mainRole));
+      }
       await updateWorker(w.id,data);
     }
     if(e.target.id==='recordForm'){
@@ -8508,11 +8752,15 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   /* ---------------- vehicle: add / search / table ---------------- */
   document.getElementById('addVehicleBtn').addEventListener('click', ()=>{
+    const ty=document.getElementById('addVehicleType'), dv=document.getElementById('addVehicleDivision');
+    if(!ty.options.length) ty.innerHTML=vehicleTypeOptionsHtml('');
+    if(!dv.options.length) dv.innerHTML=vehicleDivisionOptionsHtml('');
     document.getElementById('addVehiclePanel').hidden=false;
   });
   document.getElementById('cancelAddVehicle').addEventListener('click', ()=>{
     document.getElementById('addVehiclePanel').hidden=true;
     document.getElementById('addVehicleForm').reset();
+    document.getElementById('addVehicleType').innerHTML=vehicleTypeOptionsHtml(''); document.getElementById('addVehicleDivision').innerHTML=vehicleDivisionOptionsHtml('');
   });
   document.getElementById('addVehicleForm').addEventListener('submit', async e=>{
     e.preventDefault();
@@ -8527,6 +8775,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
   document.getElementById('vehicleSearchInput').addEventListener('input', e=>{ vehicleFilters.q=e.target.value; renderVehicleTable(); });
   document.getElementById('vehicleOwnershipFilter').addEventListener('change', e=>{ vehicleFilters.ownership=e.target.value; renderVehicleTable(); });
+  document.getElementById('vehicleTypeFilter').addEventListener('change', e=>{ vehicleFilters.type=e.target.value; renderVehicleTable(); });
   document.getElementById('vehicleRows').addEventListener('click', e=>{
     if(e.target.closest('a')) return;   // IVMS / DFMS links open in a new tab
     const tr=e.target.closest('tr[data-id]'); if(tr) openVehicleDrawer(tr.dataset.id);
@@ -9206,50 +9455,65 @@ document.addEventListener('DOMContentLoaded', ()=>{
     openReqEditor();
   });
   document.getElementById('reqPanel').addEventListener('click', e=>{
-    if(e.target.id==='reqCancel'){ closeReqEditor(); return; }
-    if(e.target.id==='reqAddRow'){ readReqRows(); reqEditRows.push({name:'', divisions:[]}); renderReqPanel(); const last=document.querySelector(`[data-req-name="${reqEditRows.length-1}"]`); if(last) last.focus(); return; }
-    if(e.target.id==='reqAddCommon'){
-      readReqRows();
-      const have=new Set(reqEditRows.map(r=>normTraining(r.name)));
-      reqEditRows=reqEditRows.filter(r=>r.name.trim() || r.divisions.length);
-      let added=0;
-      for(const t of COMMON_TRAININGS) if(!have.has(normTraining(t.name))){ reqEditRows.push({name:t.name, divisions:t.divisions.slice()}); added++; }
-      renderReqPanel();
-      toast(added ? `Added ${added} common training${added===1?'':'s'} — untick any division that doesn't need it` : 'Those are already in your list');
+    const b=e.target.closest('button'); if(!b || !reqEdit) return;
+    if(b.id==='reqCancel'){ closeReqEditor(); return; }
+    if(b.id==='reqAddRole'){ readReqGrid(); reqEdit.roles.push({name:'', orig:'', set:new Set()}); renderReqPanel(); const last=document.querySelector(`[data-role-name="${reqEdit.roles.length-1}"]`); if(last) last.focus(); return; }
+    if(b.id==='reqAddTraining'){
+      readReqGrid();
+      const inp=document.getElementById('reqNewTraining'), n=inp.value.trim();
+      if(!n){ inp.focus(); return; }
+      if(!reqAddTrainingName(n)){ toast(`“${n}” is already in the list`); return; }
+      renderReqPanel(); const again=document.getElementById('reqNewTraining'); if(again) again.focus();
       return;
     }
-    const rm=e.target.closest('[data-req-remove]');
-    if(rm){ readReqRows(); reqEditRows.splice(Number(rm.dataset.reqRemove),1); if(!reqEditRows.length) reqEditRows.push({name:'',divisions:[]}); renderReqPanel(); }
+    if(b.id==='reqAddCommon'){
+      readReqGrid();
+      let addedT=0, addedR=0;
+      for(const r of SUGGESTED_ROLES){
+        r.trainings.forEach(t=>{ if(reqAddTrainingName(t)) addedT++; });
+        if(!reqEdit.roles.some(x=>roleKey(x.name)===roleKey(r.name))){ reqEdit.roles.push({name:r.name, orig:'', set:new Set(r.trainings.map(normTraining))}); addedR++; }
+      }
+      renderReqPanel();
+      toast(addedT||addedR ? `Added ${addedR} role${addedR===1?'':'s'} and ${addedT} training${addedT===1?'':'s'} — rename, untick or remove anything that doesn't fit` : 'Those are already in your list');
+      return;
+    }
+    const cr=b.closest('[data-cat-remove]');
+    if(cr){ readReqGrid(); const t=reqEdit.catalogue[Number(cr.dataset.catRemove)]; reqEdit.catalogue.splice(Number(cr.dataset.catRemove),1); const k=normTraining(t); reqEdit.roles.forEach(r=>r.set.delete(k)); renderReqPanel(); return; }
+    const rr=b.closest('[data-role-remove]');
+    if(rr){ readReqGrid(); reqEdit.roles.splice(Number(rr.dataset.roleRemove),1); renderReqPanel(); return; }
+  });
+  document.getElementById('reqPanel').addEventListener('keydown', e=>{
+    if(e.key==='Enter' && e.target.id==='reqNewTraining'){ e.preventDefault(); const b=document.getElementById('reqAddTraining'); if(b) b.click(); }
   });
   document.getElementById('reqPanel').addEventListener('submit', async e=>{
     if(e.target.id!=='reqForm') return;
     e.preventDefault();
-    readReqRows();
-    const seen=new Set(), out=[];
-    for(const r of reqEditRows){
-      const name=r.name.trim(); if(!name) continue;
-      const k=normTraining(name); if(seen.has(k)) continue; seen.add(k);
-      if(!r.divisions.length){ toast(`Tick at least one division for “${name}”`); return; }
-      out.push({name, divisions:r.divisions});
-    }
-    if(await saveSettings('trainingMatrix', {trainings:out})) closeReqEditor();
+    if(await saveReqEditor()) closeReqEditor();
   });
+  document.getElementById('matrixRole').addEventListener('change', e=>{ matrixFilters.role=e.target.value; renderMatrix(); });
+  document.getElementById('matrixNote').addEventListener('click', e=>{ if(e.target.closest('[data-mx-norole]')){ matrixFilters.role='__none'; renderMatrix(); } });
 
   // --- Fleet: company IVMS / DFMS portal links ---
   document.getElementById('monitorBar').addEventListener('click', e=>{
-    if(e.target.id==='monitorEditBtn'){ monitorEditOpen=true; renderMonitorBar(); return; }
-    if(e.target.id==='monitorCancel'){ monitorEditOpen=false; renderMonitorBar(); return; }
+    const b=e.target.closest('button'); if(!b) return;
+    if(b.id==='monitorEditBtn'){ monitorEditOpen=true; monitorEditRows=null; renderMonitorBar(); return; }
+    if(b.id==='monitorCancel'){ monitorEditOpen=false; monitorEditRows=null; renderMonitorBar(); return; }
+    if(b.id==='monitorAddRow'){ readMonitorRows(); monitorEditRows.push({name:'', kind:'IVMS', url:'', types:[]}); renderMonitorBar(); const last=document.querySelector(`[data-ml-name="${monitorEditRows.length-1}"]`); if(last) last.focus(); return; }
+    const rm=b.closest('[data-ml-remove]');
+    if(rm){ readMonitorRows(); monitorEditRows.splice(Number(rm.dataset.mlRemove),1); renderMonitorBar(); }
   });
   document.getElementById('monitorBar').addEventListener('submit', async e=>{
     if(e.target.id!=='monitorForm') return;
     e.preventDefault();
-    const data={};
-    e.target.querySelectorAll('[data-mfield]').forEach(el=>{ data[el.dataset.mfield]=el.value.trim(); });
-    for(const k of ['ivmsPortalUrl','dfmsPortalUrl']){
-      if(data[k] && !safeUrl(data[k])){ toast(`The ${k.startsWith('ivms')?'IVMS':'DFMS'} link doesn't look like a web address — check it and save again`); return; }
-      data[k]=safeUrl(data[k]);
+    readMonitorRows();
+    const out=[];
+    for(const r of monitorEditRows){
+      const url=String(r.url||'').trim(), name=String(r.name||'').trim();
+      if(!url && !name) continue;
+      if(!safeUrl(url)){ toast(`The link for “${name||r.kind}” doesn't look like a web address — check it and save again`); return; }
+      out.push({name:name||r.kind+' portal', kind:r.kind==='DFMS'?'DFMS':'IVMS', url:safeUrl(url), types:r.types||[]});
     }
-    if(await saveSettings('app', data)){ monitorEditOpen=false; renderMonitorBar(); }
+    if(await saveSettings('app', {monitorLinks:out})){ monitorEditOpen=false; monitorEditRows=null; renderMonitorBar(); renderVehicleTable(); if(activeVehicleId) renderVehicleDrawer(); }
   });
 
   // --- QHSE library: dashboard, filters, table ---
