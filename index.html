@@ -411,6 +411,8 @@ table.req-grid td.mx-sticky input{min-width:230px;}
 .mx-scroll table.matrix-table tbody tr:hover td{background:var(--surface-2);}
 .mx-scroll table.matrix-table tbody tr:hover td.mx-sticky{background:var(--surface-2);}
 .mx-tip{margin:0 0 6px;}
+.req-rm{padding:4px 8px; min-width:34px;}
+.req-rm.armed{background:var(--danger-bg); color:var(--danger); border-color:var(--danger); font-weight:700;}
 table.req-grid td.mx-sticky .req-divchips input{min-width:0; width:14px; height:14px;}
 .req-divchips{display:flex; flex-wrap:wrap; gap:0 8px; margin-top:4px; max-width:330px;}
 .req-divchips label.chk{font-size:11px; font-weight:500; color:var(--ink-muted); gap:4px;}
@@ -1761,7 +1763,16 @@ function logChanges(before, data){
     const fvName = v && typeof v==='object' && !Array.isArray(v) ? String(v._methodName || (v._delegate&&v._delegate._methodName) || '') : '';
     if(/arrayUnion/.test(fvName)) out.push(`${k}: item added`);
     else if(/arrayRemove/.test(fvName)) out.push(`${k}: item removed`);
-    else if(Array.isArray(v) || Array.isArray(o)){ const a=(o||[]).length, b=(v||[]).length; out.push(a===b?`${k}: edited`:`${k}: ${a} → ${b} items`); }
+    else if(k==='versions') continue;
+    else if(Array.isArray(v) || Array.isArray(o)){
+      const a=(o||[]).length, b=(v||[]).length;
+      const nm=x=>x && typeof x==='object' ? String(x.name||'').trim() : (typeof x==='string' ? x : '');
+      const on=(o||[]).map(nm).filter(Boolean), vn=(v||[]).map(nm).filter(Boolean);
+      if(on.length || vn.length){
+        const add=vn.filter(x=>!on.includes(x)), del=on.filter(x=>!vn.includes(x));
+        out.push(`${k}: ${a} → ${b}${add.length?' · added '+add.slice(0,8).join(', '):''}${del.length?' · removed '+del.slice(0,8).join(', '):''}${!add.length&&!del.length?' · edited':''}`);
+      } else out.push(a===b?`${k}: edited`:`${k}: ${a} → ${b} items`);
+    }
     else if(v && typeof v==='object') out.push(`${k}: ${v.url||v.name?'file updated':'updated'}`);
     else out.push(`${k}: ${logShort(o)} → ${logShort(v)}`);
     if(out.length>=15) break;
@@ -2578,7 +2589,7 @@ function reqEditFromSettings(){
   let guessed=0;
   const roles=trainingRoles().map(r=>{ let d=roleDivisions(r); if(!d.length){ d=guessRoleDivisions(r.name); guessed++; }
     return {name:String(r.name).trim(), orig:String(r.name).trim(), set:new Set((r.trainings||[]).map(normTraining).filter(Boolean)), divs:new Set(d)}; });
-  return {catalogue:cat, roles, guessed, div:(matrixFilters.division && matrixFilters.division!=='all' && TRADE_CATEGORIES.includes(matrixFilters.division)) ? matrixFilters.division : 'all'};
+  return {catalogue:cat, roles, guessed, removed:[], div:(matrixFilters.division && matrixFilters.division!=='all' && TRADE_CATEGORIES.includes(matrixFilters.division)) ? matrixFilters.division : 'all'};
 }
 function readReqGrid(){
   const panel=document.getElementById('reqPanel');
@@ -2611,8 +2622,16 @@ function renderReqPanel(){
           <td class="mx-sticky"><input data-role-name="${i}" value="${esc(r.name)}" placeholder="e.g. Scaffolder" aria-label="Role name">
             <div class="req-divchips">${TRADE_CATEGORIES.map(d=>`<label class="chk"><input type="checkbox" data-role-div="${i}" value="${esc(d)}" ${r.divs.has(d)?'checked':''}>${esc(divShort(d))}</label>`).join('')}</div></td>
           ${cat.map(t=>`<td class="mx-cell"><input type="checkbox" data-role-t="${i}" value="${esc(t)}" ${r.set.has(normTraining(t))?'checked':''} aria-label="${esc((r.name||'Role')+' needs '+t)}" title="${esc((r.name||'Role')+' → '+t)}"></td>`).join('')}
-          <td><button type="button" class="icon-btn danger" data-role-remove="${i}" aria-label="Remove role" title="Remove role">${ic('close')}</button></td>
+          <td><button type="button" class="btn btn-sm btn-ghost req-rm" data-role-remove="${i}" data-armed="0" aria-label="Remove role" title="Remove this role">${ic('close')}</button></td>
         </tr>`).join('')}</tbody></table></div>` : `<p class="wsub">No roles ${reqEdit.div==='all'?'yet':'for '+esc(divShort(reqEdit.div))+' yet'} — click “+ Add role”${reqEdit.div==='all'?', or use the suggested roles':''}.</p>`; })()}
+      ${reqEdit.removed.length ? `<div class="notice" style="margin-top:10px;">${ic('alert')} <strong>Will be removed when you save:</strong> ${reqEdit.removed.map((x,k)=>`${esc(x.role.name)} <button type="button" class="att-link" data-req-undo="${k}">Undo</button>`).join(' · ')}</div>` : ''}
+      ${(()=>{ const now=new Set(reqEdit.roles.map(r=>roleKey(r.name))); const seen=new Set(); const list=[];
+        for(const v of (trainingReq.versions||[]).slice().reverse()) for(const r of (v.roles||[])){ const k=roleKey(r.name); if(k && !now.has(k) && !seen.has(k) && !reqEdit.removed.some(x=>roleKey(x.role.name)===k)){ seen.add(k); list.push(r); } }
+        reqEdit.restorable=list;
+        return list.length ? `<details class="xroles" style="margin-top:10px;"><summary>Roles removed earlier (${list.length}) — add back</summary><div class="req-chips" style="margin-top:6px;">${list.map((r,k)=>`<span class="req-chip">${esc(r.name)} <button type="button" data-req-restore="${k}" title="Add back">+</button></span>`).join('')}</div></details>` : ''; })()}
+      <details class="xroles" style="margin-top:10px;"><summary>Add several roles at once${reqEdit.div!=='all'?' to '+esc(divShort(reqEdit.div)):''}</summary>
+        <textarea id="reqBulkNames" rows="4" placeholder="One role per line, e.g.&#10;Sales Executive&#10;Operation Manager&#10;Project Engineer" style="margin-top:6px;"></textarea>
+        <button type="button" class="btn btn-sm" id="reqBulkAdd" style="margin-top:6px;">Add these roles</button></details>
       <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
         <button type="button" class="btn btn-sm" id="reqAddRole">+ Add role${reqEdit.div!=='all'?' to '+esc(divShort(reqEdit.div)):''}</button>
         <button type="button" class="btn btn-sm btn-ghost" id="reqAddCommon">+ Add suggested roles &amp; trainings</button>
@@ -2644,8 +2663,12 @@ async function saveReqEditor(){
     roles.push({name, divisions:TRADE_CATEGORIES.filter(d=>r.divs.has(d)), trainings:reqEdit.catalogue.filter(t=>r.set.has(normTraining(t)))});
     if(r.orig && roleKey(r.orig)!==k && !reqEdit.roles.some(x=>x!==r && roleKey(x.orig)===k)) renames.set(roleKey(r.orig), name);
   }
-  if(!(await saveSettings('trainingMatrix', {catalogue:reqEdit.catalogue.slice(), roles}))) return false;
-  toast(`Saved — ${reqEdit.catalogue.length} training${reqEdit.catalogue.length===1?'':'s'} and ${roles.length} role${roles.length===1?'':'s'}`);
+  // keep the last 10 saved versions so a removed role can always be added back
+  const prevRoles=trainingRoles();
+  const versions=[...(trainingReq.versions||[]), ...(prevRoles.length ? [{at:new Date().toISOString(), by:(auth.currentUser&&auth.currentUser.email)||'', roles:prevRoles.map(r=>({name:r.name, divisions:roleDivisions(r), trainings:(r.trainings||[]).slice()}))}] : [])].slice(-10);
+  if(!(await saveSettings('trainingMatrix', {catalogue:reqEdit.catalogue.slice(), roles, versions}))) return false;
+  const removedNames=prevRoles.map(r=>String(r.name).trim()).filter(n=>!roles.some(x=>roleKey(x.name)===roleKey(n)) && !renames.has(roleKey(n)));
+  toast(`Saved — ${reqEdit.catalogue.length} training${reqEdit.catalogue.length===1?'':'s'} and ${roles.length} role${roles.length===1?'':'s'}${removedNames.length?` · removed: ${removedNames.join(', ')}`:''}`);
   matrixFilters.mode=null;
   if(renames.size){
     const batch=db.batch(); let n=0;
@@ -9797,7 +9820,23 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const cr=b.closest('[data-cat-remove]');
     if(cr){ readReqGrid(); const t=reqEdit.catalogue[Number(cr.dataset.catRemove)]; reqEdit.catalogue.splice(Number(cr.dataset.catRemove),1); const k=normTraining(t); reqEdit.roles.forEach(r=>r.set.delete(k)); renderReqPanel(); return; }
     const rr=b.closest('[data-role-remove]');
-    if(rr){ readReqGrid(); reqEdit.roles.splice(Number(rr.dataset.roleRemove),1); renderReqPanel(); return; }
+    if(rr){
+      if(rr.dataset.armed!=='1'){ rr.dataset.armed='1'; rr.classList.add('armed'); rr.textContent='Remove?'; setTimeout(()=>{ if(rr.isConnected && rr.dataset.armed==='1'){ rr.dataset.armed='0'; rr.classList.remove('armed'); rr.innerHTML=ic('close'); } },4000); return; }
+      readReqGrid(); const i=Number(rr.dataset.roleRemove), gone=reqEdit.roles.splice(i,1)[0]; if(gone && String(gone.name||'').trim()) reqEdit.removed.push({i, role:gone}); renderReqPanel(); return;
+    }
+    const un=b.closest('[data-req-undo]');
+    if(un){ readReqGrid(); const x=reqEdit.removed.splice(Number(un.dataset.reqUndo),1)[0]; if(x) reqEdit.roles.splice(Math.min(x.i, reqEdit.roles.length), 0, x.role); renderReqPanel(); return; }
+    const rs=b.closest('[data-req-restore]');
+    if(rs){ readReqGrid(); const r=(reqEdit.restorable||[])[Number(rs.dataset.reqRestore)]; if(r && !reqEdit.roles.some(x=>roleKey(x.name)===roleKey(r.name))){ reqEdit.roles.push({name:r.name, orig:'', set:new Set((r.trainings||[]).map(normTraining)), divs:new Set(roleDivisions(r).length?roleDivisions(r):guessRoleDivisions(r.name))}); (r.trainings||[]).forEach(t=>reqAddTrainingName(t)); toast(`“${r.name}” added back — Save to keep it`); } renderReqPanel(); return; }
+    if(b.id==='reqBulkAdd'){
+      readReqGrid();
+      const ta=document.getElementById('reqBulkNames'), names=String(ta.value||'').split(/\n|,|;/).map(x=>x.trim()).filter(Boolean);
+      let n=0, dup=[];
+      for(const nm of names){ if(reqEdit.roles.some(x=>roleKey(x.name)===roleKey(nm))){ dup.push(nm); continue; } reqEdit.roles.push({name:nm, orig:'', set:new Set(), divs:new Set(reqEdit.div!=='all'?[reqEdit.div]:[])}); n++; }
+      renderReqPanel();
+      toast(n ? `Added ${n} role${n===1?'':'s'}${reqEdit.div!=='all'?' to '+divShort(reqEdit.div):' — tick their divisions'}${dup.length?` (${dup.length} already in the list)`:''} — now tick their trainings and Save` : (dup.length?'Those roles are already in the list':'Type the role names first, one per line'));
+      return;
+    }
   });
   document.getElementById('reqPanel').addEventListener('keydown', e=>{
     if(e.key==='Enter' && e.target.id==='reqNewTraining'){ e.preventDefault(); const b=document.getElementById('reqAddTraining'); if(b) b.click(); }
