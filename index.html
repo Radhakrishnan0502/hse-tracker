@@ -5893,7 +5893,10 @@ function renderAll(){
 }
 
 function renderTiles(){
-  const list=activeWorkers();
+  const all=activeWorkers();
+  // Batch 28: the tiles follow the division picked (strip or drop-down); the strip itself always shows every division
+  const div=(typeof filters!=='undefined' && filters.trade!=null) ? filters.trade : 'all';
+  const list = div==='all' ? all : all.filter(w=>w.trade===div);
   const total=list.length;
   const active=list.filter(w=>(w.status||'active')!=='inactive').length;
   function agg(key){
@@ -5920,7 +5923,7 @@ function renderTiles(){
   for(const w of list){ for(const v of (w.violations||[])){ const d=daysUntil(v.date); if(d!==null && -d<=90){ vio90++; if(v.severity==='Critical') vioCrit++; } } }
 
   const tiles=[
-    {label:'Workforce', num:total, cls:'', sub:`${active} active${total-active?` · ${total-active} inactive`:''}`, cat:'--cat-1', icon:ic('users')},
+    {label:'Workforce', num:total, cls:'', sub:`${active} active${total-active?` · ${total-active} inactive`:''}${div!=='all'?` · ${esc(div)}`:''}`, cat:'--cat-1', icon:ic('users')},
     {label:'Civil ID', num:civExpired, cls:civExpired?'danger':(civExpiring?'warn':'ok'), sub:`${civExpiring} expiring soon`, cat:'--cat-2', icon:ic('idcard')},
     {label:'Induction', num:ind.expired+ind.missing, cls:(ind.expired+ind.missing)?'danger':'ok', sub:`${ind.expiring} expiring soon · ${ind.missing} not inducted`, cat:'--cat-3', icon:ic('clipboard')},
     {label:'Training', num:tr.expired, cls:tr.expired?'danger':'ok', sub:`${tr.expiring} expiring soon`, cat:'--cat-4', icon:ic('cap')},
@@ -5930,7 +5933,7 @@ function renderTiles(){
     {label:'Warning letters', num:totalWarnings, cls:finalWarn?'danger':(totalWarnings?'warn':''), sub:`${finalWarn} at final warning`, cat:'--cat-8', icon:ic('alert')},
     {label:'Violations (90d)', num:vio90, cls:vioCrit?'danger':(vio90?'warn':''), sub:`${vioCrit} critical`, cat:'--cat-9', icon:ic('ban')},
   ];
-  renderDivisionStrip(list);
+  renderDivisionStrip(all);
   document.getElementById('tiles').innerHTML = tiles.map(t=>`
     <div class="tile" style="--tile-accent:var(${t.cat})">
       <div class="tile-head"><div class="tile-icon">${t.icon}</div><div class="tile-label">${t.label}</div></div>
@@ -8835,8 +8838,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 
   document.getElementById('searchInput').addEventListener('input', e=>{ filters.q=e.target.value; renderTable(); });
-  document.getElementById('tradeFilter').addEventListener('change', e=>{ filters.trade=e.target.value; renderTable(); renderDivisionStrip(activeWorkers()); });
-  document.getElementById('divStrip').addEventListener('click', e=>{ const b=e.target.closest('[data-divchip]'); if(!b) return; const v=b.dataset.divchip; filters.trade = (filters.trade===v && v!=='all') ? 'all' : v; const sel=document.getElementById('tradeFilter'); if(sel) sel.value=filters.trade; renderTable(); renderDivisionStrip(activeWorkers()); });
+  document.getElementById('tradeFilter').addEventListener('change', e=>{ filters.trade=e.target.value; renderTable(); renderTiles(); });
+  document.getElementById('divStrip').addEventListener('click', e=>{ const b=e.target.closest('[data-divchip]'); if(!b) return; const v=b.dataset.divchip; filters.trade = (filters.trade===v && v!=='all') ? 'all' : v; const sel=document.getElementById('tradeFilter'); if(sel) sel.value=filters.trade; renderTable(); renderTiles(); });
   document.getElementById('statusFilter').addEventListener('change', e=>{ filters.status=e.target.value; renderTable(); });
 
   document.getElementById('workerRows').addEventListener('click', e=>{
