@@ -420,6 +420,8 @@ table.grid-table tbody tr:hover td{background:var(--surface-2);}
 table.grid-table tr > :first-child{border-left:0;} table.grid-table tr > :last-child{border-right:0;}
 table.grid-table thead tr:first-child th{border-top:0;} table.grid-table tbody tr:last-child td{border-bottom:0;}
 button.is-saving{opacity:.6; cursor:progress;}
+.update-banner{position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:300; display:flex; gap:10px; align-items:center; flex-wrap:wrap; max-width:calc(100% - 24px); background:var(--warn-bg); color:var(--warn); border:1px solid var(--warn); border-radius:12px; padding:10px 14px; box-shadow:var(--shadow); font-size:13px;}
+.update-banner span{color:var(--ink);}
 /* Batch 30: Workforce dashboard — headcount + donut on the left, compliance bars on the right */
 .wf-dash{display:grid; grid-template-columns:minmax(300px,1fr) 2.2fr; gap:14px; margin-bottom:16px;}
 @media (max-width:980px){ .wf-dash{grid-template-columns:1fr;} }
@@ -866,6 +868,7 @@ body.read-only #ckTemplatesBtn{display:none !important;}
       <div id="workforceRegisterPane">
       <div class="tiles" id="tiles"></div>
       <div class="notice" id="moveNote" hidden></div>
+      <div class="notice" id="dupNote" hidden></div>
       <div class="div-strip" id="divStrip" aria-label="Workers by division"></div>
 
       <div class="panel" id="addWorkerPanel" hidden>
@@ -2291,7 +2294,7 @@ function startSettingsData(){
   try{
     unsubscribeSettings = db.collection('settings').onSnapshot(snap=>{
       settingsLoadError=null;
-      const map={}; snap.docs.forEach(d=>{ map[d.id]=d.data()||{}; });
+      const map={}; snap.docs.forEach(d=>{ map[d.id]=d.data()||{}; }); settingsDocs=map;
       appSettings=map.app||{};
       trainingReq=map.trainingMatrix||{trainings:[]};
       appTargets=map.targets||{};
@@ -2306,7 +2309,38 @@ function startSettingsData(){
     });
   }catch(e){ console.error(e); }
 }
-async function saveSettings(docId, data){
+/* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
+   1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
+   2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
+const APP_BUILD='b31';
+let appOutdated=false;
+async function checkAppVersion(){
+  try{
+    if(!/^https?:/.test(location.protocol)) return;
+    const r=await fetch(new URL('index.html', location.href).href, {cache:'no-store'}); if(!r.ok) return;
+    const m=(await r.text()).match(/const APP_BUILD='([^']+)'/);
+    if(m && m[1]!==APP_BUILD) showOutdatedBanner();
+  }catch(e){}
+}
+function showOutdatedBanner(){
+  appOutdated=true;
+  if(document.getElementById('updateBanner')) return;
+  const b=document.createElement('div'); b.id='updateBanner'; b.className='update-banner';
+  b.innerHTML=`${ic('alert')} <span>A newer version of the tracker is available. Refresh to use it — saving settings is paused on this old copy.</span> <button type="button" class="btn btn-sm btn-primary" id="updateBannerBtn">Refresh now</button>`;
+  document.body.appendChild(b);
+  b.querySelector('#updateBannerBtn').addEventListener('click', ()=>location.reload());
+}
+setInterval(checkAppVersion, 5*60*1000);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') checkAppVersion(); });
+setTimeout(checkAppVersion, 20000);
+let settingsDocs={};
+function settingsStamp(docId){ return (settingsDocs[docId]||{}).updatedAt||''; }
+async function saveSettings(docId, data, baseStamp){
+  if(appOutdated){ toast('This is an old copy of the tracker — click “Refresh now” at the bottom, then save again'); return false; }
+  if(baseStamp!==undefined && settingsStamp(docId)!==baseStamp){
+    toast('Not saved — these settings were changed on another screen after you opened this form. Close it, open it again, and redo your change.');
+    return false;
+  }
   try{ await db.collection('settings').doc(docId).set(stamp(data), {merge:true}); toast('Saved'); return true; }
   catch(e){
     console.error(e);
@@ -2346,7 +2380,7 @@ function vehicleMonitorLinks(v){
     dfms: safeUrl(v && v.dfmsLink) || (pd ? pd.url : ''), dfmsName: (v && safeUrl(v.dfmsLink)) ? 'this vehicle\'s link' : (pd ? pd.name : ''),
   };
 }
-let monitorEditOpen=false, monitorEditRows=null;
+let monitorEditOpen=false, monitorEditRows=null, monitorBase=undefined;
 function readMonitorRows(){
   const el=document.getElementById('monitorBar'); if(!monitorEditRows || !el) return;
   monitorEditRows=monitorEditRows.map((r,i)=>({
@@ -2541,7 +2575,7 @@ function renderMatrix(){
   for(const r of rows) for(const c of r.cells){ if(!c) continue; need++; const s=c.st.status; if(s==='valid') valid++; else if(s==='missing') missing++; else if(s==='expired') expired++; else if(s==='expiring'){ expiring++; valid++; } }
   const pct = need ? Math.round(valid*100/need) : 100;
   tiles.innerHTML=[
-    {label:'Compliance', num:need?pct+'%':'—', cls:need?(pct>=90?'ok':pct>=70?'warn':'danger'):'', sub:`${valid} of ${need} required trainings in date`, cat:'--cat-4', icon:ic('chart')},
+    {label:'Compliance', num:need?pct+'%':'—', cls:need?(pct>=90?'ok':pct>=70?'warn':'danger'):'', sub:`${valid} of ${need} required trainings in date${noRole.length?` · ⚠ ${noRole.length} worker${noRole.length===1?'':'s'} not counted (no role)`:''}`, cat:'--cat-4', icon:ic('chart')},
     {label:'Missing', num:missing, cls:missing?'danger':'ok', sub:'required but never recorded', cat:'--cat-9', icon:ic('xcircle')},
     {label:'Expired', num:expired, cls:expired?'danger':'ok', sub:'past the valid-until date', cat:'--cat-7', icon:ic('stop')},
     {label:'Expiring soon', num:expiring, cls:expiring?'warn':'ok', sub:'within the next 30 days', cat:'--cat-2', icon:ic('hourglass')},
@@ -2702,7 +2736,7 @@ function renderReqPanel(){
     </form>`;
 }
 function openReqEditor(){
-  reqEdit=reqEditFromSettings();
+  reqEdit=reqEditFromSettings(); reqEdit.base=settingsStamp('trainingMatrix');
   document.getElementById('reqPanel').hidden=false;
   renderReqPanel();
 }
@@ -2727,7 +2761,7 @@ async function saveReqEditor(){
   // keep the last 10 saved versions so a removed role can always be added back
   const prevRoles=trainingRoles();
   const versions=[...(trainingReq.versions||[]), ...(prevRoles.length ? [{at:new Date().toISOString(), by:(auth.currentUser&&auth.currentUser.email)||'', roles:prevRoles.map(r=>({name:r.name, divisions:roleDivisions(r), trainings:(r.trainings||[]).slice()}))}] : [])].slice(-10);
-  if(!(await saveSettings('trainingMatrix', {catalogue:reqEdit.catalogue.slice(), roles, versions}))) return false;
+  if(!(await saveSettings('trainingMatrix', {catalogue:reqEdit.catalogue.slice(), roles, versions}, reqEdit.base))) return false;
   const removedNames=prevRoles.map(r=>String(r.name).trim()).filter(n=>!roles.some(x=>roleKey(x.name)===roleKey(n)) && !renames.has(roleKey(n)));
   toast(`Saved — ${reqEdit.catalogue.length} training${reqEdit.catalogue.length===1?'':'s'} and ${roles.length} role${roles.length===1?'':'s'}${removedNames.length?` · removed: ${removedNames.join(', ')}`:''}`);
   matrixFilters.mode=null;
@@ -4597,7 +4631,7 @@ regDefine({
 function subEvalScore(e){ const ks=['hseScore','complianceScore','competenceScore','docsScore','housekeepingScore'].map(k=>Number(e[k])).filter(n=>n>=1&&n<=5); if(!ks.length) return null; return Math.round(ks.reduce((a,b)=>a+b,0)/(ks.length*5)*100); }
 
 /* =============================== KPI SCORECARD =============================== */
-let kpiEditOpen=false, kpiYear=String(new Date().getFullYear());
+let kpiEditOpen=false, kpiYear=String(new Date().getFullYear()), kpiBase=undefined;
 function kpiMonthMetrics(year){ const out=[]; for(let m=1;m<=12;m++) out.push(computeReportMetrics(reportEntriesFor('all', `${year}-${String(m).padStart(2,'0')}`, 'all'))); return out; }
 const KPI_MONTH = {   // monthly value for the scorecard grid (count-type KPIs)
   lti:m=>m.lti, mti:m=>m.mti, fac:m=>m.fac, vehicleInc:m=>m.vehicleIncident, incidents:m=>m.incident, daysLost:m=>m.ltiDaysLost,
@@ -4622,7 +4656,8 @@ function renderKpiPanel(){
   } else {
     const row=d=>{ const act=a[d.key], tgt=t[d.key], st=targetStatus(d, act, tgt===''||tgt===undefined?null:Number(tgt), a._months); const mf=KPI_MONTH[d.key];
       const cells=MONTHS_SHORT.map((_,n)=>{ if(!mf || n+1>lastM) return '<td class="kpi-m"></td>'; const v=mf(mm[n], kpiYear, n+1); const inProgress = Number(kpiYear)===new Date().getFullYear() && n===new Date().getMonth(); const bad = inProgress && d.type!=='max' ? false : d.type==='max' ? v>0 && (d.key==='lti'||d.key==='mti'||d.key==='vehicleInc'||d.key==='heatCases') : (!d.annual && tgt!==undefined && tgt!=='' && v<Number(tgt)); return `<td class="kpi-m ${v?'':'kpi-zero'} ${bad?'kpi-bad':''}">${v}</td>`; }).join('');
-      return `<tr><td><div class="wname">${esc(d.label)}</div></td><td class="mono">${d.type==='max'?'≤':'≥'} ${fmtTarget(d, tgt)}</td>${cells}<td class="mono"><strong>${fmtTarget(d, act)}</strong></td><td><span class="badge ${st.cls}">${st.t}</span></td></tr>`; };
+      const note = d.key==='training' ? (()=>{ const n=activeWorkers().filter(w=>(w.status||'active')==='active' && !workerRoles(w).length).length; return n ? `<div class="wsub" style="color:var(--warn);">⚠ ${n} active worker${n===1?' is':'s are'} not counted — no designation / role set</div>` : ''; })() : '';
+      return `<tr><td><div class="wname">${esc(d.label)}</div>${note}</td><td class="mono">${d.type==='max'?'≤':'≥'} ${fmtTarget(d, tgt)}</td>${cells}<td class="mono"><strong>${fmtTarget(d, act)}</strong></td><td><span class="badge ${st.cls}">${st.t}</span></td></tr>`; };
     body=`<div class="table-wrap"><table class="kpi-table"><thead><tr><th>KPI</th><th>Target</th>${MONTHS_SHORT.map(m=>`<th class="kpi-m">${m}</th>`).join('')}<th>YTD</th><th>Status</th></tr></thead><tbody>
       <tr class="kpi-group"><td colspan="16">Lagging KPIs — outcomes</td></tr>${TARGET_DEFS.filter(d=>d.kind==='lagging').map(row).join('')}
       <tr class="kpi-group"><td colspan="16">Leading KPIs — proactive activities</td></tr>${TARGET_DEFS.filter(d=>d.kind==='leading').map(row).join('')}
@@ -5940,6 +5975,7 @@ function startReportData(){
 function renderAll(){
   renderTiles();
   renderMoveNote();
+  renderDupNote();
   renderTradeFilter();
   renderTable();
   document.getElementById('clearSampleBtn').hidden = !workers.some(w=>w.isSample);
@@ -6251,6 +6287,18 @@ function sitePastTeamHtml(s){
   const btn=w=>canEdit()?`<button type="button" class="btn btn-sm" data-bring-back="${w.id}">Bring back</button>`:'';
   return `${away.length?`<div class="subhead">Away on a temporary move (${away.length})</div>${away.map(w=>`<div class="equip-line" data-open-worker="${w.id}"><div class="equip-line-main"><div class="equip-line-title">${esc(w.fullName||'—')}</div><div class="wsub">now at ${esc(locLabel(w.projectId))} · due back ${esc(w.returnDate)}</div></div><div class="equip-line-badges">${w.returnDate<=t?'<span class="badge warn">Due back</span>':''}${btn(w)}</div></div>`).join('')}`:''}
     ${past.length?`<div class="subhead">Previously on this project (${past.length})</div>${past.slice(0,40).map(({w,last})=>`<div class="equip-line" data-open-worker="${w.id}"><div class="equip-line-main"><div class="equip-line-title">${esc(w.fullName||'—')}</div><div class="wsub">${esc([w.designation, w.trade].filter(Boolean).join(' · ')||'—')} · here ${esc(last.from||'?')} → ${esc(last.to)} · now ${w.projectId?'at '+esc(locLabel(w.projectId)):'not assigned'}</div></div><div class="equip-line-badges">${btn(w)}</div></div>`).join('')}`:''}`;
+}
+// Batch 31: workers entered twice (same Civil ID) — before the double-save fix, or on different days
+function duplicateWorkerGroups(){
+  const g=new Map();
+  for(const w of workers){ const k=normKey(w.civilId||''); if(!k) continue; if(!g.has(k)) g.set(k,[]); g.get(k).push(w); }
+  return [...g.values()].filter(ws=>ws.filter(w=>!w.deleted).length>1);
+}
+function renderDupNote(){
+  const el=document.getElementById('dupNote'); if(!el) return;
+  const groups=auth.currentUser ? duplicateWorkerGroups() : [];
+  el.hidden=!groups.length;
+  el.innerHTML = groups.length ? `${ic('alert')} <strong>Possible duplicate workers (same Civil ID):</strong> ${groups.slice(0,8).map(ws=>{ const a=ws.filter(w=>!w.deleted); return `<button type="button" class="att-link" data-dup-civil="${esc(a[0].civilId||'')}">${esc(a[0].fullName||'Worker')} · ${esc(a[0].civilId||'')} ×${a.length}</button>`; }).join(' · ')}${groups.length>8?' …':''} <span class="wsub" style="display:inline;">— open each copy, keep the one with the records and move the other to Deleted workers.</span>` : '';
 }
 function renderMoveNote(){
   const el=document.getElementById('moveNote'); if(!el) return;
@@ -9038,6 +9086,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const mb=e.target.closest('[data-move-back]');
     if(mb){ if(await moveWorker(w.id, w.returnProjectId)) toast('Moved back to '+projectName(w.returnProjectId)); return; }
   });
+  document.getElementById('dupNote').addEventListener('click', e=>{ const b=e.target.closest('[data-dup-civil]'); if(!b) return; filters.q=b.dataset.dupCivil; filters.trade='all'; const si=document.getElementById('searchInput'); if(si) si.value=filters.q; const tf=document.getElementById('tradeFilter'); if(tf) tf.value='all'; renderTable(); renderTiles(); });
   document.getElementById('moveNote').addEventListener('click', e=>{ const b=e.target.closest('[data-open-due]'); if(b){ openDrawer(b.dataset.openDue); } });
   document.getElementById('drawerBody').addEventListener('click', async e=>{
     if(e.target.id==='toggleRecordForm'){
@@ -9941,7 +9990,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   // --- Fleet: company IVMS / DFMS portal links ---
   document.getElementById('monitorBar').addEventListener('click', e=>{
     const b=e.target.closest('button'); if(!b) return;
-    if(b.id==='monitorEditBtn'){ monitorEditOpen=true; monitorEditRows=null; renderMonitorBar(); return; }
+    if(b.id==='monitorEditBtn'){ monitorEditOpen=true; monitorEditRows=null; monitorBase=settingsStamp('app'); renderMonitorBar(); return; }
     if(b.id==='monitorCancel'){ monitorEditOpen=false; monitorEditRows=null; renderMonitorBar(); return; }
     if(b.id==='monitorAddRow'){ readMonitorRows(); monitorEditRows.push({name:'', kind:'IVMS', url:'', types:[]}); renderMonitorBar(); const last=document.querySelector(`[data-ml-name="${monitorEditRows.length-1}"]`); if(last) last.focus(); return; }
     const rm=b.closest('[data-ml-remove]');
@@ -9958,7 +10007,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       if(!safeUrl(url)){ toast(`The link for “${name||r.kind}” doesn't look like a web address — check it and save again`); return; }
       out.push({name:name||r.kind+' portal', kind:r.kind==='DFMS'?'DFMS':'IVMS', url:safeUrl(url), types:r.types||[]});
     }
-    if(await saveSettings('app', {monitorLinks:out})){ monitorEditOpen=false; monitorEditRows=null; renderMonitorBar(); renderVehicleTable(); if(activeVehicleId) renderVehicleDrawer(); }
+    if(await saveSettings('app', {monitorLinks:out}, monitorBase)){ monitorEditOpen=false; monitorEditRows=null; renderMonitorBar(); renderVehicleTable(); if(activeVehicleId) renderVehicleDrawer(); }
   });
 
   // --- QHSE library: dashboard, filters, table ---
@@ -10259,7 +10308,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   // ---- HSE targets ----
   document.addEventListener('click', e=>{
-    if(e.target.closest('#ccTargetsEdit')){ kpiEditOpen=true; kpiYear = reportPeriod==='year' ? reportYear : String(reportMonth).slice(0,4); document.querySelector('.sidenav-btn[data-section="objectives"]').click(); renderKpiPanel(); return; }
+    if(e.target.closest('#ccTargetsEdit')){ kpiEditOpen=true; kpiBase=settingsStamp('targets'); kpiYear = reportPeriod==='year' ? reportYear : String(reportMonth).slice(0,4); document.querySelector('.sidenav-btn[data-section="objectives"]').click(); renderKpiPanel(); return; }
     if(e.target.id==='targetsCancel'){ targetsEditOpen=false; renderTargetsPanel(); }
   });
   document.addEventListener('submit', async e=>{
@@ -10466,7 +10515,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   $('incAlertBtn').addEventListener('click', ()=>{ const i=incidentList.find(x=>x.id===activeIncId); if(i){ closeIncDrawer(); openAlertForIncident(i); } });
   // KPI panel
   $('objectivesTop').addEventListener('click', e=>{
-    if(e.target.closest('#kpiEditBtn')){ kpiEditOpen=true; renderKpiPanel(); return; }
+    if(e.target.closest('#kpiEditBtn')){ kpiEditOpen=true; kpiBase=settingsStamp('targets'); renderKpiPanel(); return; }
     if(e.target.closest('#kpiCancel')){ kpiEditOpen=false; renderKpiPanel(); return; }
     if(e.target.closest('#kpiPdfBtn')){ downloadKpiPdf(); return; }
   });
@@ -10474,7 +10523,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   $('objectivesTop').addEventListener('submit', async e=>{
     if(e.target.id!=='kpiForm') return; e.preventDefault();
     const d={...(targetsFor(kpiYear)||{})}; e.target.querySelectorAll('[data-kfield]').forEach(el=>{ d[el.dataset.kfield]= el.value===''?'':Number(el.value); });
-    if(await saveSettings('targets', {[kpiYear]:d})){ appTargets={...appTargets, [kpiYear]:d}; kpiEditOpen=false; targetsEditOpen=false; renderKpiPanel(); renderTargetsPanel(); renderRegAll('objectives'); }
+    if(await saveSettings('targets', {[kpiYear]:d}, kpiBase)){ appTargets={...appTargets, [kpiYear]:d}; kpiEditOpen=false; targetsEditOpen=false; renderKpiPanel(); renderTargetsPanel(); renderRegAll('objectives'); }
   });
   // action tracker
   $('actSrcTabs').addEventListener('click', e=>{ const b=e.target.closest('[data-actsrc]'); if(!b) return; actFilters.src=b.dataset.actsrc; renderActionTracker(); });
