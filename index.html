@@ -404,6 +404,13 @@ label.chk input{width:auto; flex:none;}
 .req-add{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
 .req-add input{flex:1 1 220px; min-width:0;}
 table.req-grid td.mx-sticky input{min-width:230px;}
+table.req-grid td.mx-sticky .req-divchips input{min-width:0; width:14px; height:14px;}
+.req-divchips{display:flex; flex-wrap:wrap; gap:2px 10px; margin-top:6px; max-width:260px;}
+.req-divchips label.chk{font-size:11.5px; font-weight:500; color:var(--ink-muted);}
+#matrixDivTabs .seg-btn, #reqDivTabs .seg-btn{font-size:11.5px; padding:8px 12px;}
+.seg-btn .seg-n{opacity:.7; font-weight:600; margin-left:3px;}
+#matrixDivTabs{display:flex; width:fit-content; max-width:100%;}
+details.xroles{margin-top:8px;} details.xroles summary{cursor:pointer; font-size:12.5px; color:var(--ink-muted); margin-bottom:6px;}
 table.req-grid td.mx-cell input{width:18px; height:18px; cursor:pointer;}
 .req-box .rf{align-items:center;}
 #matrixNote .btn{margin-left:6px;}
@@ -857,12 +864,13 @@ body.read-only #ckTemplatesBtn{display:none !important;}
           </div>
         </div>
         <div class="panel" id="reqPanel" hidden></div>
+        <div class="seg-tabs" id="matrixDivTabs" aria-label="Division"></div>
         <div class="seg-tabs" id="matrixModeTabs"><button type="button" class="seg-btn active" data-mxmode="workers">Workers</button><button type="button" class="seg-btn" data-mxmode="roles">Role requirements</button></div>
         <div class="tiles tiles-4" id="matrixTiles"></div>
         <div class="notice" id="matrixNote" hidden></div>
         <div class="toolbar">
           <input type="search" id="matrixSearch" placeholder="Search worker…">
-          <select id="matrixDivision" aria-label="Filter by division"><option value="all">All divisions</option></select>
+          <select id="matrixDivision" aria-label="Filter by division" hidden><option value="all">All divisions</option></select>
           <select id="matrixRole" aria-label="Filter by role"><option value="all">All roles</option></select>
           <select id="matrixGaps">
             <option value="all">All active workers</option>
@@ -2324,6 +2332,25 @@ function requiredTrainings(){ return (trainingReq.trainings||[]).filter(t=>t && 
    A worker has a main role + extra roles; they need every training of every role they hold. */
 function roleKey(n){ return String(n||'').trim().toLowerCase(); }
 function trainingRoles(){ return (trainingReq.roles||[]).filter(r=>r && String(r.name||'').trim()); }
+// Batch 25: each role belongs to one or more divisions (worker Trade values). No divisions ticked = any division.
+const DIV_SHORT = new Map([['Office Staff','Office'],['Scaffolding Division','Scaffolding'],['Civil Division','Civil'],['Logistics & Rental Division','Logistics & Rental'],['Sub Contractor','Sub-contractor']]);
+function divShort(t){ return DIV_SHORT.get(t) || t; }
+function roleDivisions(r){ return (r && Array.isArray(r.divisions)) ? [...new Set(r.divisions.map(canonTrade).filter(Boolean))] : []; }
+function roleFitsTrade(r, trade){ const d=roleDivisions(r); return !d.length || !trade || trade==='all' || d.includes(canonTrade(trade)); }
+function rolesForTrade(trade){ return trainingRoles().filter(r=>roleFitsTrade(r, trade)); }
+// for roles saved before divisions existed: use the divisions of the workers who already hold the role, else the name
+function guessRoleDivisions(name){
+  const k=roleKey(name);
+  const trades=[...new Set(activeWorkers().filter(w=>roleKey(w.designation)===k || roleKey(w.mainRole)===k || (w.extraRoles||[]).some(x=>roleKey(x)===k)).map(w=>canonTrade(w.trade)).filter(t=>TRADE_CATEGORIES.includes(t)))];
+  if(trades.length) return trades;
+  const n=String(name||'').toLowerCase(), out=[];
+  if(/scaffold/.test(n)) out.push('Scaffolding Division');
+  if(/civil|mason|carpent|steel ?fix|labou?r|helper|plumb|electric|welder/.test(n)) out.push('Civil Division');
+  if(/driver|crane|rigger|banksman|forklift|operator|mechanic|logistic|transport/.test(n)) out.push('Logistics & Rental Division');
+  if(out.length) return out;
+  if(/site supervisor|foreman|chargehand|leading hand/.test(n)) return ['Scaffolding Division','Civil Division','Logistics & Rental Division'];
+  return ['Office Staff'];
+}
 function roleNamesList(){ return trainingRoles().map(r=>String(r.name).trim()); }
 function trainingCatalogue(){
   const out=[], seen=new Set();
@@ -2391,9 +2418,12 @@ function renderMatrix(){
   divSel.innerHTML='<option value="all">All divisions</option>'+opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
   divSel.value = opts.includes(matrixFilters.division) ? matrixFilters.division : 'all';
   matrixFilters.division=divSel.value;
+  { const aw=activeWorkers().filter(w=>(w.status||'active')==='active');
+    document.getElementById('matrixDivTabs').innerHTML=['all',...opts].map(d=>`<button type="button" class="seg-btn ${matrixFilters.division===d?'active':''}" data-mxdiv="${esc(d)}">${esc(d==='all'?'All':divShort(d))} <span class="seg-n">${d==='all'?aw.length:aw.filter(w=>w.trade===d).length}</span></button>`).join(''); }
   const roles=roleNamesList();
-  roleSel.innerHTML='<option value="all">All roles</option>'+roles.map(r=>`<option value="${esc(r)}">${esc(r)}</option>`).join('')+'<option value="__none">No role / designation not in list</option>';
-  roleSel.value = (matrixFilters.role==='__none' || roles.includes(matrixFilters.role)) ? matrixFilters.role : 'all';
+  const divRoles=rolesForTrade(matrixFilters.division).map(r=>String(r.name).trim());
+  roleSel.innerHTML='<option value="all">All roles</option>'+divRoles.map(r=>`<option value="${esc(r)}">${esc(r)}</option>`).join('')+'<option value="__none">No role / designation not in list</option>';
+  roleSel.value = (matrixFilters.role==='__none' || divRoles.includes(matrixFilters.role)) ? matrixFilters.role : 'all';
   matrixFilters.role=roleSel.value;
   const head=document.getElementById('matrixHead'), body=document.getElementById('matrixRows'), tiles=document.getElementById('matrixTiles');
   note.hidden=true; note.innerHTML='';
@@ -2403,7 +2433,6 @@ function renderMatrix(){
   const mode=matrixFilters.mode || (roles.length && !anyRoleSet ? 'roles' : 'workers');
   document.querySelectorAll('#matrixModeTabs [data-mxmode]').forEach(b=>b.classList.toggle('active', b.dataset.mxmode===mode));
   ['matrixRole','matrixGaps'].forEach(id=>{ document.getElementById(id).hidden = mode==='roles'; });
-  divSel.hidden = mode==='roles';
   document.getElementById('matrixSearch').placeholder = mode==='roles' ? 'Search role or training…' : 'Search worker…';
   if(settingsLoadError==='rules'){ tiles.innerHTML=''; head.innerHTML=''; body.innerHTML=`<tr><td class="empty-state">${esc(RULES_UPDATE_MSG)}</td></tr>`; return; }
   if(!roles.length){
@@ -2467,12 +2496,23 @@ async function exportTrainingMatrix(){
     for(const x of c.cells) if(x.st.status!=='valid') gaps.push([w.fullName||'', w.civilId||'', w.trade||'', workerRoles(w).join(' + '), x.name, word[x.st.status]||x.st.status, x.st.expiry||'', x.roles.join(', ')]);
   }
   const counts=new Map(); ws.forEach(w=>workerRoles(w).forEach(r=>{ const k=roleKey(r); counts.set(k,(counts.get(k)||0)+1); }));
-  const m2=[['Role','Workers with this role', ...cat], ...roles.map(r=>{ const need=new Set((r.trainings||[]).map(normTraining)); return [r.name, counts.get(roleKey(r.name))||0, ...cat.map(t=>need.has(normTraining(t))?'✓':'')]; })];
+  const m2=[['Role','Divisions','Workers with this role', ...cat], ...roles.map(r=>{ const need=new Set((r.trainings||[]).map(normTraining)); return [r.name, roleDivisions(r).map(divShort).join(', ')||'All divisions', counts.get(roleKey(r.name))||0, ...cat.map(t=>need.has(normTraining(t))?'✓':'')]; })];
   const wb=XLSX.utils.book_new();
   const s1=XLSX.utils.aoa_to_sheet(m1); s1['!cols']=[{wch:26},{wch:16},{wch:24},{wch:18},{wch:30},{wch:9},{wch:8},{wch:12}, ...cols.map(t=>({wch:Math.max(14, Math.min(28, t.length+2))}))]; s1['!freeze']={xSplit:1, ySplit:1};
-  const s2=XLSX.utils.aoa_to_sheet(m2); s2['!cols']=[{wch:30},{wch:12}, ...cat.map(t=>({wch:Math.max(12, Math.min(26, t.length+2))}))];
+  const s2=XLSX.utils.aoa_to_sheet(m2); s2['!cols']=[{wch:30},{wch:26},{wch:12}, ...cat.map(t=>({wch:Math.max(12, Math.min(26, t.length+2))}))];
   const s3=XLSX.utils.aoa_to_sheet(gaps.length>1 ? gaps : [...gaps, ['No gaps — every required training is in date.']]); s3['!cols']=[{wch:26},{wch:16},{wch:24},{wch:30},{wch:26},{wch:14},{wch:12},{wch:30}];
-  XLSX.utils.book_append_sheet(wb, s1, 'Worker training matrix');
+  XLSX.utils.book_append_sheet(wb, s1, 'All workers');
+  // one sheet per division, with only the trainings that division needs
+  for(const d of TRADE_CATEGORIES){
+    const dr=reqs.filter(x=>x.w.trade===d); if(!dr.length) continue;
+    const du=new Set(); dr.forEach(x=>x.c.cells.forEach(t=>du.add(normTraining(t.name))));
+    const dc=cat.filter(t=>du.has(normTraining(t)));
+    const aoa=[['Worker','Civil ID','Designation','Roles','Required','In date','Compliance %', ...dc]];
+    for(const {w,c} of dr){ const by=new Map(c.cells.map(t=>[normTraining(t.name), t]));
+      aoa.push([w.fullName||'', w.civilId||'', w.designation||'', workerRoles(w).join(' + ')||'No role set', c.need, c.ok, c.need?Math.round(c.ok*100/c.need):'', ...dc.map(t=>{ const x=by.get(normTraining(t)); return x ? (word[x.st.status]||x.st.status)+(x.st.expiry?` (${x.st.expiry})`:'') : '—'; })]); }
+    const sh=XLSX.utils.aoa_to_sheet(aoa); sh['!cols']=[{wch:26},{wch:16},{wch:22},{wch:30},{wch:9},{wch:8},{wch:12}, ...dc.map(t=>({wch:Math.max(14, Math.min(28, t.length+2))}))];
+    XLSX.utils.book_append_sheet(wb, sh, divShort(d).replace(/[\\/?*\[\]:]/g,' ').slice(0,31));
+  }
   XLSX.utils.book_append_sheet(wb, s2, 'Role requirements');
   XLSX.utils.book_append_sheet(wb, s3, 'Gaps to close');
   XLSX.writeFile(wb, `Burhan_Training_Matrix_${localToday()}.xlsx`);
@@ -2481,22 +2521,26 @@ async function exportTrainingMatrix(){
 // Role requirements view: roles down the side, trainings across, ✓ where the role needs it
 function renderRoleRequirements(q){
   const head=document.getElementById('matrixHead'), body=document.getElementById('matrixRows'), tiles=document.getElementById('matrixTiles'), note=document.getElementById('matrixNote');
-  const roles=trainingRoles(), cat=trainingCatalogue();
-  const counts=new Map(); activeWorkers().filter(w=>(w.status||'active')==='active').forEach(w=>workerRoles(w).forEach(r=>{ const k=roleKey(r); counts.set(k,(counts.get(k)||0)+1); }));
-  const noRole=activeWorkers().filter(w=>(w.status||'active')==='active' && !workerRoles(w).length).length;
+  const div=matrixFilters.division, roles=rolesForTrade(div);
+  const used=new Set(roles.flatMap(r=>(r.trainings||[]).map(normTraining)));
+  const cat=div==='all' ? trainingCatalogue() : trainingCatalogue().filter(t=>used.has(normTraining(t)));
+  const aw=activeWorkers().filter(w=>(w.status||'active')==='active' && (div==='all' || w.trade===div));
+  const counts=new Map(); aw.forEach(w=>workerRoles(w).forEach(r=>{ const k=roleKey(r); counts.set(k,(counts.get(k)||0)+1); }));
+  const noRole=aw.filter(w=>!workerRoles(w).length).length;
   tiles.innerHTML=[
-    {label:'Roles', num:roles.length, sub:'set up in Roles & required trainings', cat:'--cat-4', icon:ic('users')},
-    {label:'Trainings', num:cat.length, sub:'in the training list', cat:'--cat-5', icon:ic('cap')},
-    {label:'Workers with a role', num:activeWorkers().filter(w=>(w.status||'active')==='active' && workerRoles(w).length).length, sub:'active workers', cat:'--cat-3', icon:ic('checkcircle')},
+    {label:'Roles', num:roles.length, sub:div==='all'?'set up in Roles & required trainings':'for '+divShort(div), cat:'--cat-4', icon:ic('users')},
+    {label:'Trainings', num:cat.length, sub:div==='all'?'in the training list':'needed in '+divShort(div), cat:'--cat-5', icon:ic('cap')},
+    {label:'Workers with a role', num:aw.filter(w=>workerRoles(w).length).length, sub:div==='all'?'active workers':'active workers in '+divShort(div), cat:'--cat-3', icon:ic('checkcircle')},
     {label:'No role yet', num:noRole, cls:noRole?'warn':'ok', sub:'set in each worker\'s Profile', cat:'--cat-2', icon:ic('alert')},
   ].map(t=>`<div class="tile" style="--tile-accent:var(${t.cat})"><div class="tile-head"><div class="tile-icon">${t.icon}</div><div class="tile-label">${t.label}</div></div><div class="tile-num ${t.cls||''}">${t.num}</div><div class="tile-sub">${t.sub}</div></div>`).join('');
   if(noRole){ note.hidden=false; note.innerHTML=`${ic('alert')} Next step: give each worker their role(s) — open the worker → <strong>Profile</strong> → pick their <em>Designation</em> (and any Extra roles) → Save. The <strong>Workers</strong> view then shows who has which training.`; }
   const cols=cat.filter(t=>!q || t.toLowerCase().includes(q) || roles.some(r=>r.name.toLowerCase().includes(q)));
   const rows=roles.filter(r=>!q || r.name.toLowerCase().includes(q) || (r.trainings||[]).some(t=>String(t).toLowerCase().includes(q)));
   head.innerHTML=`<tr><th class="mx-sticky">Role</th><th class="mx-col">Workers</th>${cols.map(t=>`<th class="mx-col">${esc(t)}</th>`).join('')}</tr>`;
+  if(!roles.length){ body.innerHTML=`<tr><td class="empty-state" colspan="${cols.length+2}">No roles for ${esc(divShort(div))} yet — add them in <strong>Roles &amp; required trainings</strong>.</td></tr>`; return; }
   if(!rows.length){ body.innerHTML=`<tr><td class="empty-state" colspan="${cols.length+2}">No roles match.</td></tr>`; return; }
   body.innerHTML=rows.map(r=>{ const need=new Set((r.trainings||[]).map(normTraining)); const n=counts.get(roleKey(r.name))||0;
-    return `<tr><td class="mx-sticky"><div class="wname">${esc(r.name)}</div><div class="wsub">${need.size} training${need.size===1?'':'s'} required</div></td><td class="mx-cell">${n}</td>${cols.map(t=>`<td class="mx-cell">${need.has(normTraining(t))?'<span class="badge ok" title="Required">✓</span>':'<span class="mx-na">—</span>'}</td>`).join('')}</tr>`; }).join('');
+    return `<tr><td class="mx-sticky"><div class="wname">${esc(r.name)}</div><div class="wsub">${need.size} training${need.size===1?'':'s'} · ${esc(roleDivisions(r).map(divShort).join(', ')||'all divisions')}</div></td><td class="mx-cell">${n}</td>${cols.map(t=>`<td class="mx-cell">${need.has(normTraining(t))?'<span class="badge ok" title="Required">✓</span>':'<span class="mx-na">—</span>'}</td>`).join('')}</tr>`; }).join('');
 }
 function setWorkforceView(v){
   workforceView=v;
@@ -2507,21 +2551,24 @@ function setWorkforceView(v){
 }
 // Suggested starting point — edit freely (typical oil & gas contractor roles in Oman)
 const SUGGESTED_ROLES = [
-  {name:'HSE Engineer / Officer', trainings:['HSE Induction','H2S Awareness','Working at Height','Fire Fighting','First Aid','Defensive Driving','Permit to Work','Confined Space Entry','Scaffolding Inspection']},
-  {name:'Office Staff', trainings:['HSE Induction','Fire Fighting']},
-  {name:'Site Supervisor / Foreman', trainings:['HSE Induction','H2S Awareness','Working at Height','Permit to Work','First Aid','Fire Fighting']},
-  {name:'Scaffolder', trainings:['HSE Induction','H2S Awareness','Working at Height','Scaffolding Erection','Manual Handling']},
-  {name:'Scaffolding Supervisor / Inspector', trainings:['HSE Induction','H2S Awareness','Working at Height','Scaffolding Inspection','Permit to Work','First Aid']},
-  {name:'Light Vehicle Driver', trainings:['HSE Induction','H2S Awareness','Defensive Driving']},
-  {name:'Heavy Vehicle Driver', trainings:['HSE Induction','H2S Awareness','Heavy Vehicle Defensive Driving']},
-  {name:'Crane Operator', trainings:['HSE Induction','H2S Awareness','Crane Operation','Rigging & Slinging','Heavy Vehicle Defensive Driving']},
-  {name:'Rigger / Banksman', trainings:['HSE Induction','H2S Awareness','Rigging & Slinging','Working at Height']},
-  {name:'Civil Worker', trainings:['HSE Induction','H2S Awareness','Working at Height','Manual Handling']},
+  {name:'HSE Engineer / Officer', divisions:['Office Staff'], trainings:['HSE Induction','H2S Awareness','Working at Height','Fire Fighting','First Aid','Defensive Driving','Permit to Work','Confined Space Entry','Scaffolding Inspection']},
+  {name:'Office Staff', divisions:['Office Staff'], trainings:['HSE Induction','Fire Fighting']},
+  {name:'Site Supervisor / Foreman', divisions:['Scaffolding Division','Civil Division','Logistics & Rental Division'], trainings:['HSE Induction','H2S Awareness','Working at Height','Permit to Work','First Aid','Fire Fighting']},
+  {name:'Scaffolder', divisions:['Scaffolding Division'], trainings:['HSE Induction','H2S Awareness','Working at Height','Scaffolding Erection','Manual Handling']},
+  {name:'Scaffolding Supervisor / Inspector', divisions:['Scaffolding Division'], trainings:['HSE Induction','H2S Awareness','Working at Height','Scaffolding Inspection','Permit to Work','First Aid']},
+  {name:'Light Vehicle Driver', divisions:['Logistics & Rental Division','Civil Division','Scaffolding Division'], trainings:['HSE Induction','H2S Awareness','Defensive Driving']},
+  {name:'Heavy Vehicle Driver', divisions:['Logistics & Rental Division'], trainings:['HSE Induction','H2S Awareness','Heavy Vehicle Defensive Driving']},
+  {name:'Crane Operator', divisions:['Logistics & Rental Division'], trainings:['HSE Induction','H2S Awareness','Crane Operation','Rigging & Slinging','Heavy Vehicle Defensive Driving']},
+  {name:'Rigger / Banksman', divisions:['Logistics & Rental Division'], trainings:['HSE Induction','H2S Awareness','Rigging & Slinging','Working at Height']},
+  {name:'Civil Worker', divisions:['Civil Division'], trainings:['HSE Induction','H2S Awareness','Working at Height','Manual Handling']},
 ];
 function reqEditFromSettings(){
   const cat=trainingCatalogue();
   if(!cat.length) requiredTrainings().forEach(t=>{ const n=String(t.name).trim(); if(!cat.some(x=>normTraining(x)===normTraining(n))) cat.push(n); });   // pre-fill from the old division list
-  return {catalogue:cat, roles:trainingRoles().map(r=>({name:String(r.name).trim(), orig:String(r.name).trim(), set:new Set((r.trainings||[]).map(normTraining).filter(Boolean))}))};
+  let guessed=0;
+  const roles=trainingRoles().map(r=>{ let d=roleDivisions(r); if(!d.length){ d=guessRoleDivisions(r.name); guessed++; }
+    return {name:String(r.name).trim(), orig:String(r.name).trim(), set:new Set((r.trainings||[]).map(normTraining).filter(Boolean)), divs:new Set(d)}; });
+  return {catalogue:cat, roles, guessed, div:(matrixFilters.division && matrixFilters.division!=='all' && TRADE_CATEGORIES.includes(matrixFilters.division)) ? matrixFilters.division : 'all'};
 }
 function readReqGrid(){
   const panel=document.getElementById('reqPanel');
@@ -2530,6 +2577,8 @@ function readReqGrid(){
     const inp=panel.querySelector(`[data-role-name="${i}"]`); if(inp) r.name=inp.value;
     const boxes=panel.querySelectorAll(`[data-role-t="${i}"]`);
     if(boxes.length){ r.set=new Set(); boxes.forEach(b=>{ if(b.checked) r.set.add(normTraining(b.value)); }); }
+    const dboxes=panel.querySelectorAll(`[data-role-div="${i}"]`);
+    if(dboxes.length){ r.divs=new Set(); dboxes.forEach(b=>{ if(b.checked) r.divs.add(b.value); }); }
   });
 }
 function renderReqPanel(){
@@ -2543,19 +2592,22 @@ function renderReqPanel(){
       <div class="req-chips">${cat.length ? cat.map((t,i)=>`<span class="req-chip">${esc(t)}<button type="button" data-cat-remove="${i}" aria-label="Remove ${esc(t)}" title="Remove">${ic('close')}</button></span>`).join('') : '<span class="wsub">No trainings yet — add them below, or use the suggested list.</span>'}</div>
       <div class="req-add"><input id="reqNewTraining" list="trainingNameList" placeholder="Add a training, e.g. Rigging & Slinging" aria-label="New training name"><button type="button" class="btn btn-sm" id="reqAddTraining">+ Add training</button></div>
       <datalist id="trainingNameList">${names.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist>
-      <div class="subhead">Roles — tick what each role needs (${reqEdit.roles.length})</div>
-      ${reqEdit.roles.length ? `<div class="table-wrap"><table class="matrix-table req-grid">
-        <thead><tr><th class="mx-sticky">Role / designation</th>${cat.map(t=>`<th class="mx-col">${esc(t)}</th>`).join('')}<th></th></tr></thead>
-        <tbody>${reqEdit.roles.map((r,i)=>`<tr>
-          <td class="mx-sticky"><input data-role-name="${i}" value="${esc(r.name)}" placeholder="e.g. Scaffolder" aria-label="Role name"></td>
+      <div class="subhead">Roles — tick the division(s) and the trainings each role needs</div>
+      <div class="seg-tabs" id="reqDivTabs">${['all',...TRADE_CATEGORIES].map(d=>{ const n=d==='all'?reqEdit.roles.length:reqEdit.roles.filter(r=>r.divs.has(d)).length; return `<button type="button" class="seg-btn ${reqEdit.div===d?'active':''}" data-req-div-tab="${esc(d)}">${esc(d==='all'?'All':divShort(d))} (${n})</button>`; }).join('')}</div>
+      ${reqEdit.guessed ? `<div class="notice">${ic('alert')} Divisions were filled in for ${reqEdit.guessed} role${reqEdit.guessed===1?'':'s'} that didn't have any yet — check the ticks under each role name, then <strong>Save</strong>.</div>` : ''}
+      ${(()=>{ const shown=reqEdit.roles.map((r,i)=>({r,i})).filter(x=>reqEdit.div==='all' || x.r.divs.has(reqEdit.div) || !x.r.divs.size); return shown.length ? `<div class="table-wrap"><table class="matrix-table req-grid">
+        <thead><tr><th class="mx-sticky">Role / designation · division(s)</th>${cat.map(t=>`<th class="mx-col">${esc(t)}</th>`).join('')}<th></th></tr></thead>
+        <tbody>${shown.map(({r,i})=>`<tr>
+          <td class="mx-sticky"><input data-role-name="${i}" value="${esc(r.name)}" placeholder="e.g. Scaffolder" aria-label="Role name">
+            <div class="req-divchips">${TRADE_CATEGORIES.map(d=>`<label class="chk"><input type="checkbox" data-role-div="${i}" value="${esc(d)}" ${r.divs.has(d)?'checked':''}>${esc(divShort(d))}</label>`).join('')}</div></td>
           ${cat.map(t=>`<td class="mx-cell"><input type="checkbox" data-role-t="${i}" value="${esc(t)}" ${r.set.has(normTraining(t))?'checked':''} aria-label="${esc((r.name||'Role')+' needs '+t)}"></td>`).join('')}
           <td><button type="button" class="icon-btn danger" data-role-remove="${i}" aria-label="Remove role" title="Remove role">${ic('close')}</button></td>
-        </tr>`).join('')}</tbody></table></div>` : '<p class="wsub">No roles yet — click “+ Add role”, or use the suggested roles.</p>'}
+        </tr>`).join('')}</tbody></table></div>` : `<p class="wsub">No roles ${reqEdit.div==='all'?'yet':'for '+esc(divShort(reqEdit.div))+' yet'} — click “+ Add role”${reqEdit.div==='all'?', or use the suggested roles':''}.</p>`; })()}
       <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-        <button type="button" class="btn btn-sm" id="reqAddRole">+ Add role</button>
+        <button type="button" class="btn btn-sm" id="reqAddRole">+ Add role${reqEdit.div!=='all'?' to '+esc(divShort(reqEdit.div)):''}</button>
         <button type="button" class="btn btn-sm btn-ghost" id="reqAddCommon">+ Add suggested roles &amp; trainings</button>
       </div>
-      <p class="wsub" style="margin:8px 0 0;">Renaming a role here also updates the workers who have it. Removing a role doesn't change any worker — it just stops requiring trainings.</p>
+      <p class="wsub" style="margin:8px 0 0;">New people joining with a new job title? Just add the role here (in their division's tab) and tick its trainings — it then appears in the Designation list for that division. Renaming a role here also updates the workers who have it. Removing a role doesn't change any worker — it just stops requiring trainings.</p>
       <div class="form-actions"><button type="button" class="btn" id="reqCancel">Cancel</button><button type="submit" class="btn btn-primary">Save roles &amp; trainings</button></div>
     </form>`;
 }
@@ -2578,7 +2630,8 @@ async function saveReqEditor(){
     const name=String(r.name||'').trim();
     if(!name){ if(r.set.size){ toast('Give every role a name (or remove the empty row)'); return false; } continue; }
     const k=roleKey(name); if(seen.has(k)){ toast(`“${name}” is listed twice — keep it once`); return false; } seen.add(k);
-    roles.push({name, trainings:reqEdit.catalogue.filter(t=>r.set.has(normTraining(t)))});
+    if(!r.divs || !r.divs.size){ toast(`Tick at least one division for “${name}”`); reqEdit.div='all'; renderReqPanel(); return false; }
+    roles.push({name, divisions:TRADE_CATEGORIES.filter(d=>r.divs.has(d)), trainings:reqEdit.catalogue.filter(t=>r.set.has(normTraining(t)))});
     if(r.orig && roleKey(r.orig)!==k && !reqEdit.roles.some(x=>x!==r && roleKey(x.orig)===k)) renames.set(roleKey(r.orig), name);
   }
   if(!(await saveSettings('trainingMatrix', {catalogue:reqEdit.catalogue.slice(), roles}))) return false;
@@ -2597,21 +2650,28 @@ async function saveReqEditor(){
   return true;
 }
 // Worker profile: Designation (= main role, from the role list) + extra roles
+function designationOptionsHtml(trade, current){
+  const roles=rolesForTrade(trade).map(r=>String(r.name).trim()), sel=String(current||'').trim();
+  const opts=roles.slice(); if(sel && !opts.some(r=>roleKey(r)===roleKey(sel))) opts.unshift(sel);
+  return `<option value="">Select…</option>${opts.map(r=>`<option value="${esc(r)}" ${roleKey(r)===roleKey(sel)?'selected':''}>${esc(r)}${knownRole(r)?(roles.includes(r)?'':' — other division'):' — not in the role list'}</option>`).join('')}`;
+}
 function designationFieldHtml(w){
   const roles=roleNamesList(), d=String(w.designation||'').trim();
   if(!roles.length) return `<label>Designation<input data-field="designation" value="${esc(d)}" placeholder="e.g. Foreman, Supervisor"></label>`;
-  const sel=workerMainRole(w) || d;
-  const opts=roles.slice(); if(sel && !knownRole(sel)) opts.unshift(sel);
-  return `<label>Designation (role)<select data-field="designation"><option value="">Select…</option>${opts.map(r=>`<option value="${esc(r)}" ${roleKey(r)===roleKey(sel)?'selected':''}>${esc(r)}${knownRole(r)?'':' — not in the role list'}</option>`).join('')}</select></label>`;
+  return `<label>Designation (role)<select data-field="designation">${designationOptionsHtml(w.trade, workerMainRole(w) || d)}</select></label>`;
 }
 function workerRolesFormHtml(w){
   const roles=roleNamesList();
   if(!roles.length) return `<div class="span-all wsub">Roles: none set up yet${canEdit()?' — add them in <strong>Workforce → Training matrix → Roles &amp; required trainings</strong>; the Designation then becomes a pick-list of those roles.':'.'}</div>`;
-  const extra=new Set((w.extraRoles||[]).map(roleKey));
-  const main=roleKey(workerMainRole(w));
-  const opts=roles.filter(r=>roleKey(r)!==main); for(const x of (w.extraRoles||[])) if(x && roleKey(x)!==main && !opts.some(r=>roleKey(r)===roleKey(x))) opts.push(x);
+  const extra=new Set((w.extraRoles||[]).map(roleKey)), main=roleKey(workerMainRole(w));
+  const mine=rolesForTrade(w.trade).map(r=>String(r.name).trim()).filter(r=>roleKey(r)!==main);
+  const other=roles.filter(r=>roleKey(r)!==main && !mine.includes(r));
+  for(const x of (w.extraRoles||[])) if(x && roleKey(x)!==main && !mine.some(r=>roleKey(r)===roleKey(x)) && !other.some(r=>roleKey(r)===roleKey(x))) other.push(x);
+  const box=r=>`<label class="chk"><input type="checkbox" data-extra-role value="${esc(r)}" ${extra.has(roleKey(r))?'checked':''}>${esc(r)}</label>`;
+  const otherTicked=other.some(r=>extra.has(roleKey(r)));
   return `<div class="span-all"><div class="pick-label">Extra roles <span class="wsub">— only if this person also does another job (e.g. a driver who also works as a scaffolder). Their training needs add up with the Designation.</span></div>
-      <div class="cause-list">${opts.map(r=>`<label class="chk"><input type="checkbox" data-extra-role value="${esc(r)}" ${extra.has(roleKey(r))?'checked':''}>${esc(r)}</label>`).join('')}</div></div>`;
+      <div class="cause-list">${mine.length ? mine.map(box).join('') : '<span class="wsub">No other roles in this division.</span>'}</div>
+      ${other.length ? `<details class="xroles" ${otherTicked?'open':''}><summary>Roles from other divisions (${other.length})</summary><div class="cause-list">${other.map(box).join('')}</div></details>` : ''}</div>`;
 }
 // Worker → Induction tab: onboarding induction (here) + project inductions attended (from Monthly Report sessions)
 function projectInductionsForWorker(wid){
@@ -8835,6 +8895,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 
   document.getElementById('drawerBody').addEventListener('change', e=>{
+    if(e.target.matches('#profileForm [data-field="trade"]')){ const d=document.querySelector('#profileForm select[data-field="designation"]'); if(d) d.innerHTML=designationOptionsHtml(e.target.value, d.value); }
     if(e.target.id==='wmTemp'){ const b=document.getElementById('wmBackWrap'); if(b) b.hidden=!e.target.checked; }
   });
   document.getElementById('drawerBody').addEventListener('click', async e=>{
@@ -9692,6 +9753,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(cell && canEdit()){ addFormOpen=true; editingRecordId=null; recordPrefill={__tab:'trainings', name:cell.dataset.mxTrain}; }   // missing / expired → open "add training record" with the name filled in
     renderDrawer();
   });
+  document.getElementById('matrixDivTabs').addEventListener('click', e=>{ const b=e.target.closest('[data-mxdiv]'); if(!b) return; matrixFilters.division=b.dataset.mxdiv; matrixFilters.role='all'; renderMatrix(); });
   document.getElementById('matrixModeTabs').addEventListener('click', e=>{ const b=e.target.closest('[data-mxmode]'); if(!b) return; matrixFilters.mode=b.dataset.mxmode; renderMatrix(); });
   document.getElementById('exportMatrixBtn').addEventListener('click', exportTrainingMatrix);
   document.getElementById('editReqBtn').addEventListener('click', ()=>{
@@ -9701,7 +9763,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('reqPanel').addEventListener('click', e=>{
     const b=e.target.closest('button'); if(!b || !reqEdit) return;
     if(b.id==='reqCancel'){ closeReqEditor(); return; }
-    if(b.id==='reqAddRole'){ readReqGrid(); reqEdit.roles.push({name:'', orig:'', set:new Set()}); renderReqPanel(); const last=document.querySelector(`[data-role-name="${reqEdit.roles.length-1}"]`); if(last) last.focus(); return; }
+    const dt=b.closest('[data-req-div-tab]'); if(dt){ readReqGrid(); reqEdit.div=dt.dataset.reqDivTab; renderReqPanel(); return; }
+    if(b.id==='reqAddRole'){ readReqGrid(); reqEdit.roles.push({name:'', orig:'', set:new Set(), divs:new Set(reqEdit.div!=='all'?[reqEdit.div]:[])}); renderReqPanel(); const last=document.querySelector(`[data-role-name="${reqEdit.roles.length-1}"]`); if(last) last.focus(); return; }
     if(b.id==='reqAddTraining'){
       readReqGrid();
       const inp=document.getElementById('reqNewTraining'), n=inp.value.trim();
@@ -9715,7 +9778,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       let addedT=0, addedR=0;
       for(const r of SUGGESTED_ROLES){
         r.trainings.forEach(t=>{ if(reqAddTrainingName(t)) addedT++; });
-        if(!reqEdit.roles.some(x=>roleKey(x.name)===roleKey(r.name))){ reqEdit.roles.push({name:r.name, orig:'', set:new Set(r.trainings.map(normTraining))}); addedR++; }
+        if(!reqEdit.roles.some(x=>roleKey(x.name)===roleKey(r.name))){ reqEdit.roles.push({name:r.name, orig:'', set:new Set(r.trainings.map(normTraining)), divs:new Set(r.divisions||[])}); addedR++; }
       }
       renderReqPanel();
       toast(addedT||addedR ? `Added ${addedR} role${addedR===1?'':'s'} and ${addedT} training${addedT===1?'':'s'} — rename, untick or remove anything that doesn't fit` : 'Those are already in your list');
