@@ -411,6 +411,52 @@ table.req-grid td.mx-sticky input{min-width:230px;}
 .mx-scroll table.matrix-table tbody tr:hover td{background:var(--surface-2);}
 .mx-scroll table.matrix-table tbody tr:hover td.mx-sticky{background:var(--surface-2);}
 .mx-tip{margin:0 0 6px;}
+/* Batch 29: worker register with full grid lines */
+table.grid-table{border-collapse:collapse;}
+table.grid-table th, table.grid-table td{border:1px solid var(--line);}
+table.grid-table thead th{background:var(--surface-2); color:var(--ink); border-bottom:2px solid var(--accent);}
+table.grid-table tbody tr:nth-child(even) td{background:color-mix(in srgb, var(--surface-2) 45%, transparent);}
+table.grid-table tbody tr:hover td{background:var(--surface-2);}
+table.grid-table tr > :first-child{border-left:0;} table.grid-table tr > :last-child{border-right:0;}
+table.grid-table thead tr:first-child th{border-top:0;} table.grid-table tbody tr:last-child td{border-bottom:0;}
+button.is-saving{opacity:.6; cursor:progress;}
+/* Batch 30: Workforce dashboard — headcount + donut on the left, compliance bars on the right */
+.wf-dash{display:grid; grid-template-columns:minmax(300px,1fr) 2.2fr; gap:14px; margin-bottom:16px;}
+@media (max-width:980px){ .wf-dash{grid-template-columns:1fr;} }
+.wf-hero, .wf-rows{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px 18px; box-shadow:var(--shadow);}
+:root:not([data-theme="light"]) .wf-hero, :root:not([data-theme="light"]) .wf-rows{background:rgba(10,26,46,.82);}
+.wf-hero-body{display:flex; gap:18px; align-items:center; flex-wrap:wrap; margin-top:10px;}
+.wf-donut{position:relative; width:132px; height:132px; flex:none;}
+.wf-donut-c{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;}
+.wf-big{font-family:var(--font-display); font-weight:800; font-size:34px; line-height:1; color:var(--ink);}
+.wf-sub{font-size:11.5px; color:var(--ink-muted); font-weight:500; line-height:1.35; margin-top:2px;}
+.wf-legend{display:flex; flex-direction:column; gap:3px; flex:1; min-width:150px;}
+.wf-leg-title{font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-muted); font-weight:700; margin-bottom:2px;}
+.wf-leg{display:grid; grid-template-columns:12px 1fr auto; gap:8px; align-items:center; background:none; border:0; padding:4px 6px; border-radius:6px; color:var(--ink); font:inherit; font-size:13px; text-align:left; cursor:pointer;}
+.wf-leg:hover:not([disabled]){background:var(--surface-2);} .wf-leg[disabled]{cursor:default;}
+.wf-dot{width:10px; height:10px; border-radius:3px;}
+.wf-leg-v{font-weight:700; font-variant-numeric:tabular-nums;}
+.wf-rows{display:flex; flex-direction:column; gap:2px;}
+.wf-hero{display:flex; flex-direction:column;}
+.wf-ready{margin-top:auto; padding-top:14px; border-top:1px solid var(--line);}
+.wf-ready .wf-bar{margin:6px 0 8px;}
+.wf-ready-l{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; font-size:12.5px; color:var(--ink-muted);}
+.wf-ready-l span{display:inline-flex; align-items:center; gap:6px;} .wf-ready-l b{color:var(--ink);} .wf-ready-l .wf-dot{display:inline-block;}
+.wf-rows-head{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-muted); font-weight:700; margin-bottom:6px;}
+.wf-key{display:flex; gap:10px; align-items:center; text-transform:none; letter-spacing:0; font-weight:500; font-size:11.5px;}
+.wf-key i{display:inline-block; width:10px; height:10px; border-radius:3px; margin:0 4px 0 6px; vertical-align:-1px;}
+.wf-row{display:grid; grid-template-columns:30px minmax(150px,1.1fr) 2fr 54px; gap:12px; align-items:center; padding:7px 0; border-top:1px solid var(--line);}
+.wf-row:first-of-type{border-top:0;}
+.wf-ic .ic{width:18px; height:18px; color:var(--ink-muted);}
+.wf-lbl{font-weight:700; font-size:13.5px; color:var(--ink);}
+.wf-lbl .wf-sub{font-weight:500;}
+.wf-bar{display:flex; gap:2px; height:12px; border-radius:4px; overflow:hidden; background:transparent;}
+.wf-bar-empty{background:var(--surface-2);}
+.wf-seg{min-width:4px; height:100%;} .wf-seg:first-child{border-radius:4px 0 0 4px;} .wf-seg:last-child{border-radius:0 4px 4px 0;} .wf-seg:only-child{border-radius:4px;}
+.wf-seg.ok, .wf-key .ok{background:var(--ok);} .wf-seg.soon, .wf-key .soon{background:var(--warn);} .wf-seg.bad, .wf-key .bad{background:var(--danger);} .wf-seg.none, .wf-key .none{background:var(--surface-2); outline:1px solid var(--line); outline-offset:-1px;}
+.wf-num{font-family:var(--font-display); font-weight:800; font-size:24px; text-align:right; font-variant-numeric:tabular-nums; color:var(--ink);}
+.wf-num.danger{color:var(--danger);} .wf-num.warn{color:var(--warn);} .wf-num.ok{color:var(--ok);}
+@media (max-width:620px){ .wf-row{grid-template-columns:24px 1fr 44px; } .wf-row .wf-bar{grid-column:2 / 4; grid-row:2;} .wf-num{font-size:20px;} }
 .req-rm{padding:4px 8px; min-width:34px;}
 .req-rm.armed{background:var(--danger-bg); color:var(--danger); border-color:var(--danger); font-weight:700;}
 table.req-grid td.mx-sticky .req-divchips input{min-width:0; width:14px; height:14px;}
@@ -851,7 +897,7 @@ body.read-only #ckTemplatesBtn{display:none !important;}
       </div>
 
       <div class="table-wrap">
-        <table>
+        <table class="grid-table">
           <thead>
             <tr>
               <th>Worker</th><th>Civil ID</th><th>Trade</th><th>Status</th>
@@ -1696,6 +1742,12 @@ function pdfDoc(opts){
    a panel has unsaved changes, that redraw is skipped; it resumes as soon as you save, cancel, switch tab or close. */
 function formDirtyIn(containerId){ return !!document.querySelector(`#${containerId} form[data-dirty="1"]`); }
 function clearDirtyForms(){ document.querySelectorAll('form[data-dirty]').forEach(f=>{ delete f.dataset.dirty; }); }
+document.addEventListener('submit', e=>{
+  const f=e.target; if(!(f instanceof HTMLFormElement) || f.id==='loginForm') return;
+  const btns=[...f.querySelectorAll('button[type="submit"], button:not([type])')].filter(b=>!b.disabled);
+  btns.forEach(b=>{ b.disabled=true; b.classList.add('is-saving'); });
+  setTimeout(()=>btns.forEach(b=>{ b.disabled=false; b.classList.remove('is-saving'); }), 1500);
+}, true);
 (function(){
   const mark=e=>{ const t=e.target; if(!t || !t.closest) return; if(t.type==='file' || t.type==='search') return; const f=t.closest('form'); if(f && f.id!=='loginForm') f.dataset.dirty='1'; };
   document.addEventListener('input', mark, true);
@@ -1796,12 +1848,21 @@ function writeActivity(col, id, action, data, before){
   }catch(e){ console.warn('activity log skipped', e); }
 }
 const _rawCollection = db.collection.bind(db);
+const _recentAdds = new Map();
 db.collection = function(name){
   const c=_rawCollection(name);
   if(name==='activityLog') return c;
   try{
     const origAdd=c.add && c.add.bind(c), origDoc=c.doc && c.doc.bind(c);
-    if(origAdd) c.add = async data=>{ const ref=await origAdd(data); writeActivity(name, ref&&ref.id, 'created', data, null); return ref; };
+    if(origAdd) c.add = data=>{
+      // Batch 29: the same new record sent twice within a few seconds (double click / double Enter) is saved once
+      let key=''; try{ key=name+'|'+JSON.stringify(data,(k,v)=>(k==='createdAt'||k==='updatedAt')?undefined:v); }catch(e){}
+      const now=Date.now(), prev=key && _recentAdds.get(key);
+      if(prev && now-prev.t<5000) return prev.p;
+      const p=(async()=>{ const ref=await origAdd(data); writeActivity(name, ref&&ref.id, 'created', data, null); return ref; })();
+      if(key){ _recentAdds.set(key,{t:now,p}); p.catch(()=>_recentAdds.delete(key)); if(_recentAdds.size>50){ for(const [k,v] of _recentAdds) if(now-v.t>5000) _recentAdds.delete(k); } }
+      return p;
+    };
     if(origDoc) c.doc = function(id){
       const d=origDoc(id), did=id||(d&&d.id);
       const oSet=d.set&&d.set.bind(d), oUpd=d.update&&d.update.bind(d), oDel=d.delete&&d.delete.bind(d);
@@ -5894,52 +5955,74 @@ function renderAll(){
 
 function renderTiles(){
   const all=activeWorkers();
-  // Batch 28: the tiles follow the division picked (strip or drop-down); the strip itself always shows every division
+  // the dashboard follows the division picked (strip or drop-down); the strip itself always shows every division
   const div=(typeof filters!=='undefined' && filters.trade!=null) ? filters.trade : 'all';
   const list = div==='all' ? all : all.filter(w=>w.trade===div);
-  const total=list.length;
-  const active=list.filter(w=>(w.status||'active')!=='inactive').length;
-  function agg(key){
-    let expired=0, expiring=0, missing=0;
-    for(const w of list){
-      const recs=w[key]||[];
-      if(recs.length===0){ if(key==='inductions') missing++; continue; }
-      const worst=worstStatusOf(currentRecs(recs, key));
-      if(worst==='expired') expired++; else if(worst==='expiring') expiring++;
-    }
-    return {expired,expiring,missing};
-  }
-  const ind=agg('inductions'), tr=agg('trainings'), comp=agg('competency'), lic=agg('licenses');
-  let civExpired=0, civExpiring=0;
-  for(const w of list){ if(!w.civilIdExpiry) continue; const s=statusFor(w.civilIdExpiry); if(s==='expired') civExpired++; else if(s==='expiring') civExpiring++; }
-  let medUnfit=0, medExpired=0, medExpiring=0;
+  const total=list.length, active=list.filter(w=>(w.status||'active')!=='inactive').length;
+  // each row: how many workers are OK / expiring / a problem / nothing recorded
+  const mk=()=>({ok:0, soon:0, bad:0, none:0});
+  const R={civil:mk(), ind:mk(), tr:mk(), comp:mk(), med:mk(), lic:mk(), warn:mk(), vio:mk()};
+  let unfit=0, missingInd=0, finalWarn=0, totalWarnings=0, vio90=0, vioCrit=0;
+  const put=(r,st)=>{ if(st==='valid') r.ok++; else if(st==='expiring') r.soon++; else if(st==='expired'||st==='missing'||st==='unfit') r.bad++; else r.none++; };
   for(const w of list){
-    const ms=medicalStatus(w).status;
-    if(ms==='unfit') medUnfit++; else if(ms==='expired') medExpired++; else if(ms==='expiring') medExpiring++;
+    put(R.civil, w.civilIdExpiry ? statusFor(w.civilIdExpiry) : 'none');
+    const ia=aggFor(w,'inductions'); if(ia.status==='missing') missingInd++; put(R.ind, ia.status);
+    for(const [k,key] of [['tr','trainings'],['comp','competency'],['lic','licenses']]){ const recs=w[key]||[]; put(R[k], recs.length ? worstStatusOf(currentRecs(recs, key)) : 'none'); }
+    const ms=medicalStatus(w).status; if(ms==='unfit') unfit++; put(R.med, ms);
+    const wl=w.warnings||[]; totalWarnings+=wl.length;
+    if(wl.some(x=>x.level==='Final warning')){ finalWarn++; R.warn.bad++; } else if(wl.length) R.warn.soon++; else R.warn.ok++;
+    let v90=0, crit=0; for(const v of (w.violations||[])){ const d=daysUntil(v.date); if(d!==null && -d<=90){ v90++; if(v.severity==='Critical') crit++; } }
+    vio90+=v90; vioCrit+=crit; if(crit) R.vio.bad++; else if(v90) R.vio.soon++; else R.vio.ok++;
   }
-  const totalWarnings=list.reduce((n,w)=>n+((w.warnings||[]).length),0);
-  const finalWarn=list.filter(w=>(w.warnings||[]).some(x=>x.level==='Final warning')).length;
-  let vio90=0, vioCrit=0;
-  for(const w of list){ for(const v of (w.violations||[])){ const d=daysUntil(v.date); if(d!==null && -d<=90){ vio90++; if(v.severity==='Critical') vioCrit++; } } }
-
-  const tiles=[
-    {label:'Workforce', num:total, cls:'', sub:`${active} active${total-active?` · ${total-active} inactive`:''}${div!=='all'?` · ${esc(div)}`:''}`, cat:'--cat-1', icon:ic('users')},
-    {label:'Civil ID', num:civExpired, cls:civExpired?'danger':(civExpiring?'warn':'ok'), sub:`${civExpiring} expiring soon`, cat:'--cat-2', icon:ic('idcard')},
-    {label:'Induction', num:ind.expired+ind.missing, cls:(ind.expired+ind.missing)?'danger':'ok', sub:`${ind.expiring} expiring soon · ${ind.missing} not inducted`, cat:'--cat-3', icon:ic('clipboard')},
-    {label:'Training', num:tr.expired, cls:tr.expired?'danger':'ok', sub:`${tr.expiring} expiring soon`, cat:'--cat-4', icon:ic('cap')},
-    {label:'Competency', num:comp.expired, cls:comp.expired?'danger':'ok', sub:`${comp.expiring} expiring soon`, cat:'--cat-5', icon:ic('checkcircle')},
-    {label:'Medical fitness', num:medUnfit+medExpired, cls:(medUnfit+medExpired)?'danger':'ok', sub:`${medUnfit} unfit · ${medExpiring} expiring soon`, cat:'--cat-6', icon:ic('heart')},
-    {label:'Licenses', num:lic.expired, cls:lic.expired?'danger':'ok', sub:`${lic.expiring} expiring soon`, cat:'--cat-7', icon:ic('file')},
-    {label:'Warning letters', num:totalWarnings, cls:finalWarn?'danger':(totalWarnings?'warn':''), sub:`${finalWarn} at final warning`, cat:'--cat-8', icon:ic('alert')},
-    {label:'Violations (90d)', num:vio90, cls:vioCrit?'danger':(vio90?'warn':''), sub:`${vioCrit} critical`, cat:'--cat-9', icon:ic('ban')},
+  const exp=(r)=>r.bad, rows=[
+    {key:'civil', label:'Civil ID', icon:'idcard', num:R.civil.bad, sub:`${R.civil.bad} expired · ${R.civil.soon} expiring soon`, words:['valid','expiring soon','expired','no expiry date']},
+    {key:'ind', label:'Induction', icon:'clipboard', num:R.ind.bad, sub:`${missingInd} not inducted · ${R.ind.bad-missingInd} expired · ${R.ind.soon} expiring soon`, words:['inducted','expiring soon','not inducted / expired','—']},
+    {key:'tr', label:'Training', icon:'cap', num:R.tr.bad, sub:`${R.tr.bad} expired · ${R.tr.soon} expiring soon`, words:['all valid','expiring soon','expired','none logged']},
+    {key:'comp', label:'Competency', icon:'checkcircle', num:R.comp.bad, sub:`${R.comp.bad} expired · ${R.comp.soon} expiring soon`, words:['all valid','expiring soon','expired','none logged']},
+    {key:'med', label:'Medical fitness', icon:'heart', num:R.med.bad, sub:`${unfit} unfit · ${R.med.bad-unfit} expired · ${R.med.soon} expiring soon`, words:['fit & valid','expiring soon','unfit / expired','none logged']},
+    {key:'lic', label:'Licenses', icon:'file', num:R.lic.bad, sub:`${R.lic.bad} expired · ${R.lic.soon} expiring soon`, words:['all valid','expiring soon','expired','none logged']},
+    {key:'warn', label:'Warning letters', icon:'alert', num:totalWarnings, numCls:finalWarn?'danger':(totalWarnings?'warn':''), sub:`${totalWarnings} letter${totalWarnings===1?'':'s'} · ${finalWarn} at final warning`, words:['no warnings','has warnings','final warning','—']},
+    {key:'vio', label:'Violations (90 days)', icon:'ban', num:vio90, numCls:vioCrit?'danger':(vio90?'warn':''), sub:`${vio90} in 90 days · ${vioCrit} critical`, words:['none','has violations','critical','—']},
   ];
+  const bar=(r, words)=>{
+    const n=r.ok+r.soon+r.bad+r.none; if(!n) return '<div class="wf-bar wf-bar-empty"></div>';
+    const seg=(v,cls,w)=>v?`<span class="wf-seg ${cls}" style="flex:${v}" title="${v} worker${v===1?'':'s'} · ${esc(w)}"></span>`:'';
+    return `<div class="wf-bar" role="img" aria-label="${esc(words.map((w,i)=>[r.ok,r.soon,r.bad,r.none][i]+' '+w).join(', '))}">${seg(r.ok,'ok',words[0])}${seg(r.soon,'soon',words[1])}${seg(r.bad,'bad',words[2])}${seg(r.none,'none',words[3])}</div>`;
+  };
+  const rowsHtml=rows.map(x=>{ const r=R[x.key], cls=x.numCls!==undefined ? x.numCls : (x.num?'danger':(r.soon?'warn':'ok'));
+    return `<div class="wf-row"><div class="wf-ic">${ic(x.icon)}</div><div class="wf-lbl">${esc(x.label)}<div class="wf-sub">${esc(x.sub)}</div></div>${bar(r, x.words)}<div class="wf-num ${cls}">${x.num}</div></div>`; }).join('');
+  // hero: headcount + donut (all divisions → by division; one division → ready vs needs attention)
+  let segs, donutTitle;
+  if(div==='all'){
+    const order=[['Office Staff','--cat-6'],['Civil Division','--cat-1'],['Scaffolding Division','--cat-2'],['Logistics & Rental Division','--cat-4'],['Sub Contractor','--cat-5']];
+    segs=order.map(([t,c])=>({label:divShort(t), trade:t, value:list.filter(w=>w.trade===t).length, color:`var(${c})`}));
+    const other=list.filter(w=>!order.some(o=>o[0]===w.trade)).length; if(other) segs.push({label:'No division', trade:'', value:other, color:'var(--line)'});
+    donutTitle='By division';
+  } else {
+    const issues=list.filter(w=>workerIssues(w).length).length;
+    segs=[{label:'Ready to work', value:list.length-issues, color:'var(--ok)'},{label:'Needs attention', value:issues, color:'var(--danger)'}];
+    donutTitle='Documents';
+  }
+  const tot=segs.reduce((n,s)=>n+s.value,0), R0=52, C=2*Math.PI*R0, gap=segs.filter(s=>s.value).length>1 ? 2 : 0;
+  let off=0; const arcs=tot ? segs.filter(s=>s.value).map(s=>{ const len=C*s.value/tot, a=`<circle r="${R0}" cx="66" cy="66" fill="none" stroke="${s.color}" stroke-width="14" stroke-dasharray="${Math.max(0,len-gap)} ${C-Math.max(0,len-gap)}" stroke-dashoffset="${-off}"><title>${esc(s.label)}: ${s.value}</title></circle>`; off+=len; return a; }).join('') : '';
+  const legend=segs.map(s=>`<button type="button" class="wf-leg" ${s.trade!==undefined?`data-wf-div="${esc(s.trade)}"`:'disabled'}><span class="wf-dot" style="background:${s.color}"></span><span class="wf-leg-l">${esc(s.label)}</span><span class="wf-leg-v">${s.value}</span></button>`).join('');
+  const el=document.getElementById('tiles'); el.className='wf-dash';
   renderDivisionStrip(all);
-  document.getElementById('tiles').innerHTML = tiles.map(t=>`
-    <div class="tile" style="--tile-accent:var(${t.cat})">
-      <div class="tile-head"><div class="tile-icon">${t.icon}</div><div class="tile-label">${t.label}</div></div>
-      <div class="tile-num ${t.cls}">${t.num}</div><div class="tile-sub">${t.sub}</div>
+  el.innerHTML = `<div class="wf-hero">
+      <div class="tile-head"><div class="tile-icon">${ic('users')}</div><div class="tile-label">Workforce${div!=='all'?' · '+esc(divShort(div)):''}</div></div>
+      <div class="wf-hero-body">
+        <div class="wf-donut"><svg viewBox="0 0 132 132" width="132" height="132" aria-hidden="true"><circle r="${R0}" cx="66" cy="66" fill="none" stroke="var(--surface-2)" stroke-width="14"/><g transform="rotate(-90 66 66)">${arcs}</g></svg>
+          <div class="wf-donut-c"><div class="wf-big">${total}</div><div class="wf-sub">${active} active${total-active?` · ${total-active} inactive`:''}</div></div></div>
+        <div class="wf-legend"><div class="wf-leg-title">${donutTitle}</div>${legend}</div>
+      </div>
+      ${div==='all' && total ? (()=>{ const iss=list.filter(w=>workerIssues(w).length).length, ok=total-iss; return `<div class="wf-ready"><div class="wf-leg-title">Documents</div>
+        <div class="wf-bar" role="img" aria-label="${ok} ready to work, ${iss} need attention">${ok?`<span class="wf-seg ok" style="flex:${ok}" title="${ok} ready to work"></span>`:''}${iss?`<span class="wf-seg bad" style="flex:${iss}" title="${iss} need attention"></span>`:''}</div>
+        <div class="wf-ready-l"><span><i class="wf-dot" style="background:var(--ok)"></i> Ready to work <b>${ok}</b></span><span><i class="wf-dot" style="background:var(--danger)"></i> Needs attention <b>${iss}</b></span></div></div>`; })() : ''}
     </div>
-  `).join('');
+    <div class="wf-rows">
+      <div class="wf-rows-head"><span>Compliance by worker${div!=='all'?' — '+esc(divShort(div)):''}</span><span class="wf-key"><i class="ok"></i>OK <i class="soon"></i>Expiring <i class="bad"></i>Problem <i class="none"></i>Not recorded</span></div>
+      ${rowsHtml}
+    </div>`;
 }
 
 // Head-count per division (e.g. Civil 10 · Scaffolding 8 …) — tap a division to show only its workers
@@ -8815,6 +8898,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
     e.preventDefault();
     const data={status:'active', inductions:[],trainings:[],competency:[],medical:[],licenses:[],warnings:[],violations:[], createdAt:new Date().toISOString(), createdBy:(auth.currentUser&&auth.currentUser.email)||''};
     e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
+    { const k=normKey(data.civilId||''); const dup=k && workers.find(w=>normKey(w.civilId)===k);
+      if(dup){ toast(`${dup.fullName||'A worker'} already has Civil ID ${data.civilId}${dup.deleted?' (in Deleted workers)':''} — not added twice`); return; } }
     try{
       await db.collection('workers').add(data);
       toast('Worker added');
@@ -8839,6 +8924,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   document.getElementById('searchInput').addEventListener('input', e=>{ filters.q=e.target.value; renderTable(); });
   document.getElementById('tradeFilter').addEventListener('change', e=>{ filters.trade=e.target.value; renderTable(); renderTiles(); });
+  document.getElementById('tiles').addEventListener('click', e=>{ const b=e.target.closest('[data-wf-div]'); if(!b) return; const v=b.dataset.wfDiv; if(!v) return; filters.trade=v; const sel=document.getElementById('tradeFilter'); if(sel) sel.value=v; renderTable(); renderTiles(); });
   document.getElementById('divStrip').addEventListener('click', e=>{ const b=e.target.closest('[data-divchip]'); if(!b) return; const v=b.dataset.divchip; filters.trade = (filters.trade===v && v!=='all') ? 'all' : v; const sel=document.getElementById('tradeFilter'); if(sel) sel.value=filters.trade; renderTable(); renderTiles(); });
   document.getElementById('statusFilter').addEventListener('change', e=>{ filters.status=e.target.value; renderTable(); });
 
