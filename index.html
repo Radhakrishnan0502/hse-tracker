@@ -817,6 +817,24 @@ label.sj-inline select{width:auto; min-width:150px;}
 .sj-loaded{margin:-4px 0 14px;}
 .sj-vol{white-space:nowrap;}
 .ext-add > summary{list-style:none; display:inline-flex; margin-top:6px;} .ext-add > summary::-webkit-details-marker{display:none;}
+
+/* ---- Batch 35: civil progress ---- */
+.cw-bar{position:relative; height:10px; border-radius:5px; background:var(--muted-bg); overflow:visible; margin:4px 0 3px;}
+.cw-fill{position:absolute; left:0; top:0; bottom:0; border-radius:5px; background:var(--cat-1); min-width:2px;}
+.cw-fill.behind{background:var(--warn);} .cw-fill.done{background:var(--ok);}
+.cw-plan{position:absolute; top:-3px; bottom:-3px; width:2px; margin-left:-1px; background:var(--ink); border-radius:1px;}
+.cw-plan-key{display:inline-block; width:2px; height:12px; background:var(--ink); vertical-align:-2px; margin-right:6px;}
+.cw-hero{display:flex; gap:16px; align-items:center;} .cw-big{font-family:var(--font-display); font-weight:800; font-size:40px; line-height:1; color:var(--ink);} .cw-big small{font-size:18px; margin-left:2px;}
+.cw-hero-r{flex:1; min-width:0;}
+.cw-proj{margin-bottom:12px;} .cw-proj-h{font-weight:700; font-size:13px; color:var(--ink); margin:6px 0 4px;}
+.cw-row{display:grid; grid-template-columns:minmax(150px,1.2fr) 2fr 52px 104px; gap:12px; align-items:center; padding:8px 4px; border-top:1px solid var(--line); cursor:pointer;}
+.cw-row:hover, .cw-day-r:hover{background:var(--muted-bg);} .cw-day-r{cursor:pointer;}
+.cw-row-pct{font-family:var(--font-display); font-weight:800; font-size:18px; text-align:right; font-variant-numeric:tabular-nums; color:var(--ink);}
+@media (max-width:760px){ .cw-row{grid-template-columns:1fr 52px; } .cw-row-bar{grid-column:1 / -1; grid-row:2;} .cw-row-st{grid-column:1 / -1;} }
+.cw-log{border:1px solid var(--line); border-radius:10px;}
+.cw-log-row{display:grid; grid-template-columns:minmax(0,1.6fr) 150px minmax(0,1fr); gap:10px; align-items:center; padding:8px 10px; border-top:1px solid var(--line);} .cw-log-row:first-child{border-top:0;}
+@media (max-width:760px){ .cw-log-row{grid-template-columns:1fr 1fr;} .cw-log-name{grid-column:1 / -1;} }
+label.cw-qty{flex-direction:row; align-items:center; gap:6px; margin:0;} label.cw-qty input{width:100%;} label.cw-qty span{font-size:12.5px; color:var(--ink-muted); min-width:30px;}
 </style>
 </head>
 <body class="auth-open">
@@ -847,6 +865,7 @@ label.sj-inline select{width:auto; min-width:150px;}
     <button type="button" class="sidenav-btn" data-section="vehicles">Plant &amp; Equipment</button>
     <button type="button" class="sidenav-btn" data-section="site">Project Details</button>
     <button type="button" class="sidenav-btn" data-section="scaff">Scaffolding Jobs</button>
+    <button type="button" class="sidenav-btn" data-section="civil">Civil Progress</button>
     <button type="button" class="sidenav-btn" data-section="subcons">Subcontractors</button>
     <div class="nav-group">Safety</div>
     <button type="button" class="sidenav-btn" data-section="incidents">Incident Register</button>
@@ -1846,7 +1865,7 @@ function deltaize(current, data){
 }
 
 /* ---------------- change history: every add / update / set / delete is written to activityLog ---------------- */
-const LOG_COLLECTION_LABELS = {workers:'Workforce', vehicles:'Fleet', siteEquipment:'Projects', equipment:'Plant & Equipment', hseLogs:'Monthly Report', qhseDocs:'QHSE Library', settings:'Settings', incidents:'Incident Register', audits:'Audits', objectives:'Objectives', safetyAlerts:'Safety Alerts', legalReqs:'Legal Register', meetings:'Meetings', subcontractors:'Subcontractors', hira:'Risk Register', moc:'Management of Change', observations:'Observations', heatLogs:'Heat Stress', inspections:'Inspections', scaffJobs:'Scaffolding Jobs'};
+const LOG_COLLECTION_LABELS = {workers:'Workforce', vehicles:'Fleet', siteEquipment:'Projects', equipment:'Plant & Equipment', hseLogs:'Monthly Report', qhseDocs:'QHSE Library', settings:'Settings', incidents:'Incident Register', audits:'Audits', objectives:'Objectives', safetyAlerts:'Safety Alerts', legalReqs:'Legal Register', meetings:'Meetings', subcontractors:'Subcontractors', hira:'Risk Register', moc:'Management of Change', observations:'Observations', heatLogs:'Heat Stress', inspections:'Inspections', scaffJobs:'Scaffolding Jobs', civilWorks:'Civil Progress'};
 const LOG_IGNORE_KEYS = new Set(['updatedAt','updatedBy','createdAt','createdBy']);
 function logCacheFind(col, id){
   try{
@@ -2381,7 +2400,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b34';
+const APP_BUILD='b35';
 let appOutdated=false;
 async function checkAppVersion(){
   try{
@@ -5325,6 +5344,225 @@ function renderCkDrawer(){
 }
 async function saveCustomChecklists(list){ const ok=await saveSettings('checklists', {items:list}); if(ok){ customChecklists=list; renderCkDrawer(); renderRegAll('insp'); } return ok; }
 
+
+/* ================= CIVIL WORK PROGRESS — quantities per work item (Batch 35) ================= */
+// One record = one work item on a project (e.g. "Block work GF — 1000 m²"); entries[] = daily quantity done.
+// Loaded: items still in progress + items finished in the last 2 months; older finished items on request.
+const CW_UNITS=['m²','m³','m','sq ft','cu ft','ft','Nos','pcs','tonnes','kg','LS'];
+const CW_STATUSES=['In progress','On hold','Completed'];
+let cwDash={project:'all', day:''}, cwOlder=new Map(), cwOlderLoaded=false, cwRefresh=null, cwLog={open:false, date:'', project:''};
+function fmtQty(n){ n=Number(n)||0; return (Math.round(n*100)/100).toLocaleString('en-GB', {maximumFractionDigits:2}); }
+function cwDone(r){ return (r.entries||[]).reduce((n,e)=>n+(Number(e.qty)||0),0); }
+function cwTotal(r){ return Number(r.totalQty)||0; }
+function cwPct(r){ const t=cwTotal(r); return t ? cwDone(r)*100/t : 0; }
+function cwRate(r){   // average quantity per calendar day (recent 14 days, or since the first entry if newer)
+  const es=(r.entries||[]).filter(e=>e.date && Number(e.qty)); if(!es.length) return 0;
+  const t=localToday(), first=es.map(e=>e.date).sort()[0];
+  const span=Math.min(14, Math.max(1, daysBetween(first, t)+1)), from=dateAdd(t, -(span-1));
+  const recent=es.filter(e=>e.date>=from && e.date<=t).reduce((n,e)=>n+Number(e.qty),0);
+  if(recent>0) return recent/span;
+  const all=es.reduce((n,e)=>n+Number(e.qty),0); return all/Math.max(1, daysBetween(first, t)+1);
+}
+function cwForecast(r){
+  const rem=cwTotal(r)-cwDone(r); if(rem<=0) return {done:true};
+  const rate=cwRate(r); if(!rate) return null;
+  const days=Math.ceil(rem/rate); return {days, date:dateAdd(localToday(), days)};
+}
+function cwPlannedPct(r){ if(!r.startDate || !r.plannedEnd || r.plannedEnd<=r.startDate) return null; return Math.max(0, Math.min(100, daysBetween(r.startDate, localToday())*100/daysBetween(r.startDate, r.plannedEnd))); }
+function cwState(r){
+  if((r.status||'In progress')==='Completed') return 'done';
+  if(r.status==='On hold') return 'hold';
+  if(!(r.entries||[]).length) return 'notstarted';
+  const f=cwForecast(r), t=localToday();
+  if(r.plannedEnd && (r.plannedEnd<t || (f && f.date && f.date>r.plannedEnd))) return 'behind';
+  return 'ontrack';
+}
+function cwStateBadge(r){
+  const st=cwState(r);
+  return {done:'<span class="badge ok">Completed</span>', hold:'<span class="badge muted">On hold</span>', notstarted:'<span class="badge muted">Not started</span>', behind:'<span class="badge warn">Behind plan</span>', ontrack:'<span class="badge ok">On track</span>'}[st];
+}
+function cwBarHtml(r){
+  const p=cwPct(r), pl=cwPlannedPct(r), st=cwState(r);
+  return `<div class="cw-bar" title="${fmtQty(p)}% done${pl!==null?` · planned by today ${Math.round(pl)}%`:''}"><span class="cw-fill ${st==='behind'?'behind':st==='done'?'done':''}" style="width:${Math.min(100,p)}%"></span>${pl!==null&&st!=='done'?`<i class="cw-plan" style="left:${pl}%"></i>`:''}</div>`;
+}
+function cwItems(){ return regActive('civil').filter(r=>cwDash.project==='all' || r.projectId===cwDash.project); }
+function cwProjects(){ const all=activeSites(); const cv=all.filter(s=>(s.division||'Civil')==='Civil'); return cv.length?cv:all; }
+function cwFromDate(){ return monthAdd(localToday().slice(0,7), -2)+'-01'; }
+function cwListen(onList, onErr){
+  const from=cwFromDate(), col=db.collection('civilWorks');
+  const qs=[col.where('open','==',true), col.where('finishedOn','>=',from), col.where('createdAt','>=',from)];
+  const parts=qs.map(()=>new Map());
+  const emit=()=>{ const all=new Map(); for(const m of [cwOlder, ...parts]) for(const [id,d] of m) all.set(id,d); onList([...all.values()]); };
+  cwRefresh=emit;
+  const un=qs.map((q,i)=>q.onSnapshot(snap=>{ parts[i]=new Map(snap.docs.map(d=>[d.id, {id:d.id, ...(d.data()||{})}])); emit(); }, onErr));
+  return ()=>{ un.forEach(u=>{ try{ u&&u(); }catch(e){} }); cwRefresh=null; cwOlder=new Map(); cwOlderLoaded=false; };
+}
+async function cwLoadOlder(){
+  if(cwOlderLoaded) return;
+  try{ const snap=await db.collection('civilWorks').where('open','==',false).get(); for(const d of snap.docs) cwOlder.set(d.id, {id:d.id, ...(d.data()||{})}); cwOlderLoaded=true; toast(`${snap.docs.length} finished item${snap.docs.length===1?'':'s'} loaded`); if(cwRefresh) cwRefresh(); }
+  catch(e){ console.error(e); toast(e&&e.code==='permission-denied'?RULES_UPDATE_MSG:'Could not load older items'); }
+}
+// totals saved on the record so lists/emails don't have to add up every entry
+function cwComputed(r, entries){
+  const x={...r, entries}, done=cwDone(x), last=(entries||[]).map(e=>e.date).filter(Boolean).sort().pop()||'';
+  const out={doneQty:Math.round(done*100)/100, lastEntry:last};
+  if(cwTotal(x) && done>=cwTotal(x) && (r.status||'In progress')!=='Completed'){ out.status='Completed'; out.finishedOn=last||localToday(); out.open=false; setTimeout(()=>toast(`${r.activity||'Item'} reached 100% — marked Completed (change the status if work continues)`), 600); }
+  return out;
+}
+function cwDailyChartHtml(r){
+  const t=localToday(), days=30, by=new Map();
+  for(const e of (r.entries||[])) if(e.date) by.set(e.date, (by.get(e.date)||0)+(Number(e.qty)||0));
+  const ds=[...Array(days)].map((_,i)=>dateAdd(t, i-days+1)), vals=ds.map(d=>by.get(d)||0);
+  const max=Math.max(1, ...vals), W=760, H=170, L=40, B=22, T=8, cw=(W-L-4)/days, bw=Math.max(4, Math.min(16, cw-6)), ph=H-B-T;
+  const nice=v=>{ const p=Math.pow(10, Math.floor(Math.log10(v))); const m=v/p; return (m<=1?1:m<=2?2:m<=5?5:10)*p; }, top=nice(max);
+  const y=v=>T+ph-(v/top)*ph;
+  let g=`<line x1="${L}" x2="${W-4}" y1="${T+ph}" y2="${T+ph}" class="sj-axis"/>`;
+  for(const v of [top/2, top]) g+=`<line x1="${L}" x2="${W-4}" y1="${y(v)}" y2="${y(v)}" class="sj-grid"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end" class="sj-tick">${fmtQty(v)}</text>`;
+  g+=`<text x="${L-6}" y="${T+ph+4}" text-anchor="end" class="sj-tick">0</text>`;
+  ds.forEach((d,i)=>{ const x0=L+i*cw, cx=x0+cw/2, v=vals[i];
+    if(v>0){ const h=(v/top)*ph, rr=Math.min(3, bw/2, h), yy=T+ph-h, x=cx-bw/2; g+=`<path d="M${x},${T+ph} V${yy+rr} Q${x},${yy} ${x+rr},${yy} H${x+bw-rr} Q${x+bw},${yy} ${x+bw},${yy+rr} V${T+ph} Z" fill="var(--cat-1)"/>`; }
+    if(i===days-1 || (days-1-i)%7===0) g+=`<text x="${cx}" y="${H-6}" text-anchor="middle" class="sj-tick${d===t?' sj-today':''}">${esc(dayLabel(d))}</text>`;
+    g+=`<rect x="${x0}" y="${T}" width="${cw}" height="${ph+B}" fill="transparent" data-sj-tip="${esc(dayLabel(d))}: ${fmtQty(v)} ${esc(r.unit||'')}"/>`; });
+  return `<div class="sj-chart"><div class="sj-scroll"><svg viewBox="0 0 ${W} ${H}" class="sj-svg" role="img" aria-label="Quantity done per day, last 30 days">${g}</svg></div><div class="sj-tip" hidden></div></div>`;
+}
+function cwProgressTabHtml(r){
+  const done=cwDone(r), tot=cwTotal(r), p=cwPct(r), f=cwForecast(r), pl=cwPlannedPct(r), rate=cwRate(r), st=cwState(r);
+  const row=(k,v)=>`<div class="rf"><span class="rf-k">${k}</span><span class="rf-v">${v}</span></div>`;
+  return `<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">${cwStateBadge(r)}</div>
+    <div class="cw-hero"><div class="cw-big">${fmtQty(p)}<small>%</small></div><div class="cw-hero-r"><div><strong>${fmtQty(done)}</strong> of ${fmtQty(tot)} ${esc(r.unit||'')} done</div><div class="wsub">${tot-done>0?`${fmtQty(tot-done)} ${esc(r.unit||'')} remaining`:'all quantity done'}</div>${cwBarHtml(r)}</div></div>
+    <div class="panel req-box" style="margin:12px 0;">
+      ${pl!==null&&st!=='done'?row('Plan', `planned by today <strong>${Math.round(pl)}%</strong> · actual <strong>${fmtQty(p)}%</strong> ${p+0.5<pl?`<span class="badge warn">${Math.round(pl-p)}% behind</span>`:'<span class="badge ok">on or ahead of plan</span>'}`):''}
+      ${row('Recent rate', rate?`${fmtQty(rate)} ${esc(r.unit||'')} per day (average of the last 14 days)`:'no quantities logged yet')}
+      ${st!=='done'?row('Expected finish', f&&f.date?`<strong>${esc(f.date)}</strong> (about ${fmtDays(f.days)} at the recent rate)${r.plannedEnd?` · planned end ${esc(r.plannedEnd)}${f.date>r.plannedEnd?` <span class="badge warn">${fmtDays(daysBetween(r.plannedEnd, f.date))} late</span>`:''}`:''}`:'—'):row('Finished', esc(r.finishedOn||r.lastEntry||'—'))}
+      ${row('Days worked', `${new Set((r.entries||[]).filter(e=>Number(e.qty)).map(e=>e.date)).size} day(s) with progress logged${r.lastEntry?` · last on ${esc(r.lastEntry)}`:''}`)}
+    </div>
+    <div class="subhead">Quantity done per day — last 30 days</div>${cwDailyChartHtml(r)}
+    ${canEdit()&&st!=='done'?`<p style="margin-top:10px;"><button type="button" class="btn btn-sm btn-primary" data-cw-logtab="1">+ Log progress</button> <span class="wsub" style="display:inline;">— or use “Log today’s progress” on the main page for all items at once.</span></p>`:''}`;
+}
+
+/* ---- main page panel: daily log for many items at once + project progress ---- */
+function renderCivilTop(){
+  const box=document.getElementById('civilTop'); if(!box || !auth.currentUser) return;
+  if(regState.civil.err==='rules'){ box.innerHTML=''; return; }
+  const t=localToday(), items=cwItems(), act=items.filter(r=>cwState(r)!=='done');
+  const day=cwDash.day||t;
+  const todays=[]; for(const r of items) for(const e of (r.entries||[])) if(e.date===day && Number(e.qty)) todays.push({r,e});
+  const byProj=new Map(); for(const r of items.filter(r=>cwState(r)!=='done' || String(r.finishedOn||'')>=dateAdd(t,-30))){ const k=r.projectId||''; if(!byProj.has(k)) byProj.set(k,[]); byProj.get(k).push(r); }
+  const logDate=cwLog.date||t, logItems=regActive('civil').filter(r=>cwState(r)!=='done' && r.status!=='On hold' && (!cwLog.project || r.projectId===cwLog.project));
+  const keep={}; box.querySelectorAll('[data-cw-qty],[data-cw-note],#cwLogBy').forEach(i=>{ if(i.value) keep[i.dataset.cwQty?'q'+i.dataset.cwQty:i.dataset.cwNote?'n'+i.dataset.cwNote:'by']=i.value; });
+  box.innerHTML=`
+  ${canEdit()?`<div class="panel sj-panel" id="cwLogPanel" ${cwLog.open?'':'hidden'}>
+    <div class="sj-head"><h3>Log progress — all items at once</h3><span class="wsub">Type the quantity done for each item; leave empty if no work.</span></div>
+    <form id="cwLogForm"><div class="sj-ctrl" style="margin-bottom:10px;">
+      <label class="sj-inline">Date <input type="date" id="cwLogDate" value="${esc(logDate)}" max="${t}" required></label>
+      <label class="sj-inline">Project <select id="cwLogProject"><option value="">All projects</option>${cwProjects().map(s=>`<option value="${s.id}" ${s.id===cwLog.project?'selected':''}>${esc(s.siteName||'Project')}</option>`).join('')}</select></label>
+      <label class="sj-inline">Done by <input id="cwLogBy" placeholder="Supervisor / crew (optional)" style="min-width:200px;"></label></div>
+      ${logItems.length?`<div class="cw-log">${logItems.map(r=>{ const already=(r.entries||[]).filter(e=>e.date===logDate).reduce((n,e)=>n+(Number(e.qty)||0),0); return `<div class="cw-log-row">
+        <div class="cw-log-name"><div class="wname">${esc(r.activity||'Item')}</div><div class="wsub">${esc([r.projectId?projectName(r.projectId):'', r.area].filter(Boolean).join(' · '))} · ${fmtQty(cwDone(r))}/${fmtQty(cwTotal(r))} ${esc(r.unit||'')} (${fmtQty(cwPct(r))}%)${already?` · <strong>${fmtQty(already)} already logged this day</strong>`:''}</div></div>
+        <label class="cw-qty"><input type="number" step="any" min="0" inputmode="decimal" data-cw-qty="${r.id}" placeholder="0"><span>${esc(r.unit||'')}</span></label>
+        <input class="cw-note" data-cw-note="${r.id}" placeholder="Note (optional)"></div>`; }).join('')}</div>`:'<p class="wsub">No work items in progress for this project — add one with “+ Work item”.</p>'}
+      <div class="form-actions"><button type="button" class="btn" id="cwLogCancel">Close</button><button type="submit" class="btn btn-primary" ${logItems.length?'':'disabled'}>Save progress</button></div></form></div>`:''}
+  <div class="panel sj-panel">
+    <div class="sj-head"><h3>Progress by project</h3>
+      <div class="sj-ctrl"><label class="sj-inline">Project <select data-cw="project"><option value="all">All projects</option>${cwProjects().map(s=>`<option value="${s.id}" ${s.id===cwDash.project?'selected':''}>${esc(s.siteName||'Project')}</option>`).join('')}</select></label></div></div>
+    ${byProj.size?[...byProj.entries()].sort((a,b)=>projectName(a[0]||'').localeCompare(projectName(b[0]||''))).map(([pid, list])=>`<div class="cw-proj"><div class="cw-proj-h">${esc(pid?projectName(pid):'No project')} <span class="wsub">${list.length} item${list.length===1?'':'s'}</span></div>
+      ${list.sort((a,b)=>String(a.itemNo||'').localeCompare(String(b.itemNo||''))).map(r=>{ const f=cwForecast(r); return `<div class="cw-row" data-reg-row="civil:${r.id}">
+        <div class="cw-row-name"><div class="wname">${esc(r.activity||'Item')}</div><div class="wsub">${esc([r.itemNo, r.area].filter(Boolean).join(' · '))}</div></div>
+        <div class="cw-row-bar">${cwBarHtml(r)}<div class="wsub">${fmtQty(cwDone(r))} / ${fmtQty(cwTotal(r))} ${esc(r.unit||'')}${cwState(r)!=='done'&&f&&f.date?` · expected ${esc(f.date)}`:''}${r.plannedEnd&&cwState(r)!=='done'?` · planned ${esc(r.plannedEnd)}`:''}</div></div>
+        <div class="cw-row-pct">${fmtQty(Math.round(cwPct(r)))}%</div><div class="cw-row-st">${cwStateBadge(r)}</div></div>`; }).join('')}</div>`).join('')
+      : '<p class="wsub">No work items yet.</p>'}
+    <p class="wsub" style="margin:8px 0 0;"><i class="cw-plan-key"></i> line on a bar = where the plan says it should be today (needs a start and planned end date).</p>
+  </div>
+  <div class="panel sj-panel">
+    <div class="sj-head"><h3>${day===t?'Work done today':'Work done on '+esc(dayLabel(day)+' '+day.slice(0,4))}</h3>
+      <div class="sj-ctrl"><button type="button" class="icon-btn" data-cw-day="-1" aria-label="Previous day">${ic('prev')}</button><input type="date" data-cw="day" value="${esc(day)}" max="${t}" aria-label="Pick a day"><button type="button" class="icon-btn" data-cw-day="1" aria-label="Next day" ${day>=t?'disabled':''}>${ic('next')}</button></div></div>
+    ${todays.length?`<div class="sj-mini">${todays.map(({r,e})=>`<div class="sj-r cw-day-r" data-reg-row="civil:${r.id}"><span><strong>${esc(r.activity||'Item')}</strong> <span class="wsub">${esc(r.projectId?projectName(r.projectId):'')}${e.doneBy?' · '+esc(e.doneBy):''}${e.notes?' · '+esc(e.notes):''}</span></span><span class="num"><strong>${fmtQty(e.qty)}</strong> ${esc(r.unit||'')}</span></div>`).join('')}</div>`:'<p class="wsub" style="margin:0;">No progress logged for this day.</p>'}
+  </div>
+  <p class="wsub sj-loaded">Showing items in progress and items finished in the last 2 months.${cwOlderLoaded?' Older finished items are loaded too.':` <button type="button" class="att-link" id="cwLoadOlder">Load older finished items</button>`}</p>`;
+  for(const [k,v] of Object.entries(keep)){ const el=k==='by'?document.getElementById('cwLogBy'):box.querySelector(k[0]==='q'?`[data-cw-qty="${k.slice(1)}"]`:`[data-cw-note="${k.slice(1)}"]`); if(el) el.value=v; }
+}
+async function saveCivilLog(form){
+  const date=document.getElementById('cwLogDate').value, by=document.getElementById('cwLogBy').value.trim();
+  if(!date){ toast('Pick the date'); return; }
+  const rows=[...form.querySelectorAll('[data-cw-qty]')].map(i=>({id:i.dataset.cwQty, qty:i.value===''?0:Number(i.value), note:(form.querySelector(`[data-cw-note="${i.dataset.cwQty}"]`)||{}).value||''})).filter(x=>x.qty>0);
+  if(!rows.length){ toast('Type a quantity for at least one item'); return; }
+  let ok=0;
+  for(const x of rows){ const r=regState.civil.list.find(q=>q.id===x.id); if(!r) continue;
+    const entries=(r.entries||[]).concat([{id:'e'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), date, qty:x.qty, doneBy:by, notes:x.note.trim()}]);
+    if(await regUpdate('civil', r.id, {entries, ...cwComputed(r, entries)}, true)) ok++; }
+  if(ok){ toast(`Progress saved for ${ok} item${ok===1?'':'s'} (${date})`); document.querySelectorAll('#cwLogForm [data-cw-qty], #cwLogForm [data-cw-note]').forEach(i=>i.value=''); }
+}
+async function exportCivil(){
+  try{ await loadScriptOnce(XLSX_URL); }catch(e){ toast('Could not load the Excel tools — check your internet connection and try again'); return; }
+  const list=cwItems().slice().sort((a,b)=>projectName(a.projectId||'').localeCompare(projectName(b.projectId||'')) || String(a.itemNo||'').localeCompare(String(b.itemNo||'')));
+  const st={done:'Completed', hold:'On hold', notstarted:'Not started', behind:'Behind plan', ontrack:'On track'};
+  const s1=[['Item no.','Project','Work item','Area / location','Unit','Total quantity','Done','Remaining','% done','Planned % by today','Start','Planned end','Expected finish','Rate per day (recent)','Status','Last logged','Finished on']];
+  for(const r of list){ const f=cwForecast(r), pl=cwPlannedPct(r); s1.push([r.itemNo||'', r.projectId?projectName(r.projectId):'', r.activity||'', r.area||'', r.unit||'', cwTotal(r), Math.round(cwDone(r)*100)/100, Math.round((cwTotal(r)-cwDone(r))*100)/100, Math.round(cwPct(r)*10)/10, pl===null?'':Math.round(pl), r.startDate||'', r.plannedEnd||'', f&&f.date?f.date:'', Math.round(cwRate(r)*100)/100, st[cwState(r)], r.lastEntry||'', r.finishedOn||'']); }
+  const s2=[['Date','Project','Item no.','Work item','Quantity','Unit','Done by','Notes']];
+  const log=[]; for(const r of list) for(const e of (r.entries||[])) log.push([e.date||'', r.projectId?projectName(r.projectId):'', r.itemNo||'', r.activity||'', Number(e.qty)||0, r.unit||'', e.doneBy||'', e.notes||'']);
+  log.sort((a,b)=>String(a[0]).localeCompare(String(b[0]))); s2.push(...log);
+  const wb=XLSX.utils.book_new();
+  const a=XLSX.utils.aoa_to_sheet(s1); a['!cols']=[{wch:13},{wch:22},{wch:30},{wch:18},{wch:7},{wch:12},{wch:10},{wch:11},{wch:8},{wch:12},{wch:11},{wch:11},{wch:13},{wch:12},{wch:12},{wch:11},{wch:11}];
+  const b=XLSX.utils.aoa_to_sheet(s2); b['!cols']=[{wch:11},{wch:22},{wch:13},{wch:30},{wch:10},{wch:7},{wch:22},{wch:30}];
+  XLSX.utils.book_append_sheet(wb, a, 'Work items'); XLSX.utils.book_append_sheet(wb, b, 'Daily log');
+  XLSX.writeFile(wb, `Burhan_Civil_Progress_${cwDash.project==='all'?'':projectName(cwDash.project).replace(/[^\w-]+/g,'_')+'_'}${localToday()}.xlsx`);
+}
+
+regDefine({
+  key:'civil', collection:'civilWorks', singular:'Work item', title:'Civil Progress', tagline:'Quantities · Daily progress · Expected finish',
+  addLabel:'+ Work item', addTitle:'New work item', noField:'itemNo', noPrefix:'CW', noYear:true, dateField:'startDate',
+  listen:cwListen, topPanel:()=>renderCivilTop(),
+  headerButtons:'<button class="btn btn-sm" type="button" id="civilExportBtn">'+ic('download')+' Export Excel</button><button class="btn btn-sm reg-edit-only" type="button" id="cwLogBtn">'+ic('pencil')+' Log today’s progress</button>',
+  searchPlaceholder:'Search work item, area, item no.…', emptyEditor:'No work items yet — click “+ Work item” (e.g. Block work ground floor · 1000 m²), then log the quantity done each day with “Log today’s progress”.', emptyViewer:'No work items recorded yet.',
+  titleOf:r=>r.activity||'Work item', subOf:r=>[r.projectId?projectName(r.projectId):'', r.area, `${fmtQty(cwDone(r))} / ${fmtQty(cwTotal(r))} ${r.unit||''}`].filter(Boolean).join(' · '),
+  badgesOf:r=>cwStateBadge(r), searchText:r=>[r.itemNo, r.activity, r.area, r.unit, r.projectId?projectName(r.projectId):''].join(' '),
+  extraMatch:r=>cwDash.project==='all' || r.projectId===cwDash.project,
+  addFields:['projectId','activity','area','unit','totalQty','startDate','plannedEnd'], addDefaults:{status:'In progress', projectId:()=>cwDash.project!=='all'?cwDash.project:(cwProjects().length===1?cwProjects()[0].id:'')},
+  segs:[{key:'active', label:'In progress', match:r=>['ontrack','notstarted','behind'].includes(cwState(r))},{key:'behind', label:'Behind plan', match:r=>cwState(r)==='behind'},{key:'hold', label:'On hold', match:r=>cwState(r)==='hold'},{key:'done', label:'Completed', match:r=>cwState(r)==='done'}],
+  sort:(a,b)=>projectName(a.projectId||'').localeCompare(projectName(b.projectId||'')) || String(a.itemNo||'').localeCompare(String(b.itemNo||'')),
+  tabs:[{key:'progress', label:'Progress', html:r=>cwProgressTabHtml(r)},
+    {key:'main', label:'Details', groups:[{fields:[
+      {key:'itemNo', label:'Item no.', required:true},
+      {key:'projectId', label:'Project', type:'project'},
+      {key:'activity', label:'Work item', required:true, wide:true, placeholder:'e.g. Block work — ground floor, Excavation, Plastering, Concrete pouring'},
+      {key:'area', label:'Area / location', placeholder:'e.g. Building A, Zone 3'},
+      {key:'unit', label:'Unit', type:'textlist', options:()=>CW_UNITS, required:true, placeholder:'m², m³, m, sq ft, Nos…'},
+      {key:'totalQty', label:'Total quantity', type:'number', min:0, required:true},
+      {key:'startDate', label:'Start date', type:'date'},
+      {key:'plannedEnd', label:'Planned end date', type:'date'},
+      {key:'status', label:'Status', type:'select', options:CW_STATUSES},
+      {key:'notes', label:'Notes', type:'textarea', wide:true},
+    ]}]},
+    {key:'sub:entries', label:'Daily log', sub:'entries'}],
+  subs:{entries:{label:'Daily log', addLabel:'Log progress', defaults:()=>({date:localToday()}), empty:'Nothing logged yet.',
+    fields:[{key:'date', label:'Date', type:'date', required:true},{key:'qty', label:'Quantity done', type:'number', min:0, required:true},{key:'doneBy', label:'Done by (supervisor / crew)'},{key:'notes', label:'Notes'}],
+    hideInCard:['date','qty'], sort:(a,b)=>String(b.date||'').localeCompare(String(a.date||'')),
+    title:(x, r)=>`<span class="mono">${esc(x.date||'—')}</span> · <strong>${fmtQty(x.qty)} ${esc(r.unit||'')}</strong>`,
+    onSave:(r, list)=>cwComputed(r, list)}},
+  columns:[
+    {label:'Item', html:r=>`<div class="wname">${esc(r.activity||'—')}</div><div class="wsub">${esc([r.itemNo, r.area].filter(Boolean).join(' · '))}</div>`},
+    {label:'Project', html:r=>esc(r.projectId?projectName(r.projectId):'—')},
+    {label:'Progress', html:r=>`<div style="min-width:150px;">${cwBarHtml(r)}<div class="wsub">${fmtQty(cwDone(r))} / ${fmtQty(cwTotal(r))} ${esc(r.unit||'')} · <strong>${fmtQty(Math.round(cwPct(r)))}%</strong></div></div>`},
+    {label:'Expected finish', html:r=>{ if(cwState(r)==='done') return `<span class="wsub">finished ${esc(r.finishedOn||'')}</span>`; const f=cwForecast(r); return `${f&&f.date?`<span class="mono">${esc(f.date)}</span>`:'<span class="wsub">—</span>'}${r.plannedEnd?`<div class="wsub">planned ${esc(r.plannedEnd)}</div>`:''}`; }},
+    {label:'Status', html:r=>cwStateBadge(r)},
+  ],
+  tiles:()=>{ const list=cwItems(), t=localToday(), mo=t.slice(0,7);
+    const act=list.filter(r=>['ontrack','notstarted','behind'].includes(cwState(r))), beh=list.filter(r=>cwState(r)==='behind');
+    const today=list.filter(r=>(r.entries||[]).some(e=>e.date===t && Number(e.qty))).length;
+    const avg=act.length?Math.round(act.reduce((n,r)=>n+Math.min(100,cwPct(r)),0)/act.length):null;
+    return [{label:'Items in progress', num:act.length, sub:avg!==null?`average ${avg}% done`:'none', icon:'chart'},
+      {label:'Progress logged today', num:today, sub:`item${today===1?'':'s'} · ${list.filter(r=>(r.entries||[]).some(e=>e.date===dateAdd(t,-1))).length} yesterday`, icon:'pencil'},
+      {label:'Behind plan', num:beh.length, cls:beh.length?'warn':'ok', sub:'expected finish after the planned end', icon:'clock'},
+      {label:'Completed this month', num:list.filter(r=>cwState(r)==='done' && String(r.finishedOn||'').startsWith(mo)).length, sub:`${list.filter(r=>cwState(r)==='done').length} completed in view`, icon:'checkcircle'}]; },
+});
+REG.civil.beforeCreate=d=>{ d.entries=d.entries||[]; d.status=d.status||'In progress'; d.open=d.status!=='Completed'; d.doneQty=0; d.finishedOn=''; d.activity=(d.activity||'').trim(); };
+REG.civil.beforeUpdate=(data, cur)=>{
+  if(data.startDate!==undefined || data.plannedEnd!==undefined){ const s=data.startDate!==undefined?data.startDate:cur.startDate, e=data.plannedEnd!==undefined?data.plannedEnd:cur.plannedEnd; if(s && e && e<s){ toast('The planned end date is before the start date'); return null; } }
+  if('status' in data){ data.open=data.status!=='Completed'; if(data.status==='Completed' && cur.status!=='Completed' && !data.finishedOn) data.finishedOn=cur.lastEntry||localToday(); if(data.status!=='Completed') data.finishedOn=''; }
+  return data;
+};
+REG.civil.afterSave=r=>{ if(cwOlder.has(r.id)){ cwOlder.set(r.id, {...cwOlder.get(r.id), ...r}); if(cwRefresh) cwRefresh(); } };
+
 /* ---- action tracker: extra sources ---- */
 const B12_ACT_SOURCES=[{key:'obs',label:'Observations'},{key:'insp',label:'Inspections'},{key:'hira',label:'Risk register'},{key:'moc',label:'Change (MOC)'},{key:'heat',label:'Heat stress'}];
 
@@ -6198,7 +6436,8 @@ function startSiteData(){
       renderSiteAll();
       renderEquipAll();           // location names come from projects
       renderReportAll();          // project names / filter in the Monthly Report
-      if(regState.scaff && !document.getElementById('scaffSection')?.hidden) renderRegAll('scaff');   // project names in the scaffolding job log
+      if(regState.scaff && !document.getElementById('scaffSection')?.hidden) renderRegAll('scaff');
+      if(regState.civil && !document.getElementById('civilSection')?.hidden) renderRegAll('civil');   // project names in the scaffolding job log
       migrateLegacySiteEquipment();
     }, err=>{ console.error(err); if(!auth.currentUser) return; toast('Sync error — some project data may be stale.'); });
   }catch(e){ console.error(e); }
@@ -10970,6 +11209,23 @@ document.addEventListener('DOMContentLoaded', ()=>{
   $('histClose').addEventListener('click', closeHistoryDrawer); $('histOverlay').addEventListener('click', closeHistoryDrawer);
 
 
+
+  // --- Batch 35: civil work progress ---
+  const cwKeepAndRender=()=>renderCivilTop();
+  document.addEventListener('click', e=>{
+    if(e.target.closest('#civilExportBtn')){ exportCivil(); return; }
+    if(e.target.closest('#cwLogBtn')){ cwLog.open=!cwLog.open; if(cwLog.open && !cwLog.project && cwDash.project!=='all') cwLog.project=cwDash.project; renderCivilTop(); if(cwLog.open){ const p=document.getElementById('cwLogPanel'); if(p) p.scrollIntoView({block:'start', behavior:'smooth'}); } return; }
+    if(e.target.closest('#cwLogCancel')){ cwLog.open=false; renderCivilTop(); return; }
+    if(e.target.closest('#cwLoadOlder')){ cwLoadOlder(); return; }
+    const dd=e.target.closest('[data-cw-day]'); if(dd){ const t=localToday(); let d=dateAdd(cwDash.day||t, Number(dd.dataset.cwDay)); if(d>t) d=t; cwDash.day=d; renderCivilTop(); return; }
+    if(e.target.closest('[data-cw-logtab]')){ activeRegTab='sub:entries'; regSubOpen='entries'; regSubEdit=null; renderRegDrawer(); return; }
+  });
+  document.addEventListener('change', e=>{
+    const c=e.target.closest('[data-cw]'); if(c){ if(c.dataset.cw==='project'){ cwDash.project=c.value; renderRegAll('civil'); } else if(c.dataset.cw==='day'){ cwDash.day=c.value||''; renderCivilTop(); } return; }
+    if(e.target.id==='cwLogDate'){ cwLog.date=e.target.value; cwKeepAndRender(); return; }
+    if(e.target.id==='cwLogProject'){ cwLog.project=e.target.value; cwKeepAndRender(); return; }
+  });
+  document.addEventListener('submit', async e=>{ if(e.target.id!=='cwLogForm') return; e.preventDefault(); if(!canEdit()) return; await saveCivilLog(e.target); });
   // --- Batch 33: scaffolding job log dashboard ---
   document.addEventListener('click', e=>{
     const ex=e.target.closest('#scaffExportBtn'); if(ex){ exportScaffJobs(); return; }
@@ -11100,6 +11356,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.querySelector('.sidenav-btn[data-section="activity"]').addEventListener('click', loadActivityLog);
   document.querySelector('.sidenav-btn[data-section="actions"]').addEventListener('click', renderActionTracker);
   document.querySelector('.sidenav-btn[data-section="scaff"]').addEventListener('click', ()=>renderRegAll('scaff'));
+  document.querySelector('.sidenav-btn[data-section="civil"]').addEventListener('click', ()=>renderRegAll('civil'));
 });
 
 /* ---------------- Batch 12 events ---------------- */
