@@ -899,6 +899,13 @@ th.mx-cat-opal{box-shadow:inset 0 3px 0 var(--cat-1);} th.mx-cat-client{box-shad
 
 /* ---- Batch 44: PDO SP-1157 courses ---- */
 .req-pdo .req-pdo-g{margin-bottom:8px;} .req-pdo label.chk{display:flex; gap:8px; align-items:baseline; margin:3px 0; font-weight:500;}
+
+/* ---- Batch 45: SP-1257 crew check ---- */
+.crew-check{border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-size:12.5px; color:var(--ink); display:grid; gap:4px;}
+.crew-check.bad{border-color:var(--warn); background:var(--warn-bg);} .crew-check.ok{border-color:var(--ok); background:var(--ok-bg);}
+.crew-check .ic{width:14px; height:14px; vertical-align:-2px;}
+.crew-chips{display:flex; flex-wrap:wrap; gap:4px;} .crew-card{font-size:11.5px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); background:var(--surface);}
+.crew-card.c-gold{box-shadow:inset 3px 0 0 #c9a227;} .crew-card.c-blue{box-shadow:inset 3px 0 0 #2563eb;} .crew-card.c-amber{box-shadow:inset 3px 0 0 #f59e0b;} .crew-card.c-white{box-shadow:inset 3px 0 0 #cbd5e1;} .crew-card.c-green{box-shadow:inset 3px 0 0 #16a34a;} .crew-card.c-none{box-shadow:inset 3px 0 0 var(--danger);}
 </style>
 </head>
 <body class="auth-open">
@@ -2558,7 +2565,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b44';
+const APP_BUILD='b45';
 let appOutdated=false;
 // Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
 let _verTag=null, _verLast=0;
@@ -2829,8 +2836,29 @@ const PDO_COURSES=[
   {lvl:'Defensive driving', code:'EVF', name:'Defensive Driving, Fire-tender & Emergency Response Vehicle', years:1, alias:/fire.?tender|emergency response vehicle/},
   {lvl:'Defensive driving', code:'SJM', name:'Safe Journey Manager', years:2, alias:/journey manag/},
   {lvl:'Defensive driving', code:'SJMR', name:'Safe Journey Manager Reassessment', years:3, base:['SJM']},
+  /* Batch 45: SP-1257 V7.0 (Mar 2024) Appendix B — CISRS scaffolding cards (card colour as PDO record card) and other work-at-height training.
+     covers = a higher card also satisfies these lower requirements. Validity: CISRS / PASMA / IPAF cards 5 years, IRATA 3 years (scheme rules). */
+  {lvl:'SP-1257 Scaffolding', code:'CISRS SUP', name:'CISRS Scaffolding Supervisor', card:'Gold', years:5, covers:['LXE 044'], alias:/scaffold(ing)? supervisor/},
+  {lvl:'SP-1257 Scaffolding', code:'CISRS SUP-R', name:'CISRS Scaffolding Supervisor Refresher', card:'Gold', years:5, base:['CISRS SUP'], covers:['LXE 044'], alias:/scaffold(ing)? supervisor.*(refresher|recert)/},
+  {lvl:'SP-1257 Scaffolding', code:'CISRS ASI', name:'CISRS Advanced Scaffold Inspection', card:'Gold', years:5, covers:['CISRS BSI','LXE 044'], alias:/advanced scaffold(ing)? insp/},
+  {lvl:'SP-1257 Scaffolding', code:'CISRS BSI', name:'CISRS Basic Scaffold Inspection', card:'Blue', years:5, covers:['LXE 044'], alias:/scaffold(ing)? insp/},
+  {lvl:'SP-1257 Scaffolding', code:'CISRS ADV', name:'CISRS Advanced Scaffolder', card:'Gold', years:5, covers:['CISRS SCAF','CISRS TRN','CISRS BASE','CISRS LAB'], alias:/advanced scaffolder/},
+  {lvl:'SP-1257 Scaffolding', code:'CISRS SCAF', name:'CISRS Scaffolder (tube & fitting or system)', card:'Blue', years:5, covers:['CISRS TRN','CISRS BASE','CISRS LAB'], alias:/^(?!.*(trainee|advanced|labourer|laborer|helper|supervisor|insp|appreciation)).*(scaffolder|scaffold(ing)? erect)/},
+  {lvl:'SP-1257 Scaffolding', code:'CISRS TRN', name:'CISRS Trainee Scaffolder', card:'Amber', years:5, alias:/trainee scaffolder/},
+  {lvl:'SP-1257 Scaffolding', code:'CISRS BASE', name:'CISRS Basic Access Systems Erector (BASE)', card:'White', years:5, alias:/access systems erector|\bbase\b.*erector/},
+  {lvl:'SP-1257 Scaffolding', code:'CISRS LAB', name:'CISRS Scaffolding Labourer', card:'Green', years:5, alias:/scaffold(ing)? (labourer|laborer|helper)/},
+  {lvl:'SP-1257 Scaffolding', code:'LXE 044', name:'PDO Scaffolding Appreciation', years:null, alias:/scaffold(ing)? appreciation|lxe ?044/},
+  {lvl:'SP-1257 Work at height', code:'PASMA', name:'PASMA Mobile Access Tower', years:5, alias:/pasma(?!.*low)|mobile (access )?tower/},
+  {lvl:'SP-1257 Work at height', code:'PASMA LLA', name:'PASMA Low-level Access (ladders, steps, podiums)', years:5, alias:/low.?level access|pasma.*low/},
+  {lvl:'SP-1257 Work at height', code:'IPAF', name:'IPAF Powered Access Licence (MEWP / MCWP)', years:5, alias:/ipaf|\bmewp\b|powered access/},
+  {lvl:'SP-1257 Work at height', code:'IRATA L3', name:'IRATA Rope Access Technician Level 3', years:3, covers:['IRATA L2','IRATA L1'], alias:/irata.*(level ?3|\bl3\b)|rope access.*(level ?3|\bl3\b)/},
+  {lvl:'SP-1257 Work at height', code:'IRATA L2', name:'IRATA Rope Access Technician Level 2', years:3, covers:['IRATA L1'], alias:/irata.*(level ?2|\bl2\b)|rope access.*(level ?2|\bl2\b)/},
+  {lvl:'SP-1257 Work at height', code:'IRATA L1', name:'IRATA Rope Access Technician Level 1', years:3, alias:/irata|rope access/},
+  {lvl:'SP-1257 Work at height', code:'FASET', name:'FASET Safety Net Rigger', years:null, alias:/faset|safety net/},
 ];
 function pdoCourseLabel(c){ return `(${c.code}) ${c.name}`; }
+function pdoCardText(c){ return c.card ? ` — ${c.card} card` : ''; }
+const SCAFF_CARD_RANK={'CISRS SUP':6,'CISRS SUP-R':6,'CISRS ADV':5,'CISRS ASI':4,'CISRS SCAF':4,'CISRS BSI':3,'CISRS BASE':2,'CISRS TRN':1,'CISRS LAB':0};
 const _pdoCache=new Map();
 function pdoCourseOf(name){
   const raw=String(name||'').trim(); if(!raw) return null;
@@ -2846,7 +2874,7 @@ function trainingStatusFor(w, reqName){
   const key=normTraining(reqName); if(!key) return {status:'na'};
   const reqC=pdoCourseOf(reqName);
   const recs=(w.trainings||[]).filter(r=>{ const n=normTraining(r.name); if(n && (n===key || (' '+n+' ').includes(' '+key+' '))) return true;
-    if(!reqC) return false; const rc=pdoCourseOf(r.name); return !!rc && (rc.code===reqC.code || (rc.base||[]).includes(reqC.code)); });
+    if(!reqC) return false; const rc=pdoCourseOf(r.name); return !!rc && (rc.code===reqC.code || (rc.base||[]).includes(reqC.code) || (rc.covers||[]).includes(reqC.code)); });
   if(!recs.length) return {status:'missing'};
   let best=null;
   for(const r of recs){
@@ -3086,13 +3114,13 @@ function renderReqPanel(){
       <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
         <button type="button" class="btn btn-sm" id="reqAddRole">+ Add role${reqEdit.div!=='all'?' to '+esc(divShort(reqEdit.div)):''}</button>
         <button type="button" class="btn btn-sm btn-ghost" id="reqAddCommon">+ Add suggested roles &amp; trainings</button>
-        <button type="button" class="btn btn-sm" id="reqPdoOpen">+ Add PDO trainings (SP-1157)</button>
+        <button type="button" class="btn btn-sm" id="reqPdoOpen">+ Add PDO trainings (SP-1157 / SP-1257)</button>
       </div>
       <p class="wsub" style="margin:8px 0 0;">New people joining with a new job title? Just add the role here (in their division's tab) and tick its trainings — it then appears in the Designation list for that division. Renaming a role here also updates the workers who have it. Removing a role doesn't change any worker — it just stops requiring trainings.</p>
       ${reqEdit.pdoOpen ? (()=>{ const have=new Set(reqEdit.catalogue.map(t=>{ const c=pdoCourseOf(t); return c?c.code:''; }).filter(Boolean)); const groups=[...new Set(PDO_COURSES.map(c=>c.lvl))];
-        return `<div class="panel req-pdo" style="margin-top:10px;"><div class="subhead" style="margin-top:0;">PDO trainings — SP-1157 V4.1 (tick, then “Add ticked”)</div>
-          <p class="wsub" style="margin:0 0 8px;">Refresher / recertification courses (H2SR, SCBA-R, AGT-R, PTWH-R, PTWS-R, HSE LFS-R, NORMM-R, SJMR, RT) are not listed — a worker's refresher record counts for the main course automatically.</p>
-          ${groups.map(g=>`<div class="req-pdo-g"><div class="req-grp-h">${esc(g)}</div>${PDO_COURSES.filter(c=>c.lvl===g && !c.base).map(c=>`<label class="chk"><input type="checkbox" data-pdo-add="${esc(c.code)}" ${have.has(c.code)?'checked disabled':''}>${esc(pdoCourseLabel(c))} <span class="wsub">${c.years?c.years+' yr'+(c.years>1?'s':''):'no expiry'}${have.has(c.code)?' · in list':''}</span></label>`).join('')}</div>`).join('')}
+        return `<div class="panel req-pdo" style="margin-top:10px;"><div class="subhead" style="margin-top:0;">PDO trainings — SP-1157 V4.1 &amp; SP-1257 V7.0 (tick, then “Add ticked”)</div>
+          <p class="wsub" style="margin:0 0 8px;">Refresher / recertification courses (H2SR, SCBA-R, AGT-R, PTWH-R, PTWS-R, HSE LFS-R, NORMM-R, SJMR, RT, Supervisor refresher) are not listed — a refresher record counts for the main course automatically. A higher scaffolding card also counts for the lower ones (e.g. Advanced Scaffolder covers Scaffolder; Inspector / Supervisor cover Scaffolding Appreciation).</p>
+          ${groups.map(g=>`<div class="req-pdo-g"><div class="req-grp-h">${esc(g)}</div>${PDO_COURSES.filter(c=>c.lvl===g && !c.base).map(c=>`<label class="chk"><input type="checkbox" data-pdo-add="${esc(c.code)}" ${have.has(c.code)?'checked disabled':''}>${esc(pdoCourseLabel(c))} <span class="wsub">${c.card?esc(c.card)+' card · ':''}${c.years?c.years+' yr'+(c.years>1?'s':''):'no expiry'}${have.has(c.code)?' · in list':''}</span></label>`).join('')}</div>`).join('')}
           <div style="display:flex; gap:8px; margin-top:8px;"><button type="button" class="btn btn-sm btn-primary" id="reqPdoAdd">Add ticked</button><button type="button" class="btn btn-sm" id="reqPdoClose">Close</button></div></div>`; })() : ''}
       <div class="form-actions"><button type="button" class="btn" id="reqCancel">Cancel</button><button type="submit" class="btn btn-primary">Save roles &amp; trainings</button></div>
     </form>`;
@@ -4460,6 +4488,7 @@ function applyShowWhen(root){
 }
 function regFieldHtml0(f, v, attr){
   attr=attr||'data-rf';
+  if(f.type==='crewcheck') return `<div class="span-all" data-crew-check="${esc(f.crewKey||'rigUpCrew')}" data-attr="${attr}"></div>`;
   if(f.type==='kmline') return `<div class="span-all wsub sj-km" data-km-for="${esc(f.key.replace(/KmNote$/,''))}"></div>`;
   const req=f.required?' *':'', cls=f.wide?' class="span-all"':'';
   if(f.type==='project') return `<label${cls}>${esc(f.label)}${req}<select ${attr}="${f.key}">${projectOptionsHtml(v||'')}</select></label>`;
@@ -4574,7 +4603,7 @@ function openRegAdd(key){
   const cfg=REG[key], fields=regFieldsOf(cfg).filter(f=>cfg.addFields.includes(f.key));
   document.getElementById(key+'AddFields').innerHTML = cfg.addFields.map(k=>fields.find(f=>f.key===k)).filter(Boolean).map(f=>regFieldHtml(f, (cfg.addDefaults||{})[f.key]!==undefined ? (typeof cfg.addDefaults[f.key]==='function'?cfg.addDefaults[f.key]():cfg.addDefaults[f.key]) : (f.type==='date'&&f.key===(cfg.dateField||'date')?localToday():''))).join('');
   document.getElementById(key+'AddPanel').hidden=false;
-  const af=document.getElementById(key+'AddFields'); applyShowWhen(af); if(key==='scaff') updateScaffKm(af);
+  const af=document.getElementById(key+'AddFields'); applyShowWhen(af); if(key==='scaff'){ updateScaffKm(af); updateCrewCheck(af); }
 }
 
 /* ---- drawer ---- */
@@ -4600,7 +4629,7 @@ function renderRegDrawer(){
   else if(t.html) b.innerHTML=t.html(r);
   else b.innerHTML=regFormTabHtml(cfg, r, t);
   if(t.key==='history') loadRegHistory(cfg.collection, r.id);
-  applyShowWhen(b); if(activeReg==='scaff') updateScaffKm(b);
+  applyShowWhen(b); if(activeReg==='scaff'){ updateScaffKm(b); updateCrewCheck(b); }
 }
 function regFormTabHtml(cfg, r, t){
   const head = t.key==='main' ? `${cfg.badgesOf?`<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">${cfg.badgesOf(r)}</div>`:''}${updatedNoteHtml(r)}` : '';
@@ -5550,7 +5579,7 @@ regDefine({
 
 /* =============================== INSPECTION CHECKLISTS =============================== */
 const BUILTIN_CHECKLISTS=[
-  {key:'scaffold', group:'Scaffold & fall protection', name:'Scaffold inspection (tag check)', subjectLabel:'Scaffold no. / location', items:['Scaffold tag present, current and signed (green)','Base plates / sole boards on firm level ground','Standards plumb, ledgers & transoms secure','Bracing in place and undamaged','Working platform fully boarded, boards secured','Guardrails (top & mid) and toe boards fitted','Safe access ladder secured, extends 1 m above platform','Ties / anchors in place as per design','No overloading of materials on platform','Gaps to structure ≤ 300 mm or protected','Weekly / after-weather inspection recorded']},
+  {key:'scaffold', group:'Scaffold & fall protection', name:'Scaffold inspection (tag check)', subjectLabel:'Scaffold no. / location', items:['Scaffold tag present, current and signed (green)','Base plates / sole boards on firm level ground','Standards plumb, ledgers & transoms secure','Bracing in place and undamaged','Working platform fully boarded, boards secured','Guardrails (top & mid) and toe boards fitted','Safe access ladder secured, extends 1 m above platform','Ties / anchors in place as per design','No overloading of materials on platform','Gaps to structure ≤ 300 mm or protected','Inspected within the last 7 days and after any alteration / bad weather — recorded on the tag','Tag holder at every access point; tag insert completed by the Scaffold Inspector (English)','Red "Scaffold incomplete — do not use" sign shown while erecting / altering','Maximum load sign on loading bays, towers and lifting frames','Danger area barricaded with warning signs during erection / dismantling','Scaffold built as per design / drawing (complex or non-standard scaffolds)']},
   {key:'harness', group:'Scaffold & fall protection', name:'Full body harness & lanyard', subjectLabel:'Harness serial no.', items:['Webbing free of cuts, burns, fraying or chemical damage','Stitching intact','D-rings and buckles free of cracks, rust or distortion','Lanyard / shock absorber pack intact and not deployed','Snap hooks and karabiners lock properly','Label / serial number legible and within service life','Six-monthly inspection by competent person current']},
   {key:'ladder', group:'Scaffold & fall protection', name:'Ladder inspection', subjectLabel:'Ladder no. / type', items:['Stiles straight and undamaged','Rungs / steps secure, clean and undamaged','Anti-slip feet present','Locking bars / spreaders work (step ladders)','Correct type and height for the task','Inspection tag current']},
   {key:'extinguisher', group:'Fire & emergency', name:'Fire extinguisher monthly check', subjectLabel:'Extinguisher no. / location', items:['In its designated place, visible and accessible','Pressure gauge in the green zone','Safety pin and tamper seal intact','Hose / nozzle undamaged and clear','No corrosion or physical damage','Service tag current (annual)','Correct type for the area','Signage in place']},
@@ -6183,6 +6212,68 @@ function scaffCancelled(list){
   return out.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
 }
 function scaffKmText(km, est, src){ if(km!==''&&km!=null) return src==='estimate' ? `≈ ${fmtQty(km)} km (estimate)` : `${fmtQty(km)} km`; return est!==''&&est!=null ? `≈ ${fmtQty(est)} km (estimate)` : ''; }
+/* Batch 45: SP-1257 §5.6 crew competence — best in-date scaffolding card of each crew member on a date */
+function scaffCardOf(w, onDate){
+  let best=null; const d=onDate||localToday();
+  for(const r of (w && w.trainings)||[]){ const c=pdoCourseOf(r.name); if(!c || SCAFF_CARD_RANK[c.code]===undefined) continue; if(r.expiry && r.expiry<d) continue; if(r.date && r.date>d) continue;
+    const code=c.code==='CISRS SUP-R'?'CISRS SUP':c.code; if(!best || SCAFF_CARD_RANK[code]>SCAFF_CARD_RANK[best.code]) best={code, course:PDO_COURSES.find(x=>x.code===code), expiry:r.expiry||''}; }
+  return best;
+}
+function scaffCrewCheck(ids, onDate, chargehand){
+  ids=(ids||[]).filter(Boolean); if(!ids.length) return {issues:[], members:[]};
+  const members=ids.map(id=>{ const w=workers.find(x=>x.id===id); return {id, name:w?(w.fullName||'—'):'removed worker', card:w?scaffCardOf(w, onDate):null}; });
+  const competent=members.filter(m=>m.card && ['CISRS SCAF','CISRS ADV','CISRS SUP'].includes(m.card.code)).length;
+  const issues=[];
+  if(!competent) issues.push('No competent Scaffolder (Blue or Gold CISRS card in date) in the crew — trainees and labourers may only work under a Scaffolder or Advanced Scaffolder.');
+  else if(members.length/competent>4) issues.push(`Only ${competent} competent scaffolder${competent===1?'':'s'} for ${members.length} people — SP-1257 asks for a Scaffolder or Advanced Scaffolder per gang of 2–4.`);
+  const nocard=members.filter(m=>!m.card); if(nocard.length) issues.push(`No scaffolding card in date: ${nocard.map(m=>m.name).join(', ')}.`);
+  if(chargehand!==undefined){ if(!chargehand) issues.push('No Chargehand named for the gang (SP-1257: each gang must have a nominated Chargehand).'); else if(!ids.includes(chargehand)) issues.push('The Chargehand is not ticked in the crew.'); }
+  return {issues, members};
+}
+function scaffCrewCheckHtml(ids, onDate, chargehand){
+  const ck=scaffCrewCheck(ids, onDate, chargehand); if(!ck.members.length) return '';
+  const chips=ck.members.map(m=>`<span class="crew-card ${m.card?'c-'+String(m.card.course&&m.card.course.card||'none').toLowerCase():'c-none'}" title="${esc(m.card?m.card.course.name+(m.card.expiry?' · valid until '+m.card.expiry:''):'No scaffolding card in date')}">${esc(m.name)} · ${esc(m.card?(m.card.course.card?m.card.course.card+' ':'')+m.card.code.replace('CISRS ',''):'no card')}</span>`).join('');
+  return `<div class="crew-check ${ck.issues.length?'bad':'ok'}"><div class="crew-chips">${chips}</div>${ck.issues.length?ck.issues.map(x=>`<div>${ic('alert')} ${esc(x)}</div>`).join(''):`<div>${ic('checkcircle')} Crew meets SP-1257 §5.6 (competent scaffolder in the gang, cards in date).</div>`}</div>`;
+}
+function updateCrewCheck(root){
+  (root||document).querySelectorAll('[data-crew-check]').forEach(el=>{ const form=el.closest('form'); if(!form) return; const key=el.dataset.crewCheck, attr=el.dataset.attr||'data-rf';
+    const ids=[...form.querySelectorAll(`[${attr}="${key}"]:checked`)].map(x=>x.value); const dEl=form.querySelector(`[${attr}="${el.dataset.dateKey||'rigUpDate'}"]`), chEl=form.querySelector(`[${attr}="chargehand"]`);
+    el.innerHTML=scaffCrewCheckHtml(ids, dEl?dEl.value:'', chEl?chEl.value:undefined); });
+}
+/* Batch 45: SP-1257 §5.12 — handover inspection before use, then every ≤7 days until dismantled, plus after alteration / bad weather.
+   The inspector needs a Basic or Advanced Scaffold Inspection card and must be independent of the gang that erected it. */
+const SCAFF_INSP_TYPES=['Handover (before first use)','7-day inspection','After alteration','After bad weather / incident'];
+function scaffInspectorOptions(){ return activeWorkers().filter(w=>(w.status||'active')!=='inactive').map(w=>({w, c:scaffCardOf(w)})).sort((a,b)=>((b.c&&['CISRS BSI','CISRS ASI','CISRS SUP'].includes(b.c.code))-(a.c&&['CISRS BSI','CISRS ASI','CISRS SUP'].includes(a.c.code))) || (a.w.fullName||'').localeCompare(b.w.fullName||''))
+  .map(({w,c})=>({value:w.id, label:`${w.fullName||'—'}${c?' — '+(c.course.card?c.course.card+' ':'')+c.code.replace('CISRS ',''):''}`})); }
+function scaffIsInspectorCard(w, d){ return (w && w.trainings||[]).some(r=>{ const c=pdoCourseOf(r.name); return c && ['CISRS BSI','CISRS ASI'].includes(c.code) && (!r.expiry || r.expiry>=(d||localToday())); }); }
+function scaffInspectorIssues(id, d, job){
+  const out=[]; if(!id) return out; const w=workers.find(x=>x.id===id);
+  if(!scaffIsInspectorCard(w, d)) out.push('No inspection card — needs a CISRS Basic or Advanced Scaffold Inspection card in date (SP-1257 App. B)');
+  if(job && (job.rigUpCrew||[]).includes(id)){ const c=scaffCardOf(w, d); if(!(c && c.code==='CISRS ADV' && job.chargehand===id)) out.push('Not independent — was in the crew that erected this scaffold (SP-1257 §5.12)'); }
+  return out;
+}
+// newest first; same date & time → the one recorded later wins
+function scaffInspSorted(list){ return (list||[]).map((x,i)=>({x,i})).sort((a,b)=>String(b.x.date||'').localeCompare(String(a.x.date||'')) || String(b.x.time||'').localeCompare(String(a.x.time||'')) || b.i-a.i).map(o=>o.x); }
+function scaffInspComputed(list){
+  const l=scaffInspSorted(list), last=l[0];
+  return {lastInspection:last?last.date:'', lastTag:last?(String(last.tag||'').startsWith('Red')?'red':'green'):'', handoverDone:l.some(x=>String(x.type||'').startsWith('Handover')), inspectionDue:last?dateAdd(last.date, 7):''};
+}
+// inspection status of a standing scaffold: handover missing / red tag / overdue / due soon / ok
+function scaffInspState(r){
+  if(!scaffStanding(r)) return null;
+  const t=localToday(), l=(r.inspections||[]);
+  if(!l.length) return {key:'nohandover', cls:'danger', text:'Handover inspection not recorded', days:daysBetween(r.rigUpDate||t, t)};
+  const c=scaffInspComputed(l);
+  if(c.lastTag==='red') return {key:'red', cls:'danger', text:`Red tag since ${c.lastInspection} — do not use`};
+  const d=daysBetween(t, c.inspectionDue);
+  if(d<0) return {key:'overdue', cls:'danger', text:`Inspection overdue by ${-d} day${d===-1?'':'s'} (last ${c.lastInspection})`, days:d};
+  if(d<=1) return {key:'due', cls:'warn', text:d===0?'Inspection due today':'Inspection due tomorrow', days:d};
+  return {key:'ok', cls:'ok', text:`Next inspection by ${c.inspectionDue}`, days:d};
+}
+function scaffInspSummaryHtml(r){
+  const st=scaffInspState(r); if(!st) return `<p class="wsub">This scaffold is not standing — inspections are kept as a record.</p>`;
+  return `<div class="notice" style="border-color:var(--${st.cls==='ok'?'ok':st.cls})">${ic(st.cls==='ok'?'checkcircle':'alert')} <strong>${esc(st.text)}</strong><div class="wsub">SP-1257 §5.12: handover inspection before first use, then at least every 7 days until dismantled, and after any alteration or event that may affect it (high wind, damage, overloading). Reports to the person responsible within 24 h; keep for the life of the scaffold + 3 months.</div></div>`;
+}
 function scaffCrewNames(ids){ return (ids||[]).map(id=>{ const w=workers.find(x=>x.id===id); return w?(w.fullName||'—'):'removed worker'; }); }
 function scaffProjects(){ const all=activeSites(); const sc=all.filter(s=>s.division==='Scaffolding'); return sc.length?sc:all; }
 function scaffJobs(){ return regActive('scaff').filter(r=>scaffDash.project==='all' || r.projectId===scaffDash.project); }
@@ -6194,7 +6285,7 @@ function crewPickHtml(f, v, attr){
   const list=activeWorkers().filter(w=>sel.has(w.id) || ((w.status||'active')!=='inactive' && workerDivKey(w)==='Scaffolding')).sort((a,b)=>(a.fullName||'').localeCompare(b.fullName||''));
   const rows=list.map(x=>`<label class="pick-row" data-text="${esc(((x.fullName||'')+' '+(x.civilId||'')+' '+(x.designation||'')).toLowerCase())}">
       <input type="checkbox" ${attr}="${f.key}" data-multi="${f.key}" value="${esc(x.id)}" ${sel.has(x.id)?'checked':''}>
-      <span class="pick-main"><span class="wname">${esc(x.fullName||'—')}</span><span class="wsub">${esc([x.designation, x.projectId?projectName(x.projectId):''].filter(Boolean).join(' · ')||'—')}</span></span></label>`).join('');
+      <span class="pick-main"><span class="wname">${esc(x.fullName||'—')}</span><span class="wsub">${esc([x.designation, (c=>c?(c.course.card?c.course.card+' card ':'')+c.code.replace('CISRS ',''):'no scaffolding card')(scaffCardOf(x)), x.projectId?projectName(x.projectId):''].filter(Boolean).join(' · ')||'—')}</span></span></label>`).join('');
   const kept=[...sel].filter(id=>!list.some(x=>x.id===id)).map(id=>`<input type="checkbox" hidden checked ${attr}="${f.key}" data-multi="${f.key}" value="${esc(id)}">`).join('');
   return `<div class="span-all">
     <div class="pick-label">${esc(f.label)} <span data-multi-count="${f.key}">(${sel.size} ticked)</span></div>
@@ -6312,8 +6403,9 @@ function renderScaffTop0(box){
   ${scaffPlacesPanelHtml()}
   <div class="panel sj-panel">
     <div class="sj-head"><h3>Standing now (${standing.length})</h3><span class="wsub">Rigged up and not yet rigged down — longest first</span></div>
-    ${standing.length?`<div class="table-wrap"><table class="grid-table"><thead><tr><th>Location</th><th>Project</th><th>Volume</th><th>Rig-up</th><th class="num">Days standing</th><th></th></tr></thead><tbody>
-      ${standing.map(r=>`<tr data-reg-row="scaff:${r.id}"><td><div class="wname">${esc(r.location||'—')}</div><div class="wsub">${esc([r.jobNo, r.tagNo?'Tag '+r.tagNo:''].filter(Boolean).join(' · '))}</div></td><td>${esc(r.projectId?projectName(r.projectId):'—')}</td><td>${scaffVolBadge(r.volume)}</td><td class="mono">${esc(r.rigUpDate||'—')}</td><td class="num"><strong>${scaffDays(r)??'—'}</strong></td><td>${canEdit()?`<button type="button" class="btn btn-sm" data-reg-tab="down">Rig down</button>`:''}</td></tr>`).join('')}
+    ${(()=>{ const bad=standing.map(r=>({r, st:scaffInspState(r)})).filter(x=>x.st && x.st.cls!=='ok'); return bad.length?`<div class="notice">${ic('alert')} <strong>${bad.length} standing scaffold${bad.length===1?' needs':'s need'} inspection attention</strong> (SP-1257 §5.12): ${bad.slice(0,8).map(x=>`<button type="button" class="att-link" data-reg-row="scaff:${x.r.id}" data-reg-tab="sub:inspections">${esc(x.r.location||'—')}</button> — ${esc(x.st.text)}`).join(' · ')}${bad.length>8?' …':''}</div>`:''; })()}
+    ${standing.length?`<div class="table-wrap"><table class="grid-table"><thead><tr><th>Location</th><th>Project</th><th>Volume</th><th>Rig-up</th><th class="num">Days standing</th><th>Inspection (7-day)</th><th></th></tr></thead><tbody>
+      ${standing.map(r=>`<tr data-reg-row="scaff:${r.id}"><td><div class="wname">${esc(r.location||'—')}</div><div class="wsub">${esc([r.jobNo, r.tagNo?'Tag '+r.tagNo:''].filter(Boolean).join(' · '))}</div></td><td>${esc(r.projectId?projectName(r.projectId):'—')}</td><td>${scaffVolBadge(r.volume)}</td><td class="mono">${esc(r.rigUpDate||'—')}</td><td class="num"><strong>${scaffDays(r)??'—'}</strong></td><td>${(st=>st?`<span class="badge ${st.cls}">${esc(st.text)}</span>`:'')(scaffInspState(r))}${canEdit()?` <button type="button" class="att-link" data-reg-tab="sub:inspections">Record</button>`:''}</td><td>${canEdit()?`<button type="button" class="btn btn-sm" data-reg-tab="down">Rig down</button>`:''}</td></tr>`).join('')}
     </tbody></table></div>`:'<p class="wsub">No scaffolds standing.</p>'}
   </div>
   <p class="wsub sj-loaded">Showing jobs from <strong>${esc(monthLabel(oldest))}</strong> onwards${older.length?` plus ${older.map(monthLabel).join(', ')}`:''}, and every scaffold still standing. Older months load when you go back to them with ‹ above.</p>`;
@@ -6325,17 +6417,20 @@ async function exportScaffJobs(){
   const list=scaffJobs().slice().sort((a,b)=>String(a.rigUpDate||'').localeCompare(String(b.rigUpDate||'')) || String(a.jobNo||'').localeCompare(String(b.jobNo||'')));
   const jobs=[['Job no.','Project','Client / company','Requested by','Requester phone','Request / WO no.','Location / well head','Scaffold tag','Volume','Lifts','Rig-up date','Rig-up outcome','Rig-up from','Rig-up vehicle','Rig-up km (one way)','Rig-up km how','Rig-up crew','Rig-down date','Rig-down from','Rig-down vehicle','Rig-down km (one way)','Rig-down km how','Rig-down crew','Cancelled rig-down trips','Days standing','Status','Notes'],
     ...list.map(r=>[r.jobNo||'', r.projectId?projectName(r.projectId):'', r.client||'', r.requestedBy||'', r.requesterPhone||'', r.workOrder||'', r.location||'', r.tagNo||'', r.volume||'', r.lifts===''||r.lifts==null?'':r.lifts, r.rigUpDate||'', scaffUpDone(r)?'Completed':`Cancelled — ${[r.upCancelStage, r.upCancelReason, r.upCancelledBy?'by '+r.upCancelledBy:''].filter(Boolean).join(' · ')}`, r.upFrom||'', r.upVehicle||'', r.upKm??'', kmHow(r.upKmSrc, r.upKm), scaffCrewNames(r.rigUpCrew).join(', '), r.rigDownDate||'', r.downFrom||'', r.downVehicle||'', r.downKm??'', kmHow(r.downKmSrc, r.downKm), scaffCrewNames(r.rigDownCrew).join(', '), (r.downCancels||[]).length||'', scaffDays(r)??'', !scaffUpDone(r)?'Cancelled':scaffStanding(r)?'Standing':'Rigged down', r.notes||''])];
+  const inspRows=[['Job no.','Location','Project','Date','Time','Inspection','Inspector','Inspector card','Tag','Matters identified','Action','Reported to','Warnings']];
+  for(const r of list) for(const x of (r.inspections||[])){ const w=workers.find(q=>q.id===x.inspector), c=w?scaffCardOf(w, x.date):null; inspRows.push([r.jobNo||'', r.location||'', r.projectId?projectName(r.projectId):'', x.date||'', x.time||'', x.type||'', w?w.fullName:'', c?c.course.name:'', x.tag||'', x.matters||'', x.action||'', x.reportedTo||'', scaffInspectorIssues(x.inspector, x.date, r).join(' | ')]); }
   const cancRows=[['Date','Trip','Job no.','Project','Client','Location','Stage','Reason','Cancelled by','Crew','Km (one way)','Km how'], ...scaffCancelled(list).map(x=>[x.date, x.kind, x.r.jobNo||'', x.r.projectId?projectName(x.r.projectId):'', x.r.client||'', x.r.location||'', x.stage, x.reason, x.by, scaffCrewNames(x.crew).join(', '), x.km??'', kmHow(x.src, x.km)])];
   const days=new Map(); const bump=(d,i,v)=>{ if(!d) return; if(!days.has(d)) days.set(d,[0,0,0,0,0,0,0,0]); days.get(d)[i]++; const k=SCAFF_VOLUMES.indexOf(v); if(k>-1) days.get(d)[2+i*3+k]++; };
   list.forEach(r=>{ if(scaffUpDone(r)) bump(r.rigUpDate,0,r.volume); bump(r.rigDownDate,1,r.volume); });
   const daily=[['Date','Rig-ups','Rig-downs', ...SCAFF_VOLUMES.map(v=>'Rig-ups '+v), ...SCAFF_VOLUMES.map(v=>'Rig-downs '+v)], ...[...days.keys()].sort().map(d=>[d, ...days.get(d)])];
-  const standing=[['Job no.','Project','Location / well head','Scaffold tag','Volume','Rig-up date','Days standing','Rig-up crew'], ...list.filter(scaffStanding).sort((a,b)=>(scaffDays(b)||0)-(scaffDays(a)||0)).map(r=>[r.jobNo||'', r.projectId?projectName(r.projectId):'', r.location||'', r.tagNo||'', r.volume||'', r.rigUpDate||'', scaffDays(r)??'', scaffCrewNames(r.rigUpCrew).join(', ')])];
+  const standing=[['Job no.','Project','Location / well head','Scaffold tag','Volume','Rig-up date','Days standing','Rig-up crew','Inspection status'], ...list.filter(scaffStanding).sort((a,b)=>(scaffDays(b)||0)-(scaffDays(a)||0)).map(r=>[r.jobNo||'', r.projectId?projectName(r.projectId):'', r.location||'', r.tagNo||'', r.volume||'', r.rigUpDate||'', scaffDays(r)??'', scaffCrewNames(r.rigUpCrew).join(', '), (scaffInspState(r)||{}).text||''])];
   const wb=XLSX.utils.book_new();
   const s1=XLSX.utils.aoa_to_sheet(jobs); s1['!cols']=jobs[0].map(h=>({wch:/crew|Notes|outcome/i.test(h)?30:Math.max(10, Math.min(22, h.length+2))}));
   const s4=XLSX.utils.aoa_to_sheet(cancRows.length>1?cancRows:[...cancRows, ['No cancelled trips']]); s4['!cols']=cancRows[0].map(h=>({wch:/Reason|Crew/.test(h)?30:14}));
   const s2=XLSX.utils.aoa_to_sheet(daily); s2['!cols']=[{wch:12},{wch:9},{wch:10}, ...new Array(6).fill({wch:17})];
   const s3=XLSX.utils.aoa_to_sheet(standing.length>1?standing:[...standing, ['No scaffolds standing']]); s3['!cols']=[{wch:14},{wch:22},{wch:24},{wch:12},{wch:11},{wch:12},{wch:13},{wch:34}];
   XLSX.utils.book_append_sheet(wb, s1, 'Jobs'); XLSX.utils.book_append_sheet(wb, s2, 'Daily summary'); XLSX.utils.book_append_sheet(wb, s3, 'Standing now'); XLSX.utils.book_append_sheet(wb, s4, 'Cancelled trips');
+  { const s5=XLSX.utils.aoa_to_sheet(inspRows.length>1?inspRows:[...inspRows, ['No inspections recorded']]); s5['!cols']=inspRows[0].map(h=>({wch:/Matters|Action|Warnings/.test(h)?34:16})); XLSX.utils.book_append_sheet(wb, s5, 'Inspections'); }
   XLSX.writeFile(wb, `Burhan_Scaffolding_Jobs_${scaffDash.project==='all'?'':projectName(scaffDash.project).replace(/[^\w-]+/g,'_')+'_'}${localToday()}.xlsx`);
 }
 
@@ -6435,7 +6530,7 @@ regDefine({
   badgesOf:r=>(!scaffUpDone(r)?`<span class="badge muted">Rig-up cancelled</span>`:scaffStanding(r)?`<span class="badge warn">Standing · ${scaffDays(r)??'—'} days</span>`:`<span class="badge ok">Rigged down · stood ${scaffDays(r)} days</span>`)+((r.downCancels||[]).length?` <span class="badge warn">${r.downCancels.length} cancelled rig-down trip${r.downCancels.length===1?'':'s'}</span>`:''),
   searchText:r=>[r.jobNo, r.location, r.tagNo, r.volume, r.client, r.requestedBy, r.workOrder, r.projectId?projectName(r.projectId):'', ...scaffCrewNames(r.rigUpCrew), ...scaffCrewNames(r.rigDownCrew)].join(' '),
   extraMatch:r=>scaffDash.project==='all' || r.projectId===scaffDash.project,
-  addFields:['rigUpDate','projectId','client','requestedBy','requesterPhone','workOrder','location','volume','lifts','tagNo','upOutcome','upCancelStage','upCancelReason','upCancelledBy','upFrom','upVehicle','upKmNote','rigUpCrew','notes'], addDefaults:{rigUpDate:()=>localToday(), projectId:()=>scaffDash.project!=='all'?scaffDash.project:(scaffProjects().length===1?scaffProjects()[0].id:'')},
+  addFields:['rigUpDate','projectId','client','requestedBy','requesterPhone','workOrder','location','volume','lifts','tagNo','upOutcome','upCancelStage','upCancelReason','upCancelledBy','upFrom','upVehicle','upKmNote','rigUpCrew','chargehand','crewCheck','notes'], addDefaults:{rigUpDate:()=>localToday(), projectId:()=>scaffDash.project!=='all'?scaffDash.project:(scaffProjects().length===1?scaffProjects()[0].id:'')},
   keepAddOpen:(f, d)=>{ for(const k of ['location','tagNo','lifts','notes','workOrder','upCancelReason','upCancelledBy']){ const el=f.querySelector(`[data-rf="${k}"]`); if(el) el.value=''; } const v=f.querySelector('[data-rf="volume"]'); if(v) v.value='';
     const dl=document.getElementById('dl_location'); if(dl && d.location && ![...dl.options].some(o=>o.value===d.location)) dl.insertAdjacentHTML('beforeend', `<option value="${esc(d.location)}">`);
     const oc=f.querySelector('[data-rf="upOutcome"]'); if(oc){ oc.value='Completed'; applyShowWhen(f); } updateScaffKm(f);
@@ -6467,14 +6562,30 @@ regDefine({
       {key:'upVehicle', label:'Vehicle', type:'textlist', options:scaffVehicleOptions, placeholder:'e.g. OM 1234'},
       {key:'upKmNote', label:'', type:'kmline'},
       {key:'rigUpCrew', label:'Crew', type:'crew'},
+      {key:'chargehand', label:'Chargehand (leads the gang)', type:'pick', empty:'Select…', options:()=>activeWorkers().filter(w=>(w.status||'active')!=='inactive' && workerDivKey(w)==='Scaffolding').sort((a,b)=>(a.fullName||'').localeCompare(b.fullName||'')).map(w=>({value:w.id, label:`${w.fullName||'—'}${(c=>c?' — '+(c.course.card?c.course.card+' ':'')+c.code.replace('CISRS ',''):'')(scaffCardOf(w))}`}))},
+      {key:'crewCheck', label:'', type:'crewcheck', crewKey:'rigUpCrew'},
       {key:'notes', label:'Notes', type:'textarea', wide:true},
     ]}]},
+    {key:'sub:inspections', label:'Inspections', sub:'inspections', showIf:r=>scaffUpDone(r), pre:r=>scaffInspSummaryHtml(r)},
     {key:'down', label:'Rig down', html:r=>scaffDownHtml(r)}],
+  subs:{inspections:{label:'Scaffold inspections', addLabel:'Record inspection', empty:'No inspection recorded — SP-1257 needs a handover inspection before first use, then at least every 7 days until dismantled.',
+    defaults:r=>({date:localToday(), time:(d=>String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'))(new Date()), type:(r.inspections||[]).length?'7-day inspection':'Handover (before first use)', tag:'Green — safe to use'}),
+    fields:[{key:'date', label:'Date', type:'date', required:true},{key:'time', label:'Time', type:'time'},
+      {key:'type', label:'Inspection', type:'select', options:SCAFF_INSP_TYPES, required:true},
+      {key:'inspector', label:'Scaffold Inspector', type:'pick', required:true, empty:'Select…', options:scaffInspectorOptions},
+      {key:'tag', label:'Tag / result', type:'select', options:['Green — safe to use','Red — do not use'], required:true},
+      {key:'matters', label:'Matters identified (defects / risks)', type:'textarea', wide:true},
+      {key:'action', label:'Action taken / further action', wide:true},
+      {key:'reportedTo', label:'Reported to (person responsible)'}],
+    hideInCard:['date','time','tag','inspector','type'], sort:(a,b)=>String(b.date||'').localeCompare(String(a.date||'')) || String(b.time||'').localeCompare(String(a.time||'')),
+    title:(x, r)=>`<span class="mono">${esc(x.date||'—')}${x.time?' '+esc(x.time):''}</span> · ${esc(x.type||'')} · ${String(x.tag||'').startsWith('Red')?'<span class="badge danger">Red tag</span>':'<span class="badge ok">Green tag</span>'}`,
+    body:(x, r)=>{ const w=workers.find(q=>q.id===x.inspector), warn=scaffInspectorIssues(x.inspector, x.date, r); return `<div class="wsub" style="margin:2px 0 4px;">Inspector: <strong>${esc(w?w.fullName:(x.inspectorName||'—'))}</strong>${warn.length?` ${warn.map(m=>`<span class="badge warn" title="${esc(m)}">${esc(m.split(' — ')[0])}</span>`).join(' ')}`:''}</div>`; },
+    onSave:(r, list)=>scaffInspComputed(list)}},
   columns:[
     {label:'Job', cls:'mono', html:r=>`<strong>${esc(r.jobNo||'—')}</strong><div class="wsub">${esc(r.rigUpDate||'')}</div>`},
     {label:'Location', html:r=>`<div class="wname">${esc(r.location||'—')}</div><div class="wsub">${esc([r.client, r.projectId?projectName(r.projectId):'', r.tagNo?'Tag '+r.tagNo:''].filter(Boolean).join(' · ')||'—')}</div>`},
     {label:'Volume', html:r=>scaffVolBadge(r.volume)+(r.lifts!==''&&r.lifts!=null?`<div class="wsub">${esc(String(r.lifts))} lift${Number(r.lifts)===1?'':'s'}</div>`:'')},
-    {label:'Rig-up crew', html:r=>{ const n=scaffCrewNames(r.rigUpCrew); return n.length?`<strong>${n.length}</strong> <span class="wsub">${esc(n.slice(0,3).join(', '))}${n.length>3?' …':''}</span>`:'<span class="wsub">—</span>'; }},
+    {label:'Rig-up crew', html:r=>{ const n=scaffCrewNames(r.rigUpCrew); if(!n.length) return '<span class="wsub">—</span>'; const ck=scaffCrewCheck(r.rigUpCrew, r.rigUpDate); return `<strong>${n.length}</strong> <span class="wsub">${esc(n.slice(0,3).join(', '))}${n.length>3?' …':''}</span>${ck.issues.length&&scaffUpDone(r)?`<div><span class="badge warn" title="${esc(ck.issues.join(' '))}">Crew check</span></div>`:''}`; }},
     {label:'Rig-down', html:r=>!scaffUpDone(r)?`<span class="badge muted">Rig-up cancelled</span><div class="wsub">${esc([r.upCancelStage, r.upCancelReason].filter(Boolean).join(' · '))}</div>`:scaffStanding(r)?`<span class="badge warn">Standing</span>${canEdit()?` <button type="button" class="btn btn-sm" data-reg-tab="down">Rig down</button>`:''}`:`<span class="mono">${esc(r.rigDownDate)}</span><div class="wsub">${(r.rigDownCrew||[]).length} crew</div>`},
     {label:'Days', cls:'num', html:r=>`<strong>${scaffDays(r)??'—'}</strong>`},
   ],
@@ -6483,7 +6594,7 @@ regDefine({
     const cT=scaffCancelled(list).filter(x=>x.date===t).length;
     return [{label:'Rig-ups today', num:list.filter(r=>scaffUpDone(r) && r.rigUpDate===t).length, sub:`${list.filter(r=>scaffUpDone(r) && r.rigUpDate===y).length} yesterday · ${list.filter(r=>scaffUpDone(r) && String(r.rigUpDate||'').startsWith(mo)).length} this month${cT?` · ${cT} cancelled today`:''}`, icon:'ladder'},
       {label:'Rig-downs today', num:list.filter(r=>r.rigDownDate===t).length, sub:`${list.filter(r=>r.rigDownDate===y).length} yesterday · ${dm.length} this month`, icon:'check'},
-      {label:'Standing now', num:st.length, sub:st.length?`longest ${Math.max(...st.map(r=>scaffDays(r)||0))} days`:'none standing', icon:'hourglass'},
+      {label:'Standing now', num:st.length, cls:st.some(r=>{ const x=scaffInspState(r); return x && x.cls==='danger'; })?'warn':'', sub:st.length?`longest ${Math.max(...st.map(r=>scaffDays(r)||0))} days · ${st.filter(r=>{ const x=scaffInspState(r); return x && x.cls==='danger'; }).length} inspection overdue / missing / red`:'none standing', icon:'hourglass'},
       {label:'Average days standing', num:dm.length?Math.round(dm.reduce((n,r)=>n+(scaffDays(r)||0),0)/dm.length):'—', sub:`rigged down this month`, icon:'clock'}]; },
 });
 function scaffCleanTrip(d){
@@ -6496,14 +6607,14 @@ REG.scaff.validate=d=>{
   if(d.upOutcome==='Cancelled' && !String(d.upCancelReason||'').trim()) return 'Enter the reason the trip was cancelled';
   return '';
 };
-REG.scaff.beforeCreate=d=>{ d.rigUpCrew=d.rigUpCrew||[]; d.rigDownCrew=d.rigDownCrew||[]; d.downCancels=[]; d.location=(d.location||'').trim(); d.upOutcome=d.upOutcome||'Completed';
+REG.scaff.beforeCreate=d=>{ d.rigUpCrew=d.rigUpCrew||[]; d.rigDownCrew=d.rigDownCrew||[]; d.downCancels=[]; d.inspections=d.inspections||[]; delete d.crewCheck; d.location=(d.location||'').trim(); d.upOutcome=d.upOutcome||'Completed';
   if(!d.client && d.projectId){ const s=activeSites().find(x=>x.id===d.projectId); if(s && s.clientName) d.client=s.clientName; }
   scaffCleanTrip(d); d.open=d.upOutcome!=='Cancelled' && !d.rigDownDate; };
 REG.scaff.beforeUpdate=(data, cur)=>{
   if('location' in data) data.location=(data.location||'').trim();
   if('upOutcome' in data){ const msg=REG.scaff.validate({...cur, ...data}); if(msg){ toast(msg); return null; } }
   if('upFrom' in data && !('location' in data)) data.location=cur.location||'';
-  scaffCleanTrip(data);
+  scaffCleanTrip(data); delete data.crewCheck;
   if('upOutcome' in data){ if(data.upOutcome==='Cancelled'){ if(cur.rigDownDate){ toast('This scaffold was already rigged down — undo the rig-down first'); return null; } data.open=false; } else data.open=!(data.rigDownDate!==undefined?data.rigDownDate:cur.rigDownDate); }
   const up=data.rigUpDate!==undefined?data.rigUpDate:cur.rigUpDate, down=data.rigDownDate!==undefined?data.rigDownDate:cur.rigDownDate;
   if(up && down && down<up){ toast('Rig-down date cannot be before the rig-up date'); return null; }
@@ -9686,7 +9797,7 @@ function recordTabHtml(w,key,cfg){
     if(f.type==='workers') return workerPickFieldHtml(f, editing, w);
     if(key==='trainings' && f.key==='name'){ const names=[...new Set([...trainingCatalogue(), ...PDO_COURSES.map(pdoCourseLabel)])], cur=pdoCourseOf(val);
       const groups=[...new Set(PDO_COURSES.map(c=>c.lvl))];
-      return `<label class="span-all">PDO course (SP-1157)<select data-pdo-pick><option value="">— Not a PDO course / type the name below —</option>${groups.map(g=>`<optgroup label="${esc(g)}">${PDO_COURSES.filter(c=>c.lvl===g).map(c=>`<option value="${esc(c.code)}" ${cur&&cur.code===c.code?'selected':''}>${esc(pdoCourseLabel(c))} — ${c.years?c.years+' yr'+(c.years>1?'s':''):'no expiry'}</option>`).join('')}</optgroup>`).join('')}</select></label>
+      return `<label class="span-all">PDO course (SP-1157 / SP-1257)<select data-pdo-pick><option value="">— Not a PDO course / type the name below —</option>${groups.map(g=>`<optgroup label="${esc(g)}">${PDO_COURSES.filter(c=>c.lvl===g).map(c=>`<option value="${esc(c.code)}" ${cur&&cur.code===c.code?'selected':''}>${esc(pdoCourseLabel(c))}${esc(pdoCardText(c))} — ${c.years?c.years+' yr'+(c.years>1?'s':''):'no expiry'}</option>`).join('')}</optgroup>`).join('')}</select></label>
         <label>${esc(f.label)} *<input type="text" data-field="name" value="${esc(val)}" required list="reqTrainingNames" placeholder="${esc(f.placeholder||'')}"><datalist id="reqTrainingNames">${names.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist></label>`; }
     const firstVal = editing ? (editing[cfg.fields[0].key]||'') : '';
     const sw = f.showWhen ? ` data-show-when="${esc(f.showWhen.join('|'))}" ${f.showWhen.includes(firstVal)?'':'hidden'}` : '';
@@ -10588,7 +10699,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(c.years){ const x=new Date(d+'T00:00:00'); x.setFullYear(x.getFullYear()+c.years); ex.value=ymd(x); } else ex.value='';
     ex.dataset.auto='1';
     let hint=form.querySelector('.pdo-hint'); if(!hint){ hint=document.createElement('p'); hint.className='wsub pdo-hint span-all'; hint.style.margin='0'; const lab=ex.closest('label'); (lab||ex).insertAdjacentElement('afterend', hint); }
-    hint.textContent = c.years ? `Valid until set from SP-1157: ${c.code} is re-certified every ${c.years} year${c.years>1?'s':''} — change it if the certificate says otherwise.` : `${c.code} has no re-certification in SP-1157 — no expiry.`;
+    hint.textContent = c.years ? `Valid until set automatically: ${c.code}${c.card?' ('+c.card+' card)':''} is valid ${c.years} year${c.years>1?'s':''} — change it if the certificate / card says otherwise.` : `${c.code} has no re-certification — no expiry.`;
   }
   document.getElementById('drawerBody').addEventListener('change', e=>{
     const pk=e.target.closest('[data-pdo-pick]'); if(pk){ const form=pk.closest('form'), c=PDO_COURSES.find(x=>x.code===pk.value), nm=form && form.querySelector('[data-field="name"]'); if(c && nm){ nm.value=pdoCourseLabel(c); const ex=form.querySelector('[data-field="expiry"]'); if(ex && !ex.value) ex.dataset.auto='1'; pdoAutoExpiry(form); } return; }
@@ -12078,7 +12189,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
   document.querySelector('.sidenav-btn[data-section="calendar"]').addEventListener('click', ()=>renderCalendar());
   // --- Batch 37: scaffolding — outcome fields, km, places ---
-  document.addEventListener('change', e=>{ const t=e.target; if(t.matches && t.matches('[data-rf],[data-sf],[data-sd]')){ const f=t.closest('form'); if(f){ applyShowWhen(f); updateScaffKm(f); } } });
+  document.addEventListener('change', e=>{ const t=e.target; if(t.matches && t.matches('[data-rf],[data-sf],[data-sd]')){ const f=t.closest('form'); if(f){ applyShowWhen(f); updateScaffKm(f); updateCrewCheck(f); } } });
   document.addEventListener('change', e=>{ const t=e.target; if(!t.matches || !t.matches('[data-rf="projectId"]')) return; const f=t.closest('form'); const c=f && f.querySelector('[data-rf="client"]'); if(!c || c.value.trim() || !f.closest('#scaffAddPanel,#regDrawer')) return; const s=activeSites().find(x=>x.id===t.value); if(s && s.clientName) c.value=s.clientName; });
   document.addEventListener('input', e=>{ const t=e.target; if(t.matches && t.matches('[data-rf$="From"],[data-rf="location"],[data-sd$="From"]')){ const f=t.closest('form'); if(f) updateScaffKm(f); } });
   document.addEventListener('click', async e=>{
