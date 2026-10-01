@@ -2497,7 +2497,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b38';
+const APP_BUILD='b39';
 let appOutdated=false;
 // Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
 let _verTag=null, _verLast=0;
@@ -5960,6 +5960,7 @@ function placesGpx(list){
   return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Burhan HSE Portal" xmlns="http://www.topografix.com/GPX/1/1">\n${list.map(p=>`  <wpt lat="${p.lat}" lon="${p.lng}"><name>${x(p.name)}</name></wpt>`).join('\n')}\n</gpx>\n`;
 }
 function scaffPlacesPanelHtml(){
+  return '';   // Batch 39: Places box removed at the user's request (distance comes from the map search + road route)
   if(!scaffPlacesOpen) return '';
   const places=scaffPlaces().slice().sort((a,b)=>a.name.localeCompare(b.name));
   const missing=[...new Set([...scaffLocations(), ...regActive('scaff').map(r=>(r.upFrom||'').trim()), ...regActive('scaff').map(r=>(r.downFrom||'').trim())].filter(n=>n && !placeOf(n)))].sort();
@@ -5992,13 +5993,13 @@ function updateScaffKm(root, noFetch){
     const missing=[from, to].filter(n=>!pointOf(n));
     if(!d){
       const notFound=missing.filter(n=>scaffGeo.get(placeKey(n))===null);
-      el.innerHTML = notFound.length ? `“${esc(notFound.join('” and “'))}” not found on the map — add the GPS point once in <button type="button" class="att-link" data-sp-edit="new:${esc(notFound[0])}">Places &amp; km</button> (paste GPS, a Google Maps or OsmAnd link).`
+      el.innerHTML = notFound.length ? `“${esc(notFound.join('” and “'))}” not found on the map — km can't be worked out (try the nearest town or village name).`
         : `Finding ${esc(missing.join(' and '))} on the map…`;
     } else {
-      el.innerHTML = d.src==='road' ? `Distance <strong>${d.km} km</strong> one way by road (OpenStreetMap route)${d.offKm>=1?` · includes ≈ ${d.offKm} km off-road to the GPS point`:''}`
+      el.innerHTML = d.src==='road' ? `Distance <strong>${d.km} km</strong> one way by road (OpenStreetMap route)${d.offKm>=1?` · includes ≈ ${d.offKm} km off the mapped road`:''}`
         : `≈ <strong>${d.km} km</strong> one way (estimate — straight line ${d.straight} km × ${SCAFF_KM_FACTOR})${busy?' · checking road route…':''}`;
       const found=[from, to].map(n=>pointOf(n)).filter(x=>x && x.src==='map');
-      if(found.length) el.innerHTML+=`<div class="wsub">Found on the map: ${found.map(x=>esc(x.label||'')).join(' · ')} — saved to Places when you save this job.</div>`;
+      if(found.length) el.innerHTML+=`<div class="wsub">Found on the map: ${found.map(x=>esc(x.label||'')).join(' · ')}</div>`;
     }
     if(!noFetch && (!d || d.src!=='road')){ clearTimeout(_kmTimer); _kmTimer=setTimeout(()=>ensureDistance(from, to).then(()=>{ document.querySelectorAll('form').forEach(f=>{ if(f.querySelector('[data-km-for]')) updateScaffKm(f, true); }); }), 500); }
   });
@@ -6029,7 +6030,7 @@ regDefine({
   key:'scaff', collection:'scaffJobs', singular:'Scaffold job', title:'Scaffolding Jobs', tagline:'Rig up · Rig down · Every well head',
   addLabel:'+ Rig-up', addTitle:'New rig-up', noField:'jobNo', noPrefix:'SCF', noYear:true, dateField:'rigUpDate',
   listen:scaffListen, topPanel:()=>renderScaffTop(),
-  headerButtons:'<button class="btn btn-sm" type="button" id="scaffPlacesBtn">'+ic('pin')+' Places &amp; km</button><button class="btn btn-sm" type="button" id="scaffExportBtn">'+ic('download')+' Export Excel</button>',
+  headerButtons:'<button class="btn btn-sm" type="button" id="scaffExportBtn">'+ic('download')+' Export Excel</button>',
   searchPlaceholder:'Search location, tag, job no., crew…', emptyEditor:'No scaffolding jobs yet — click “+ Rig-up” for each scaffold put up today. When it comes down, click “Rig down” on its row.', emptyViewer:'No scaffolding jobs recorded yet.',
   titleOf:r=>r.location||'Scaffold', subOf:r=>[r.projectId?projectName(r.projectId):'', r.volume, r.rigUpDate?'up '+r.rigUpDate:'', r.rigDownDate?'down '+r.rigDownDate:'standing'].filter(Boolean).join(' · '),
   badgesOf:r=>(!scaffUpDone(r)?`<span class="badge muted">Rig-up cancelled</span>`:scaffStanding(r)?`<span class="badge warn">Standing · ${scaffDays(r)??'—'} days</span>`:`<span class="badge ok">Rigged down · stood ${scaffDays(r)} days</span>`)+((r.downCancels||[]).length?` <span class="badge warn">${r.downCancels.length} cancelled rig-down trip${r.downCancels.length===1?'':'s'}</span>`:''),
@@ -6042,7 +6043,7 @@ regDefine({
     const loc=f.querySelector('[data-rf="location"]'); if(loc) loc.focus(); toast(d.upOutcome==='Cancelled'?'Cancelled trip saved':'Rig-up saved — date, project, client and crew are kept for the next one'); },
   segs:[{key:'standing', label:'Standing now', match:scaffStanding},{key:'down', label:'Rigged down', match:r=>scaffUpDone(r) && !!r.rigDownDate},{key:'canc', label:'Cancelled trips', match:r=>!scaffUpDone(r) || (r.downCancels||[]).length>0}],
   sort:(a,b)=>String(b.rigUpDate||'').localeCompare(String(a.rigUpDate||'')) || String(b.jobNo||'').localeCompare(String(a.jobNo||'')),
-  tabs:[{key:'main', label:'Rig-up', pre:r=>{ const pt=pointOf(r.location); return pt?`<p class="wsub" style="margin:0 0 10px;">${ic('pin')} ${esc(r.location)} — open in ${placeLinksHtml(pt)}</p>`:''; }, groups:[
+  tabs:[{key:'main', label:'Rig-up', groups:[
     {title:'Job', fields:[
       {key:'jobNo', label:'Job no.', required:true},
       {key:'rigUpDate', label:'Rig-up date', type:'date', required:true},
@@ -6112,7 +6113,7 @@ REG.scaff.beforeUpdate=(data, cur)=>{
 };
 // before saving: look up the places / road route (max 6 s — otherwise the estimate is saved)
 REG.scaff.prepare=d=>{ const x=scaffDistance(d.upFrom, d.location); if(d.upFrom && d.location && (!x || x.src!=='road')) toast('Working out the distance…'); return Promise.race([ensureDistance(d.upFrom, d.location), new Promise(r=>setTimeout(r, 6000))]); };
-REG.scaff.afterSave=r=>{ scaffKeepFoundPlaces([r.upFrom, r.location, r.downFrom]); if(scaffOlder.has(r.id)){ scaffOlder.set(r.id, {...scaffOlder.get(r.id), ...r}); if(scaffRefresh) scaffRefresh(); } };
+REG.scaff.afterSave=r=>{ if(scaffOlder.has(r.id)){ scaffOlder.set(r.id, {...scaffOlder.get(r.id), ...r}); if(scaffRefresh) scaffRefresh(); } };
 REG.scaff.customSubmit={
   down: async (r, form)=>{
     const q=k=>{ const x=form.querySelector(`[data-sd="${k}"]`); return x?String(x.value||'').trim():''; };
@@ -6124,7 +6125,7 @@ REG.scaff.customSubmit={
     if(q('downOutcome')==='Cancelled'){
       const reason=q('reason'); if(!reason){ toast('Enter the reason the trip was cancelled'); return; }
       const c={id:'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), date, stage:q('stage'), reason, cancelledBy:q('cancelledBy'), crew, from, vehicle:veh, km:q('stage')==='Before leaving'?'':km, kmSrc:q('stage')==='Before leaving'?'':kmSrc};
-      if(await regUpdate('scaff', r.id, {downCancels:(r.downCancels||[]).concat([c])}, true)){ toast('Cancelled rig-down trip saved — the scaffold is still standing'); scaffKeepFoundPlaces([from]); }
+      if(await regUpdate('scaff', r.id, {downCancels:(r.downCancels||[]).concat([c])}, true)){ toast('Cancelled rig-down trip saved — the scaffold is still standing'); }
       return;
     }
     const upd={rigDownDate:date, rigDownCrew:crew, downFrom:from, downVehicle:veh, downKm:km, downKmSrc:kmSrc, downRequestedBy:q('downRequestedBy'), downWorkOrder:q('downWorkOrder')};
