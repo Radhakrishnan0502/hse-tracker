@@ -34,6 +34,7 @@
   --warn:#ffc93c;    --warn-bg:#302810;
   --danger:#ff5a5a;  --danger-bg:#361519;
   --muted:#8fb1c8;   --muted-bg:#10243b;
+  --band-red:#ff5a5a; --band-orange:#ff8c3a; --band-yellow:#ffd23f; --band-green:#35e08a;   /* training dial bands */
   --shadow:0 1px 2px rgba(0,0,0,.6), 0 12px 30px -16px rgba(0,0,0,.9);
   --logo-shadow:0 0 16px rgba(35,190,255,.35);
   /* categorical KPI-tile accents — fixed order, validated for CVD + contrast on --bg */
@@ -66,6 +67,7 @@
   --warn:#b45309;    --warn-bg:#fef3e2;
   --danger:#c0311a;  --danger-bg:#fdeceb;
   --muted:#5b6475;   --muted-bg:#eef0f3;
+  --band-red:#c0311a; --band-orange:#e2600c; --band-yellow:#b98a00; --band-green:#0f7650;
   --shadow:0 1px 2px rgba(16,24,40,.05), 0 8px 20px -12px rgba(16,24,40,.14);
   --logo-shadow:0 1px 6px rgba(16,24,40,.12);
   --accent:#0b7fb3;  --accent-ink:#ffffff;
@@ -866,6 +868,10 @@ th.mx-cat-opal{box-shadow:inset 0 3px 0 var(--cat-1);} th.mx-cat-client{box-shad
 @media (max-width:760px){ .req-trow{grid-template-columns:1fr 34px;} .req-trow select, .req-tclients{grid-column:1 / 2;} }
 .req-grp{margin-top:8px; padding-top:6px; border-top:1px dashed var(--line);} .req-grp:first-of-type{border-top:0;}
 .req-grp-h{font-weight:700; font-size:12.5px; color:var(--ink); margin-bottom:4px;}
+
+/* ---- Batch 41: training dial bands ---- */
+.cc-band-key{grid-column:1/-1; display:flex; flex-wrap:wrap; justify-content:center; gap:6px 16px; font-size:11.5px; color:var(--ink-muted); margin:2px 4px 0;}
+.cc-band-key i{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px;}
 </style>
 </head>
 <body class="auth-open">
@@ -2514,7 +2520,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b40';
+const APP_BUILD='b41';
 let appOutdated=false;
 // Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
 let _verTag=null, _verLast=0;
@@ -8456,8 +8462,27 @@ function ccLtiStreak(division, project, refDay){
   }
   return {days:current, best, lastLti: ltis.length ? ltis[ltis.length-1] : null, lastFromBase: !!(base && start===base && ltis.length), since, hours:Math.round(hours), carried, company};
 }
-function ccDial(v, size, stroke, label){
-  const r=(size-stroke)/2-2, c=size/2, C=2*Math.PI*r, arc=C*0.75, col=ccStatusColor(v), to=v===null?arc:arc*(1-v/100);
+/* Batch 41: training dials — 4 bands (below 50 red · 50–79 orange · 80–89 yellow · 90+ green) and a speedometer-style
+   ring that blends from red at the start to the band colour at the tip */
+function bandColor(v){ return v===null||v===undefined ? 'var(--ink-muted)' : v<50 ? 'var(--band-red)' : v<80 ? 'var(--band-orange)' : v<90 ? 'var(--band-yellow)' : 'var(--band-green)'; }
+const BAND_STOPS=[[0,'--band-red'],[46,'--band-red'],[54,'--band-orange'],[76,'--band-orange'],[82,'--band-yellow'],[87,'--band-yellow'],[92,'--band-green'],[100,'--band-green']];
+function bandBlend(p){
+  for(let i=1;i<BAND_STOPS.length;i++){ const [p1,c1]=BAND_STOPS[i], [p0,c0]=BAND_STOPS[i-1]; if(p<=p1){ if(c0===c1) return `var(${c0})`; const t=Math.round((p-p0)*100/(p1-p0)); return `color-mix(in srgb, var(${c0}) ${100-t}%, var(${c1}))`; } }
+  return 'var(--band-green)';
+}
+let _dialId=0;
+function ccDial(v, size, stroke, label, opts){
+  const r=(size-stroke)/2-2, c=size/2, C=2*Math.PI*r, arc=C*0.75, col=opts&&opts.bands ? bandColor(v) : ccStatusColor(v), to=v===null?arc:arc*(1-v/100);
+  if(opts && opts.bands){
+    const id='dm'+(++_dialId), N=60, pt=p=>{ const a=(135+p*270)*Math.PI/180; return `${(c+r*Math.cos(a)).toFixed(2)} ${(c+r*Math.sin(a)).toFixed(2)}`; };
+    const segs=[...Array(N)].map((_,i)=>{ const p0=i? i/N-0.004 : -0.03, p1=i===N-1 ? 1.03 : (i+1)/N+0.004; return `<path d="M${pt(p0)} A${r.toFixed(2)} ${r.toFixed(2)} 0 0 1 ${pt(p1)}" fill="none" stroke-width="${stroke}" style="stroke:${bandBlend((i+0.5)*100/N)}"/>`; }).join('');
+    const ticks=size>=90 ? [...Array(24)].map((_,i)=>{ const a=(135+i*270/23)*Math.PI/180, r1=r-stroke/2-4, r2=r1-4; return `<line x1="${(c+r1*Math.cos(a)).toFixed(1)}" y1="${(c+r1*Math.sin(a)).toFixed(1)}" x2="${(c+r2*Math.cos(a)).toFixed(1)}" y2="${(c+r2*Math.sin(a)).toFixed(1)}" stroke="var(--line)" stroke-width="1"/>`; }).join('') : '';
+    return `<svg viewBox="0 0 ${size} ${size}" role="img" aria-label="${esc(label)} ${v===null?'no data':v+'%'}">
+      <circle cx="${c}" cy="${c}" r="${r.toFixed(1)}" fill="none" stroke="var(--surface-2)" stroke-width="${stroke}" stroke-dasharray="${arc.toFixed(1)} ${C.toFixed(1)}" transform="rotate(135 ${c} ${c})" stroke-linecap="round"/>
+      <mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="${size}" height="${size}"><circle class="cc-arc" cx="${c}" cy="${c}" r="${r.toFixed(1)}" fill="none" stroke="#fff" stroke-width="${stroke}" stroke-dasharray="${arc.toFixed(1)} ${C.toFixed(1)}" stroke-dashoffset="${arc.toFixed(1)}" data-to="${to.toFixed(1)}" transform="rotate(135 ${c} ${c})" stroke-linecap="round"/></mask>
+      <g mask="url(#${id})" style="filter:drop-shadow(0 0 4px ${col})">${v===null?'':segs}</g>
+      ${ticks}</svg>`;
+  }
   const ticks=size>=90 ? [...Array(24)].map((_,i)=>{ const a=(135+i*270/23)*Math.PI/180, r1=r-stroke/2-4, r2=r1-4; return `<line x1="${(c+r1*Math.cos(a)).toFixed(1)}" y1="${(c+r1*Math.sin(a)).toFixed(1)}" x2="${(c+r2*Math.cos(a)).toFixed(1)}" y2="${(c+r2*Math.sin(a)).toFixed(1)}" stroke="var(--line)" stroke-width="1"/>`; }).join('') : '';
   return `<svg viewBox="0 0 ${size} ${size}" role="img" aria-label="${esc(label)} ${v===null?'no data':v+'%'}">
     <circle cx="${c}" cy="${c}" r="${r.toFixed(1)}" fill="none" stroke="var(--surface-2)" stroke-width="${stroke}" stroke-dasharray="${arc.toFixed(1)} ${C.toFixed(1)}" transform="rotate(135 ${c} ${c})" stroke-linecap="round"/>
@@ -8565,7 +8590,8 @@ function renderCommandCentre(entries, m, key){
   } else divRows=[gauge(divLabel(division), scopeWs)].filter(Boolean);
   const noRoleN=scopeWs.filter(w=>!workerRoles(w).length).length;
   document.getElementById('ccGauges').innerHTML = divRows.length
-    ? divRows.map(r=>`<div class="cc-g">${ccDial(r.pct,120,10,r.d)}<div class="cc-gv" style="color:${ccStatusColor(r.pct)}">${r.pct}%</div><div class="cc-gl">${esc(r.d)}</div><div class="cc-gs">${esc(r.sub)}</div></div>`).join('')
+    ? divRows.map(r=>`<div class="cc-g">${ccDial(r.pct,120,10,r.d,{bands:true})}<div class="cc-gv" style="color:${bandColor(r.pct)}">${r.pct}%</div><div class="cc-gl">${esc(r.d)}</div><div class="cc-gs">${esc(r.sub)}</div></div>`).join('')
+      + `<div class="cc-band-key"><span><i style="background:var(--band-red)"></i>below 50%</span><span><i style="background:var(--band-orange)"></i>50–79%</span><span><i style="background:var(--band-yellow)"></i>80–89%</span><span><i style="background:var(--band-green)"></i>90% and above</span></div>`
       + (noRoleN ? `<p class="wsub" style="grid-column:1/-1; margin:6px 4px;">${noRoleN} worker${noRoleN===1?'':'s'} in this view ${noRoleN===1?'has':'have'} no role yet and ${noRoleN===1?'is':'are'} not counted — set roles in each worker's Profile.</p>` : '')
     : `<p class="wsub" style="grid-column:1/-1; margin:6px 4px;">${!trainingRoles().length ? (canEdit()?'Set the roles and their required trainings in <strong>Workforce → Training matrix → Roles &amp; required trainings</strong>, then give each worker their role(s).':'The HSE team has not set the required trainings yet.') : (scopeWs.length ? 'No worker in this view has a role with required trainings yet — set roles in each worker\'s Profile.' : 'No active workers in this view.')}</p>`;
   // compliance right now — for the division / project in view (QHSE documents are company-wide)
