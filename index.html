@@ -835,6 +835,22 @@ label.sj-inline select{width:auto; min-width:150px;}
 .cw-log-row{display:grid; grid-template-columns:minmax(0,1.6fr) 150px minmax(0,1fr); gap:10px; align-items:center; padding:8px 10px; border-top:1px solid var(--line);} .cw-log-row:first-child{border-top:0;}
 @media (max-width:760px){ .cw-log-row{grid-template-columns:1fr 1fr;} .cw-log-name{grid-column:1 / -1;} }
 label.cw-qty{flex-direction:row; align-items:center; gap:6px; margin:0;} label.cw-qty input{width:100%;} label.cw-qty span{font-size:12.5px; color:var(--ink-muted); min-width:30px;}
+
+/* ---- Batch 37: scaffolding trips ---- */
+.sj-r4{grid-template-columns:minmax(0,1fr) 54px 64px 66px;}
+.sj-km{min-height:18px; margin-top:-4px;} .sj-km strong{color:var(--ink);}
+.sj-canc, .sj-place{grid-template-columns:minmax(0,1fr) auto; cursor:default;} .sj-canc{cursor:pointer;} .sj-canc:hover{background:var(--muted-bg);}
+
+/* ---- Batch 37: DD-MM-YYYY date boxes ---- */
+.dmy-wrap{position:relative; display:inline-flex; align-items:center; max-width:100%; vertical-align:middle;}
+label > .dmy-wrap, .form-grid .dmy-wrap, .dmy-wrap.block{display:flex; width:100%;}
+.dmy-wrap > .dmy-input{flex:1 1 auto; min-width:0; padding-right:34px; font-variant-numeric:tabular-nums;}
+.dmy-cal{position:absolute; right:7px; top:50%; transform:translateY(-50%); width:22px; height:22px; display:flex; align-items:center; justify-content:center; color:var(--ink-muted); cursor:pointer; border-radius:5px;}
+.dmy-cal:hover{color:var(--accent); background:var(--muted-bg);}
+.dmy-native{position:absolute; inset:0; width:100%; height:100%; opacity:0; border:0; padding:0; margin:0; pointer-events:none;}
+@media (pointer:coarse){ .dmy-native{pointer-events:auto;} }
+.dmy-input.dmy-bad{border-color:var(--danger) !important;}
+.sj-ctrl .dmy-wrap{width:auto;} .sj-ctrl .dmy-input{width:158px;}
 </style>
 </head>
 <body class="auth-open">
@@ -1761,7 +1777,7 @@ label.cw-qty{flex-direction:row; align-items:center; gap:6px; margin:0;} label.c
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 <script>
 /* =========================================================================
    1. PASTE YOUR FIREBASE PROJECT CONFIG HERE
@@ -1791,13 +1807,93 @@ const db = firebase.firestore();
 function ic(name, cls){ return `<svg class="ic${cls?' '+cls:''}" aria-hidden="true"><use href="#i-${name}"/></svg>`; }
 const storage = firebase.storage();
 
+/* ================= Batch 37: dates shown and typed as DD-MM-YYYY on every device =================
+   Browsers draw <input type="date"> in the computer's own language (MM/DD on a US-English PC) and allow
+   6-digit years. Every date box is turned into a DD-MM-YYYY text box with a calendar button; the code still
+   reads/writes YYYY-MM-DD through .value, so saved data is unchanged. Dates written as YYYY-MM-DD in the
+   page text and PDFs are shown as DD-MM-YYYY. Excel exports keep the sortable YYYY-MM-DD. */
+const ISO_DATE_RE=/^(\d{4})-(\d{2})-(\d{2})$/;
+function isoToDmy(s){ const m=ISO_DATE_RE.exec(String(s||'')); return m ? `${m[3]}-${m[2]}-${m[1]}` : ''; }
+function isoDateOk(iso){ const m=ISO_DATE_RE.exec(iso); if(!m) return false; const y=+m[1], mo=+m[2], d=+m[3]; const x=new Date(y, mo-1, d); return y>=1900 && y<=2200 && x.getFullYear()===y && x.getMonth()===mo-1 && x.getDate()===d; }
+function dmyToIso(t){
+  t=String(t||'').trim(); if(!t) return '';
+  if(ISO_DATE_RE.test(t)) return isoDateOk(t) ? t : null;
+  const m=/^(\d{1,2})[-\/. ](\d{1,2})[-\/. ](\d{4})$/.exec(t); if(!m) return null;
+  const iso=`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`; return isoDateOk(iso) ? iso : null;
+}
+const _inputValue=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+function dmyRaw(inp){ return _inputValue.get.call(inp); }
+function dmyCheck(inp){
+  const raw=dmyRaw(inp).trim();
+  if(!raw){ inp.setCustomValidity(''); inp.classList.remove('dmy-bad'); return; }
+  const iso=dmyToIso(raw); let msg='';
+  if(!iso) msg='Enter the date as DD-MM-YYYY (e.g. 05-10-2026)';
+  else { const mn=inp.getAttribute('min'), mx=inp.getAttribute('max');
+    if(mn && ISO_DATE_RE.test(mn) && iso<mn) msg=`The date cannot be before ${isoToDmy(mn)}`;
+    else if(mx && ISO_DATE_RE.test(mx) && iso>mx) msg=`The date cannot be after ${isoToDmy(mx)}`; }
+  inp.setCustomValidity(msg); inp.classList.toggle('dmy-bad', !!msg && raw.length>=10);
+}
+const DMY_CAL_SVG='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>';
+function enhanceDateInput(inp){
+  if(inp.dataset.dmy || inp.type!=='date') return;
+  inp.dataset.dmy='1';
+  const iso=dmyRaw(inp), attrVal=inp.getAttribute('value');
+  inp.type='text'; inp.maxLength=10; inp.setAttribute('inputmode','numeric'); inp.setAttribute('autocomplete','off');
+  if(!inp.placeholder) inp.placeholder='DD-MM-YYYY';
+  inp.classList.add('dmy-input');
+  if(attrVal && ISO_DATE_RE.test(attrVal)) inp.setAttribute('value', isoToDmy(attrVal));   // form.reset() goes back to this
+  Object.defineProperty(inp, 'value', {configurable:true,
+    get(){ const r=dmyToIso(dmyRaw(this)); return r || ''; },
+    set(v){ const x=String(v==null?'':v); _inputValue.set.call(this, ISO_DATE_RE.test(x) ? isoToDmy(x) : x); dmyCheck(this); }});
+  inp.value=iso;
+  const wrap=document.createElement('span'); wrap.className='dmy-wrap'; if(inp.hidden) wrap.hidden=true;
+  inp.parentNode.insertBefore(wrap, inp); wrap.appendChild(inp);
+  const btn=document.createElement('span'); btn.className='dmy-cal'; btn.title='Pick from calendar'; btn.innerHTML=DMY_CAL_SVG;
+  const nat=document.createElement('input'); nat.type='date'; nat.className='dmy-native'; nat.tabIndex=-1; nat.setAttribute('aria-label','Calendar'); nat.max='9999-12-31';
+  btn.appendChild(nat); wrap.appendChild(btn);
+  if(inp.disabled || inp.readOnly) btn.hidden=true;
+  const sync=()=>{ nat.value=inp.value||''; const mn=inp.getAttribute('min'), mx=inp.getAttribute('max'); nat.min=mn&&ISO_DATE_RE.test(mn)?mn:''; nat.max=mx&&ISO_DATE_RE.test(mx)?mx:'9999-12-31'; };
+  btn.addEventListener('pointerdown', sync);
+  btn.addEventListener('click', e=>{ if(e.target===nat && window.matchMedia('(pointer:coarse)').matches) return; e.preventDefault(); sync(); try{ nat.showPicker(); }catch(err){ nat.focus(); try{ nat.click(); }catch(e2){} } });
+  nat.addEventListener('change', ()=>{ if(!nat.value) return; inp.value=nat.value; inp.dispatchEvent(new Event('input', {bubbles:true})); inp.dispatchEvent(new Event('change', {bubbles:true})); });
+}
+// typing: digits get dashes added (01102026 → 01-10-2026); a pasted YYYY-MM-DD is turned round
+document.addEventListener('input', e=>{
+  const t=e.target; if(!t.classList || !t.classList.contains('dmy-input')) return;
+  const raw=dmyRaw(t);
+  if(ISO_DATE_RE.test(raw)){ _inputValue.set.call(t, isoToDmy(raw)); }
+  else if(/^(\d{2}-){0,2}\d*$/.test(raw)){ const d=raw.replace(/\D/g,'').slice(0,8); _inputValue.set.call(t, d.slice(0,2)+(d.length>2?'-'+d.slice(2,4):'')+(d.length>4?'-'+d.slice(4,8):'')); }
+  dmyCheck(t);
+}, true);
+document.addEventListener('change', e=>{ const t=e.target; if(!t.classList || !t.classList.contains('dmy-input')) return; const iso=dmyToIso(dmyRaw(t)); if(iso) _inputValue.set.call(t, isoToDmy(iso)); dmyCheck(t); }, true);
+// page text: YYYY-MM-DD → DD-MM-YYYY (not inside form fields, scripts or styles)
+const ISO_IN_TEXT=/\b(\d{4})-(\d{2})-(\d{2})\b/g;
+function dmyText(node){
+  const skip=n=>{ const p=n.parentNode; return !p || /^(SCRIPT|STYLE|TEXTAREA|INPUT|OPTION|NOSCRIPT)$/.test(p.nodeName) || (p.closest && p.closest('[contenteditable],.no-dmy')); };
+  const fix=n=>{ const v=n.nodeValue; if(v && v.length>=10 && /\d{4}-\d{2}-\d{2}/.test(v) && !skip(n)){ const nv=v.replace(ISO_IN_TEXT, (m,y,mo,d)=>isoDateOk(m)?`${d}-${mo}-${y}`:m); if(nv!==v) n.nodeValue=nv; } };
+  if(node.nodeType===3){ fix(node); return; }
+  if(node.nodeType!==1 && node.nodeType!==11) return;
+  const w=document.createTreeWalker(node, NodeFilter.SHOW_TEXT); let n; while((n=w.nextNode())) fix(n);
+}
+function dmyScan(node){
+  if(node.nodeType===1){ if(node.matches && node.matches('input[type="date"]:not(.dmy-native)')) enhanceDateInput(node); else if(node.querySelectorAll) node.querySelectorAll('input[type="date"]:not(.dmy-native)').forEach(enhanceDateInput); }
+  dmyText(node);
+}
+function startDmy(){
+  if(window.__DMY_OFF) return;
+  dmyScan(document.body);
+  new MutationObserver(list=>{ for(const m of list){ if(m.type==='characterData') dmyText(m.target); else m.addedNodes.forEach(dmyScan); } })
+    .observe(document.body, {childList:true, subtree:true, characterData:true});
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', startDmy); else startDmy();
+
 
 
 /* ---------------- PDF helper ----------------
    jsPDF's built-in fonts can't draw some symbols (≤ ≥ → CO₂ …) — they come out as junk. pdfDoc() swaps them for
    plain equivalents, and shortens any single line that would run off the right edge of the page (with "…"). */
 const PDF_CHAR_MAP={'≤':'<=','≥':'>=','→':'->','←':'<-','↔':'<->','₂':'2','₃':'3','²':'2','³':'3','−':'-','✓':'v','✔':'v','✗':'x','✘':'x','⚠':'!','≈':'~','≠':'!=','\u00a0':' ','\u2009':' ','\u202f':' '};
-function pdfSafe(t){ if(Array.isArray(t)) return t.map(pdfSafe); if(typeof t!=='string') return t; return t.replace(/[≤≥→←↔₂₃²³−✓✔✗✘⚠≈≠\u00a0\u2009\u202f]/g, c=>PDF_CHAR_MAP[c]||c); }
+function pdfSafe(t){ if(Array.isArray(t)) return t.map(pdfSafe); if(typeof t!=='string') return t; if(/\d{4}-\d{2}-\d{2}/.test(t)) t=t.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (m,y,mo,d)=>isoDateOk(m)?`${d}-${mo}-${y}`:m); return t.replace(/[≤≥→←↔₂₃²³−✓✔✗✘⚠≈≠\u00a0\u2009\u202f]/g, c=>PDF_CHAR_MAP[c]||c); }
 function pdfDoc(opts){
   const d=new window.jspdf.jsPDF(opts);
   const text=d.text.bind(d), split=d.splitTextToSize.bind(d);
@@ -2390,6 +2486,7 @@ function startSettingsData(){
       customChecklists=(map.checklists&&map.checklists.items)||[];
       renderMonitorBar(); renderVehicleTable(); if(activeVehicleId) renderVehicleDrawer();
       renderMatrix(); renderReportAll(); renderAssuranceAll();
+      if(regState.scaff && document.getElementById('scaffSection') && !document.getElementById('scaffSection').hidden) renderRegAll('scaff');
     }, err=>{
       console.error(err); if(!auth.currentUser) return;
       settingsLoadError = err && err.code==='permission-denied' ? 'rules' : 'other';
@@ -2400,12 +2497,18 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b35';
+const APP_BUILD='b37';
 let appOutdated=false;
+// Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
+let _verTag=null, _verLast=0;
 async function checkAppVersion(){
   try{
-    if(!/^https?:/.test(location.protocol)) return;
-    const r=await fetch(new URL('index.html', location.href).href, {cache:'no-store'}); if(!r.ok) return;
+    if(!/^https?:/.test(location.protocol) || appOutdated) return;
+    if(Date.now()-_verLast < 4*60*1000) return; _verLast=Date.now();
+    const url=new URL('index.html', location.href).href;
+    if(_verTag){ const h=await fetch(url, {method:'HEAD', cache:'no-store'}); const t=h.ok && (h.headers.get('etag')||h.headers.get('last-modified')); if(t && t===_verTag) return; }
+    const r=await fetch(url, {cache:'no-store'}); if(!r.ok) return;
+    _verTag=r.headers.get('etag')||r.headers.get('last-modified')||null;
     const m=(await r.text()).match(/const APP_BUILD='([^']+)'/);
     if(m && m[1]!==APP_BUILD) showOutdatedBanner();
   }catch(e){}
@@ -2420,7 +2523,7 @@ function showOutdatedBanner(){
 }
 setInterval(checkAppVersion, 5*60*1000);
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') checkAppVersion(); });
-setTimeout(checkAppVersion, 20000);
+setTimeout(checkAppVersion, 60000);   // first check a minute after opening, so it never slows the start
 let settingsDocs={};
 function settingsStamp(docId){ return (settingsDocs[docId]||{}).updatedAt||''; }
 async function saveSettings(docId, data, baseStamp){
@@ -4167,7 +4270,22 @@ function regNextNo(key, dateStr){
 }
 function regOptions(f){ return typeof f.options==='function' ? f.options() : (f.options||[]); }
 function regFieldHtml(f, v, attr){
+  if((v===undefined || v===null || v==='') && f.default!==undefined) v=f.default;
+  const h=regFieldHtml0(f, v, attr);
+  return f.showWhen ? h.replace(/^<(label|div)/, `<$1 data-showwhen="${esc(f.showWhen)}"`) : h;
+}
+// Batch 37: show a field only when another field has a value (e.g. reason only when Outcome = Cancelled)
+function applyShowWhen(root){
+  if(!root) return;
+  root.querySelectorAll('[data-showwhen]').forEach(el=>{
+    const [k,v]=el.dataset.showwhen.split('='); const form=el.closest('form')||root;
+    const src=form.querySelector(`[data-rf="${k}"],[data-sf="${k}"],[data-sd="${k}"]`);
+    el.hidden = !(src && (src.value||'')===v);
+  });
+}
+function regFieldHtml0(f, v, attr){
   attr=attr||'data-rf';
+  if(f.type==='kmline') return `<div class="span-all wsub sj-km" data-km-for="${esc(f.key.replace(/KmNote$/,''))}"></div>`;
   const req=f.required?' *':'', cls=f.wide?' class="span-all"':'';
   if(f.type==='project') return `<label${cls}>${esc(f.label)}${req}<select ${attr}="${f.key}">${projectOptionsHtml(v||'')}</select></label>`;
   if(f.type==='pick'){ const opts=regOptions(f); return `<label${cls}>${esc(f.label)}${req}<select ${attr}="${f.key}" ${f.required?'required':''}><option value="">${esc(f.empty||'Select…')}</option>${opts.map(o=>`<option value="${esc(o.value)}" ${o.value===v?'selected':''}>${esc(o.label)}</option>`).join('')}</select></label>`; }
@@ -4221,6 +4339,7 @@ async function regCreate(key, data, openTab){
   const d={deleted:false, createdAt:new Date().toISOString(), createdBy:(u&&u.email)||'', ...data};
   for(const s of Object.keys(cfg.subs||{})) if(!d[s]) d[s]=[];
   if(cfg.noField && !d[cfg.noField]) d[cfg.noField]=regNextNo(key, d[cfg.dateField||'date']);
+  if(cfg.validate){ const msg=cfg.validate(d); if(msg){ toast(msg); return null; } }
   if(cfg.beforeCreate) cfg.beforeCreate(d);
   try{ const ref=await db.collection(cfg.collection).add(stamp(d)); toast(`${d[cfg.noField]||cfg.singular} saved`); if(cfg.afterSave) cfg.afterSave({...d, id:ref.id}); if(!cfg.keepAddOpen) openRegDrawer(key, ref.id, openTab); return ref.id; }
   catch(e){ console.error(e); toast(e&&e.code==='permission-denied'?RULES_UPDATE_MSG:'Could not save'); return null; }
@@ -4278,6 +4397,7 @@ function openRegAdd(key){
   const cfg=REG[key], fields=regFieldsOf(cfg).filter(f=>cfg.addFields.includes(f.key));
   document.getElementById(key+'AddFields').innerHTML = cfg.addFields.map(k=>fields.find(f=>f.key===k)).filter(Boolean).map(f=>regFieldHtml(f, (cfg.addDefaults||{})[f.key]!==undefined ? (typeof cfg.addDefaults[f.key]==='function'?cfg.addDefaults[f.key]():cfg.addDefaults[f.key]) : (f.type==='date'&&f.key===(cfg.dateField||'date')?localToday():''))).join('');
   document.getElementById(key+'AddPanel').hidden=false;
+  const af=document.getElementById(key+'AddFields'); applyShowWhen(af); if(key==='scaff') updateScaffKm(af);
 }
 
 /* ---- drawer ---- */
@@ -4303,6 +4423,7 @@ function renderRegDrawer(){
   else if(t.html) b.innerHTML=t.html(r);
   else b.innerHTML=regFormTabHtml(cfg, r, t);
   if(t.key==='history') loadRegHistory(cfg.collection, r.id);
+  applyShowWhen(b); if(activeReg==='scaff') updateScaffKm(b);
 }
 function regFormTabHtml(cfg, r, t){
   const head = t.key==='main' ? `${cfg.badgesOf?`<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">${cfg.badgesOf(r)}</div>`:''}${updatedNoteHtml(r)}` : '';
@@ -5577,8 +5698,36 @@ function dateAdd(d, n){ const x=new Date(d+'T00:00:00'); x.setDate(x.getDate()+n
 function monthLabel(ym){ return new Date(ym+'-01T00:00:00').toLocaleDateString('en-GB',{month:'long', year:'numeric'}); }
 function dayLabel(d){ return new Date(d+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric', month:'short'}); }
 function scaffLoadFrom(){ return monthAdd(localToday().slice(0,7), -1)+'-01'; }
-function scaffStanding(r){ return !r.rigDownDate; }
-function scaffDays(r){ if(!r.rigUpDate) return null; return Math.max(0, daysBetween(r.rigUpDate, r.rigDownDate||localToday())); }
+function scaffUpDone(r){ return (r.upOutcome||'Completed')!=='Cancelled'; }
+function scaffStanding(r){ return scaffUpDone(r) && !r.rigDownDate; }
+function scaffDays(r){ if(!r.rigUpDate || !scaffUpDone(r)) return null; return Math.max(0, daysBetween(r.rigUpDate, r.rigDownDate||localToday())); }
+/* Batch 37: request details, cancelled trips, places (GPS) and km */
+const SCAFF_CANCEL_STAGES=['Before leaving','On the road','At site'];
+const SCAFF_KM_FACTOR=1.3;   // straight-line distance × 1.3 ≈ road/track distance (estimate only)
+function scaffPlaces(){ return ((settingsDocs.scaffPlaces||{}).items)||[]; }
+function placeKey(n){ return String(n||'').trim().toLowerCase().replace(/\s+/g,' '); }
+function placeOf(name){ const k=placeKey(name); return k ? scaffPlaces().find(p=>placeKey(p.name)===k) : null; }
+function haversineKm(a, b){ const R=6371, toR=x=>x*Math.PI/180, dLat=toR(b.lat-a.lat), dLng=toR(b.lng-a.lng); const h=Math.sin(dLat/2)**2+Math.cos(toR(a.lat))*Math.cos(toR(b.lat))*Math.sin(dLng/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
+function scaffEstKm(from, to){ const a=placeOf(from), b=placeOf(to); if(!a || !b) return null; const st=haversineKm(a,b); return {straight:Math.round(st*10)/10, km:Math.round(st*SCAFF_KM_FACTOR)}; }
+function odoKm(a, b){ const x=Number(a), y=Number(b); return (a!=='' && b!=='' && a!=null && b!=null && !isNaN(x) && !isNaN(y) && y>=x) ? Math.round((y-x)*10)/10 : ''; }
+function parseCoords(t){
+  t=String(t||'').trim(); if(!t) return null;
+  const pats=[/@(-?\d{1,3}\.\d+),\s*(-?\d{1,3}\.\d+)/, /!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/, /[?&](?:q|ll|query|destination)=(-?\d{1,3}\.\d+)(?:,|%2C)\s*(-?\d{1,3}\.\d+)/i, /^(-?\d{1,3}\.\d+)\s*[,; ]\s*(-?\d{1,3}\.\d+)$/];
+  for(const re of pats){ const m=re.exec(t); if(m){ const lat=Number(m[1]), lng=Number(m[2]); if(Math.abs(lat)<=90 && Math.abs(lng)<=180) return {lat, lng}; } }
+  return null;
+}
+function scaffVehicleOptions(){ return vehicles.filter(v=>!v.deleted).map(v=>v.vehicleNumber||'').filter(Boolean).sort(); }
+function scaffPlaceOptions(){ return [...new Set([...scaffPlaces().map(p=>p.name), ...regActive('scaff').map(r=>(r.upFrom||'').trim()), ...scaffLocations()].filter(Boolean))].sort((a,b)=>a.localeCompare(b)); }
+// every cancelled trip (cancelled rig-ups + cancelled rig-down attempts)
+function scaffCancelled(list){
+  const out=[];
+  for(const r of list){
+    if(!scaffUpDone(r)) out.push({r, kind:'Rig-up', date:r.rigUpDate||'', stage:r.upCancelStage||'', reason:r.upCancelReason||'', by:r.upCancelledBy||'', km:r.upKm, estKm:r.upEstKm, crew:r.rigUpCrew||[]});
+    for(const c of (r.downCancels||[])) out.push({r, c, kind:'Rig-down', date:c.date||'', stage:c.stage||'', reason:c.reason||'', by:c.cancelledBy||'', km:c.km, estKm:c.estKm, crew:c.crew||[]});
+  }
+  return out.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+}
+function scaffKmText(km, est){ return km!==''&&km!=null ? `${fmtQty(km)} km` : (est!==''&&est!=null ? `≈ ${fmtQty(est)} km (estimate)` : ''); }
 function scaffCrewNames(ids){ return (ids||[]).map(id=>{ const w=workers.find(x=>x.id===id); return w?(w.fullName||'—'):'removed worker'; }); }
 function scaffProjects(){ const all=activeSites(); const sc=all.filter(s=>s.division==='Scaffolding'); return sc.length?sc:all; }
 function scaffJobs(){ return regActive('scaff').filter(r=>scaffDash.project==='all' || r.projectId===scaffDash.project); }
@@ -5639,7 +5788,7 @@ const inRange=(d, rg)=>!!d && d>=rg.from && d<=rg.to;
 function scaffChartHtml(list, ym){
   const days=Number(new Date(Number(ym.slice(0,4)), Number(ym.slice(5,7)), 0).getDate());
   const up=new Array(days).fill(0), dn=new Array(days).fill(0);
-  for(const r of list){ if(String(r.rigUpDate||'').startsWith(ym)) up[Number(r.rigUpDate.slice(8,10))-1]++; if(String(r.rigDownDate||'').startsWith(ym)) dn[Number(r.rigDownDate.slice(8,10))-1]++; }
+  for(const r of list){ if(scaffUpDone(r) && String(r.rigUpDate||'').startsWith(ym)) up[Number(r.rigUpDate.slice(8,10))-1]++; if(String(r.rigDownDate||'').startsWith(ym)) dn[Number(r.rigDownDate.slice(8,10))-1]++; }
   const max=Math.max(1, ...up, ...dn), top=Math.max(2, Math.ceil(max/2)*2);
   const W=760, H=190, L=26, B=22, T=8, cw=(W-L-4)/days, bw=Math.max(3, Math.min(10, (cw-6)/2)), ph=H-B-T;
   const y=v=>T+ph-(v/top)*ph;
@@ -5659,15 +5808,22 @@ function scaffChartHtml(list, ym){
   return {svg:`<svg viewBox="0 0 ${W} ${H}" class="sj-svg" role="img" aria-label="Daily rig-ups and rig-downs, ${esc(monthLabel(ym))}">${g}</svg>`, tu, td};
 }
 function scaffCountTable(title, rows, cols){
-  const row=(r, head)=>`<div class="sj-r${head?' sj-rh':''}">${r.map((c,i)=>`<span${i?' class="num"':''}>${head||!i?esc(c):(c||'<span class="wsub">0</span>')}</span>`).join('')}</div>`;
+  const row=(r, head)=>`<div class="sj-r${head?' sj-rh':''}${cols.length===4?' sj-r4':''}">${r.map((c,i)=>`<span${i?' class="num"':''}>${head||!i?esc(c):(c||'<span class="wsub">0</span>')}</span>`).join('')}</div>`;
   return `<div class="sj-tbl"><div class="sj-tbl-h">${esc(title)}</div>${rows.length?`<div class="sj-mini">${row(cols,true)}${rows.map(r=>row(r)).join('')}</div>`:'<p class="wsub" style="margin:6px 0 0;">Nothing in this period.</p>'}</div>`;
 }
 function renderScaffTop(){
   const box=document.getElementById('scaffTop'); if(!box || !auth.currentUser) return;
+  const keepPl={name:(document.getElementById('spName')||{}).value, coords:(document.getElementById('spCoords')||{}).value};
+  try{ renderScaffTop0(box); } finally { const a=document.getElementById('spName'), c=document.getElementById('spCoords'); if(a && keepPl.name!==undefined) a.value=keepPl.name; if(c && keepPl.coords!==undefined) c.value=keepPl.coords; }
+}
+function renderScaffTop0(box){
   if(regState.scaff.err==='rules'){ box.innerHTML=''; return; }
   const t=localToday(), ym=scaffDash.month||t.slice(0,7), list=scaffJobs();
   const ch=scaffChartHtml(list, ym), rg=scaffPeriod();
-  const ups=list.filter(r=>inRange(r.rigUpDate, rg)), downs=list.filter(r=>inRange(r.rigDownDate, rg));
+  const ups=list.filter(r=>scaffUpDone(r) && inRange(r.rigUpDate, rg)), downs=list.filter(r=>inRange(r.rigDownDate, rg));
+  const canc=scaffCancelled(list).filter(x=>inRange(x.date, rg)), cancMonth=scaffCancelled(list).filter(x=>String(x.date).startsWith(ym));
+  const kmAct=[...ups.map(r=>r.upKm), ...downs.map(r=>r.downKm), ...canc.map(x=>x.km)].filter(k=>k!==''&&k!=null).reduce((n,k)=>n+Number(k),0);
+  const byClient=(()=>{ const m=new Map(); const add=(k,i)=>{ k=k||'Not recorded'; if(!m.has(k)) m.set(k,[0,0,0]); m.get(k)[i]++; }; ups.forEach(r=>add(r.client,0)); downs.forEach(r=>add(r.client,1)); canc.forEach(x=>add(x.r.client,2)); return [...m.entries()].sort((a,b)=>(b[1][0]+b[1][1]+b[1][2])-(a[1][0]+a[1][1]+a[1][2])).map(([k,v])=>[k, ...v]); })();
   const by=(keyFn, label)=>{ const m=new Map(); const add=(k,i)=>{ if(!k) return; if(!m.has(k)) m.set(k,[0,0]); m.get(k)[i]++; }; ups.forEach(r=>[].concat(keyFn(r,'up')).forEach(k=>add(k,0))); downs.forEach(r=>[].concat(keyFn(r,'down')).forEach(k=>add(k,1))); return [...m.entries()].sort((a,b)=>(b[1][0]+b[1][1])-(a[1][0]+a[1][1]) || a[0].localeCompare(b[0])).map(([k,v])=>[k, v[0], v[1]]); };
   const byProj=by(r=>r.projectId?projectName(r.projectId):'No project'), byLoc=by(r=>r.location||'—');
   const byVol=SCAFF_VOLUMES.map(v=>[v, ups.filter(r=>r.volume===v).length, downs.filter(r=>r.volume===v).length]);
@@ -5680,7 +5836,7 @@ function renderScaffTop(){
     <div class="sj-head"><h3>Daily rig-ups &amp; rig-downs</h3>
       <div class="sj-ctrl"><label class="sj-inline">Project <select data-sj="project"><option value="all">All projects</option>${scaffProjects().map(s=>`<option value="${s.id}" ${s.id===scaffDash.project?'selected':''}>${esc(s.siteName||'Project')}</option>`).join('')}</select></label>
         <span class="sj-month"><button type="button" class="icon-btn" data-sj-month="-1" aria-label="Previous month">${ic('prev')}</button><strong>${esc(monthLabel(ym))}</strong><button type="button" class="icon-btn" data-sj-month="1" aria-label="Next month" ${ym>=t.slice(0,7)?'disabled':''}>${ic('next')}</button></span></div></div>
-    <div class="sj-legend"><span><i style="background:var(--cat-1)"></i>Rig-ups <b>${ch.tu}</b></span><span><i style="background:var(--cat-2)"></i>Rig-downs <b>${ch.td}</b></span><span class="wsub">Click a day to see its jobs below</span></div>
+    <div class="sj-legend"><span><i style="background:var(--cat-1)"></i>Rig-ups <b>${ch.tu}</b></span><span><i style="background:var(--cat-2)"></i>Rig-downs <b>${ch.td}</b></span>${cancMonth.length?`<span>Cancelled trips <b>${cancMonth.length}</b></span>`:''}<span class="wsub">Click a day to see its jobs below</span></div>
     ${scaffLoading?'<p class="wsub">Loading month…</p>':(!scaffMonthLoaded(ym)?`<p class="wsub">This month is older than what is loaded. <button type="button" class="att-link" data-sj-load="${ym}">Load ${esc(monthLabel(ym))}</button></p>`:'')}
     <div class="sj-chart"><div class="sj-scroll">${ch.svg}</div><div class="sj-tip" hidden></div></div>
   </div>
@@ -5688,14 +5844,17 @@ function renderScaffTop(){
     <div class="sj-head"><h3>Who did what — ${esc(rg.label)}</h3>
       <div class="sj-ctrl"><div class="seg-tabs sj-seg">${per.map(([k,l])=>`<button type="button" class="seg-btn ${scaffDash.period===k?'active':''}" data-sj-period="${k}">${l==='Whole month'?esc(monthLabel(ym).split(' ')[0]):l}</button>`).join('')}</div>
         <input type="date" data-sj="day" value="${esc(scaffDash.period==='day'?scaffDash.day:'')}" max="${t}" aria-label="Pick a day"></div></div>
-    <div class="sj-sum"><span><b>${ups.length}</b> rig-up${ups.length===1?'':'s'}</span><span><b>${downs.length}</b> rig-down${downs.length===1?'':'s'}</span>${downs.length?`<span>average <b>${Math.round(downs.reduce((n,r)=>n+(scaffDays(r)||0),0)/downs.length)}</b> days standing before rig-down</span>`:''}</div>
+    <div class="sj-sum"><span><b>${ups.length}</b> rig-up${ups.length===1?'':'s'}</span><span><b>${downs.length}</b> rig-down${downs.length===1?'':'s'}</span>${canc.length?`<span><b>${canc.length}</b> cancelled trip${canc.length===1?'':'s'}</span>`:''}${kmAct?`<span><b>${fmtQty(kmAct)}</b> km driven (odometer)</span>`:''}${downs.length?`<span>average <b>${Math.round(downs.reduce((n,r)=>n+(scaffDays(r)||0),0)/downs.length)}</b> days standing before rig-down</span>`:''}</div>
     <div class="sj-tbls">
+      ${scaffCountTable('By client', byClient, ['Client','Rig-ups','Rig-downs','Cancelled'])}
       ${scaffDash.project==='all'?scaffCountTable('By project', byProj, ['Project','Rig-ups','Rig-downs']):''}
       ${scaffCountTable('By location / well head', byLoc, ['Location','Rig-ups','Rig-downs'])}
       ${scaffCountTable('By volume', ups.length||downs.length?byVol:[], ['Volume','Rig-ups','Rig-downs'])}
       ${scaffCountTable('By crew member', byCrew, ['Worker','Rig-ups','Rig-downs'])}
     </div>
+    ${canc.length?`<div class="subhead">Cancelled trips</div><div class="sj-mini">${canc.map(x=>`<div class="sj-r sj-canc" data-reg-row="scaff:${x.r.id}"><span><strong>${esc(x.kind)}</strong> · ${esc(x.r.location||'—')} <span class="wsub">${esc([x.date, x.stage, x.reason, x.by?'by '+x.by:'', x.r.client].filter(Boolean).join(' · '))}</span></span><span class="num wsub">${esc(scaffKmText(x.km, x.estKm))}</span></div>`).join('')}</div>`:''}
   </div>
+  ${scaffPlacesPanelHtml()}
   <div class="panel sj-panel">
     <div class="sj-head"><h3>Standing now (${standing.length})</h3><span class="wsub">Rigged up and not yet rigged down — longest first</span></div>
     ${standing.length?`<div class="table-wrap"><table class="grid-table"><thead><tr><th>Location</th><th>Project</th><th>Volume</th><th>Rig-up</th><th class="num">Days standing</th><th></th></tr></thead><tbody>
@@ -5708,86 +5867,193 @@ function renderScaffTop(){
 async function exportScaffJobs(){
   try{ await loadScriptOnce(XLSX_URL); }catch(e){ toast('Could not load the Excel tools — check your internet connection and try again'); return; }
   const list=scaffJobs().slice().sort((a,b)=>String(a.rigUpDate||'').localeCompare(String(b.rigUpDate||'')) || String(a.jobNo||'').localeCompare(String(b.jobNo||'')));
-  const jobs=[['Job no.','Project','Location / well head','Scaffold tag','Volume','Lifts','Rig-up date','Rig-up crew','Rig-down date','Rig-down crew','Days standing','Status','Notes'],
-    ...list.map(r=>[r.jobNo||'', r.projectId?projectName(r.projectId):'', r.location||'', r.tagNo||'', r.volume||'', r.lifts===''||r.lifts==null?'':r.lifts, r.rigUpDate||'', scaffCrewNames(r.rigUpCrew).join(', '), r.rigDownDate||'', scaffCrewNames(r.rigDownCrew).join(', '), scaffDays(r)??'', scaffStanding(r)?'Standing':'Rigged down', r.notes||''])];
+  const jobs=[['Job no.','Project','Client / company','Requested by','Requester phone','Request / WO no.','Location / well head','Scaffold tag','Volume','Lifts','Rig-up date','Rig-up outcome','Rig-up from','Rig-up vehicle','Rig-up km (odometer)','Rig-up km (estimate)','Rig-up crew','Rig-down date','Rig-down from','Rig-down vehicle','Rig-down km (odometer)','Rig-down km (estimate)','Rig-down crew','Cancelled rig-down trips','Days standing','Status','Notes'],
+    ...list.map(r=>[r.jobNo||'', r.projectId?projectName(r.projectId):'', r.client||'', r.requestedBy||'', r.requesterPhone||'', r.workOrder||'', r.location||'', r.tagNo||'', r.volume||'', r.lifts===''||r.lifts==null?'':r.lifts, r.rigUpDate||'', scaffUpDone(r)?'Completed':`Cancelled — ${[r.upCancelStage, r.upCancelReason, r.upCancelledBy?'by '+r.upCancelledBy:''].filter(Boolean).join(' · ')}`, r.upFrom||'', r.upVehicle||'', r.upKm??'', r.upEstKm??'', scaffCrewNames(r.rigUpCrew).join(', '), r.rigDownDate||'', r.downFrom||'', r.downVehicle||'', r.downKm??'', r.downEstKm??'', scaffCrewNames(r.rigDownCrew).join(', '), (r.downCancels||[]).length||'', scaffDays(r)??'', !scaffUpDone(r)?'Cancelled':scaffStanding(r)?'Standing':'Rigged down', r.notes||''])];
+  const cancRows=[['Date','Trip','Job no.','Project','Client','Location','Stage','Reason','Cancelled by','Crew','Km (odometer)','Km (estimate)'], ...scaffCancelled(list).map(x=>[x.date, x.kind, x.r.jobNo||'', x.r.projectId?projectName(x.r.projectId):'', x.r.client||'', x.r.location||'', x.stage, x.reason, x.by, scaffCrewNames(x.crew).join(', '), x.km??'', x.estKm??''])];
   const days=new Map(); const bump=(d,i,v)=>{ if(!d) return; if(!days.has(d)) days.set(d,[0,0,0,0,0,0,0,0]); days.get(d)[i]++; const k=SCAFF_VOLUMES.indexOf(v); if(k>-1) days.get(d)[2+i*3+k]++; };
-  list.forEach(r=>{ bump(r.rigUpDate,0,r.volume); bump(r.rigDownDate,1,r.volume); });
+  list.forEach(r=>{ if(scaffUpDone(r)) bump(r.rigUpDate,0,r.volume); bump(r.rigDownDate,1,r.volume); });
   const daily=[['Date','Rig-ups','Rig-downs', ...SCAFF_VOLUMES.map(v=>'Rig-ups '+v), ...SCAFF_VOLUMES.map(v=>'Rig-downs '+v)], ...[...days.keys()].sort().map(d=>[d, ...days.get(d)])];
   const standing=[['Job no.','Project','Location / well head','Scaffold tag','Volume','Rig-up date','Days standing','Rig-up crew'], ...list.filter(scaffStanding).sort((a,b)=>(scaffDays(b)||0)-(scaffDays(a)||0)).map(r=>[r.jobNo||'', r.projectId?projectName(r.projectId):'', r.location||'', r.tagNo||'', r.volume||'', r.rigUpDate||'', scaffDays(r)??'', scaffCrewNames(r.rigUpCrew).join(', ')])];
   const wb=XLSX.utils.book_new();
-  const s1=XLSX.utils.aoa_to_sheet(jobs); s1['!cols']=[{wch:14},{wch:22},{wch:24},{wch:12},{wch:11},{wch:6},{wch:12},{wch:34},{wch:12},{wch:34},{wch:13},{wch:12},{wch:30}];
+  const s1=XLSX.utils.aoa_to_sheet(jobs); s1['!cols']=jobs[0].map(h=>({wch:/crew|Notes|outcome/i.test(h)?30:Math.max(10, Math.min(22, h.length+2))}));
+  const s4=XLSX.utils.aoa_to_sheet(cancRows.length>1?cancRows:[...cancRows, ['No cancelled trips']]); s4['!cols']=cancRows[0].map(h=>({wch:/Reason|Crew/.test(h)?30:14}));
   const s2=XLSX.utils.aoa_to_sheet(daily); s2['!cols']=[{wch:12},{wch:9},{wch:10}, ...new Array(6).fill({wch:17})];
   const s3=XLSX.utils.aoa_to_sheet(standing.length>1?standing:[...standing, ['No scaffolds standing']]); s3['!cols']=[{wch:14},{wch:22},{wch:24},{wch:12},{wch:11},{wch:12},{wch:13},{wch:34}];
-  XLSX.utils.book_append_sheet(wb, s1, 'Jobs'); XLSX.utils.book_append_sheet(wb, s2, 'Daily summary'); XLSX.utils.book_append_sheet(wb, s3, 'Standing now');
+  XLSX.utils.book_append_sheet(wb, s1, 'Jobs'); XLSX.utils.book_append_sheet(wb, s2, 'Daily summary'); XLSX.utils.book_append_sheet(wb, s3, 'Standing now'); XLSX.utils.book_append_sheet(wb, s4, 'Cancelled trips');
   XLSX.writeFile(wb, `Burhan_Scaffolding_Jobs_${scaffDash.project==='all'?'':projectName(scaffDash.project).replace(/[^\w-]+/g,'_')+'_'}${localToday()}.xlsx`);
 }
 
+function scaffTripFieldsHtml(prefix, r, vals){
+  // from place, vehicle, odometer start/end (+ estimate shown live)
+  const v=vals||{};
+  return `<label>Start from<input data-sd="${prefix}From" list="dl_scaffPlaces" value="${esc(v.from||'')}" placeholder="e.g. Camp / Yard" autocomplete="off"></label>
+    <label>Vehicle<input data-sd="${prefix}Vehicle" list="dl_scaffVehicles" value="${esc(v.vehicle||'')}" placeholder="e.g. OM 1234" autocomplete="off"></label>
+    <label>Odometer start (km)<input type="number" step="any" min="0" data-sd="${prefix}OdoStart" value="${esc(v.odoStart??'')}"></label>
+    <label>Odometer end (km)<input type="number" step="any" min="0" data-sd="${prefix}OdoEnd" value="${esc(v.odoEnd??'')}"></label>
+    <div class="span-all wsub sj-km" data-km-for="${prefix}" data-km-to="${esc(r.location||'')}"></div>`;
+}
+let scaffPlacesOpen=false, scaffPlaceEdit=null;
+function scaffPlacesPanelHtml(){
+  if(!scaffPlacesOpen) return '';
+  const places=scaffPlaces().slice().sort((a,b)=>a.name.localeCompare(b.name));
+  const missing=[...new Set([...scaffLocations(), ...regActive('scaff').map(r=>(r.upFrom||'').trim()), ...regActive('scaff').map(r=>(r.downFrom||'').trim())].filter(n=>n && !placeOf(n)))].sort();
+  const ed=scaffPlaceEdit!==null ? (places.find(p=>p.id===scaffPlaceEdit)||{name:scaffPlaceEdit.startsWith('new:')?scaffPlaceEdit.slice(4):''}) : null;
+  return `${scaffDatalistsHtml()}<div class="panel sj-panel" id="scaffPlacesPanel">
+    <div class="sj-head"><h3>Places &amp; distances (${places.length})</h3><button type="button" class="btn btn-sm" id="scaffPlacesClose">Close</button></div>
+    <p class="wsub" style="margin:0 0 10px;">Save a GPS point once for the camp/yard and each well head. The tracker then estimates the km between “Start from” and the location (straight line × ${SCAFF_KM_FACTOR} for roads and tracks — an estimate). When the odometer start/end is typed, that real km is used instead.</p>
+    ${canEdit()?(ed?`<form id="scaffPlaceForm" class="form-grid" style="margin-bottom:12px;">
+        <label>Place name *<input id="spName" required value="${esc(ed.name||'')}" placeholder="e.g. Fahud Camp, Well NM-123" list="dl_scaffPlaces"></label>
+        <label>GPS point * <span class="wsub" style="display:inline;">(lat, long — or paste a Google Maps link)</span><input id="spCoords" required value="${ed.lat!=null?esc(ed.lat+', '+ed.lng):''}" placeholder="e.g. 22.3541, 56.4870"></label>
+        <div class="span-all" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;"><button type="button" class="btn btn-sm" id="spHere">${ic('pin')} Use my current location</button><span class="wsub" id="spMsg">Tip: in Google Maps press and hold the spot — the numbers shown at the top are the GPS point.</span></div>
+        <div class="form-actions span-all"><button type="button" class="btn btn-sm" id="spCancel">Cancel</button><button type="submit" class="btn btn-primary btn-sm">Save place</button></div></form>`
+      :`<button type="button" class="btn btn-sm btn-primary" data-sp-edit="new:" style="margin-bottom:10px;">+ Add place</button>`):''}
+    ${places.length?`<div class="sj-mini">${places.map(pl=>`<div class="sj-r sj-place"><span><strong>${esc(pl.name)}</strong> <span class="wsub mono">${esc(pl.lat+', '+pl.lng)}</span> <a class="att-link" href="https://www.google.com/maps?q=${encodeURIComponent(pl.lat+','+pl.lng)}" target="_blank" rel="noopener">Map</a></span><span class="num">${canEdit()?`<button type="button" class="att-link" data-sp-edit="${esc(pl.id)}">Edit</button> <button type="button" class="att-link" data-sp-del="${esc(pl.id)}" data-armed="0">Remove</button>`:''}</span></div>`).join('')}</div>`:'<p class="wsub">No places saved yet.</p>'}
+    ${missing.length&&canEdit()?`<div class="subhead">Used in jobs but no GPS point yet</div><div style="display:flex; gap:6px; flex-wrap:wrap;">${missing.slice(0,40).map(n=>`<button type="button" class="btn btn-sm" data-sp-edit="new:${esc(n)}">+ ${esc(n)}</button>`).join('')}</div>`:''}
+  </div>`;
+}
+async function saveScaffPlaces(items){ const ok=await saveSettings('scaffPlaces', {items}); if(ok){ scaffPlaceEdit=null; renderRegAll('scaff'); } return ok; }
+// live "≈ km" line under a trip's odometer fields
+function updateScaffKm(root){
+  (root||document).querySelectorAll('[data-km-for]').forEach(el=>{
+    const pre=el.dataset.kmFor, form=el.closest('form'); if(!form) return;
+    const q=k=>{ const x=form.querySelector(`[data-sd="${pre}${k}"],[data-rf="${pre}${k}"]`); return x?x.value:''; };
+    const toEl=form.querySelector('[data-rf="location"]'), to=toEl?toEl.value:(el.dataset.kmTo||'');
+    const from=q('From'), act=odoKm(q('OdoStart'), q('OdoEnd')), est=scaffEstKm(from, to);
+    const o=q('OdoStart'), e2=q('OdoEnd');
+    el.innerHTML = (o!=='' && e2!=='' && act==='') ? '<span class="badge warn">Odometer end is lower than start</span>'
+      : act!=='' ? `<strong>${fmtQty(act)} km</strong> driven (odometer)${est?` · map estimate ≈ ${est.km} km one way`:''}`
+      : est ? `≈ <strong>${est.km} km</strong> one way from ${esc(from)} to ${esc(to)} (estimate — straight line ${est.straight} km)`
+      : (from && to) ? `No km estimate yet — add a GPS point for ${[!placeOf(from)?esc(from):'', !placeOf(to)?esc(to):''].filter(Boolean).join(' and ')} in “Places &amp; km”.` : '';
+  });
+}
+function scaffDatalistsHtml(){ return `<datalist id="dl_scaffPlaces">${scaffPlaceOptions().map(o=>`<option value="${esc(o)}">`).join('')}</datalist><datalist id="dl_scaffVehicles">${scaffVehicleOptions().map(o=>`<option value="${esc(o)}">`).join('')}</datalist>`; }
 function scaffDownHtml(r){
-  const done=!scaffStanding(r);
+  if(!scaffUpDone(r)) return `<p class="wsub">This rig-up was <strong>cancelled</strong>${r.upCancelStage?' ('+esc(r.upCancelStage.toLowerCase())+')':''} — there is no scaffold to rig down. Change the outcome in the Rig-up tab if it was done after all.</p>`;
+  const done=!scaffStanding(r), cancels=(r.downCancels||[]).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  const lastFrom=r.downFrom || r.upFrom || '';
+  const cancList=cancels.length?`<div class="subhead">Cancelled rig-down trips (${cancels.length})</div>${cancels.map(c=>`<div class="record-card"><div class="record-card-top"><div class="record-card-title"><span class="mono">${esc(c.date||'—')}</span> · <span class="badge warn">Cancelled</span> ${esc(c.stage||'')}</div>${canEdit()?`<div class="record-card-actions"><button type="button" class="icon-btn danger" data-scaff-candel="${esc(c.id)}" data-armed="0" aria-label="Delete">${ic('trash')}</button></div>`:''}</div>
+      <div class="record-fields">${c.reason?`<div class="rf"><span class="rf-k">Reason</span><span class="rf-v">${esc(c.reason)}</span></div>`:''}${c.cancelledBy?`<div class="rf"><span class="rf-k">Cancelled by</span><span class="rf-v">${esc(c.cancelledBy)}</span></div>`:''}${(c.crew||[]).length?`<div class="rf"><span class="rf-k">Crew</span><span class="rf-v">${esc(scaffCrewNames(c.crew).join(', '))}</span></div>`:''}${scaffKmText(c.km, c.estKm)?`<div class="rf"><span class="rf-k">Distance</span><span class="rf-v">${esc(scaffKmText(c.km, c.estKm))}${c.from?' from '+esc(c.from):''}</span></div>`:''}</div></div>`).join('')}`:'';
   return `<p class="wsub" style="margin:0 0 12px;">Rigged up <strong>${esc(r.rigUpDate||'—')}</strong> at <strong>${esc(r.location||'—')}</strong>${r.volume?' · '+esc(r.volume):''}. ${done?`Rigged down after <strong>${scaffDays(r)}</strong> days.`:`Standing for <strong>${scaffDays(r)??'—'}</strong> days so far.`}</p>
     <form data-reg-custom="down"><div class="form-grid">
-      <label>Rig-down date *<input type="date" data-sd="rigDownDate" required value="${esc(r.rigDownDate||localToday())}" min="${esc(r.rigUpDate||'')}" max="${localToday()}"></label>
-      ${crewPickHtml({key:'rigDownCrew', label:'Rig-down crew', hint:done?'':'Pre-ticked with the rig-up crew — change it if a different crew did the rig-down.'}, done?(r.rigDownCrew||[]):(r.rigUpCrew||[]), 'data-sd')}
-    </div><div class="form-actions">${done?'<button type="button" class="btn btn-sm" data-scaff-undo="1" data-armed="0">Undo rig-down (still standing)</button>':''}<button type="submit" class="btn btn-primary">${done?'Save':'Save rig-down'}</button></div></form>`;
+      ${done?'<input type="hidden" data-sd="downOutcome" value="Completed">':`<label>Outcome<select data-sd="downOutcome"><option>Completed</option><option value="Cancelled">Cancelled — trip did not happen / stopped</option></select></label>`}
+      <label>${done?'Rig-down date *':'Date *'}<input type="date" data-sd="rigDownDate" required value="${esc(r.rigDownDate||localToday())}" min="${esc(r.rigUpDate||'')}" max="${localToday()}"></label>
+      <label data-showwhen="downOutcome=Cancelled">When cancelled<select data-sd="stage">${SCAFF_CANCEL_STAGES.map(x=>`<option>${x}</option>`).join('')}</select></label>
+      <label data-showwhen="downOutcome=Cancelled">Reason *<input data-sd="reason" placeholder="e.g. Client stopped work — rig still in operation"></label>
+      <label data-showwhen="downOutcome=Cancelled">Cancelled by<input data-sd="cancelledBy" placeholder="Name / client"></label>
+      <label data-showwhen="downOutcome=Completed">Rig-down requested by<input data-sd="downRequestedBy" value="${esc(r.downRequestedBy||'')}"></label>
+      <label data-showwhen="downOutcome=Completed">Request / WO no.<input data-sd="downWorkOrder" value="${esc(r.downWorkOrder||'')}"></label>
+      ${scaffTripFieldsHtml('down', r, done?{from:r.downFrom, vehicle:r.downVehicle, odoStart:r.downOdoStart, odoEnd:r.downOdoEnd}:{from:lastFrom, vehicle:r.upVehicle||''})}
+      ${crewPickHtml({key:'rigDownCrew', label:'Crew', hint:done?'':'Pre-ticked with the rig-up crew — change it if a different crew went.'}, done?(r.rigDownCrew||[]):(r.rigUpCrew||[]), 'data-sd')}
+    </div><div class="form-actions">${done?'<button type="button" class="btn btn-sm" data-scaff-undo="1" data-armed="0">Undo rig-down (still standing)</button>':''}<button type="submit" class="btn btn-primary">${done?'Save':'Save'}</button></div></form>
+    ${cancList}${scaffDatalistsHtml()}`;
 }
 
 regDefine({
   key:'scaff', collection:'scaffJobs', singular:'Scaffold job', title:'Scaffolding Jobs', tagline:'Rig up · Rig down · Every well head',
   addLabel:'+ Rig-up', addTitle:'New rig-up', noField:'jobNo', noPrefix:'SCF', noYear:true, dateField:'rigUpDate',
   listen:scaffListen, topPanel:()=>renderScaffTop(),
-  headerButtons:'<button class="btn btn-sm" type="button" id="scaffExportBtn">'+ic('download')+' Export Excel</button>',
+  headerButtons:'<button class="btn btn-sm" type="button" id="scaffPlacesBtn">'+ic('pin')+' Places &amp; km</button><button class="btn btn-sm" type="button" id="scaffExportBtn">'+ic('download')+' Export Excel</button>',
   searchPlaceholder:'Search location, tag, job no., crew…', emptyEditor:'No scaffolding jobs yet — click “+ Rig-up” for each scaffold put up today. When it comes down, click “Rig down” on its row.', emptyViewer:'No scaffolding jobs recorded yet.',
   titleOf:r=>r.location||'Scaffold', subOf:r=>[r.projectId?projectName(r.projectId):'', r.volume, r.rigUpDate?'up '+r.rigUpDate:'', r.rigDownDate?'down '+r.rigDownDate:'standing'].filter(Boolean).join(' · '),
-  badgesOf:r=>scaffStanding(r)?`<span class="badge warn">Standing · ${scaffDays(r)??'—'} days</span>`:`<span class="badge ok">Rigged down · stood ${scaffDays(r)} days</span>`,
-  searchText:r=>[r.jobNo, r.location, r.tagNo, r.volume, r.projectId?projectName(r.projectId):'', ...scaffCrewNames(r.rigUpCrew), ...scaffCrewNames(r.rigDownCrew)].join(' '),
+  badgesOf:r=>(!scaffUpDone(r)?`<span class="badge muted">Rig-up cancelled</span>`:scaffStanding(r)?`<span class="badge warn">Standing · ${scaffDays(r)??'—'} days</span>`:`<span class="badge ok">Rigged down · stood ${scaffDays(r)} days</span>`)+((r.downCancels||[]).length?` <span class="badge warn">${r.downCancels.length} cancelled rig-down trip${r.downCancels.length===1?'':'s'}</span>`:''),
+  searchText:r=>[r.jobNo, r.location, r.tagNo, r.volume, r.client, r.requestedBy, r.workOrder, r.projectId?projectName(r.projectId):'', ...scaffCrewNames(r.rigUpCrew), ...scaffCrewNames(r.rigDownCrew)].join(' '),
   extraMatch:r=>scaffDash.project==='all' || r.projectId===scaffDash.project,
-  addFields:['rigUpDate','projectId','location','volume','lifts','tagNo','rigUpCrew','notes'], addDefaults:{rigUpDate:()=>localToday(), projectId:()=>scaffDash.project!=='all'?scaffDash.project:(scaffProjects().length===1?scaffProjects()[0].id:'')},
-  keepAddOpen:(f, d)=>{ for(const k of ['location','tagNo','lifts','notes']){ const el=f.querySelector(`[data-rf="${k}"]`); if(el) el.value=''; } const v=f.querySelector('[data-rf="volume"]'); if(v) v.value='';
+  addFields:['rigUpDate','projectId','client','requestedBy','requesterPhone','workOrder','location','volume','lifts','tagNo','upOutcome','upCancelStage','upCancelReason','upCancelledBy','upFrom','upVehicle','upOdoStart','upOdoEnd','upKmNote','rigUpCrew','notes'], addDefaults:{rigUpDate:()=>localToday(), projectId:()=>scaffDash.project!=='all'?scaffDash.project:(scaffProjects().length===1?scaffProjects()[0].id:'')},
+  keepAddOpen:(f, d)=>{ for(const k of ['location','tagNo','lifts','notes','workOrder','upCancelReason','upCancelledBy','upOdoStart','upOdoEnd']){ const el=f.querySelector(`[data-rf="${k}"]`); if(el) el.value=''; } const v=f.querySelector('[data-rf="volume"]'); if(v) v.value='';
     const dl=document.getElementById('dl_location'); if(dl && d.location && ![...dl.options].some(o=>o.value===d.location)) dl.insertAdjacentHTML('beforeend', `<option value="${esc(d.location)}">`);
-    const loc=f.querySelector('[data-rf="location"]'); if(loc) loc.focus(); toast('Rig-up saved — date, project and crew are kept for the next one'); },
-  segs:[{key:'standing', label:'Standing now', match:scaffStanding},{key:'down', label:'Rigged down', match:r=>!scaffStanding(r)}],
+    const oc=f.querySelector('[data-rf="upOutcome"]'); if(oc){ oc.value='Completed'; applyShowWhen(f); } updateScaffKm(f);
+    const loc=f.querySelector('[data-rf="location"]'); if(loc) loc.focus(); toast(d.upOutcome==='Cancelled'?'Cancelled trip saved':'Rig-up saved — date, project, client and crew are kept for the next one'); },
+  segs:[{key:'standing', label:'Standing now', match:scaffStanding},{key:'down', label:'Rigged down', match:r=>scaffUpDone(r) && !!r.rigDownDate},{key:'canc', label:'Cancelled trips', match:r=>!scaffUpDone(r) || (r.downCancels||[]).length>0}],
   sort:(a,b)=>String(b.rigUpDate||'').localeCompare(String(a.rigUpDate||'')) || String(b.jobNo||'').localeCompare(String(a.jobNo||'')),
-  tabs:[{key:'main', label:'Rig-up', groups:[{fields:[
+  tabs:[{key:'main', label:'Rig-up', groups:[
+    {title:'Job', fields:[
       {key:'jobNo', label:'Job no.', required:true},
       {key:'rigUpDate', label:'Rig-up date', type:'date', required:true},
       {key:'projectId', label:'Project', type:'project'},
-      {key:'location', label:'Location / well head', type:'textlist', options:scaffLocations, required:true, placeholder:'e.g. Well head NM-123'},
+      {key:'location', label:'Location / well head (destination)', type:'textlist', options:scaffLocations, required:true, placeholder:'e.g. Well head NM-123'},
       {key:'volume', label:'Volume', type:'select', options:SCAFF_VOLUMES, required:true},
       {key:'lifts', label:'Lifts / floors', type:'number', min:0},
       {key:'tagNo', label:'Scaffold tag no.'},
-      {key:'rigUpCrew', label:'Rig-up crew', type:'crew'},
+    ]},
+    {title:'Requested by', fields:[
+      {key:'client', label:'Client / company', type:'textlist', options:()=>[...new Set([...activeSites().map(x=>x.clientName), ...regActive('scaff').map(x=>x.client)].filter(Boolean))].sort(), placeholder:'e.g. PDO'},
+      {key:'requestedBy', label:'Requested by (name)', placeholder:'e.g. Site supervisor'},
+      {key:'requesterPhone', label:'Requester phone', type:'tel', placeholder:'+968 …'},
+      {key:'workOrder', label:'Request / work order no.'},
+    ]},
+    {title:'Trip & outcome', fields:[
+      {key:'upOutcome', label:'Outcome', type:'select', options:['Completed','Cancelled'], default:'Completed'},
+      {key:'upCancelStage', label:'When cancelled', type:'select', options:SCAFF_CANCEL_STAGES, showWhen:'upOutcome=Cancelled'},
+      {key:'upCancelReason', label:'Reason for cancelling', showWhen:'upOutcome=Cancelled', placeholder:'e.g. Permit not ready, rig moved'},
+      {key:'upCancelledBy', label:'Cancelled by', showWhen:'upOutcome=Cancelled', placeholder:'Name / client'},
+      {key:'upFrom', label:'Start from', type:'textlist', options:scaffPlaceOptions, placeholder:'e.g. Camp / Yard'},
+      {key:'upVehicle', label:'Vehicle', type:'textlist', options:scaffVehicleOptions, placeholder:'e.g. OM 1234'},
+      {key:'upOdoStart', label:'Odometer start (km)', type:'number', min:0},
+      {key:'upOdoEnd', label:'Odometer end (km)', type:'number', min:0},
+      {key:'upKmNote', label:'', type:'kmline'},
+      {key:'rigUpCrew', label:'Crew', type:'crew'},
       {key:'notes', label:'Notes', type:'textarea', wide:true},
     ]}]},
     {key:'down', label:'Rig down', html:r=>scaffDownHtml(r)}],
   columns:[
     {label:'Job', cls:'mono', html:r=>`<strong>${esc(r.jobNo||'—')}</strong><div class="wsub">${esc(r.rigUpDate||'')}</div>`},
-    {label:'Location', html:r=>`<div class="wname">${esc(r.location||'—')}</div><div class="wsub">${esc([r.projectId?projectName(r.projectId):'', r.tagNo?'Tag '+r.tagNo:''].filter(Boolean).join(' · ')||'—')}</div>`},
+    {label:'Location', html:r=>`<div class="wname">${esc(r.location||'—')}</div><div class="wsub">${esc([r.client, r.projectId?projectName(r.projectId):'', r.tagNo?'Tag '+r.tagNo:''].filter(Boolean).join(' · ')||'—')}</div>`},
     {label:'Volume', html:r=>scaffVolBadge(r.volume)+(r.lifts!==''&&r.lifts!=null?`<div class="wsub">${esc(String(r.lifts))} lift${Number(r.lifts)===1?'':'s'}</div>`:'')},
     {label:'Rig-up crew', html:r=>{ const n=scaffCrewNames(r.rigUpCrew); return n.length?`<strong>${n.length}</strong> <span class="wsub">${esc(n.slice(0,3).join(', '))}${n.length>3?' …':''}</span>`:'<span class="wsub">—</span>'; }},
-    {label:'Rig-down', html:r=>scaffStanding(r)?`<span class="badge warn">Standing</span>${canEdit()?` <button type="button" class="btn btn-sm" data-reg-tab="down">Rig down</button>`:''}`:`<span class="mono">${esc(r.rigDownDate)}</span><div class="wsub">${(r.rigDownCrew||[]).length} crew</div>`},
+    {label:'Rig-down', html:r=>!scaffUpDone(r)?`<span class="badge muted">Rig-up cancelled</span><div class="wsub">${esc([r.upCancelStage, r.upCancelReason].filter(Boolean).join(' · '))}</div>`:scaffStanding(r)?`<span class="badge warn">Standing</span>${canEdit()?` <button type="button" class="btn btn-sm" data-reg-tab="down">Rig down</button>`:''}`:`<span class="mono">${esc(r.rigDownDate)}</span><div class="wsub">${(r.rigDownCrew||[]).length} crew</div>`},
     {label:'Days', cls:'num', html:r=>`<strong>${scaffDays(r)??'—'}</strong>`},
   ],
   tiles:()=>{ const list=scaffJobs(), t=localToday(), y=dateAdd(t,-1), mo=t.slice(0,7);
     const st=list.filter(scaffStanding), dm=list.filter(r=>String(r.rigDownDate||'').startsWith(mo));
-    return [{label:'Rig-ups today', num:list.filter(r=>r.rigUpDate===t).length, sub:`${list.filter(r=>r.rigUpDate===y).length} yesterday · ${list.filter(r=>String(r.rigUpDate||'').startsWith(mo)).length} this month`, icon:'ladder'},
+    const cT=scaffCancelled(list).filter(x=>x.date===t).length;
+    return [{label:'Rig-ups today', num:list.filter(r=>scaffUpDone(r) && r.rigUpDate===t).length, sub:`${list.filter(r=>scaffUpDone(r) && r.rigUpDate===y).length} yesterday · ${list.filter(r=>scaffUpDone(r) && String(r.rigUpDate||'').startsWith(mo)).length} this month${cT?` · ${cT} cancelled today`:''}`, icon:'ladder'},
       {label:'Rig-downs today', num:list.filter(r=>r.rigDownDate===t).length, sub:`${list.filter(r=>r.rigDownDate===y).length} yesterday · ${dm.length} this month`, icon:'check'},
       {label:'Standing now', num:st.length, sub:st.length?`longest ${Math.max(...st.map(r=>scaffDays(r)||0))} days`:'none standing', icon:'hourglass'},
       {label:'Average days standing', num:dm.length?Math.round(dm.reduce((n,r)=>n+(scaffDays(r)||0),0)/dm.length):'—', sub:`rigged down this month`, icon:'clock'}]; },
 });
-REG.scaff.beforeCreate=d=>{ d.rigUpCrew=d.rigUpCrew||[]; d.rigDownCrew=d.rigDownCrew||[]; d.location=(d.location||'').trim(); d.open=!d.rigDownDate; };
+function scaffCleanTrip(d){
+  if('upOutcome' in d && d.upOutcome!=='Cancelled'){ d.upCancelStage=''; d.upCancelReason=''; d.upCancelledBy=''; }
+  if('upOdoStart' in d || 'upOdoEnd' in d) d.upKm=odoKm(d.upOdoStart, d.upOdoEnd);
+  if('upFrom' in d || 'location' in d){ const est=scaffEstKm(d.upFrom, d.location); d.upEstKm=est?est.km:''; }
+  delete d.upKmNote;
+  for(const k of ['client','requestedBy','requesterPhone','workOrder','upFrom','upVehicle','upCancelReason','upCancelledBy']) if(typeof d[k]==='string') d[k]=d[k].trim();
+}
+REG.scaff.validate=d=>{
+  if(d.upOutcome==='Cancelled' && !String(d.upCancelReason||'').trim()) return 'Enter the reason the trip was cancelled';
+  if(d.upOdoStart!=='' && d.upOdoEnd!=='' && d.upOdoStart!=null && d.upOdoEnd!=null && Number(d.upOdoEnd)<Number(d.upOdoStart)) return 'Odometer end is lower than the start';
+  return '';
+};
+REG.scaff.beforeCreate=d=>{ d.rigUpCrew=d.rigUpCrew||[]; d.rigDownCrew=d.rigDownCrew||[]; d.downCancels=[]; d.location=(d.location||'').trim(); d.upOutcome=d.upOutcome||'Completed';
+  if(!d.client && d.projectId){ const s=activeSites().find(x=>x.id===d.projectId); if(s && s.clientName) d.client=s.clientName; }
+  scaffCleanTrip(d); d.open=d.upOutcome!=='Cancelled' && !d.rigDownDate; };
 REG.scaff.beforeUpdate=(data, cur)=>{
   if('location' in data) data.location=(data.location||'').trim();
+  if('upOutcome' in data || 'upOdoEnd' in data){ const msg=REG.scaff.validate({...cur, ...data}); if(msg){ toast(msg); return null; } }
+  if('upFrom' in data && !('location' in data)) data.location=cur.location||'';
+  scaffCleanTrip(data);
+  if('upOutcome' in data){ if(data.upOutcome==='Cancelled'){ if(cur.rigDownDate){ toast('This scaffold was already rigged down — undo the rig-down first'); return null; } data.open=false; } else data.open=!(data.rigDownDate!==undefined?data.rigDownDate:cur.rigDownDate); }
   const up=data.rigUpDate!==undefined?data.rigUpDate:cur.rigUpDate, down=data.rigDownDate!==undefined?data.rigDownDate:cur.rigDownDate;
   if(up && down && down<up){ toast('Rig-down date cannot be before the rig-up date'); return null; }
-  if('rigDownDate' in data) data.open=!data.rigDownDate;
+  if('rigDownDate' in data) data.open=scaffUpDone({...cur, ...data}) && !data.rigDownDate;
   return data;
 };
 REG.scaff.afterSave=r=>{ if(scaffOlder.has(r.id)){ scaffOlder.set(r.id, {...scaffOlder.get(r.id), ...r}); if(scaffRefresh) scaffRefresh(); } };
 REG.scaff.customSubmit={
   down: async (r, form)=>{
-    const date=form.querySelector('[data-sd="rigDownDate"]').value; if(!date){ toast('Pick the rig-down date'); return; }
+    const q=k=>{ const x=form.querySelector(`[data-sd="${k}"]`); return x?String(x.value||'').trim():''; };
+    const date=q('rigDownDate'); if(!date){ toast('Pick the date'); return; }
     const crew=[...form.querySelectorAll('[data-sd="rigDownCrew"]:checked')].map(x=>x.value);
-    if(await regUpdate('scaff', r.id, {rigDownDate:date, rigDownCrew:crew}, true)) toast(`Rig-down saved — stood ${Math.max(0, daysBetween(r.rigUpDate||date, date))} days`);
+    const from=q('downFrom'), veh=q('downVehicle'), os=q('downOdoStart'), oe=q('downOdoEnd');
+    if(os!=='' && oe!=='' && Number(oe)<Number(os)){ toast('Odometer end is lower than the start'); return; }
+    const km=odoKm(os===''?'':Number(os), oe===''?'':Number(oe)), est=scaffEstKm(from, r.location), estKm=est?est.km:'';
+    if(q('downOutcome')==='Cancelled'){
+      const reason=q('reason'); if(!reason){ toast('Enter the reason the trip was cancelled'); return; }
+      const c={id:'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), date, stage:q('stage'), reason, cancelledBy:q('cancelledBy'), crew, from, vehicle:veh, odoStart:os===''?'':Number(os), odoEnd:oe===''?'':Number(oe), km, estKm};
+      if(await regUpdate('scaff', r.id, {downCancels:(r.downCancels||[]).concat([c])}, true)) toast('Cancelled rig-down trip saved — the scaffold is still standing');
+      return;
+    }
+    const upd={rigDownDate:date, rigDownCrew:crew, downFrom:from, downVehicle:veh, downOdoStart:os===''?'':Number(os), downOdoEnd:oe===''?'':Number(oe), downKm:km, downEstKm:estKm, downRequestedBy:q('downRequestedBy'), downWorkOrder:q('downWorkOrder')};
+    if(await regUpdate('scaff', r.id, upd, true)) toast(`Rig-down saved — stood ${Math.max(0, daysBetween(r.rigUpDate||date, date))} days`);
   },
 };
 
@@ -11226,6 +11492,39 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(e.target.id==='cwLogProject'){ cwLog.project=e.target.value; cwKeepAndRender(); return; }
   });
   document.addEventListener('submit', async e=>{ if(e.target.id!=='cwLogForm') return; e.preventDefault(); if(!canEdit()) return; await saveCivilLog(e.target); });
+
+  // --- Batch 37: scaffolding — outcome fields, km, places ---
+  document.addEventListener('change', e=>{ const t=e.target; if(t.matches && t.matches('[data-rf],[data-sf],[data-sd]')){ const f=t.closest('form'); if(f){ applyShowWhen(f); updateScaffKm(f); } } });
+  document.addEventListener('change', e=>{ const t=e.target; if(!t.matches || !t.matches('[data-rf="projectId"]')) return; const f=t.closest('form'); const c=f && f.querySelector('[data-rf="client"]'); if(!c || c.value.trim() || !f.closest('#scaffAddPanel,#regDrawer')) return; const s=activeSites().find(x=>x.id===t.value); if(s && s.clientName) c.value=s.clientName; });
+  document.addEventListener('input', e=>{ const t=e.target; if(t.matches && t.matches('[data-rf$="OdoStart"],[data-rf$="OdoEnd"],[data-rf$="From"],[data-rf="location"],[data-sd$="OdoStart"],[data-sd$="OdoEnd"],[data-sd$="From"]')){ const f=t.closest('form'); if(f) updateScaffKm(f); } });
+  document.addEventListener('click', async e=>{
+    if(e.target.closest('#scaffPlacesBtn')){ scaffPlacesOpen=!scaffPlacesOpen; scaffPlaceEdit=null; renderScaffTop(); if(scaffPlacesOpen){ const p=document.getElementById('scaffPlacesPanel'); if(p) p.scrollIntoView({block:'start', behavior:'smooth'}); } return; }
+    if(e.target.closest('#scaffPlacesClose')){ scaffPlacesOpen=false; scaffPlaceEdit=null; renderScaffTop(); return; }
+    const ed=e.target.closest('[data-sp-edit]'); if(ed){ scaffPlaceEdit=ed.dataset.spEdit; const a=document.getElementById('spName'), c=document.getElementById('spCoords'); if(a) a.value=''; if(c) c.value=''; renderScaffTop(); const n=document.getElementById('spName'); if(n){ if(scaffPlaceEdit.startsWith('new:')) n.value=scaffPlaceEdit.slice(4); else { const pl=scaffPlaces().find(x=>x.id===scaffPlaceEdit); if(pl){ n.value=pl.name; document.getElementById('spCoords').value=pl.lat+', '+pl.lng; } } n.focus(); } return; }
+    if(e.target.closest('#spCancel')){ scaffPlaceEdit=null; document.getElementById('spName').value=''; document.getElementById('spCoords').value=''; renderScaffTop(); return; }
+    if(e.target.closest('#spHere')){ const msg=document.getElementById('spMsg');
+      if(!navigator.geolocation){ if(msg) msg.textContent='This device cannot share its location.'; return; }
+      if(msg) msg.textContent='Getting your location… (allow location access if asked)';
+      navigator.geolocation.getCurrentPosition(pos=>{ const c=document.getElementById('spCoords'); if(c) c.value=`${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`; const m=document.getElementById('spMsg'); if(m) m.textContent=`Location found (accuracy about ${Math.round(pos.coords.accuracy)} m) — check the name and save.`; },
+        err=>{ const m=document.getElementById('spMsg'); if(m) m.textContent= err && err.code===1 ? 'Location access was blocked — allow it in the browser settings, or paste the GPS point.' : 'Could not get the location — try again outside, or paste the GPS point.'; }, {enableHighAccuracy:true, timeout:20000, maximumAge:0});
+      return; }
+    const del=e.target.closest('[data-sp-del]'); if(del){ if(!canEdit()) return; if(del.dataset.armed!=='1'){ del.dataset.armed='1'; del.textContent='Click again'; setTimeout(()=>{ del.dataset.armed='0'; del.textContent='Remove'; },3000); return; }
+      await saveScaffPlaces(scaffPlaces().filter(x=>x.id!==del.dataset.spDel)); return; }
+    const cd=e.target.closest('[data-scaff-candel]'); if(cd){ const r=regCurrent(); if(!r || !canEdit()) return; if(cd.dataset.armed!=='1'){ cd.dataset.armed='1'; cd.classList.add('armed'); toast('Click again to delete this cancelled trip'); setTimeout(()=>{ cd.dataset.armed='0'; cd.classList.remove('armed'); },3000); return; }
+      if(await regUpdate('scaff', r.id, {downCancels:(r.downCancels||[]).filter(x=>x.id!==cd.dataset.scaffCandel)}, true)) toast('Cancelled trip deleted'); return; }
+  });
+  document.addEventListener('submit', async e=>{
+    if(e.target.id!=='scaffPlaceForm') return; e.preventDefault(); if(!canEdit()) return;
+    const name=document.getElementById('spName').value.trim(), co=parseCoords(document.getElementById('spCoords').value);
+    if(!name){ toast('Enter the place name'); return; }
+    if(!co){ toast('GPS point not recognised — use “Use my current location”, or paste like 22.3541, 56.4870 (a full Google Maps link also works; short maps.app links do not)'); return; }
+    const list=scaffPlaces().slice(), editing=scaffPlaceEdit && !scaffPlaceEdit.startsWith('new:') ? scaffPlaceEdit : null;
+    const dup=list.find(x=>placeKey(x.name)===placeKey(name) && x.id!==editing); if(dup){ toast(`“${dup.name}” is already saved — edit that one instead`); return; }
+    const item={id:editing||('pl'+Date.now().toString(36)), name, lat:Math.round(co.lat*1e6)/1e6, lng:Math.round(co.lng*1e6)/1e6};
+    const out=editing ? list.map(x=>x.id===editing?item:x) : list.concat([item]);
+    document.getElementById('spName').value=''; document.getElementById('spCoords').value='';
+    if(await saveScaffPlaces(out)) toast(`${name} saved`);
+  });
   // --- Batch 33: scaffolding job log dashboard ---
   document.addEventListener('click', e=>{
     const ex=e.target.closest('#scaffExportBtn'); if(ex){ exportScaffJobs(); return; }
