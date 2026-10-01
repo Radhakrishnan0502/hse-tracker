@@ -851,6 +851,21 @@ label > .dmy-wrap, .form-grid .dmy-wrap, .dmy-wrap.block{display:flex; width:100
 @media (pointer:coarse){ .dmy-native{pointer-events:auto;} }
 .dmy-input.dmy-bad{border-color:var(--danger) !important;}
 .sj-ctrl .dmy-wrap{width:auto;} .sj-ctrl .dmy-input{width:158px;}
+
+/* ---- Batch 40: training groups ---- */
+.tcat{display:inline-block; font-size:10px; font-weight:700; letter-spacing:.03em; padding:1px 6px; border-radius:999px; margin-right:6px; vertical-align:1px; color:var(--ink); border:1px solid var(--line); background:var(--surface);}
+.tcat-opal{box-shadow:inset 3px 0 0 var(--cat-1);} .tcat-client{box-shadow:inset 3px 0 0 var(--cat-3);} .tcat-internal{box-shadow:inset 3px 0 0 var(--cat-4);}
+th.mx-cat-opal{box-shadow:inset 0 3px 0 var(--cat-1);} th.mx-cat-client{box-shadow:inset 0 3px 0 var(--cat-3);} th.mx-cat-internal{box-shadow:inset 0 3px 0 var(--cat-4);}
+.tcat-dot{display:inline-block; width:9px; height:9px; border-radius:3px; margin-right:6px; vertical-align:0;}
+#matrixCatTabs{margin-bottom:8px;}
+.req-tlist{border:1px solid var(--line); border-radius:10px; margin-bottom:10px; max-height:360px; overflow-y:auto;}
+.req-trow{display:grid; grid-template-columns:minmax(160px,1.2fr) minmax(170px,.8fr) minmax(0,2fr) 34px; gap:10px; align-items:center; padding:7px 10px; border-top:1px solid var(--line); box-shadow:inset 3px 0 0 var(--line);}
+.req-trow:first-child{border-top:0;} .req-trow.req-cat-opal{box-shadow:inset 3px 0 0 var(--cat-1);} .req-trow.req-cat-client{box-shadow:inset 3px 0 0 var(--cat-3);} .req-trow.req-cat-internal{box-shadow:inset 3px 0 0 var(--cat-4);}
+.req-tname{font-weight:600; color:var(--ink); font-size:13px;} .req-trow select{width:100%;}
+.req-tclients{display:flex; flex-wrap:wrap; gap:4px 10px; align-items:center;} .req-tclients input[data-cat-other]{flex:1 1 160px; min-width:140px;}
+@media (max-width:760px){ .req-trow{grid-template-columns:1fr 34px;} .req-trow select, .req-tclients{grid-column:1 / 2;} }
+.req-grp{margin-top:8px; padding-top:6px; border-top:1px dashed var(--line);} .req-grp:first-of-type{border-top:0;}
+.req-grp-h{font-weight:700; font-size:12.5px; color:var(--ink); margin-bottom:4px;}
 </style>
 </head>
 <body class="auth-open">
@@ -1017,6 +1032,7 @@ label > .dmy-wrap, .form-grid .dmy-wrap, .dmy-wrap.block{display:flex; width:100
         </div>
         <div class="panel" id="reqPanel" hidden></div>
         <div class="seg-tabs" id="matrixDivTabs" aria-label="Division"></div>
+        <div class="seg-tabs" id="matrixCatTabs" aria-label="Training group"></div>
         <div class="seg-tabs" id="matrixModeTabs"><button type="button" class="seg-btn active" data-mxmode="workers">Workers</button><button type="button" class="seg-btn" data-mxmode="roles">Role requirements</button></div>
         <div class="tiles tiles-4" id="matrixTiles"></div>
         <div class="notice" id="matrixNote" hidden></div>
@@ -1295,7 +1311,7 @@ label > .dmy-wrap, .form-grid .dmy-wrap, .dmy-wrap.block{display:flex; width:100
             <div class="cc-cluster" id="ccCluster"></div>
           </div>
           <div class="cc-panel">
-            <div class="cc-title">Training compliance <small>required trainings in date — from each worker's roles</small></div>
+            <div class="cc-title">Training compliance — OPAL / PDO mandatory <small>required trainings in date — Client and Burhan internal shown under each dial</small></div>
             <div class="cc-gauges" id="ccGauges"></div>
           </div>
           <div class="cc-panel">
@@ -2487,6 +2503,7 @@ function startSettingsData(){
       renderMonitorBar(); renderVehicleTable(); if(activeVehicleId) renderVehicleDrawer();
       renderMatrix(); renderReportAll(); renderAssuranceAll();
       if(regState.scaff && document.getElementById('scaffSection') && !document.getElementById('scaffSection').hidden) renderRegAll('scaff');
+      renderTiles();   // Batch 40: training bars on the Workforce dashboard depend on the roles / training groups
     }, err=>{
       console.error(err); if(!auth.currentUser) return;
       settingsLoadError = err && err.code==='permission-denied' ? 'rules' : 'other';
@@ -2497,7 +2514,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b39';
+const APP_BUILD='b40';
 let appOutdated=false;
 // Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
 let _verTag=null, _verLast=0;
@@ -2629,7 +2646,7 @@ function vehicleMonitorBlock(v){
 
 /* ---------------- training matrix (Workforce) ---------------- */
 let workforceView='register';
-let matrixFilters={q:'', division:'all', role:'all', gaps:'all', mode:null};
+let matrixFilters={q:'', division:'all', role:'all', gaps:'all', mode:null, cat:'all'};
 let reqEdit=null;   // editor state for "Roles & required trainings"
 function normTraining(x){ return String(x||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); }
 // legacy (before Batch 20): requirements per division — kept only to pre-fill the training list
@@ -2666,6 +2683,31 @@ function trainingCatalogue(){
   trainingRoles().forEach(r=>(r.trainings||[]).forEach(add));
   return out;
 }
+/* Batch 40: three training groups — OPAL / PDO mandatory, Client requirement, Burhan internal.
+   settings/trainingMatrix.trainingMeta = { [normTraining(name)]: {cat:'opal'|'client'|'internal', clients:[client names]} }
+   Client trainings are needed only by workers whose project is for one of the listed clients (none listed = everyone with the role).
+   Each group has its own compliance %, so internal or client gaps never pull down the OPAL / PDO figure. */
+const TRAINING_CATS=[{key:'opal', label:'OPAL / PDO mandatory', short:'OPAL / PDO', color:'--cat-1'},{key:'client', label:'Client requirement', short:'Client', color:'--cat-3'},{key:'internal', label:'Burhan internal', short:'Internal', color:'--cat-4'}];
+const TRAINING_CAT_KEYS=TRAINING_CATS.map(c=>c.key);
+function trainingCatInfo(k){ return TRAINING_CATS.find(c=>c.key===k) || TRAINING_CATS[2]; }
+function guessTrainingCat(name){
+  const n=' '+String(name||'').toLowerCase()+' ';
+  if(/client|\boq\b|occidental|\boxy\b|daleel|\bbp\b|shell|\bcc energy|petrogas|orpic/.test(n)) return 'client';
+  if(/opal|pdo|h2s|hydrogen sul|first aid|fire ?(fight|warden|safety)|working at height|\bwah\b|confined space|defensive driv|rigging|slinging|banksman|signal ?man|scaffold|permit to work|\bptw\b|gas test|authori[sz]ed gas|crane|forklift|lifting|hse induction|basic (hse|safety)|bosiet|\bloto\b|isolation|road safety|journey management|excavation|hot work|manual handling/.test(n)) return 'opal';
+  return 'internal';
+}
+function trainingMeta(name){ const m=(trainingReq.trainingMeta||{})[normTraining(name)]; return m && TRAINING_CAT_KEYS.includes(m.cat) ? m : null; }
+function trainingCat(name){ const m=trainingMeta(name); return m ? m.cat : guessTrainingCat(name); }
+function trainingClients(name){ const m=trainingMeta(name); return (m && Array.isArray(m.clients)) ? m.clients.filter(Boolean) : []; }
+function workerClient(w){ const s=w && w.projectId ? siteEquipmentList.find(x=>x.id===w.projectId && !x.deleted) : null; return s ? String(s.clientName||'').trim() : ''; }
+function clientKey(c){ return String(c||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); }
+function knownClients(){ return [...new Set([...activeSites().map(x=>String(x.clientName||'').trim()), ...Object.values(trainingReq.trainingMeta||{}).flatMap(m=>m.clients||[])].filter(Boolean))].sort((a,b)=>a.localeCompare(b)); }
+function trainingAppliesTo(w, name){
+  if(trainingCat(name)!=='client') return true;
+  const cl=trainingClients(name); if(!cl.length) return true;
+  const wc=clientKey(workerClient(w)); return !!wc && cl.some(c=>clientKey(c)===wc);
+}
+function catBadgeHtml(k){ const c=trainingCatInfo(k); return `<span class="tcat tcat-${c.key}" title="${esc(c.label)}">${esc(c.short)}</span>`; }
 // Batch 22: the worker's Designation IS their main role (picked from the role list); extra roles are ticked on top.
 // (Workers saved in Batch 20–21 may still have a separate mainRole — it is used only if the designation isn't in the role list.)
 function knownRole(x){ const k=roleKey(x); return k ? roleNamesList().find(r=>roleKey(r)===k) : undefined; }
@@ -2680,20 +2722,27 @@ function requiredForWorker(w){
   if(!mine.size) return [];
   for(const r of trainingRoles()){
     if(!mine.has(roleKey(r.name))) continue;
-    for(const t of (r.trainings||[])){ const k=normTraining(t); if(!k) continue; if(!map.has(k)) map.set(k,{name:String(t).trim(), roles:[]}); map.get(k).roles.push(String(r.name).trim()); }
+    for(const t of (r.trainings||[])){ const k=normTraining(t); if(!k || !trainingAppliesTo(w, t)) continue; if(!map.has(k)) map.set(k,{name:String(t).trim(), cat:trainingCat(t), roles:[]}); map.get(k).roles.push(String(r.name).trim()); }
   }
-  return [...map.values()];
+  return [...map.values()].sort((a,b)=>TRAINING_CAT_KEYS.indexOf(a.cat)-TRAINING_CAT_KEYS.indexOf(b.cat));
 }
 function workerTrainingCompliance(w){
   const req=requiredForWorker(w); let ok=0;
-  const cells=req.map(t=>{ const st=trainingStatusFor(w, t.name); if(st.status==='valid'||st.status==='expiring') ok++; return {...t, st}; });
-  return {need:req.length, ok, cells};
+  const byCat=Object.fromEntries(TRAINING_CAT_KEYS.map(k=>[k,{need:0, ok:0}]));
+  const cells=req.map(t=>{ const st=trainingStatusFor(w, t.name), good=st.status==='valid'||st.status==='expiring'; if(good) ok++; const b=byCat[t.cat]||byCat.internal; b.need++; if(good) b.ok++; return {...t, st}; });
+  return {need:req.length, ok, cells, byCat};
 }
 // totals for a group of workers: required slots in date, fully trained workers
-function trainingComplianceFor(ws){
+function trainingComplianceFor(ws, cat){
   let need=0, ok=0, full=0, counted=0;
-  for(const w of ws){ const c=workerTrainingCompliance(w); if(!c.need) continue; counted++; need+=c.need; ok+=c.ok; if(c.ok===c.need) full++; }
+  for(const w of ws){ const c0=workerTrainingCompliance(w), c=cat ? c0.byCat[cat] : c0; if(!c.need) continue; counted++; need+=c.need; ok+=c.ok; if(c.ok===c.need) full++; }
   return {need, ok, full, counted, pct: need ? Math.round(ok*100/need) : null};
+}
+function workerCatStatus(w, cat){
+  if(!workerRoles(w).length) return 'norole';
+  const cells=workerTrainingCompliance(w).cells.filter(x=>x.cat===cat); if(!cells.length) return 'na';
+  if(cells.some(x=>x.st.status==='missing' || x.st.status==='expired')) return 'bad';
+  return cells.some(x=>x.st.status==='expiring') ? 'soon' : 'ok';
 }
 function trainingStatusFor(w, reqName){
   const key=normTraining(reqName); if(!key) return {status:'na'};
@@ -2727,6 +2776,7 @@ function renderMatrix(){
   matrixFilters.division=divSel.value;
   { const aw=activeWorkers().filter(w=>(w.status||'active')==='active');
     document.getElementById('matrixDivTabs').innerHTML=['all',...opts].map(d=>`<button type="button" class="seg-btn ${matrixFilters.division===d?'active':''}" data-mxdiv="${esc(d)}">${esc(d==='all'?'All':divShort(d))} <span class="seg-n">${d==='all'?aw.length:aw.filter(w=>w.trade===d).length}</span></button>`).join(''); }
+  { const ct=document.getElementById('matrixCatTabs'); if(ct) ct.innerHTML=[{key:'all', short:'All trainings'}, ...TRAINING_CATS].map(c=>`<button type="button" class="seg-btn ${matrixFilters.cat===c.key?'active':''}" data-mxcat="${c.key}">${c.key!=='all'?`<i class="tcat-dot" style="background:var(${c.color})"></i>`:''}${esc(c.key==='all'?c.short:c.label)}</button>`).join(''); }
   const roles=roleNamesList();
   const divRoles=rolesForTrade(matrixFilters.division).map(r=>String(r.name).trim());
   roleSel.innerHTML='<option value="all">All roles</option>'+divRoles.map(r=>`<option value="${esc(r)}">${esc(r)}</option>`).join('')+'<option value="__none">No role / designation not in list</option>';
@@ -2760,13 +2810,13 @@ function renderMatrix(){
   });
   let rows=ws.map(w=>{ const req=requiredForWorker(w); return {w, roles:workerRoles(w), req:new Map(req.map(t=>[normTraining(t.name), t.roles]))}; });
   const used=new Set(); rows.forEach(r=>r.req.forEach((_,k)=>used.add(k)));
-  const cols=trainingCatalogue().filter(t=>used.has(normTraining(t)));
+  const cols=trainingCatalogue().filter(t=>used.has(normTraining(t)) && (matrixFilters.cat==='all' || trainingCat(t)===matrixFilters.cat)).sort((a,b)=>TRAINING_CAT_KEYS.indexOf(trainingCat(a))-TRAINING_CAT_KEYS.indexOf(trainingCat(b)));
   rows.forEach(r=>{ r.cells=cols.map(t=>{ const k=normTraining(t); return r.req.has(k) ? {st:trainingStatusFor(r.w, t), roles:r.req.get(k)} : null; }); });
   let need=0, valid=0, missing=0, expired=0, expiring=0;
   for(const r of rows) for(const c of r.cells){ if(!c) continue; need++; const s=c.st.status; if(s==='valid') valid++; else if(s==='missing') missing++; else if(s==='expired') expired++; else if(s==='expiring'){ expiring++; valid++; } }
   const pct = need ? Math.round(valid*100/need) : 100;
   tiles.innerHTML=[
-    {label:'Compliance', num:need?pct+'%':'—', cls:need?(pct>=90?'ok':pct>=70?'warn':'danger'):'', sub:`${valid} of ${need} required trainings in date${noRole.length?` · ⚠ ${noRole.length} worker${noRole.length===1?'':'s'} not counted (no role)`:''}`, cat:'--cat-4', icon:ic('chart')},
+    {label:matrixFilters.cat==='all'?'Compliance':'Compliance — '+trainingCatInfo(matrixFilters.cat).short, num:need?pct+'%':'—', cls:need?(pct>=90?'ok':pct>=70?'warn':'danger'):'', sub:`${valid} of ${need} required trainings in date${matrixFilters.cat==='all'?(()=>{ const parts=TRAINING_CATS.map(c=>{ const x=trainingComplianceFor(rows.map(r=>r.w), c.key); return x.need?`${c.short} ${x.pct}%`:''; }).filter(Boolean); return parts.length?' · '+parts.join(' · '):''; })():''}${noRole.length?` · ⚠ ${noRole.length} worker${noRole.length===1?'':'s'} not counted (no role)`:''}`, cat:'--cat-4', icon:ic('chart')},
     {label:'Missing', num:missing, cls:missing?'danger':'ok', sub:'required but never recorded', cat:'--cat-9', icon:ic('xcircle')},
     {label:'Expired', num:expired, cls:expired?'danger':'ok', sub:'past the valid-until date', cat:'--cat-7', icon:ic('stop')},
     {label:'Expiring soon', num:expiring, cls:expiring?'warn':'ok', sub:'within the next 30 days', cat:'--cat-2', icon:ic('hourglass')},
@@ -2777,7 +2827,7 @@ function renderMatrix(){
   }
   if(matrixFilters.gaps==='gaps') rows=rows.filter(r=>r.cells.some(c=>c && c.st.status!=='valid'));
   rows.sort((a,b)=>(a.w.trade||'').localeCompare(b.w.trade||'') || (a.w.fullName||'').localeCompare(b.w.fullName||''));
-  head.innerHTML = `<tr><th class="mx-sticky">Worker</th>${cols.map(t=>`<th class="mx-col">${esc(t)}</th>`).join('')}</tr>`;
+  head.innerHTML = `<tr><th class="mx-sticky">Worker</th>${cols.map(t=>`<th class="mx-col mx-cat-${trainingCat(t)}">${catBadgeHtml(trainingCat(t))}${esc(t)}${trainingCat(t)==='client'&&trainingClients(t).length?`<div class="wsub">${esc(trainingClients(t).join(', '))}</div>`:''}</th>`).join('')}</tr>`;
   if(!rows.length){ body.innerHTML=`<tr><td class="empty-state" colspan="${cols.length+1}">${matrixFilters.gaps==='gaps' ? ic('checkcircle')+' No gaps — every worker shown has all required trainings in date.' : 'No active workers match.'}</td></tr>`; return; }
   body.innerHTML = rows.map(r=>`<tr data-mx-worker="${r.w.id}">
       <td class="mx-sticky"><div class="wname">${esc(r.w.fullName||'—')}</div><div class="wsub">${r.roles.length ? esc(r.roles.join(' + ')) : `<span class="badge muted">${esc(r.w.designation?r.w.designation+' — not in role list':'No designation')}</span>`}${r.w.trade?' · '+esc(r.w.trade):''}</div></td>
@@ -2793,21 +2843,23 @@ async function exportTrainingMatrix(){
   const ws=activeWorkers().filter(w=>(w.status||'active')==='active').sort((a,b)=>(a.trade||'').localeCompare(b.trade||'') || (a.fullName||'').localeCompare(b.fullName||''));
   const reqs=ws.map(w=>({w, c:workerTrainingCompliance(w)}));
   const used=new Set(); reqs.forEach(x=>x.c.cells.forEach(t=>used.add(normTraining(t.name))));
-  const cols=cat.filter(t=>used.has(normTraining(t))).concat(cat.filter(t=>!used.has(normTraining(t))));
-  const m1=[['Worker','Civil ID','Division','Designation','Roles','Required','In date','Compliance %', ...cols]];
-  const gaps=[['Worker','Civil ID','Division','Roles','Training','Status','Valid until','Required for']];
+  const catOrd=t=>TRAINING_CAT_KEYS.indexOf(trainingCat(t));
+  const cols=cat.filter(t=>used.has(normTraining(t))).concat(cat.filter(t=>!used.has(normTraining(t)))).sort((a,b)=>catOrd(a)-catOrd(b));
+  const m1=[['Worker','Civil ID','Division','Designation','Roles','Required','In date','Compliance %', ...TRAINING_CATS.map(c=>c.short+' %'), ...cols.map(t=>`${t} [${trainingCatInfo(trainingCat(t)).short}]`)]];
+  const gaps=[['Worker','Civil ID','Division','Roles','Training','Group','Status','Valid until','Required for']];
   for(const {w,c} of reqs){
     const by=new Map(c.cells.map(t=>[normTraining(t.name), t]));
     m1.push([w.fullName||'', w.civilId||'', w.trade||'', w.designation||'', workerRoles(w).join(' + ')||'No role set', c.need, c.ok, c.need?Math.round(c.ok*100/c.need):'',
+      ...TRAINING_CAT_KEYS.map(k=>c.byCat[k].need?Math.round(c.byCat[k].ok*100/c.byCat[k].need):''),
       ...cols.map(t=>{ const x=by.get(normTraining(t)); return x ? (word[x.st.status]||x.st.status)+(x.st.expiry?` (${x.st.expiry})`:'') : '—'; })]);
-    for(const x of c.cells) if(x.st.status!=='valid') gaps.push([w.fullName||'', w.civilId||'', w.trade||'', workerRoles(w).join(' + '), x.name, word[x.st.status]||x.st.status, x.st.expiry||'', x.roles.join(', ')]);
+    for(const x of c.cells) if(x.st.status!=='valid') gaps.push([w.fullName||'', w.civilId||'', w.trade||'', workerRoles(w).join(' + '), x.name, trainingCatInfo(x.cat).label, word[x.st.status]||x.st.status, x.st.expiry||'', x.roles.join(', ')]);
   }
   const counts=new Map(); ws.forEach(w=>workerRoles(w).forEach(r=>{ const k=roleKey(r); counts.set(k,(counts.get(k)||0)+1); }));
-  const m2=[['Role','Divisions','Workers with this role', ...cat], ...roles.map(r=>{ const need=new Set((r.trainings||[]).map(normTraining)); return [r.name, roleDivisions(r).map(divShort).join(', ')||'All divisions', counts.get(roleKey(r.name))||0, ...cat.map(t=>need.has(normTraining(t))?'✓':'')]; })];
+  const m2=[['Role','Divisions','Workers with this role', ...cat], ['Group →','','', ...cat.map(t=>trainingCatInfo(trainingCat(t)).label+(trainingCat(t)==='client'&&trainingClients(t).length?' ('+trainingClients(t).join(', ')+')':''))], ...roles.map(r=>{ const need=new Set((r.trainings||[]).map(normTraining)); return [r.name, roleDivisions(r).map(divShort).join(', ')||'All divisions', counts.get(roleKey(r.name))||0, ...cat.map(t=>need.has(normTraining(t))?'✓':'')]; })];
   const wb=XLSX.utils.book_new();
-  const s1=XLSX.utils.aoa_to_sheet(m1); s1['!cols']=[{wch:26},{wch:16},{wch:24},{wch:18},{wch:30},{wch:9},{wch:8},{wch:12}, ...cols.map(t=>({wch:Math.max(14, Math.min(28, t.length+2))}))]; s1['!freeze']={xSplit:1, ySplit:1};
+  const s1=XLSX.utils.aoa_to_sheet(m1); s1['!cols']=[{wch:26},{wch:16},{wch:24},{wch:18},{wch:30},{wch:9},{wch:8},{wch:12},{wch:11},{wch:9},{wch:10}, ...cols.map(t=>({wch:Math.max(14, Math.min(34, t.length+12))}))]; s1['!freeze']={xSplit:1, ySplit:1};
   const s2=XLSX.utils.aoa_to_sheet(m2); s2['!cols']=[{wch:30},{wch:26},{wch:12}, ...cat.map(t=>({wch:Math.max(12, Math.min(26, t.length+2))}))];
-  const s3=XLSX.utils.aoa_to_sheet(gaps.length>1 ? gaps : [...gaps, ['No gaps — every required training is in date.']]); s3['!cols']=[{wch:26},{wch:16},{wch:24},{wch:30},{wch:26},{wch:14},{wch:12},{wch:30}];
+  const s3=XLSX.utils.aoa_to_sheet(gaps.length>1 ? gaps : [...gaps, ['No gaps — every required training is in date.']]); s3['!cols']=[{wch:26},{wch:16},{wch:24},{wch:30},{wch:26},{wch:22},{wch:14},{wch:12},{wch:30}];
   XLSX.utils.book_append_sheet(wb, s1, 'All workers');
   // one sheet per division, with only the trainings that division needs
   for(const d of TRADE_CATEGORIES){
@@ -2841,9 +2893,9 @@ function renderRoleRequirements(q){
     {label:'No role yet', num:noRole, cls:noRole?'warn':'ok', sub:'set in each worker\'s Profile', cat:'--cat-2', icon:ic('alert')},
   ].map(t=>`<div class="tile" style="--tile-accent:var(${t.cat})"><div class="tile-head"><div class="tile-icon">${t.icon}</div><div class="tile-label">${t.label}</div></div><div class="tile-num ${t.cls||''}">${t.num}</div><div class="tile-sub">${t.sub}</div></div>`).join('');
   if(noRole){ note.hidden=false; note.innerHTML=`${ic('alert')} Next step: give each worker their role(s) — open the worker → <strong>Profile</strong> → pick their <em>Designation</em> (and any Extra roles) → Save. The <strong>Workers</strong> view then shows who has which training.`; }
-  const cols=cat.filter(t=>!q || t.toLowerCase().includes(q) || roles.some(r=>r.name.toLowerCase().includes(q)));
+  const cols=cat.filter(t=>(matrixFilters.cat==='all' || trainingCat(t)===matrixFilters.cat) && (!q || t.toLowerCase().includes(q) || roles.some(r=>r.name.toLowerCase().includes(q)))).sort((a,b)=>TRAINING_CAT_KEYS.indexOf(trainingCat(a))-TRAINING_CAT_KEYS.indexOf(trainingCat(b)));
   const rows=roles.filter(r=>!q || r.name.toLowerCase().includes(q) || (r.trainings||[]).some(t=>String(t).toLowerCase().includes(q)));
-  head.innerHTML=`<tr><th class="mx-sticky">Role</th><th class="mx-col">Workers</th>${cols.map(t=>`<th class="mx-col">${esc(t)}</th>`).join('')}</tr>`;
+  head.innerHTML=`<tr><th class="mx-sticky">Role</th><th class="mx-col">Workers</th>${cols.map(t=>`<th class="mx-col mx-cat-${trainingCat(t)}">${catBadgeHtml(trainingCat(t))}${esc(t)}${trainingCat(t)==='client'&&trainingClients(t).length?`<div class="wsub">${esc(trainingClients(t).join(', '))}</div>`:''}</th>`).join('')}</tr>`;
   if(!roles.length){ body.innerHTML=`<tr><td class="empty-state" colspan="${cols.length+2}">No roles for ${esc(divShort(div))} yet — add them in <strong>Roles &amp; required trainings</strong>.</td></tr>`; return; }
   if(!rows.length){ body.innerHTML=`<tr><td class="empty-state" colspan="${cols.length+2}">No roles match.</td></tr>`; return; }
   body.innerHTML=rows.map(r=>{ const need=new Set((r.trainings||[]).map(normTraining)); const n=counts.get(roleKey(r.name))||0;
@@ -2875,11 +2927,16 @@ function reqEditFromSettings(){
   let guessed=0;
   const roles=trainingRoles().map(r=>{ let d=roleDivisions(r); if(!d.length){ d=guessRoleDivisions(r.name); guessed++; }
     return {name:String(r.name).trim(), orig:String(r.name).trim(), set:new Set((r.trainings||[]).map(normTraining).filter(Boolean)), divs:new Set(d)}; });
-  return {catalogue:cat, roles, guessed, removed:[], div:(matrixFilters.division && matrixFilters.division!=='all' && TRADE_CATEGORIES.includes(matrixFilters.division)) ? matrixFilters.division : 'all'};
+  const meta=new Map(); for(const t of cat){ const m=trainingMeta(t); meta.set(normTraining(t), m ? {cat:m.cat, clients:(m.clients||[]).slice()} : {cat:guessTrainingCat(t), clients:[], guess:true}); }
+  return {catalogue:cat, meta, roles, guessed, removed:[], div:(matrixFilters.division && matrixFilters.division!=='all' && TRADE_CATEGORIES.includes(matrixFilters.division)) ? matrixFilters.division : 'all'};
 }
 function readReqGrid(){
   const panel=document.getElementById('reqPanel');
   if(!reqEdit || panel.hidden) return;
+  reqEdit.catalogue.forEach((t,i)=>{ const sel=panel.querySelector(`[data-cat-sel="${i}"]`); if(!sel) return; const k=normTraining(t), old=reqEdit.meta.get(k)||{};
+    const cl=[...panel.querySelectorAll(`[data-cat-client="${i}"]:checked`)].map(x=>x.value); const other=(panel.querySelector(`[data-cat-other="${i}"]`)||{}).value||'';
+    other.split(',').map(x=>x.trim()).filter(Boolean).forEach(x=>{ if(!cl.some(c=>clientKey(c)===clientKey(x))) cl.push(x); });
+    reqEdit.meta.set(k, {cat:sel.value, clients:sel.value==='client'?cl:[], guess:old.guess && sel.value===old.cat && !sel.dataset.touched}); });
   reqEdit.roles.forEach((r,i)=>{
     const inp=panel.querySelector(`[data-role-name="${i}"]`); if(inp) r.name=inp.value;
     const boxes=panel.querySelectorAll(`[data-role-t="${i}"]`);
@@ -2895,15 +2952,21 @@ function renderReqPanel(){
   panel.innerHTML = `<h3>Roles &amp; required trainings</h3>
     <p class="wsub" style="margin:-6px 0 10px;"><strong>1.</strong> List the trainings. <strong>2.</strong> Add your company roles — these become the <em>Designation</em> pick-list on every worker's profile. <strong>3.</strong> Tick the trainings each role needs. A person with more than one role — e.g. a driver who also works as a scaffolder — needs the trainings of all their roles. Training records are matched by course name (“Working at Height – Level 2” counts for “Working at Height”).</p>
     <form id="reqForm">
-      <div class="subhead" style="margin-top:0;">Trainings (${cat.length})</div>
-      <div class="req-chips">${cat.length ? cat.map((t,i)=>`<span class="req-chip">${esc(t)}<button type="button" data-cat-remove="${i}" aria-label="Remove ${esc(t)}" title="Remove">${ic('close')}</button></span>`).join('') : '<span class="wsub">No trainings yet — add them below, or use the suggested list.</span>'}</div>
+      <div class="subhead" style="margin-top:0;">Trainings (${cat.length}) — pick the group of each training</div>
+      <p class="wsub" style="margin:0 0 8px;"><strong>OPAL / PDO mandatory</strong> · <strong>Client requirement</strong> — tick the client(s); only workers on that client's projects need it · <strong>Burhan internal</strong>. Each group has its own compliance %.</p>
+      ${(()=>{ const guessed=cat.filter(t=>(reqEdit.meta.get(normTraining(t))||{}).guess).length; return guessed?`<div class="notice">${ic('alert')} The group of ${guessed} training${guessed===1?' was':'s were'} suggested from the name (marked <em>suggested</em>) — check them, then <strong>Save</strong>.</div>`:''; })()}
+      ${cat.length ? `<div class="req-tlist">${(()=>{ const kc=knownClients(); return cat.map((t,i)=>{ const m=reqEdit.meta.get(normTraining(t))||{cat:guessTrainingCat(t), clients:[], guess:true}; const extra=(m.clients||[]).filter(c=>!kc.some(k=>clientKey(k)===clientKey(c)));
+        return `<div class="req-trow req-cat-${m.cat}"><span class="req-tname">${esc(t)}${m.guess?' <span class="badge muted">suggested</span>':''}</span>
+          <select data-cat-sel="${i}" aria-label="Group for ${esc(t)}">${TRAINING_CATS.map(c=>`<option value="${c.key}" ${m.cat===c.key?'selected':''}>${esc(c.label)}</option>`).join('')}</select>
+          <span class="req-tclients" data-cat-clients="${i}" ${m.cat==='client'?'':'hidden'}>${kc.map(c=>`<label class="chk"><input type="checkbox" data-cat-client="${i}" value="${esc(c)}" ${(m.clients||[]).some(x=>clientKey(x)===clientKey(c))?'checked':''}>${esc(c)}</label>`).join('')}<input data-cat-other="${i}" value="${esc(extra.join(', '))}" placeholder="${kc.length?'Other client(s), comma separated':'Client name(s), e.g. PDO, OQ'}"><span class="wsub req-thint" ${(m.clients||[]).length?'hidden':''}>No client ticked = needed by everyone with the role</span></span>
+          <button type="button" class="btn btn-sm btn-ghost req-rm" data-cat-remove="${i}" aria-label="Remove ${esc(t)}" title="Remove this training">${ic('close')}</button></div>`; }).join(''); })()}</div>` : '<span class="wsub">No trainings yet — add them below, or use the suggested list.</span>'}
       <div class="req-add"><input id="reqNewTraining" list="trainingNameList" placeholder="Add a training, e.g. Rigging & Slinging" aria-label="New training name"><button type="button" class="btn btn-sm" id="reqAddTraining">+ Add training</button></div>
       <datalist id="trainingNameList">${names.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist>
       <div class="subhead">Roles — tick the division(s) and the trainings each role needs</div>
       <div class="seg-tabs" id="reqDivTabs">${['all',...TRADE_CATEGORIES].map(d=>{ const n=d==='all'?reqEdit.roles.length:reqEdit.roles.filter(r=>r.divs.has(d)).length; return `<button type="button" class="seg-btn ${reqEdit.div===d?'active':''}" data-req-div-tab="${esc(d)}">${esc(d==='all'?'All':divShort(d))} (${n})</button>`; }).join('')}</div>
       ${reqEdit.guessed ? `<div class="notice">${ic('alert')} Divisions were filled in for ${reqEdit.guessed} role${reqEdit.guessed===1?'':'s'} that didn't have any yet — check the ticks under each role name, then <strong>Save</strong>.</div>` : ''}
       ${(()=>{ const shown=reqEdit.roles.map((r,i)=>({r,i})).filter(x=>reqEdit.div==='all' || x.r.divs.has(reqEdit.div) || !x.r.divs.size); return shown.length ? `<p class="wsub mx-tip">Scroll inside the box — the training names stay on top and the role names stay on the left. Sideways: use the scroll bar at the bottom of the box, or Shift + mouse wheel.</p><div class="table-wrap mx-scroll"><table class="matrix-table req-grid">
-        <thead><tr><th class="mx-sticky">Role / designation · division(s)</th>${cat.map(t=>`<th class="mx-col">${esc(t)}</th>`).join('')}<th></th></tr></thead>
+        <thead><tr><th class="mx-sticky">Role / designation · division(s)</th>${cat.map(t=>{ const k=(reqEdit.meta.get(normTraining(t))||{}).cat||guessTrainingCat(t); return `<th class="mx-col mx-cat-${k}">${catBadgeHtml(k)}${esc(t)}</th>`; }).join('')}<th></th></tr></thead>
         <tbody>${shown.map(({r,i})=>`<tr>
           <td class="mx-sticky"><input data-role-name="${i}" value="${esc(r.name)}" placeholder="e.g. Scaffolder" aria-label="Role name">
             <div class="req-divchips">${TRADE_CATEGORIES.map(d=>`<label class="chk"><input type="checkbox" data-role-div="${i}" value="${esc(d)}" ${r.divs.has(d)?'checked':''}>${esc(divShort(d))}</label>`).join('')}</div></td>
@@ -2935,7 +2998,7 @@ function closeReqEditor(){ reqEdit=null; const p=document.getElementById('reqPan
 function reqAddTrainingName(n){
   n=String(n||'').trim(); if(!n) return false;
   if(reqEdit.catalogue.some(x=>normTraining(x)===normTraining(n))) return false;
-  reqEdit.catalogue.push(n); return true;
+  reqEdit.catalogue.push(n); if(!reqEdit.meta.has(normTraining(n))) reqEdit.meta.set(normTraining(n), {cat:guessTrainingCat(n), clients:[], guess:true}); return true;
 }
 async function saveReqEditor(){
   readReqGrid();
@@ -2952,7 +3015,8 @@ async function saveReqEditor(){
   // keep the last 10 saved versions so a removed role can always be added back
   const prevRoles=trainingRoles();
   const versions=[...(trainingReq.versions||[]), ...(prevRoles.length ? [{at:new Date().toISOString(), by:(auth.currentUser&&auth.currentUser.email)||'', roles:prevRoles.map(r=>({name:r.name, divisions:roleDivisions(r), trainings:(r.trainings||[]).slice()}))}] : [])].slice(-10);
-  if(!(await saveSettings('trainingMatrix', {catalogue:reqEdit.catalogue.slice(), roles, versions}, reqEdit.base))) return false;
+  const trainingMeta={}; for(const t of reqEdit.catalogue){ const k=normTraining(t), m=reqEdit.meta.get(k)||{cat:guessTrainingCat(t), clients:[]}; trainingMeta[k]={cat:m.cat, clients:m.cat==='client'?(m.clients||[]):[]}; }
+  if(!(await saveSettings('trainingMatrix', {catalogue:reqEdit.catalogue.slice(), roles, versions, trainingMeta}, reqEdit.base))) return false;
   const removedNames=prevRoles.map(r=>String(r.name).trim()).filter(n=>!roles.some(x=>roleKey(x.name)===roleKey(n)) && !renames.has(roleKey(n)));
   toast(`Saved — ${reqEdit.catalogue.length} training${reqEdit.catalogue.length===1?'':'s'} and ${roles.length} role${roles.length===1?'':'s'}${removedNames.length?` · removed: ${removedNames.join(', ')}`:''}`);
   matrixFilters.mode=null;
@@ -3023,9 +3087,12 @@ function workerRequiredHtml(w){
   if(!roles.length) return `<div class="notice" style="margin-bottom:14px;">${ic('alert')} No role for this worker yet — pick their <strong>Designation</strong> from the role list (and any extra roles) in the <strong>Profile</strong> tab to see which trainings they need.</div>`;
   const c=workerTrainingCompliance(w);
   if(!c.need) return `<p class="wsub" style="margin:0 0 14px;">Roles: <strong>${esc(roles.join(' + '))}</strong> — no trainings are set as required for these roles yet.</p>`;
+  const wc=workerClient(w);
   return `<div class="panel req-box" style="margin-bottom:16px;">
     <div class="subhead" style="margin-top:0;">Required for ${esc(roles.join(' + '))} — ${c.ok} of ${c.need} in date</div>
-    ${c.cells.map(x=>`<div class="rf"><span class="rf-k">${matrixCellHtml(x.st, x.roles)}</span><span class="rf-v"><strong>${esc(x.name)}</strong>${x.st.expiry?` · valid until ${esc(x.st.expiry)}`:''} <span class="wsub">· ${esc(x.roles.join(', '))}</span></span></div>`).join('')}
+    ${TRAINING_CATS.map(g=>{ const cs=c.cells.filter(x=>x.cat===g.key); if(!cs.length) return g.key==='client' && trainingCatalogue().some(t=>trainingCat(t)==='client') ? `<div class="req-grp"><div class="req-grp-h">${catBadgeHtml(g.key)} ${esc(g.label)}</div><p class="wsub" style="margin:2px 0 0;">None needed${wc?' for '+esc(wc)+' projects':' — not on a client project'}.</p></div>` : '';
+      const b=c.byCat[g.key]; return `<div class="req-grp"><div class="req-grp-h">${catBadgeHtml(g.key)} ${esc(g.label)} — ${b.ok} of ${b.need} in date${g.key==='client'&&wc?` <span class="wsub">(${esc(wc)})</span>`:''}</div>
+      ${cs.map(x=>`<div class="rf"><span class="rf-k">${matrixCellHtml(x.st, x.roles)}</span><span class="rf-v"><strong>${esc(x.name)}</strong>${x.st.expiry?` · valid until ${esc(x.st.expiry)}`:''} <span class="wsub">· ${esc(x.roles.join(', '))}</span></span></div>`).join('')}</div>`; }).join('')}
   </div>`;
 }
 
@@ -3796,7 +3863,7 @@ const TARGET_DEFS = [
   {key:'daysLost', kind:'lagging', label:'Days lost to injury', type:'max', def:0},
   {key:'complaints', kind:'lagging', label:'Client HSE complaints', type:'max', def:4},
   // leading — proactive
-  {key:'training', kind:'leading', label:'Training compliance', type:'min', unit:'%', def:95, cc:true},
+  {key:'training', kind:'leading', label:'Training compliance (OPAL / PDO mandatory)', type:'min', unit:'%', def:95, cc:true},
   {key:'tbtPerMonth', kind:'leading', label:'Toolbox talks per month (average)', type:'min', dec:1, def:8, cc:true},
   {key:'inspPerMonth', kind:'leading', label:'Site visits, audits & inspections per month', type:'min', dec:1, def:6, cc:true},
   {key:'obsPerMonth', kind:'leading', label:'HSE observations per month (average)', type:'min', dec:1, def:20},
@@ -3818,7 +3885,7 @@ let targetsEditOpen=false;
 function targetsFor(year){ const t=(appTargets||{})[year]; return t || null; }
 let appTargets={};
 function allCorrectiveActions(){ return collectAllActions(); }   // same list as the Action Tracker
-function trainingCompliancePct(){ return trainingComplianceFor(activeWorkers().filter(w=>(w.status||'active')==='active')).pct; }
+function trainingCompliancePct(){ return trainingComplianceFor(activeWorkers().filter(w=>(w.status||'active')==='active'), 'opal').pct; }   // Batch 40: KPI = OPAL / PDO mandatory trainings
 // How much of the year has passed (for averages and pro-rata targets). The month in progress counts only
 // for the days elapsed, so early in a month the figures aren't unfairly "behind". upto = 'YYYY-MM' to stop at a month.
 function kpiMonthsElapsed(year, upto){
@@ -6884,13 +6951,15 @@ function renderTiles(){
   const total=list.length, active=list.filter(w=>(w.status||'active')!=='inactive').length;
   // each row: how many workers are OK / expiring / a problem / nothing recorded
   const mk=()=>({ok:0, soon:0, bad:0, none:0});
-  const R={civil:mk(), ind:mk(), tr:mk(), comp:mk(), med:mk(), lic:mk(), warn:mk(), vio:mk()};
+  const R={civil:mk(), ind:mk(), tr_opal:mk(), tr_client:mk(), tr_internal:mk(), comp:mk(), med:mk(), lic:mk(), warn:mk(), vio:mk()};
+  const trNeed={opal:0, client:0, internal:0}, trNoRole={n:0};
   let unfit=0, missingInd=0, finalWarn=0, totalWarnings=0, vio90=0, vioCrit=0;
   const put=(r,st)=>{ if(st==='valid') r.ok++; else if(st==='expiring') r.soon++; else if(st==='expired'||st==='missing'||st==='unfit') r.bad++; else r.none++; };
   for(const w of list){
     put(R.civil, w.civilIdExpiry ? statusFor(w.civilIdExpiry) : 'none');
     const ia=aggFor(w,'inductions'); if(ia.status==='missing') missingInd++; put(R.ind, ia.status);
-    for(const [k,key] of [['tr','trainings'],['comp','competency'],['lic','licenses']]){ const recs=w[key]||[]; put(R[k], recs.length ? worstStatusOf(currentRecs(recs, key)) : 'none'); }
+    if((w.status||'active')!=='inactive'){ let nr=false; for(const g of TRAINING_CAT_KEYS){ const st=workerCatStatus(w, g); if(st==='norole'){ nr=true; R['tr_'+g].none++; continue; } if(st==='na') continue; trNeed[g]++; put(R['tr_'+g], st==='ok'?'valid':st==='soon'?'expiring':'expired'); } if(nr) trNoRole.n++; }
+    for(const [k,key] of [['comp','competency'],['lic','licenses']]){ const recs=w[key]||[]; put(R[k], recs.length ? worstStatusOf(currentRecs(recs, key)) : 'none'); }
     const ms=medicalStatus(w).status; if(ms==='unfit') unfit++; put(R.med, ms);
     const wl=w.warnings||[]; totalWarnings+=wl.length;
     if(wl.some(x=>x.level==='Final warning')){ finalWarn++; R.warn.bad++; } else if(wl.length) R.warn.soon++; else R.warn.ok++;
@@ -6900,7 +6969,7 @@ function renderTiles(){
   const exp=(r)=>r.bad, rows=[
     {key:'civil', label:'Civil ID', icon:'idcard', num:R.civil.bad, sub:`${R.civil.bad} expired · ${R.civil.soon} expiring soon`, words:['valid','expiring soon','expired','no expiry date']},
     {key:'ind', label:'Induction', icon:'clipboard', num:R.ind.bad, sub:`${missingInd} not inducted · ${R.ind.bad-missingInd} expired · ${R.ind.soon} expiring soon`, words:['inducted','expiring soon','not inducted / expired','—']},
-    {key:'tr', label:'Training', icon:'cap', num:R.tr.bad, sub:`${R.tr.bad} expired · ${R.tr.soon} expiring soon`, words:['all valid','expiring soon','expired','none logged']},
+    ...TRAINING_CATS.map(g=>{ const r=R['tr_'+g.key]; return {key:'tr_'+g.key, label:'Training — '+g.short, icon:'cap', num:r.bad, sub:trainingRoles().length ? `${r.bad} missing / expired · ${r.soon} expiring · ${trNeed[g.key]} need these${r.none?` · ${r.none} no role`:''}` : 'set roles in Training matrix', words:['all in date','expiring soon','missing / expired','no role yet']}; }),
     {key:'comp', label:'Competency', icon:'checkcircle', num:R.comp.bad, sub:`${R.comp.bad} expired · ${R.comp.soon} expiring soon`, words:['all valid','expiring soon','expired','none logged']},
     {key:'med', label:'Medical fitness', icon:'heart', num:R.med.bad, sub:`${unfit} unfit · ${R.med.bad-unfit} expired · ${R.med.soon} expiring soon`, words:['fit & valid','expiring soon','unfit / expired','none logged']},
     {key:'lic', label:'Licenses', icon:'file', num:R.lic.bad, sub:`${R.lic.bad} expired · ${R.lic.soon} expiring soon`, words:['all valid','expiring soon','expired','none logged']},
@@ -8486,7 +8555,8 @@ function renderCommandCentre(entries, m, key){
   document.getElementById('ccBars').innerHTML = ccBarSvg(months, monthly.map(x=>x.proactiveTotal));
   // training compliance (Workforce → Training matrix, role-based) — follows the division / project in view
   const scopeWs=activeWorkers().filter(w=>(w.status||'active')==='active' && workerInScope(w, division, project));
-  const gauge=(label, ws)=>{ const c=trainingComplianceFor(ws); return c.need ? {d:label, pct:c.pct, sub:`${c.full} of ${c.counted} workers fully trained`} : null; };
+  const gauge=(label, ws)=>{ const c=trainingComplianceFor(ws, 'opal'); if(!c.need) return null; const other=['client','internal'].map(k=>{ const x=trainingComplianceFor(ws, k); return x.need?`${trainingCatInfo(k).short} ${x.pct}%`:''; }).filter(Boolean).join(' · ');
+    return {d:label, pct:c.pct, sub:`${c.full} of ${c.counted} fully trained${other?' · '+other:''}`}; };
   let divRows;
   if(division==='all'){
     const tot=gauge('Company-wide', scopeWs);
@@ -11039,6 +11109,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(cell && canEdit()){ addFormOpen=true; editingRecordId=null; recordPrefill={__tab:'trainings', name:cell.dataset.mxTrain}; }   // missing / expired → open "add training record" with the name filled in
     renderDrawer();
   });
+  document.getElementById('matrixCatTabs').addEventListener('click', e=>{ const b=e.target.closest('[data-mxcat]'); if(!b) return; matrixFilters.cat=b.dataset.mxcat; renderMatrix(); });
   document.getElementById('matrixDivTabs').addEventListener('click', e=>{ const b=e.target.closest('[data-mxdiv]'); if(!b) return; matrixFilters.division=b.dataset.mxdiv; matrixFilters.role='all'; renderMatrix(); });
   document.getElementById('matrixModeTabs').addEventListener('click', e=>{ const b=e.target.closest('[data-mxmode]'); if(!b) return; matrixFilters.mode=b.dataset.mxmode; renderMatrix(); });
   document.getElementById('exportMatrixBtn').addEventListener('click', exportTrainingMatrix);
@@ -11091,6 +11162,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
       return;
     }
   });
+  document.getElementById('reqPanel').addEventListener('change', e=>{ const cb=e.target.closest('[data-cat-client],[data-cat-other]'); if(cb){ const box=cb.closest('.req-tclients'); const h=box&&box.querySelector('.req-thint'); if(h) h.hidden=!!box.querySelector('[data-cat-client]:checked') || !!(box.querySelector('[data-cat-other]')||{}).value; return; }
+    const sel=e.target.closest('[data-cat-sel]'); if(!sel) return; sel.dataset.touched='1'; const box=document.querySelector(`[data-cat-clients="${sel.dataset.catSel}"]`); if(box) box.hidden=sel.value!=='client'; const row=sel.closest('.req-trow'); if(row) row.className='req-trow req-cat-'+sel.value; });
   document.getElementById('reqPanel').addEventListener('keydown', e=>{
     if(e.key==='Enter' && e.target.id==='reqNewTraining'){ e.preventDefault(); const b=document.getElementById('reqAddTraining'); if(b) b.click(); }
   });
