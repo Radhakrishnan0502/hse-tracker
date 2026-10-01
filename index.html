@@ -348,7 +348,7 @@ table.breakdown-table tbody tr[data-open-site]{cursor:pointer;}
 table.breakdown-table tbody tr.total-row td{border-top:2px solid var(--line); background:var(--surface-2);}
 .updated-note{font-size:11.5px; color:var(--ink-muted); margin:0 0 12px; font-style:italic;}
 .view-only-badge{margin-top:18px; padding:9px 12px; border-radius:9px; background:var(--warn-bg); color:var(--warn); border:1px solid var(--warn); font-size:12px; font-weight:600; line-height:1.35;}
-body.read-only #addWorkerBtn, body.read-only #clearSampleBtn, body.read-only #addVehicleBtn, body.read-only #addSiteBtn,
+body.read-only #addWorkerBtn, body.read-only #addTempBtn, body.read-only #clearSampleBtn, body.read-only #addVehicleBtn, body.read-only #addSiteBtn,
 body.read-only #addEquipBtn, body.read-only #addReportEntryBtn, body.read-only .import-btn,
 body.read-only #trashBtn, body.read-only #vehicleTrashBtn, body.read-only #siteTrashBtn, body.read-only #equipTrashBtn,
 body.read-only [data-edit], body.read-only [data-del], body.read-only [data-redit], body.read-only [data-rdel],
@@ -855,6 +855,7 @@ body.read-only #ckTemplatesBtn{display:none !important;}
           <button class="btn btn-sm" id="printQrCardsBtn" type="button" hidden title="Print QR ID cards for the workers currently shown"><svg class="ic" aria-hidden="true"><use href="#i-qr"/></svg> QR ID cards</button>
           <button class="btn btn-sm import-btn" id="importWorkersBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-upload"/></svg> Import Excel</button>
           <button class="btn btn-sm" id="trashBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg> Deleted workers (0)</button>
+          <button class="btn" id="addTempBtn" type="button">+ Temporary worker</button>
           <button class="btn btn-primary" id="addWorkerBtn">+ Add worker</button>
           <button class="btn btn-sm" id="signOutBtn" type="button" hidden>Sign out</button>
         </div>
@@ -869,7 +870,28 @@ body.read-only #ckTemplatesBtn{display:none !important;}
       <div class="tiles" id="tiles"></div>
       <div class="notice" id="moveNote" hidden></div>
       <div class="notice" id="dupNote" hidden></div>
+      <div class="notice" id="contractNote" hidden></div>
       <div class="div-strip" id="divStrip" aria-label="Workers by division"></div>
+
+      <div class="panel" id="addTempPanel" hidden>
+        <h3>Add a temporary contract worker</h3>
+        <p class="wsub" style="margin:-6px 0 10px;">For individuals hired for a few days or weeks under a contractor agreement. They count under the division they work for; when the contract ends they are released from the project automatically (records are kept, and “+ New contract” brings them back).</p>
+        <form id="addTempForm">
+          <div class="form-grid">
+            <label>Full name *<input data-tfield="fullName" required></label>
+            <label>Civil ID / passport *<input class="mono" data-tfield="civilId" required></label>
+            <label>Mobile number<input type="tel" data-tfield="mobileNumber"></label>
+            <label>Works for division *<select data-tfield="trade" id="tempTrade" required></select></label>
+            <label>Designation (role)<select data-tfield="designation" id="tempRole"></select></label>
+            <label>Project<select data-tfield="projectId" id="tempProject"></select></label>
+            <label>Contract agreement no. *<input data-tfield="agreementNo" required placeholder="e.g. BOTS/TC/2026/014"></label>
+            <label>Start date *<input type="date" data-tfield="start" required></label>
+            <label>End date *<input type="date" data-tfield="end" required></label>
+          </div>
+          <p class="wsub" style="margin:8px 0 0;">After saving, upload the signed agreement (Contracts tab) and his training certificates and medical — the profile then shows whether he is <strong>cleared to start</strong>.</p>
+          <div class="form-actions"><button type="button" class="btn" id="cancelAddTemp">Cancel</button><button type="submit" class="btn btn-primary">Save temporary worker</button></div>
+        </form>
+      </div>
 
       <div class="panel" id="addWorkerPanel" hidden>
         <h3>Add a worker</h3>
@@ -896,6 +918,7 @@ body.read-only #ckTemplatesBtn{display:none !important;}
           <option value="all">All workers</option>
           <option value="active">Active only</option>
           <option value="inactive">Inactive only</option>
+          <option value="temporary">Temporary contract workers</option>
         </select>
       </div>
 
@@ -1889,6 +1912,7 @@ const TABS = [
   {key:'ppeIssued', label:'PPE issued'},
   {key:'warnings', label:'Warnings'},
   {key:'violations', label:'Violations'},
+  {key:'contracts', label:'Contracts'},
 ];
 
 const TRADE_CATEGORIES = ['Office Staff','Scaffolding Division','Civil Division','Logistics & Rental Division','Sub Contractor'];
@@ -1982,6 +2006,17 @@ const RECORD_TYPES = {
       {key:'date', label:'Issue date', type:'date'},
       {key:'expiry', label:'Expiry date', type:'date', required:true},
       {key:'notes', label:'Notes', type:'textarea'},
+    ],
+  },
+  contracts:{
+    title:'Contracts', addLabel:'+ New contract', hasExpiry:true, hasAttachment:true, attachLabel:'signed agreement',
+    cardBadge:r=>{ const t=localToday(); if(!r.expiry) return '<span class="badge muted">No end date</span>'; if(r.expiry<t) return '<span class="badge muted">Ended</span>'; const d=daysBetween(t, r.expiry); return d<=3 ? `<span class="badge warn">Ends in ${d} day${d===1?'':'s'}</span>` : '<span class="badge ok">Running</span>'; },
+    fields:[
+      {key:'agreementNo', label:'Contract agreement no.', type:'text', required:true, placeholder:'e.g. BOTS/TC/2026/014'},
+      {key:'project', label:'Project', type:'select', get options(){ return activeSites().map(x=>x.siteName||'Project').filter(Boolean); }},
+      {key:'date', label:'Start date', type:'date', required:true},
+      {key:'expiry', label:'End date', type:'date', required:true},
+      {key:'notes', label:'Work / notes', type:'textarea', placeholder:'e.g. Scaffolding erection — tank 3 shutdown'},
     ],
   },
   ppeIssued:{
@@ -2312,7 +2347,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b31';
+const APP_BUILD='b32';
 let appOutdated=false;
 async function checkAppVersion(){
   try{
@@ -5976,6 +6011,8 @@ function renderAll(){
   renderTiles();
   renderMoveNote();
   renderDupNote();
+  renderContractNote();
+  autoEndContracts();
   renderTradeFilter();
   renderTable();
   document.getElementById('clearSampleBtn').hidden = !workers.some(w=>w.isSample);
@@ -6049,7 +6086,7 @@ function renderTiles(){
       <div class="wf-hero-body">
         <div class="wf-donut"><svg viewBox="0 0 132 132" width="132" height="132" aria-hidden="true"><circle r="${R0}" cx="66" cy="66" fill="none" stroke="var(--surface-2)" stroke-width="14"/><g transform="rotate(-90 66 66)">${arcs}</g></svg>
           <div class="wf-donut-c"><div class="wf-big">${total}</div><div class="wf-sub">${active} active${total-active?` · ${total-active} inactive`:''}</div></div></div>
-        <div class="wf-legend"><div class="wf-leg-title">${donutTitle}</div>${legend}</div>
+        <div class="wf-legend"><div class="wf-leg-title">${donutTitle}</div>${legend}${(()=>{ const n=list.filter(w=>isTemp(w) && (w.status||'active')==='active').length; return n?`<div class="wsub" style="margin:6px 6px 0;">incl. <strong>${n}</strong> temporary contract worker${n===1?'':'s'}</div>`:''; })()}</div>
       </div>
       ${div==='all' && total ? (()=>{ const iss=list.filter(w=>workerIssues(w).length).length, ok=total-iss; return `<div class="wf-ready"><div class="wf-leg-title">Documents</div>
         <div class="wf-bar" role="img" aria-label="${ok} ready to work, ${iss} need attention">${ok?`<span class="wf-seg ok" style="flex:${ok}" title="${ok} ready to work"></span>`:''}${iss?`<span class="wf-seg bad" style="flex:${iss}" title="${iss} need attention"></span>`:''}</div>
@@ -6087,7 +6124,8 @@ function matches(w){
   const q=filters.q.trim().toLowerCase();
   if(q && !((w.fullName||'')+' '+(w.civilId||'')).toLowerCase().includes(q)) return false;
   if(filters.trade!=='all' && w.trade!==filters.trade) return false;
-  if(filters.status!=='all' && (w.status||'active')!==filters.status) return false;
+  if(filters.status==='temporary'){ if(!isTemp(w)) return false; }
+  else if(filters.status!=='all' && (w.status||'active')!==filters.status) return false;
   return true;
 }
 
@@ -6100,7 +6138,7 @@ function renderTable(){
   tbody.innerHTML=list.map(w=>{
     const f=computeFlags(w);
     return `<tr data-id="${w.id}">
-      <td><div class="wname">${esc(w.fullName)}${w.isSample?'<span class="sample-tag">SAMPLE</span>':''}</div><div class="wsub">${esc(w.designation||w.contractor||'')}</div></td>
+      <td><div class="wname">${esc(w.fullName)}${w.isSample?'<span class="sample-tag">SAMPLE</span>':''}</div><div class="wsub">${esc(w.designation||w.contractor||'')}</div>${isTemp(w)?`<div style="margin-top:3px;">${contractBadgeHtml(w)}</div>`:''}</td>
       <td class="mono">${esc(w.civilId||'—')}${f.civilId.status!=='none'?`<div style="margin-top:3px;">${badgeHtml(f.civilId.status,{valid:'Valid',expiring:'Expiring soon',expired:'Expired'})}</div>`:''}</td>
       <td>${esc(w.trade||'—')}</td>
       <td>${(w.status||'active')==='inactive'?'<span class="badge muted">Inactive</span>':'<span class="badge ok">Active</span>'}</td>
@@ -6299,6 +6337,79 @@ function renderDupNote(){
   const groups=auth.currentUser ? duplicateWorkerGroups() : [];
   el.hidden=!groups.length;
   el.innerHTML = groups.length ? `${ic('alert')} <strong>Possible duplicate workers (same Civil ID):</strong> ${groups.slice(0,8).map(ws=>{ const a=ws.filter(w=>!w.deleted); return `<button type="button" class="att-link" data-dup-civil="${esc(a[0].civilId||'')}">${esc(a[0].fullName||'Worker')} · ${esc(a[0].civilId||'')} ×${a.length}</button>`; }).join(' · ')}${groups.length>8?' …':''} <span class="wsub" style="display:inline;">— open each copy, keep the one with the records and move the other to Deleted workers.</span>` : '';
+}
+/* ---- Batch 32: temporary contract workers (individuals on short contracts — 3 days, 2 weeks, a month…) ----
+   worker.empType='Temporary', worker.contracts=[{id, agreementNo, project, date (start), expiry (end), file}].
+   They belong to the division they work for. When the latest contract has ended the tracker marks them
+   inactive and releases them from the project (records + history kept); "+ New contract" brings them back. */
+function isTemp(w){ return !!w && w.empType==='Temporary'; }
+function currentContract(w){ return (w.contracts||[]).filter(c=>c && (c.date||c.expiry)).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')) || String(b.expiry||'').localeCompare(String(a.expiry||'')))[0] || null; }
+function contractState(w){
+  if(!isTemp(w)) return null;
+  const c=currentContract(w), t=localToday();
+  if(!c || !c.expiry) return {key:'none', text:c?'no end date':'no contract recorded'};
+  if(c.expiry<t) return {key:'ended', text:`contract ended ${c.expiry}`};
+  const d=daysBetween(t, c.expiry);
+  return {key:d<=3?'soon':'running', days:d, text: d===0 ? 'contract ends today' : `ends ${c.expiry}${d<=3?` (${d} day${d===1?'':'s'})`:''}`};
+}
+function contractBadgeHtml(w){
+  const st=contractState(w); if(!st) return '';
+  const cls={ended:'muted', soon:'warn', running:'ok', none:'danger'}[st.key];
+  return `<span class="badge ${cls}" title="Temporary contract worker">Temp · ${esc(st.text)}</span>`;
+}
+// Is this person cleared to start work? (role trainings, medical, Civil ID, induction for the project)
+function workerClearance(w){
+  const why=[];
+  if(w.civilIdExpiry && statusFor(w.civilIdExpiry)==='expired') why.push('Civil ID expired');
+  const ms=medicalStatus(w).status;
+  if(ms==='none') why.push('no medical'); else if(ms==='unfit') why.push('medically unfit'); else if(ms==='expired') why.push('medical expired');
+  if(!workerRoles(w).length) why.push('no designation / role — trainings cannot be checked');
+  for(const x of workerTrainingCompliance(w).cells) if(x.st.status==='missing' || x.st.status==='expired') why.push(`${x.name} ${x.st.status}`);
+  const s=w.projectId ? siteEquipmentList.find(x=>x.id===w.projectId && !x.deleted) : null;
+  if(s){
+    const ok=projectInductionsForWorker(w.id).some(a=>a.projectId===s.id) || (w.inductions||[]).some(r=>inductionTypeOf(r)==='Project induction' && renewNorm(r.site)===renewNorm(s.siteName));
+    if(!ok) why.push(`not inducted for ${s.siteName||'the project'}`);
+  }
+  return {ok:!why.length, why};
+}
+function tempWorkerBoxHtml(w){
+  if(!isTemp(w)) return '';
+  const c=currentContract(w), st=contractState(w), cl=workerClearance(w);
+  const stBadge={ended:'<span class="badge muted">Ended</span>', soon:'<span class="badge warn">Ending</span>', running:'<span class="badge ok">Running</span>', none:'<span class="badge danger">No contract</span>'}[st.key];
+  return `<div class="panel req-box" style="margin-bottom:16px;">
+    <div class="subhead" style="margin-top:0;">Temporary contract worker</div>
+    <div class="rf"><span class="rf-k">${stBadge}</span><span class="rf-v">${c ? `<strong>${esc(c.agreementNo||'Contract')}</strong> · ${esc(c.date||'?')} → ${esc(c.expiry||'?')}${c.project?' · '+esc(c.project):''} · ` : ''}${esc(st.text)}</span></div>
+    <div class="rf"><span class="rf-k">${cl.ok?'<span class="badge ok">✓ Cleared</span>':'<span class="badge danger">✗ Not cleared</span>'}</span><span class="rf-v">${cl.ok ? 'Cleared to start work — trainings, medical and project induction in order.' : '<strong>Not cleared to start:</strong> '+esc(cl.why.join(' · '))}</span></div>
+    ${canEdit()?`<div style="margin-top:10px;"><button type="button" class="btn btn-sm" data-new-contract="1">+ New contract / extend</button> <span class="wsub" style="display:inline;">— agreement no., project and dates; upload the signed agreement in the Contracts tab.</span></div>`:''}
+  </div>`;
+}
+// workers whose contract ends within 3 days, and those released recently
+function contractNotices(){
+  const t=localToday(), soon=[], ended=[];
+  for(const w of activeWorkers()){ if(!isTemp(w)) continue; const st=contractState(w); if(!st) continue;
+    if((w.status||'active')==='active' && st.key==='soon') soon.push(w);
+    const c=currentContract(w); if(st.key==='ended' && c && daysBetween(c.expiry, t)<=7) ended.push(w); }
+  return {soon, ended};
+}
+function renderContractNote(){
+  const el=document.getElementById('contractNote'); if(!el) return;
+  const {soon, ended}=auth.currentUser ? contractNotices() : {soon:[], ended:[]};
+  el.hidden=!(soon.length||ended.length);
+  const link=w=>`<button type="button" class="att-link" data-open-contract="${w.id}">${esc(w.fullName||'Worker')}</button>`;
+  el.innerHTML=[soon.length?`${ic('clock')} <strong>Contract ending soon:</strong> ${soon.map(w=>`${link(w)} (${esc(contractState(w).text)})`).join(' · ')} — extend or let it end.`:'',
+    ended.length?`<strong>Contract ended — released from project:</strong> ${ended.map(link).join(' · ')}`:''].filter(Boolean).join('<br>');
+}
+// When an editor opens the tracker, temporary workers whose contract has ended are released (once).
+const _autoEnded=new Set();
+async function autoEndContracts(){
+  if(!canEdit()) return;
+  const t=localToday();
+  for(const w of activeWorkers()){
+    if(!isTemp(w) || (w.status||'active')!=='active' || _autoEnded.has(w.id)) continue;
+    const c=currentContract(w); if(!c || !c.expiry || c.expiry>=t) continue;
+    _autoEnded.add(w.id);
+    try{ await db.collection('workers').doc(w.id).update(stamp({status:'inactive', contractEnded:c.expiry, ...moveWorkerUpdate(w, null)})); }catch(e){ console.warn('auto end contract', e); }
+  }
 }
 function renderMoveNote(){
   const el=document.getElementById('moveNote'); if(!el) return;
@@ -6924,7 +7035,7 @@ function siteTeamTabHtml(s){
     const issues=workerIssues(w);
     return `<div class="equip-line" data-open-worker="${w.id}">
       <div class="equip-line-main"><div class="equip-line-title">${esc(w.fullName||'—')}</div><div class="wsub">${esc([w.designation, w.trade].filter(Boolean).join(' · ')||'—')}</div></div>
-      <div class="equip-line-badges">${issues.length ? issues.map(i=>`<span class="badge danger">${esc(i)}</span>`).join('') : '<span class="badge ok">All valid</span>'}
+      <div class="equip-line-badges">${isTemp(w)?contractBadgeHtml(w)+(workerClearance(w).ok?'<span class="badge ok">Cleared</span>':'<span class="badge danger" title="'+esc(workerClearance(w).why.join(' · '))+'">Not cleared</span>'):''}${issues.length ? issues.map(i=>`<span class="badge danger">${esc(i)}</span>`).join('') : '<span class="badge ok">All valid</span>'}
         <button type="button" class="icon-btn danger" data-unassign-worker="${w.id}" title="Remove from this project" aria-label="Remove from project">${ic('close')}</button></div>
     </div>`;
   }).join('') : '<p class="wsub">No workers assigned yet.</p>';
@@ -7911,7 +8022,8 @@ function renderDrawer(){
   if(!w){ closeDrawer(); return; }
   document.getElementById('drawerName').textContent=w.fullName;
   document.getElementById('drawerSub').textContent=(w.civilId||'')+(w.trade?' · '+w.trade:'')+(w.projectId?' · at '+locLabel(w.projectId):'');
-  document.getElementById('drawerTabs').innerHTML=TABS.map(t=>`<button type="button" class="tab-btn ${t.key===activeTab?'active':''}" data-tab="${t.key}">${t.label}</button>`).join('');
+  if(activeTab==='contracts' && !(isTemp(w) || (w.contracts||[]).length)) activeTab='profile';
+  document.getElementById('drawerTabs').innerHTML=TABS.filter(t=>t.key!=='contracts' || isTemp(w) || (w.contracts||[]).length).map(t=>`<button type="button" class="tab-btn ${t.key===activeTab?'active':''}" data-tab="${t.key}">${t.label}</button>`).join('');
   renderDrawerBody();
 }
 
@@ -8093,6 +8205,7 @@ function profileTabHtml(w){
   const gcc=parseFloat(w.experienceGCCYears)||0, other=parseFloat(w.experienceOtherYears)||0;
   const total=(gcc+other);
   return `${updatedNote}
+  ${tempWorkerBoxHtml(w)}
   ${workerProjectHtml(w)}
   <form id="profileForm">
     <div class="subhead">Personal details</div>
@@ -8112,6 +8225,7 @@ function profileTabHtml(w){
       <label>Trade / occupation *<select data-field="trade" required>${tradeSelectHtml(w.trade||'')}</select></label>
       <label>Subcontractor / company<input data-field="contractor" value="${esc(w.contractor||'')}"></label>
       <label>Date of joining<input type="date" data-field="dateOfJoining" value="${esc(w.dateOfJoining||'')}"></label>
+      <label>Employment type<select data-field="empType"><option value="" ${isTemp(w)?'':'selected'}>Permanent / company staff</option><option value="Temporary" ${isTemp(w)?'selected':''}>Temporary contract (individual)</option></select></label>
       <label>Employment status<select data-field="status"><option value="active" ${(w.status||'active')==='active'?'selected':''}>Active</option><option value="inactive" ${w.status==='inactive'?'selected':''}>Inactive</option></select></label>
     </div>
 
@@ -8372,6 +8486,7 @@ async function buildProfilePdf(w){
   if(RECORD_TYPES.ppeIssued) section('PPE issued','ppeIssued',RECORD_TYPES.ppeIssued);
   section('Warning letters','warnings',RECORD_TYPES.warnings);
   section('Violations','violations',RECORD_TYPES.violations);
+  if(isTemp(w) || (w.contracts||[]).length) section('Contracts','contracts',RECORD_TYPES.contracts);
 
   if(w.signature && w.signature.url){
     h2('Signature on file');
@@ -8935,7 +9050,34 @@ document.addEventListener('DOMContentLoaded', ()=>{
     downloadAttachment(b.dataset.downloadUrl, b.dataset.downloadName);
   });
 
+  document.getElementById('addTempBtn').addEventListener('click', ()=>{
+    const p=document.getElementById('addTempPanel'); if(!p.hidden){ p.hidden=true; return; }
+    document.getElementById('addWorkerPanel').hidden=true;
+    const tr=document.getElementById('tempTrade'); tr.innerHTML=tradeSelectHtml(filters.trade && filters.trade!=='all' ? filters.trade : '');
+    document.getElementById('tempRole').innerHTML=designationOptionsHtml(tr.value, '');
+    document.getElementById('tempProject').innerHTML=`<option value="">— Not assigned yet —</option>`+activeSites().filter(x=>projectStatus(x)!=='Completed').map(x=>`<option value="${esc(x.id)}">${esc(x.siteName||'Project')}</option>`).join('');
+    const f=document.getElementById('addTempForm'); f.querySelector('[data-tfield="start"]').value=localToday();
+    p.hidden=false; f.querySelector('[data-tfield="fullName"]').focus();
+  });
+  document.getElementById('tempTrade').addEventListener('change', e=>{ const r=document.getElementById('tempRole'); r.innerHTML=designationOptionsHtml(e.target.value, r.value); });
+  document.getElementById('cancelAddTemp').addEventListener('click', ()=>{ document.getElementById('addTempPanel').hidden=true; document.getElementById('addTempForm').reset(); });
+  document.getElementById('addTempForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const v={}; e.target.querySelectorAll('[data-tfield]').forEach(el=>{ v[el.dataset.tfield]=String(el.value||'').trim(); });
+    if(v.end < v.start){ toast('The end date is before the start date'); return; }
+    const k=normKey(v.civilId); const dup=k && workers.find(w=>normKey(w.civilId)===k);
+    if(dup){ toast(`${dup.fullName||'A worker'} already has Civil ID ${v.civilId}${dup.deleted?' (in Deleted workers)':''} — open him and use “+ New contract” instead`); return; }
+    const site=v.projectId ? siteEquipmentList.find(x=>x.id===v.projectId) : null;
+    const now=new Date().toISOString(), me=(auth.currentUser&&auth.currentUser.email)||'';
+    const data={fullName:v.fullName, civilId:v.civilId, mobileNumber:v.mobileNumber, trade:v.trade, designation:v.designation||'', empType:'Temporary', contractor:'Individual — temporary contract', status:'active',
+      contracts:[{id:genId(), agreementNo:v.agreementNo, project:site?(site.siteName||''):'', date:v.start, expiry:v.end}],
+      projectId:site?site.id:null, projectAssignedAt:site?now:null, projectHistory:site?[{projectId:site.id, name:site.siteName||'', from:v.start, to:''}]:[],
+      inductions:[],trainings:[],competency:[],medical:[],licenses:[],warnings:[],violations:[], createdAt:now, createdBy:me};
+    try{ await db.collection('workers').add(data); toast(`${v.fullName} added — contract ${v.start} → ${v.end}`); e.target.reset(); document.getElementById('addTempPanel').hidden=true; }
+    catch(err){ console.error(err); toast('Could not add worker'); }
+  });
   document.getElementById('addWorkerBtn').addEventListener('click', ()=>{
+    document.getElementById('addTempPanel').hidden=true;
     document.getElementById('addWorkerPanel').hidden=false;
   });
   document.getElementById('cancelAddWorker').addEventListener('click', ()=>{
@@ -9060,6 +9202,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
         arr.push({id:genId(), ...data});
       }
       editingRecordId=null; addFormOpen=false; recordPrefill=null;
+      if(activeTab==='contracts'){
+        const cur=currentContract({contracts:arr}), extra={};
+        if(cur && cur.expiry && cur.expiry>=localToday()){ extra.status='active'; extra.contractEnded=''; extra.empType='Temporary';
+          const site=cur.project ? activeSites().find(x=>(x.siteName||'')===cur.project) : null;
+          if(site && site.id!==w.projectId) Object.assign(extra, moveWorkerUpdate(w, site.id)); }
+        _autoEnded.delete(w.id);
+        await updateWorker(w.id, {contracts:arr, ...extra});
+      } else
       await updateWorkerArray(w,activeTab,arr);
     }
   });
@@ -9083,9 +9233,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
       if(await moveWorker(w.id, to, opts)){ toast(to ? `Moved to ${projectName(to)}${temp?' until '+back:''}` : 'Removed from project'); }
       return;
     }
+    if(e.target.closest('[data-new-contract]')){ activeTab='contracts'; editingRecordId=null; addFormOpen=true; recordPrefill={__tab:'contracts', project:w.projectId?projectName(w.projectId):''}; renderDrawer(); return; }
     const mb=e.target.closest('[data-move-back]');
     if(mb){ if(await moveWorker(w.id, w.returnProjectId)) toast('Moved back to '+projectName(w.returnProjectId)); return; }
   });
+  document.getElementById('contractNote').addEventListener('click', e=>{ const b=e.target.closest('[data-open-contract]'); if(b) openDrawer(b.dataset.openContract); });
   document.getElementById('dupNote').addEventListener('click', e=>{ const b=e.target.closest('[data-dup-civil]'); if(!b) return; filters.q=b.dataset.dupCivil; filters.trade='all'; const si=document.getElementById('searchInput'); if(si) si.value=filters.q; const tf=document.getElementById('tradeFilter'); if(tf) tf.value='all'; renderTable(); renderTiles(); });
   document.getElementById('moveNote').addEventListener('click', e=>{ const b=e.target.closest('[data-open-due]'); if(b){ openDrawer(b.dataset.openDue); } });
   document.getElementById('drawerBody').addEventListener('click', async e=>{
