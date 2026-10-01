@@ -896,6 +896,9 @@ th.mx-cat-opal{box-shadow:inset 0 3px 0 var(--cat-1);} th.mx-cat-client{box-shad
 .cal-ev{display:grid; grid-template-columns:30px minmax(0,1fr); gap:4px 10px; padding:7px 0; border-top:1px solid var(--line);} .cal-ev:first-of-type{border-top:0;}
 .cal-ev-d{font-weight:800; color:var(--accent); font-size:15px;} .cal-ev-m strong{font-size:13px;} .cal-ev-a{grid-column:2; display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
 .cal-ev.done .cal-ev-m strong{color:var(--ink-muted);}
+
+/* ---- Batch 44: PDO SP-1157 courses ---- */
+.req-pdo .req-pdo-g{margin-bottom:8px;} .req-pdo label.chk{display:flex; gap:8px; align-items:baseline; margin:3px 0; font-weight:500;}
 </style>
 </head>
 <body class="auth-open">
@@ -1345,7 +1348,7 @@ th.mx-cat-opal{box-shadow:inset 0 3px 0 var(--cat-1);} th.mx-cat-client{box-shad
             <div class="cc-cluster" id="ccCluster"></div>
           </div>
           <div class="cc-panel">
-            <div class="cc-title">Training compliance — OPAL / PDO mandatory <small>required trainings in date — Client and Burhan internal shown under each dial</small></div>
+            <div class="cc-title">Training compliance — PDO mandatory (SP-1157) <small>required trainings in date — Client and Burhan internal shown under each dial</small></div>
             <div class="cc-gauges" id="ccGauges"></div>
           </div>
           <div class="cc-panel">
@@ -2171,7 +2174,7 @@ const RECORD_TYPES = {
   trainings:{
     title:'Training records', addLabel:'+ Add training record', hasExpiry:true, hasAttachment:true, attachLabel:'certificate',
     fields:[
-      {key:'name', label:'Course / training name', type:'text', required:true, placeholder:'e.g. Working at Height'},
+      {key:'name', label:'Course / training name', type:'text', required:true, placeholder:'e.g. Working at Height — or pick a PDO course above'},
       {key:'provider', label:'Provider', type:'text'},
       {key:'date', label:'Completion date', type:'date', required:true},
       {key:'expiry', label:'Valid until', type:'date'},
@@ -2555,7 +2558,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b43';
+const APP_BUILD='b44';
 let appOutdated=false;
 // Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
 let _verTag=null, _verLast=0;
@@ -2728,10 +2731,11 @@ function trainingCatalogue(){
    settings/trainingMatrix.trainingMeta = { [normTraining(name)]: {cat:'opal'|'client'|'internal', clients:[client names]} }
    Client trainings are needed only by workers whose project is for one of the listed clients (none listed = everyone with the role).
    Each group has its own compliance %, so internal or client gaps never pull down the OPAL / PDO figure. */
-const TRAINING_CATS=[{key:'opal', label:'OPAL / PDO mandatory', short:'OPAL / PDO', color:'--cat-1'},{key:'client', label:'Client requirement', short:'Client', color:'--cat-3'},{key:'internal', label:'Burhan internal', short:'Internal', color:'--cat-4'}];
+const TRAINING_CATS=[{key:'opal', label:'PDO mandatory (SP-1157)', short:'PDO', color:'--cat-1'},{key:'client', label:'Client requirement', short:'Client', color:'--cat-3'},{key:'internal', label:'Burhan internal', short:'Internal', color:'--cat-4'}];
 const TRAINING_CAT_KEYS=TRAINING_CATS.map(c=>c.key);
 function trainingCatInfo(k){ return TRAINING_CATS.find(c=>c.key===k) || TRAINING_CATS[2]; }
 function guessTrainingCat(name){
+  if(pdoCourseOf(name)) return 'opal';
   const n=' '+String(name||'').toLowerCase()+' ';
   if(/client|\boq\b|occidental|\boxy\b|daleel|\bbp\b|shell|\bcc energy|petrogas|orpic/.test(n)) return 'client';
   if(/opal|pdo|h2s|hydrogen sul|first aid|fire ?(fight|warden|safety)|working at height|\bwah\b|confined space|defensive driv|rigging|slinging|banksman|signal ?man|scaffold|permit to work|\bptw\b|gas test|authori[sz]ed gas|crane|forklift|lifting|hse induction|basic (hse|safety)|bosiet|\bloto\b|isolation|road safety|journey management|excavation|hot work|manual handling/.test(n)) return 'opal';
@@ -2785,9 +2789,64 @@ function workerCatStatus(w, cat){
   if(cells.some(x=>x.st.status==='missing' || x.st.status==='expired')) return 'bad';
   return cells.some(x=>x.st.status==='expiring') ? 'soon' : 'ok';
 }
+/* Batch 44: PDO SP-1157 (V4.1, Oct 2022) HSE training courses — code, name, re-certification years (null = no expiry),
+   base = the course a recertification / refresher renews (it then counts for that requirement). */
+const PDO_COURSES=[
+  {lvl:'Level 1', code:'HSEI', name:'OPAL Unified HSE Induction', years:null, alias:/\bhse induction\b|opal.*induction/},
+  {lvl:'Level 1', code:'H2SI', name:'OPAL Unified H2S & SO2 Awareness and Escape (Initial)', years:3, alias:/\bh2s\b/},
+  {lvl:'Level 1', code:'H2SR', name:'OPAL Unified H2S & SO2 Awareness and Escape (Refresher)', years:3, base:['H2SI']},
+  {lvl:'Level 1', code:'SCBA', name:'Self-contained Breathing Apparatus & Confined Space Rescue', years:3, alias:/\bscba\b|breathing apparatus/},
+  {lvl:'Level 1', code:'SCBA-R', name:'SCBA & Confined Space Rescue Recertification', years:3, base:['SCBA']},
+  {lvl:'Level 1', code:'AHA', name:'AHA Heartsaver First Aid, CPR & AED', years:2, alias:/first aid|\bcpr\b|heartsaver/},
+  {lvl:'Level 1', code:'EA', name:'Environmental Awareness', years:null, alias:/environmental awareness/},
+  {lvl:'Level 1', code:'FW', name:'Fire Warden', years:null, alias:/fire warden/},
+  {lvl:'Level 2', code:'AGT', name:'Authorized Gas Tester', years:3, alias:/gas test/},
+  {lvl:'Level 2', code:'AGT-R', name:'Authorized Gas Tester Recertification', years:3, base:['AGT']},
+  {lvl:'Level 2', code:'HII', name:'HSE Incident Investigation', years:null, alias:/incident investigation/},
+  {lvl:'Level 2', code:'PTW-H', name:'Permit to Work Holders', years:3, alias:/permit to work holder|\bptw holder/},
+  {lvl:'Level 2', code:'PTWH-R', name:'Permit to Work Holders Recertification', years:3, base:['PTW-H']},
+  {lvl:'Level 2', code:'PTW-S', name:'Permit to Work Signatories & Isolation', years:3, alias:/signator/},
+  {lvl:'Level 2', code:'PTWS-R', name:'Permit to Work Signatories Recertification', years:3, base:['PTW-S']},
+  {lvl:'Level 2', code:'HSE LFS', name:'HSE Leadership for Front Line Supervisors', years:4, alias:/front ?line supervis|hse leadership/},
+  {lvl:'Level 2', code:'HSE LFS-R', name:'HSE Leadership for Front Line Supervisors Refresher', years:4, base:['HSE LFS']},
+  {lvl:'Level 2', code:'CHM', name:'Chemical Handling Management', years:null, alias:/chemical handling/},
+  {lvl:'Level 2', code:'NORMM', name:'Naturally Occurring Radioactive Material Management', years:4, alias:/\bnorm\b|radioactive/},
+  {lvl:'Level 2', code:'NORMM-R', name:'NORM Management Reassessment', years:4, base:['NORMM']},
+  {lvl:'Level 3', code:'IOSH-MS', name:'IOSH Managing Safely', years:null, alias:/iosh/},
+  {lvl:'Level 3', code:'NEBOSH IGC', name:'NEBOSH International General Certificate', years:null, alias:/nebosh.*(igc|general)/},
+  {lvl:'Level 3', code:'NEBOSH Dip', name:'NEBOSH International Diploma', years:null, alias:/nebosh.*dip/},
+  {lvl:'Level 3', code:'NVQ3OSH', name:'NVQ Level 3 in Occupational Safety & Health', years:null, alias:/nvq.*3/},
+  {lvl:'Level 3', code:'NVQ5OSH', name:'NVQ Level 5 Diploma in Occupational Safety & Health', years:null, alias:/nvq.*5/},
+  {lvl:'Level 3', code:'VMN', name:'Goods Vehicle Marshal', years:3, alias:/vehicle marshal/},
+  {lvl:'Level 3', code:'TBP', name:'Tripod Beta Practitioner', years:null, alias:/tripod/},
+  {lvl:'Defensive driving', code:'LV', name:'Defensive Driving, Light Vehicles, Blacktop Roads', years:3, alias:/defensive driving.*(light|\blv\b)|light vehicle.*defensive|\bdd ?01\b/},
+  {lvl:'Defensive driving', code:'HV', name:'Defensive Driving, Heavy Vehicles, Blacktop Roads', years:3, alias:/(defensive driving.*(heavy|\bhv\b))|heavy vehicle.*defensive|\bdd ?02\b/},
+  {lvl:'Defensive driving', code:'GR', name:'Defensive Driving, Graded Roads', years:3, alias:/graded road/},
+  {lvl:'Defensive driving', code:'TN', name:'Defensive Driving, Bulk Tankers', years:3, alias:/tanker/},
+  {lvl:'Defensive driving', code:'LB/HB', name:'Defensive Driving, Buses (Light & Heavy)', years:3, alias:/defensive driving.*bus|\bbus(es)?\b.*defensive/},
+  {lvl:'Defensive driving', code:'RT', name:'Defensive Driving Recertification', years:3, base:['LV','HV','GR','TN','LB/HB'], alias:/defensive driving.*(recert|refresher)/},
+  {lvl:'Defensive driving', code:'EVA', name:'Defensive Driving, Ambulance Drivers', years:1, alias:/ambulance/},
+  {lvl:'Defensive driving', code:'EVF', name:'Defensive Driving, Fire-tender & Emergency Response Vehicle', years:1, alias:/fire.?tender|emergency response vehicle/},
+  {lvl:'Defensive driving', code:'SJM', name:'Safe Journey Manager', years:2, alias:/journey manag/},
+  {lvl:'Defensive driving', code:'SJMR', name:'Safe Journey Manager Reassessment', years:3, base:['SJM']},
+];
+function pdoCourseLabel(c){ return `(${c.code}) ${c.name}`; }
+const _pdoCache=new Map();
+function pdoCourseOf(name){
+  const raw=String(name||'').trim(); if(!raw) return null;
+  if(_pdoCache.has(raw)) return _pdoCache.get(raw);
+  let hit=null;
+  for(const m of [/^\(([^)]+)\)/.exec(raw), /\(([^)]+)\)\s*$/.exec(raw)]){ if(!hit && m) hit=PDO_COURSES.find(c=>c.code.toLowerCase()===m[1].trim().toLowerCase())||null; }
+  if(!hit){ const n=normTraining(raw); hit=PDO_COURSES.find(c=>normTraining(c.name)===n)||null;
+    if(!hit){ const l=raw.toLowerCase(); hit=(/refresher|recert|reassess/.test(l) ? PDO_COURSES.find(c=>c.base && c.alias && c.alias.test(l)) : null) || PDO_COURSES.find(c=>!c.base && c.alias && c.alias.test(l) && !/refresher|recert|reassess/.test(l))||null;
+      if(!hit && /refresher|recert|reassess/.test(l)){ const b=PDO_COURSES.find(c=>c.alias && c.alias.test(l)); if(b) hit=PDO_COURSES.find(c=>(c.base||[]).includes(b.code))||b; } } }
+  _pdoCache.set(raw, hit); return hit;
+}
 function trainingStatusFor(w, reqName){
   const key=normTraining(reqName); if(!key) return {status:'na'};
-  const recs=(w.trainings||[]).filter(r=>{ const n=normTraining(r.name); return n && (n===key || (' '+n+' ').includes(' '+key+' ')); });
+  const reqC=pdoCourseOf(reqName);
+  const recs=(w.trainings||[]).filter(r=>{ const n=normTraining(r.name); if(n && (n===key || (' '+n+' ').includes(' '+key+' '))) return true;
+    if(!reqC) return false; const rc=pdoCourseOf(r.name); return !!rc && (rc.code===reqC.code || (rc.base||[]).includes(reqC.code)); });
   if(!recs.length) return {status:'missing'};
   let best=null;
   for(const r of recs){
@@ -2996,7 +3055,7 @@ function renderReqPanel(){
     <p class="wsub" style="margin:-6px 0 10px;"><strong>1.</strong> List the trainings. <strong>2.</strong> Add your company roles — these become the <em>Designation</em> pick-list on every worker's profile. <strong>3.</strong> Tick the trainings each role needs. A person with more than one role — e.g. a driver who also works as a scaffolder — needs the trainings of all their roles. Training records are matched by course name (“Working at Height – Level 2” counts for “Working at Height”).</p>
     <form id="reqForm">
       <div class="subhead" style="margin-top:0;">Trainings (${cat.length}) — pick the group of each training</div>
-      <p class="wsub" style="margin:0 0 8px;"><strong>OPAL / PDO mandatory</strong> · <strong>Client requirement</strong> — tick the client(s); only workers on that client's projects need it · <strong>Burhan internal</strong>. Each group has its own compliance %.</p>
+      <p class="wsub" style="margin:0 0 8px;"><strong>PDO mandatory (SP-1157)</strong> · <strong>Client requirement</strong> — tick the client(s); only workers on that client's projects need it · <strong>Burhan internal</strong>. Each group has its own compliance %.</p>
       ${(()=>{ const guessed=cat.filter(t=>(reqEdit.meta.get(normTraining(t))||{}).guess).length; return guessed?`<div class="notice">${ic('alert')} The group of ${guessed} training${guessed===1?' was':'s were'} suggested from the name (marked <em>suggested</em>) — check them, then <strong>Save</strong>.</div>`:''; })()}
       ${cat.length ? `<div class="req-tlist">${(()=>{ const kc=knownClients(); return cat.map((t,i)=>{ const m=reqEdit.meta.get(normTraining(t))||{cat:guessTrainingCat(t), clients:[], guess:true}; const extra=(m.clients||[]).filter(c=>!kc.some(k=>clientKey(k)===clientKey(c)));
         return `<div class="req-trow req-cat-${m.cat}"><span class="req-tname">${esc(t)}${m.guess?' <span class="badge muted">suggested</span>':''}</span>
@@ -3027,8 +3086,14 @@ function renderReqPanel(){
       <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
         <button type="button" class="btn btn-sm" id="reqAddRole">+ Add role${reqEdit.div!=='all'?' to '+esc(divShort(reqEdit.div)):''}</button>
         <button type="button" class="btn btn-sm btn-ghost" id="reqAddCommon">+ Add suggested roles &amp; trainings</button>
+        <button type="button" class="btn btn-sm" id="reqPdoOpen">+ Add PDO trainings (SP-1157)</button>
       </div>
       <p class="wsub" style="margin:8px 0 0;">New people joining with a new job title? Just add the role here (in their division's tab) and tick its trainings — it then appears in the Designation list for that division. Renaming a role here also updates the workers who have it. Removing a role doesn't change any worker — it just stops requiring trainings.</p>
+      ${reqEdit.pdoOpen ? (()=>{ const have=new Set(reqEdit.catalogue.map(t=>{ const c=pdoCourseOf(t); return c?c.code:''; }).filter(Boolean)); const groups=[...new Set(PDO_COURSES.map(c=>c.lvl))];
+        return `<div class="panel req-pdo" style="margin-top:10px;"><div class="subhead" style="margin-top:0;">PDO trainings — SP-1157 V4.1 (tick, then “Add ticked”)</div>
+          <p class="wsub" style="margin:0 0 8px;">Refresher / recertification courses (H2SR, SCBA-R, AGT-R, PTWH-R, PTWS-R, HSE LFS-R, NORMM-R, SJMR, RT) are not listed — a worker's refresher record counts for the main course automatically.</p>
+          ${groups.map(g=>`<div class="req-pdo-g"><div class="req-grp-h">${esc(g)}</div>${PDO_COURSES.filter(c=>c.lvl===g && !c.base).map(c=>`<label class="chk"><input type="checkbox" data-pdo-add="${esc(c.code)}" ${have.has(c.code)?'checked disabled':''}>${esc(pdoCourseLabel(c))} <span class="wsub">${c.years?c.years+' yr'+(c.years>1?'s':''):'no expiry'}${have.has(c.code)?' · in list':''}</span></label>`).join('')}</div>`).join('')}
+          <div style="display:flex; gap:8px; margin-top:8px;"><button type="button" class="btn btn-sm btn-primary" id="reqPdoAdd">Add ticked</button><button type="button" class="btn btn-sm" id="reqPdoClose">Close</button></div></div>`; })() : ''}
       <div class="form-actions"><button type="button" class="btn" id="reqCancel">Cancel</button><button type="submit" class="btn btn-primary">Save roles &amp; trainings</button></div>
     </form>`;
 }
@@ -3906,7 +3971,7 @@ const TARGET_DEFS = [
   {key:'daysLost', kind:'lagging', label:'Days lost to injury', type:'max', def:0},
   {key:'complaints', kind:'lagging', label:'Client HSE complaints', type:'max', def:4},
   // leading — proactive
-  {key:'training', kind:'leading', label:'Training compliance (OPAL / PDO mandatory)', type:'min', unit:'%', def:95, cc:true},
+  {key:'training', kind:'leading', label:'Training compliance (PDO mandatory, SP-1157)', type:'min', unit:'%', def:95, cc:true},
   {key:'tbtPerMonth', kind:'leading', label:'Toolbox talks per month (average)', type:'min', dec:1, def:8, cc:true},
   {key:'inspPerMonth', kind:'leading', label:'Site visits, audits & inspections per month', type:'min', dec:1, def:6, cc:true},
   {key:'obsPerMonth', kind:'leading', label:'HSE observations per month (average)', type:'min', dec:1, def:20},
@@ -5947,7 +6012,7 @@ const CAL_BUILTIN=[
   {key:'aids', group:'International', title:'World AIDS Day', m:12, d:1, note:'Health awareness'},
   {key:'midday', group:'Oman', title:'Midday outdoor work ban (Ministry of Labour)', m:6, d:1, endM:8, endD:31, note:'1 June – 31 August: no outdoor work 12:30–15:30 — heat stress plan, shaded rest, water'},
   {key:'gcctraffic', group:'Oman', title:'GCC Traffic Week', variable:true, days:7, defaults:{2026:'2026-05-03'}, note:'Date announced each year by the Royal Oman Police — set it here when announced'},
-  {key:'ramadan', group:'Oman', title:'Ramadan', variable:true, days:30, defaults:{2027:'2027-02-08'}, note:'Start depends on the moon sighting — shorter working hours, fasting & fatigue awareness, driving after iftar'},
+  {key:'ramadan', group:'Oman', title:'Ramadan', variable:true, days:30, defaults:{2026:'2026-02-19', 2027:'2027-02-08'}, note:'Start depends on the moon sighting — shorter working hours, fasting & fatigue awareness, driving after iftar'},
   {key:'national', group:'Oman', title:'Oman National Day', m:11, d:20, note:'Public holiday — plan manpower, permits and road safety'},
 ];
 let calYear=null, calForm=null, calDone=null;
@@ -9619,7 +9684,10 @@ function recordTabHtml(w,key,cfg){
   const formFields = cfg.fields.map(f=>{
     const val = editing ? (editing[f.key]||'') : (recordPrefill && recordPrefill.__tab===key && recordPrefill[f.key]!=null ? recordPrefill[f.key] : (f.default||''));
     if(f.type==='workers') return workerPickFieldHtml(f, editing, w);
-    if(key==='trainings' && f.key==='name'){ const names=trainingCatalogue(); return `<label>${esc(f.label)} *<input type="text" data-field="name" value="${esc(val)}" required list="reqTrainingNames" placeholder="${esc(f.placeholder||'')}"><datalist id="reqTrainingNames">${names.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist></label>`; }
+    if(key==='trainings' && f.key==='name'){ const names=[...new Set([...trainingCatalogue(), ...PDO_COURSES.map(pdoCourseLabel)])], cur=pdoCourseOf(val);
+      const groups=[...new Set(PDO_COURSES.map(c=>c.lvl))];
+      return `<label class="span-all">PDO course (SP-1157)<select data-pdo-pick><option value="">— Not a PDO course / type the name below —</option>${groups.map(g=>`<optgroup label="${esc(g)}">${PDO_COURSES.filter(c=>c.lvl===g).map(c=>`<option value="${esc(c.code)}" ${cur&&cur.code===c.code?'selected':''}>${esc(pdoCourseLabel(c))} — ${c.years?c.years+' yr'+(c.years>1?'s':''):'no expiry'}</option>`).join('')}</optgroup>`).join('')}</select></label>
+        <label>${esc(f.label)} *<input type="text" data-field="name" value="${esc(val)}" required list="reqTrainingNames" placeholder="${esc(f.placeholder||'')}"><datalist id="reqTrainingNames">${names.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist></label>`; }
     const firstVal = editing ? (editing[cfg.fields[0].key]||'') : '';
     const sw = f.showWhen ? ` data-show-when="${esc(f.showWhen.join('|'))}" ${f.showWhen.includes(firstVal)?'':'hidden'}` : '';
     if(f.type==='textarea') return `<label${sw}>${esc(f.label)}${f.required?' *':''}<textarea data-field="${f.key}" ${f.required?'required':''}>${esc(val)}</textarea></label>`;
@@ -10512,6 +10580,21 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   });
 
+  // Batch 44: PDO course drop-down fills the name; the valid-until date follows SP-1157 re-certification years
+  function pdoAutoExpiry(form){
+    if(!form) return; const nm=form.querySelector('[data-field="name"]'), dt=form.querySelector('[data-field="date"]'), ex=form.querySelector('[data-field="expiry"]'); if(!nm || !dt || !ex) return;
+    const c=pdoCourseOf(nm.value), d=dt.value; if(!c || !d) return;
+    if(ex.value && ex.dataset.auto!=='1') return;   // a date typed by hand is kept
+    if(c.years){ const x=new Date(d+'T00:00:00'); x.setFullYear(x.getFullYear()+c.years); ex.value=ymd(x); } else ex.value='';
+    ex.dataset.auto='1';
+    let hint=form.querySelector('.pdo-hint'); if(!hint){ hint=document.createElement('p'); hint.className='wsub pdo-hint span-all'; hint.style.margin='0'; const lab=ex.closest('label'); (lab||ex).insertAdjacentElement('afterend', hint); }
+    hint.textContent = c.years ? `Valid until set from SP-1157: ${c.code} is re-certified every ${c.years} year${c.years>1?'s':''} — change it if the certificate says otherwise.` : `${c.code} has no re-certification in SP-1157 — no expiry.`;
+  }
+  document.getElementById('drawerBody').addEventListener('change', e=>{
+    const pk=e.target.closest('[data-pdo-pick]'); if(pk){ const form=pk.closest('form'), c=PDO_COURSES.find(x=>x.code===pk.value), nm=form && form.querySelector('[data-field="name"]'); if(c && nm){ nm.value=pdoCourseLabel(c); const ex=form.querySelector('[data-field="expiry"]'); if(ex && !ex.value) ex.dataset.auto='1'; pdoAutoExpiry(form); } return; }
+    if(e.target.matches && e.target.matches('#recordForm [data-field="date"], #recordForm [data-field="name"]') && activeTab==='trainings'){ const form=e.target.closest('form'); const ex=form.querySelector('[data-field="expiry"]'); if(ex && !ex.value) ex.dataset.auto='1'; pdoAutoExpiry(form); }
+    if(e.target.matches && e.target.matches('#recordForm [data-field="expiry"]')) e.target.dataset.auto='0';
+  });
   document.getElementById('drawerBody').addEventListener('change', e=>{
     if(e.target.matches('#profileForm [data-field="trade"]')){ const d=document.querySelector('#profileForm select[data-field="designation"]'); if(d) d.innerHTML=designationOptionsHtml(e.target.value, d.value); }
     if(e.target.id==='wmTemp'){ const b=document.getElementById('wmBackWrap'); if(b) b.hidden=!e.target.checked; }
@@ -11424,6 +11507,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
       renderReqPanel(); const again=document.getElementById('reqNewTraining'); if(again) again.focus();
       return;
     }
+    if(b.id==='reqPdoOpen'){ readReqGrid(); reqEdit.pdoOpen=true; renderReqPanel(); const p=document.querySelector('.req-pdo'); if(p) p.scrollIntoView({block:'nearest', behavior:'smooth'}); return; }
+    if(b.id==='reqPdoClose'){ readReqGrid(); reqEdit.pdoOpen=false; renderReqPanel(); return; }
+    if(b.id==='reqPdoAdd'){ const codes=[...document.querySelectorAll('[data-pdo-add]:checked:not(:disabled)')].map(x=>x.dataset.pdoAdd); readReqGrid();
+      let n=0; for(const code of codes){ const c=PDO_COURSES.find(x=>x.code===code); if(c && reqAddTrainingName(pdoCourseLabel(c))){ reqEdit.meta.set(normTraining(pdoCourseLabel(c)), {cat:'opal', clients:[]}); n++; } }
+      reqEdit.pdoOpen=false; renderReqPanel(); toast(n?`${n} PDO training${n===1?'':'s'} added — now tick them for each role, then Save`:'Nothing new ticked'); return; }
     if(b.id==='reqAddCommon'){
       readReqGrid();
       let addedT=0, addedR=0;
