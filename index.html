@@ -2497,7 +2497,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b37';
+const APP_BUILD='b38';
 let appOutdated=false;
 // Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
 let _verTag=null, _verLast=0;
@@ -4330,6 +4330,7 @@ function startRegData(){
 }
 function stopRegData(){ for(const key of Object.keys(regState)){ const st=regState[key]; if(st.unsub){ st.unsub(); st.unsub=null; } st.list=[]; } }
 async function regUpdate(key, id, data, quiet){
+  if(REG[key].prepare) await REG[key].prepare({...(regState[key].list.find(x=>x.id===id)||{}), ...data});
   if(REG[key].beforeUpdate){ data=REG[key].beforeUpdate({...data}, regState[key].list.find(x=>x.id===id)||{}); if(!data) return false; }
   try{ await db.collection(REG[key].collection).doc(id).update(stamp(deltaize(regState[key].list.find(x=>x.id===id), data))); if(!quiet) toast('Saved'); if(REG[key].afterSave) REG[key].afterSave({...(regState[key].list.find(x=>x.id===id)||{}), ...data, id}); return true; }
   catch(e){ console.error(e); toast(e&&e.code==='permission-denied'?RULES_UPDATE_MSG:'Could not save — '+((e&&e.code)||'error')); return false; }
@@ -4340,6 +4341,7 @@ async function regCreate(key, data, openTab){
   for(const s of Object.keys(cfg.subs||{})) if(!d[s]) d[s]=[];
   if(cfg.noField && !d[cfg.noField]) d[cfg.noField]=regNextNo(key, d[cfg.dateField||'date']);
   if(cfg.validate){ const msg=cfg.validate(d); if(msg){ toast(msg); return null; } }
+  if(cfg.prepare) await cfg.prepare(d);
   if(cfg.beforeCreate) cfg.beforeCreate(d);
   try{ const ref=await db.collection(cfg.collection).add(stamp(d)); toast(`${d[cfg.noField]||cfg.singular} saved`); if(cfg.afterSave) cfg.afterSave({...d, id:ref.id}); if(!cfg.keepAddOpen) openRegDrawer(key, ref.id, openTab); return ref.id; }
   catch(e){ console.error(e); toast(e&&e.code==='permission-denied'?RULES_UPDATE_MSG:'Could not save'); return null; }
@@ -5708,11 +5710,65 @@ function scaffPlaces(){ return ((settingsDocs.scaffPlaces||{}).items)||[]; }
 function placeKey(n){ return String(n||'').trim().toLowerCase().replace(/\s+/g,' '); }
 function placeOf(name){ const k=placeKey(name); return k ? scaffPlaces().find(p=>placeKey(p.name)===k) : null; }
 function haversineKm(a, b){ const R=6371, toR=x=>x*Math.PI/180, dLat=toR(b.lat-a.lat), dLng=toR(b.lng-a.lng); const h=Math.sin(dLat/2)**2+Math.cos(toR(a.lat))*Math.cos(toR(b.lat))*Math.sin(dLng/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
-function scaffEstKm(from, to){ const a=placeOf(from), b=placeOf(to); if(!a || !b) return null; const st=haversineKm(a,b); return {straight:Math.round(st*10)/10, km:Math.round(st*SCAFF_KM_FACTOR)}; }
+/* Batch 38: automatic distance — road route from OpenStreetMap (OSRM), town/village names found on the map (Nominatim).
+   Well heads / camps need their GPS point saved once (paste GPS, Google Maps or OsmAnd link, or import OsmAnd GPX). */
+const scaffGeo=new Map();     // name → {lat,lng,label} | null (not found) — map search results this session
+const scaffRoute=new Map();   // "lat,lng;lat,lng" → {km, offKm} | null (no route)
+const scaffPending=new Set();
+function pointOf(name){ const p=placeOf(name); if(p) return {lat:p.lat, lng:p.lng, src:'saved'}; const g=scaffGeo.get(placeKey(name)); return g ? {lat:g.lat, lng:g.lng, src:'map', label:g.label} : null; }
+function routeKey(a,b){ return `${a.lat.toFixed(5)},${a.lng.toFixed(5)};${b.lat.toFixed(5)},${b.lng.toFixed(5)}`; }
+// distance one way between two place names: road route when known, else straight line × 1.3
+function scaffDistance(from, to){
+  if(!from || !to) return null;
+  const a=pointOf(from), b=pointOf(to); if(!a || !b) return null;
+  const st=haversineKm(a,b), r=scaffRoute.get(routeKey(a,b));
+  if(r) return {km:Math.round(r.km), src:'road', offKm:Math.round(r.offKm||0), straight:Math.round(st*10)/10};
+  return {km:Math.round(st*SCAFF_KM_FACTOR), src:'estimate', straight:Math.round(st*10)/10};
+}
+function scaffEstKm(from, to){ const d=scaffDistance(from, to); return d ? {km:d.km, straight:d.straight, src:d.src} : null; }
+let _geoLast=0;
+async function geocodePlace(name){
+  const k=placeKey(name); if(!k || placeOf(name) || scaffGeo.has(k) || scaffPending.has('g:'+k)) return;
+  scaffPending.add('g:'+k);
+  try{
+    const wait=Math.max(0, 1100-(Date.now()-_geoLast)); if(wait) await new Promise(r=>setTimeout(r, wait)); _geoLast=Date.now();   // map service allows 1 search a second
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=om&accept-language=en&q=${encodeURIComponent(name)}`);
+    const js=r.ok ? await r.json() : [];
+    scaffGeo.set(k, js && js[0] ? {lat:Number(js[0].lat), lng:Number(js[0].lon), label:js[0].display_name||name} : null);
+  }catch(e){ console.warn('map search', e); }
+  finally{ scaffPending.delete('g:'+k); }
+}
+async function fetchRoute(a, b){
+  const k=routeKey(a,b); if(scaffRoute.has(k) || scaffPending.has('r:'+k)) return;
+  scaffPending.add('r:'+k);
+  try{
+    const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=false`);
+    const js=r.ok ? await r.json() : null;
+    if(js && js.code==='Ok' && js.routes && js.routes[0]){
+      const off=(js.waypoints||[]).reduce((n,w)=>n+(Number(w.distance)||0),0)/1000;   // from the GPS point to the nearest mapped road
+      scaffRoute.set(k, {km:js.routes[0].distance/1000 + off*SCAFF_KM_FACTOR, offKm:off});
+    } else scaffRoute.set(k, null);
+  }catch(e){ console.warn('route', e); }
+  finally{ scaffPending.delete('r:'+k); }
+}
+async function ensureDistance(from, to){
+  if(!from || !to) return;
+  for(const n of [from, to]) if(!pointOf(n)) await geocodePlace(n);
+  const a=pointOf(from), b=pointOf(to); if(a && b) await fetchRoute(a, b);
+}
+function osmandUrl(lat, lng){ return `https://osmand.net/map?pin=${lat},${lng}#15/${lat}/${lng}`; }
+function placeLinksHtml(pt){ return pt ? `<a class="att-link" href="https://www.google.com/maps?q=${encodeURIComponent(pt.lat+','+pt.lng)}" target="_blank" rel="noopener">Google Maps</a> · <a class="att-link" href="${osmandUrl(pt.lat, pt.lng)}" target="_blank" rel="noopener">OsmAnd</a>` : ''; }
+// places found by map search are added to the saved list when a job using them is saved
+async function scaffKeepFoundPlaces(names){
+  const add=[]; for(const n of names){ if(!n || placeOf(n)) continue; const g=scaffGeo.get(placeKey(n)); if(g && !add.some(x=>placeKey(x.name)===placeKey(n))) add.push({id:'pl'+Date.now().toString(36)+add.length, name:n.trim(), lat:Math.round(g.lat*1e6)/1e6, lng:Math.round(g.lng*1e6)/1e6, src:'map search', label:g.label}); }
+  if(add.length && canEdit()) await saveSettings('scaffPlaces', {items:scaffPlaces().concat(add)});
+}
 function odoKm(a, b){ const x=Number(a), y=Number(b); return (a!=='' && b!=='' && a!=null && b!=null && !isNaN(x) && !isNaN(y) && y>=x) ? Math.round((y-x)*10)/10 : ''; }
 function parseCoords(t){
   t=String(t||'').trim(); if(!t) return null;
-  const pats=[/@(-?\d{1,3}\.\d+),\s*(-?\d{1,3}\.\d+)/, /!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/, /[?&](?:q|ll|query|destination)=(-?\d{1,3}\.\d+)(?:,|%2C)\s*(-?\d{1,3}\.\d+)/i, /^(-?\d{1,3}\.\d+)\s*[,; ]\s*(-?\d{1,3}\.\d+)$/];
+  const dms=/(\d{1,3})\s*°\s*(\d{1,2})?\s*['′]?\s*(\d{1,2}(?:\.\d+)?)?\s*["″]?\s*([NS])[\s,;]+(\d{1,3})\s*°\s*(\d{1,2})?\s*['′]?\s*(\d{1,2}(?:\.\d+)?)?\s*["″]?\s*([EW])/i.exec(t);
+  if(dms){ const v=(d,m,sec,h)=>(Number(d)+(Number(m)||0)/60+(Number(sec)||0)/3600)*(/[SW]/i.test(h)?-1:1); return {lat:v(dms[1],dms[2],dms[3],dms[4]), lng:v(dms[5],dms[6],dms[7],dms[8])}; }
+  const pats=[/[?&]pin=(-?\d{1,3}\.\d+),\s*(-?\d{1,3}\.\d+)/i, /[?&]lat=(-?\d{1,3}\.\d+)&(?:lon|lng)=(-?\d{1,3}\.\d+)/i, /^geo:(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/i, /#\d{1,2}\/(-?\d{1,3}\.\d+)\/(-?\d{1,3}\.\d+)/, /@(-?\d{1,3}\.\d+),\s*(-?\d{1,3}\.\d+)/, /!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/, /[?&](?:q|ll|query|destination)=(-?\d{1,3}\.\d+)(?:,|%2C)\s*(-?\d{1,3}\.\d+)/i, /^(-?\d{1,3}\.\d+)\s*[,; ]\s*(-?\d{1,3}\.\d+)$/];
   for(const re of pats){ const m=re.exec(t); if(m){ const lat=Number(m[1]), lng=Number(m[2]); if(Math.abs(lat)<=90 && Math.abs(lng)<=180) return {lat, lng}; } }
   return null;
 }
@@ -5722,12 +5778,12 @@ function scaffPlaceOptions(){ return [...new Set([...scaffPlaces().map(p=>p.name
 function scaffCancelled(list){
   const out=[];
   for(const r of list){
-    if(!scaffUpDone(r)) out.push({r, kind:'Rig-up', date:r.rigUpDate||'', stage:r.upCancelStage||'', reason:r.upCancelReason||'', by:r.upCancelledBy||'', km:r.upKm, estKm:r.upEstKm, crew:r.rigUpCrew||[]});
-    for(const c of (r.downCancels||[])) out.push({r, c, kind:'Rig-down', date:c.date||'', stage:c.stage||'', reason:c.reason||'', by:c.cancelledBy||'', km:c.km, estKm:c.estKm, crew:c.crew||[]});
+    if(!scaffUpDone(r)) out.push({r, kind:'Rig-up', date:r.rigUpDate||'', stage:r.upCancelStage||'', reason:r.upCancelReason||'', by:r.upCancelledBy||'', km:r.upKm, estKm:r.upEstKm, src:r.upKmSrc, crew:r.rigUpCrew||[]});
+    for(const c of (r.downCancels||[])) out.push({r, c, kind:'Rig-down', date:c.date||'', stage:c.stage||'', reason:c.reason||'', by:c.cancelledBy||'', km:c.km, estKm:c.estKm, src:c.kmSrc, crew:c.crew||[]});
   }
   return out.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
 }
-function scaffKmText(km, est){ return km!==''&&km!=null ? `${fmtQty(km)} km` : (est!==''&&est!=null ? `≈ ${fmtQty(est)} km (estimate)` : ''); }
+function scaffKmText(km, est, src){ if(km!==''&&km!=null) return src==='estimate' ? `≈ ${fmtQty(km)} km (estimate)` : `${fmtQty(km)} km`; return est!==''&&est!=null ? `≈ ${fmtQty(est)} km (estimate)` : ''; }
 function scaffCrewNames(ids){ return (ids||[]).map(id=>{ const w=workers.find(x=>x.id===id); return w?(w.fullName||'—'):'removed worker'; }); }
 function scaffProjects(){ const all=activeSites(); const sc=all.filter(s=>s.division==='Scaffolding'); return sc.length?sc:all; }
 function scaffJobs(){ return regActive('scaff').filter(r=>scaffDash.project==='all' || r.projectId===scaffDash.project); }
@@ -5822,7 +5878,7 @@ function renderScaffTop0(box){
   const ch=scaffChartHtml(list, ym), rg=scaffPeriod();
   const ups=list.filter(r=>scaffUpDone(r) && inRange(r.rigUpDate, rg)), downs=list.filter(r=>inRange(r.rigDownDate, rg));
   const canc=scaffCancelled(list).filter(x=>inRange(x.date, rg)), cancMonth=scaffCancelled(list).filter(x=>String(x.date).startsWith(ym));
-  const kmAct=[...ups.map(r=>r.upKm), ...downs.map(r=>r.downKm), ...canc.map(x=>x.km)].filter(k=>k!==''&&k!=null).reduce((n,k)=>n+Number(k),0);
+  const kmAct=[...ups.map(r=>r.upKm), ...downs.map(r=>r.downKm), ...canc.filter(x=>x.stage==='At site').map(x=>x.km)].filter(k=>k!==''&&k!=null&&!isNaN(Number(k))).reduce((n,k)=>n+Number(k),0);
   const byClient=(()=>{ const m=new Map(); const add=(k,i)=>{ k=k||'Not recorded'; if(!m.has(k)) m.set(k,[0,0,0]); m.get(k)[i]++; }; ups.forEach(r=>add(r.client,0)); downs.forEach(r=>add(r.client,1)); canc.forEach(x=>add(x.r.client,2)); return [...m.entries()].sort((a,b)=>(b[1][0]+b[1][1]+b[1][2])-(a[1][0]+a[1][1]+a[1][2])).map(([k,v])=>[k, ...v]); })();
   const by=(keyFn, label)=>{ const m=new Map(); const add=(k,i)=>{ if(!k) return; if(!m.has(k)) m.set(k,[0,0]); m.get(k)[i]++; }; ups.forEach(r=>[].concat(keyFn(r,'up')).forEach(k=>add(k,0))); downs.forEach(r=>[].concat(keyFn(r,'down')).forEach(k=>add(k,1))); return [...m.entries()].sort((a,b)=>(b[1][0]+b[1][1])-(a[1][0]+a[1][1]) || a[0].localeCompare(b[0])).map(([k,v])=>[k, v[0], v[1]]); };
   const byProj=by(r=>r.projectId?projectName(r.projectId):'No project'), byLoc=by(r=>r.location||'—');
@@ -5844,7 +5900,7 @@ function renderScaffTop0(box){
     <div class="sj-head"><h3>Who did what — ${esc(rg.label)}</h3>
       <div class="sj-ctrl"><div class="seg-tabs sj-seg">${per.map(([k,l])=>`<button type="button" class="seg-btn ${scaffDash.period===k?'active':''}" data-sj-period="${k}">${l==='Whole month'?esc(monthLabel(ym).split(' ')[0]):l}</button>`).join('')}</div>
         <input type="date" data-sj="day" value="${esc(scaffDash.period==='day'?scaffDash.day:'')}" max="${t}" aria-label="Pick a day"></div></div>
-    <div class="sj-sum"><span><b>${ups.length}</b> rig-up${ups.length===1?'':'s'}</span><span><b>${downs.length}</b> rig-down${downs.length===1?'':'s'}</span>${canc.length?`<span><b>${canc.length}</b> cancelled trip${canc.length===1?'':'s'}</span>`:''}${kmAct?`<span><b>${fmtQty(kmAct)}</b> km driven (odometer)</span>`:''}${downs.length?`<span>average <b>${Math.round(downs.reduce((n,r)=>n+(scaffDays(r)||0),0)/downs.length)}</b> days standing before rig-down</span>`:''}</div>
+    <div class="sj-sum"><span><b>${ups.length}</b> rig-up${ups.length===1?'':'s'}</span><span><b>${downs.length}</b> rig-down${downs.length===1?'':'s'}</span>${canc.length?`<span><b>${canc.length}</b> cancelled trip${canc.length===1?'':'s'}</span>`:''}${kmAct?`<span><b>${fmtQty(kmAct)}</b> km to site (one way)</span>`:''}${downs.length?`<span>average <b>${Math.round(downs.reduce((n,r)=>n+(scaffDays(r)||0),0)/downs.length)}</b> days standing before rig-down</span>`:''}</div>
     <div class="sj-tbls">
       ${scaffCountTable('By client', byClient, ['Client','Rig-ups','Rig-downs','Cancelled'])}
       ${scaffDash.project==='all'?scaffCountTable('By project', byProj, ['Project','Rig-ups','Rig-downs']):''}
@@ -5852,7 +5908,7 @@ function renderScaffTop0(box){
       ${scaffCountTable('By volume', ups.length||downs.length?byVol:[], ['Volume','Rig-ups','Rig-downs'])}
       ${scaffCountTable('By crew member', byCrew, ['Worker','Rig-ups','Rig-downs'])}
     </div>
-    ${canc.length?`<div class="subhead">Cancelled trips</div><div class="sj-mini">${canc.map(x=>`<div class="sj-r sj-canc" data-reg-row="scaff:${x.r.id}"><span><strong>${esc(x.kind)}</strong> · ${esc(x.r.location||'—')} <span class="wsub">${esc([x.date, x.stage, x.reason, x.by?'by '+x.by:'', x.r.client].filter(Boolean).join(' · '))}</span></span><span class="num wsub">${esc(scaffKmText(x.km, x.estKm))}</span></div>`).join('')}</div>`:''}
+    ${canc.length?`<div class="subhead">Cancelled trips</div><div class="sj-mini">${canc.map(x=>`<div class="sj-r sj-canc" data-reg-row="scaff:${x.r.id}"><span><strong>${esc(x.kind)}</strong> · ${esc(x.r.location||'—')} <span class="wsub">${esc([x.date, x.stage, x.reason, x.by?'by '+x.by:'', x.r.client].filter(Boolean).join(' · '))}</span></span><span class="num wsub">${esc(scaffKmText(x.km, x.estKm, x.src))}</span></div>`).join('')}</div>`:''}
   </div>
   ${scaffPlacesPanelHtml()}
   <div class="panel sj-panel">
@@ -5864,12 +5920,13 @@ function renderScaffTop0(box){
   <p class="wsub sj-loaded">Showing jobs from <strong>${esc(monthLabel(oldest))}</strong> onwards${older.length?` plus ${older.map(monthLabel).join(', ')}`:''}, and every scaffold still standing. Older months load when you go back to them with ‹ above.</p>`;
 }
 
+function kmHow(src, km){ return km===''||km==null ? '' : src==='road' ? 'Road route (OpenStreetMap)' : src==='estimate' ? 'Estimate (straight line × 1.3)' : 'Odometer'; }
 async function exportScaffJobs(){
   try{ await loadScriptOnce(XLSX_URL); }catch(e){ toast('Could not load the Excel tools — check your internet connection and try again'); return; }
   const list=scaffJobs().slice().sort((a,b)=>String(a.rigUpDate||'').localeCompare(String(b.rigUpDate||'')) || String(a.jobNo||'').localeCompare(String(b.jobNo||'')));
-  const jobs=[['Job no.','Project','Client / company','Requested by','Requester phone','Request / WO no.','Location / well head','Scaffold tag','Volume','Lifts','Rig-up date','Rig-up outcome','Rig-up from','Rig-up vehicle','Rig-up km (odometer)','Rig-up km (estimate)','Rig-up crew','Rig-down date','Rig-down from','Rig-down vehicle','Rig-down km (odometer)','Rig-down km (estimate)','Rig-down crew','Cancelled rig-down trips','Days standing','Status','Notes'],
-    ...list.map(r=>[r.jobNo||'', r.projectId?projectName(r.projectId):'', r.client||'', r.requestedBy||'', r.requesterPhone||'', r.workOrder||'', r.location||'', r.tagNo||'', r.volume||'', r.lifts===''||r.lifts==null?'':r.lifts, r.rigUpDate||'', scaffUpDone(r)?'Completed':`Cancelled — ${[r.upCancelStage, r.upCancelReason, r.upCancelledBy?'by '+r.upCancelledBy:''].filter(Boolean).join(' · ')}`, r.upFrom||'', r.upVehicle||'', r.upKm??'', r.upEstKm??'', scaffCrewNames(r.rigUpCrew).join(', '), r.rigDownDate||'', r.downFrom||'', r.downVehicle||'', r.downKm??'', r.downEstKm??'', scaffCrewNames(r.rigDownCrew).join(', '), (r.downCancels||[]).length||'', scaffDays(r)??'', !scaffUpDone(r)?'Cancelled':scaffStanding(r)?'Standing':'Rigged down', r.notes||''])];
-  const cancRows=[['Date','Trip','Job no.','Project','Client','Location','Stage','Reason','Cancelled by','Crew','Km (odometer)','Km (estimate)'], ...scaffCancelled(list).map(x=>[x.date, x.kind, x.r.jobNo||'', x.r.projectId?projectName(x.r.projectId):'', x.r.client||'', x.r.location||'', x.stage, x.reason, x.by, scaffCrewNames(x.crew).join(', '), x.km??'', x.estKm??''])];
+  const jobs=[['Job no.','Project','Client / company','Requested by','Requester phone','Request / WO no.','Location / well head','Scaffold tag','Volume','Lifts','Rig-up date','Rig-up outcome','Rig-up from','Rig-up vehicle','Rig-up km (one way)','Rig-up km how','Rig-up crew','Rig-down date','Rig-down from','Rig-down vehicle','Rig-down km (one way)','Rig-down km how','Rig-down crew','Cancelled rig-down trips','Days standing','Status','Notes'],
+    ...list.map(r=>[r.jobNo||'', r.projectId?projectName(r.projectId):'', r.client||'', r.requestedBy||'', r.requesterPhone||'', r.workOrder||'', r.location||'', r.tagNo||'', r.volume||'', r.lifts===''||r.lifts==null?'':r.lifts, r.rigUpDate||'', scaffUpDone(r)?'Completed':`Cancelled — ${[r.upCancelStage, r.upCancelReason, r.upCancelledBy?'by '+r.upCancelledBy:''].filter(Boolean).join(' · ')}`, r.upFrom||'', r.upVehicle||'', r.upKm??'', kmHow(r.upKmSrc, r.upKm), scaffCrewNames(r.rigUpCrew).join(', '), r.rigDownDate||'', r.downFrom||'', r.downVehicle||'', r.downKm??'', kmHow(r.downKmSrc, r.downKm), scaffCrewNames(r.rigDownCrew).join(', '), (r.downCancels||[]).length||'', scaffDays(r)??'', !scaffUpDone(r)?'Cancelled':scaffStanding(r)?'Standing':'Rigged down', r.notes||''])];
+  const cancRows=[['Date','Trip','Job no.','Project','Client','Location','Stage','Reason','Cancelled by','Crew','Km (one way)','Km how'], ...scaffCancelled(list).map(x=>[x.date, x.kind, x.r.jobNo||'', x.r.projectId?projectName(x.r.projectId):'', x.r.client||'', x.r.location||'', x.stage, x.reason, x.by, scaffCrewNames(x.crew).join(', '), x.km??'', kmHow(x.src, x.km)])];
   const days=new Map(); const bump=(d,i,v)=>{ if(!d) return; if(!days.has(d)) days.set(d,[0,0,0,0,0,0,0,0]); days.get(d)[i]++; const k=SCAFF_VOLUMES.indexOf(v); if(k>-1) days.get(d)[2+i*3+k]++; };
   list.forEach(r=>{ if(scaffUpDone(r)) bump(r.rigUpDate,0,r.volume); bump(r.rigDownDate,1,r.volume); });
   const daily=[['Date','Rig-ups','Rig-downs', ...SCAFF_VOLUMES.map(v=>'Rig-ups '+v), ...SCAFF_VOLUMES.map(v=>'Rig-downs '+v)], ...[...days.keys()].sort().map(d=>[d, ...days.get(d)])];
@@ -5888,11 +5945,20 @@ function scaffTripFieldsHtml(prefix, r, vals){
   const v=vals||{};
   return `<label>Start from<input data-sd="${prefix}From" list="dl_scaffPlaces" value="${esc(v.from||'')}" placeholder="e.g. Camp / Yard" autocomplete="off"></label>
     <label>Vehicle<input data-sd="${prefix}Vehicle" list="dl_scaffVehicles" value="${esc(v.vehicle||'')}" placeholder="e.g. OM 1234" autocomplete="off"></label>
-    <label>Odometer start (km)<input type="number" step="any" min="0" data-sd="${prefix}OdoStart" value="${esc(v.odoStart??'')}"></label>
-    <label>Odometer end (km)<input type="number" step="any" min="0" data-sd="${prefix}OdoEnd" value="${esc(v.odoEnd??'')}"></label>
     <div class="span-all wsub sj-km" data-km-for="${prefix}" data-km-to="${esc(r.location||'')}"></div>`;
 }
-let scaffPlacesOpen=false, scaffPlaceEdit=null;
+let scaffPlacesOpen=false, scaffPlaceEdit=null, scaffImport=null;
+// OsmAnd favourites / tracks (GPX) or Google Earth (KML) → [{name, lat, lng}]
+function parsePlacesFile(text){
+  const doc=new DOMParser().parseFromString(text, 'application/xml'); const out=[];
+  doc.querySelectorAll('wpt, rtept').forEach(w=>{ const lat=Number(w.getAttribute('lat')), lng=Number(w.getAttribute('lon')); const n=(w.querySelector('name')||{}).textContent; if(!isNaN(lat) && !isNaN(lng) && n && n.trim()) out.push({name:n.trim(), lat, lng}); });
+  doc.querySelectorAll('Placemark').forEach(pm=>{ const n=(pm.querySelector('name')||{}).textContent, c=(pm.querySelector('Point coordinates')||{}).textContent; if(!n || !c) return; const [lng,lat]=c.trim().split(',').map(Number); if(!isNaN(lat) && !isNaN(lng)) out.push({name:n.trim(), lat, lng}); });
+  const seen=new Set(); return out.filter(x=>{ const k=placeKey(x.name); if(seen.has(k) || Math.abs(x.lat)>90 || Math.abs(x.lng)>180) return false; seen.add(k); return true; });
+}
+function placesGpx(list){
+  const x=t=>String(t).replace(/[<>&'"]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;',"'":'&apos;','"':'&quot;'}[c]));
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Burhan HSE Portal" xmlns="http://www.topografix.com/GPX/1/1">\n${list.map(p=>`  <wpt lat="${p.lat}" lon="${p.lng}"><name>${x(p.name)}</name></wpt>`).join('\n')}\n</gpx>\n`;
+}
 function scaffPlacesPanelHtml(){
   if(!scaffPlacesOpen) return '';
   const places=scaffPlaces().slice().sort((a,b)=>a.name.localeCompare(b.name));
@@ -5900,30 +5966,41 @@ function scaffPlacesPanelHtml(){
   const ed=scaffPlaceEdit!==null ? (places.find(p=>p.id===scaffPlaceEdit)||{name:scaffPlaceEdit.startsWith('new:')?scaffPlaceEdit.slice(4):''}) : null;
   return `${scaffDatalistsHtml()}<div class="panel sj-panel" id="scaffPlacesPanel">
     <div class="sj-head"><h3>Places &amp; distances (${places.length})</h3><button type="button" class="btn btn-sm" id="scaffPlacesClose">Close</button></div>
-    <p class="wsub" style="margin:0 0 10px;">Save a GPS point once for the camp/yard and each well head. The tracker then estimates the km between “Start from” and the location (straight line × ${SCAFF_KM_FACTOR} for roads and tracks — an estimate). When the odometer start/end is typed, that real km is used instead.</p>
+    <p class="wsub" style="margin:0 0 10px;">The km between “Start from” and the location is worked out automatically by road (OpenStreetMap route). Towns and villages are found on the map by name. Camps and well heads are not on public maps — save their GPS point once here, or import them from OsmAnd. Where no road is mapped, a straight-line estimate × ${SCAFF_KM_FACTOR} is used and marked “estimate”.</p>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">${canEdit()?`<label class="upload-btn">${ic('upload')} Import from OsmAnd (GPX / KML)<input type="file" hidden accept=".gpx,.kml,.xml,application/gpx+xml,application/vnd.google-earth.kml+xml" id="spImport"></label>`:''}${places.length?`<button type="button" class="btn btn-sm" id="spExport">${ic('download')} Download for OsmAnd (GPX)</button>`:''}</div>
+    ${scaffImport?`<div class="notice" style="margin-bottom:12px;">${ic('pin')} <strong>${scaffImport.items.length} point${scaffImport.items.length===1?'':'s'}</strong> found in ${esc(scaffImport.file)} — <strong>${scaffImport.items.filter(x=>!placeOf(x.name)).length} new</strong>, ${scaffImport.items.filter(x=>placeOf(x.name)).length} already saved (kept as they are). <button type="button" class="btn btn-sm btn-primary" id="spImportOk" ${scaffImport.items.some(x=>!placeOf(x.name))?'':'disabled'}>Add the new places</button> <button type="button" class="att-link" id="spImportCancel">Cancel</button></div>`:''}
     ${canEdit()?(ed?`<form id="scaffPlaceForm" class="form-grid" style="margin-bottom:12px;">
         <label>Place name *<input id="spName" required value="${esc(ed.name||'')}" placeholder="e.g. Fahud Camp, Well NM-123" list="dl_scaffPlaces"></label>
-        <label>GPS point * <span class="wsub" style="display:inline;">(lat, long — or paste a Google Maps link)</span><input id="spCoords" required value="${ed.lat!=null?esc(ed.lat+', '+ed.lng):''}" placeholder="e.g. 22.3541, 56.4870"></label>
-        <div class="span-all" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;"><button type="button" class="btn btn-sm" id="spHere">${ic('pin')} Use my current location</button><span class="wsub" id="spMsg">Tip: in Google Maps press and hold the spot — the numbers shown at the top are the GPS point.</span></div>
+        <label>GPS point * <span class="wsub" style="display:inline;">(lat, long — or paste a Google Maps / OsmAnd link)</span><input id="spCoords" required value="${ed.lat!=null?esc(ed.lat+', '+ed.lng):''}" placeholder="e.g. 22.3541, 56.4870"></label>
+        <div class="span-all" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;"><button type="button" class="btn btn-sm" id="spFind">${ic('search')} Find this name on the map</button><span class="wsub" id="spMsg">Town or village: click “Find”. Well head: paste the GPS point — in Google Maps or OsmAnd press and hold the spot, then copy the numbers or share the link.</span></div>
         <div class="form-actions span-all"><button type="button" class="btn btn-sm" id="spCancel">Cancel</button><button type="submit" class="btn btn-primary btn-sm">Save place</button></div></form>`
       :`<button type="button" class="btn btn-sm btn-primary" data-sp-edit="new:" style="margin-bottom:10px;">+ Add place</button>`):''}
-    ${places.length?`<div class="sj-mini">${places.map(pl=>`<div class="sj-r sj-place"><span><strong>${esc(pl.name)}</strong> <span class="wsub mono">${esc(pl.lat+', '+pl.lng)}</span> <a class="att-link" href="https://www.google.com/maps?q=${encodeURIComponent(pl.lat+','+pl.lng)}" target="_blank" rel="noopener">Map</a></span><span class="num">${canEdit()?`<button type="button" class="att-link" data-sp-edit="${esc(pl.id)}">Edit</button> <button type="button" class="att-link" data-sp-del="${esc(pl.id)}" data-armed="0">Remove</button>`:''}</span></div>`).join('')}</div>`:'<p class="wsub">No places saved yet.</p>'}
+    ${places.length?`<div class="sj-mini">${places.map(pl=>`<div class="sj-r sj-place"><span><strong>${esc(pl.name)}</strong> <span class="wsub mono">${esc(pl.lat+', '+pl.lng)}</span>${pl.src==='map search'?' <span class="badge muted">from map search</span>':''} ${placeLinksHtml(pl)}</span><span class="num">${canEdit()?`<button type="button" class="att-link" data-sp-edit="${esc(pl.id)}">Edit</button> <button type="button" class="att-link" data-sp-del="${esc(pl.id)}" data-armed="0">Remove</button>`:''}</span></div>`).join('')}</div>`:'<p class="wsub">No places saved yet.</p>'}
     ${missing.length&&canEdit()?`<div class="subhead">Used in jobs but no GPS point yet</div><div style="display:flex; gap:6px; flex-wrap:wrap;">${missing.slice(0,40).map(n=>`<button type="button" class="btn btn-sm" data-sp-edit="new:${esc(n)}">+ ${esc(n)}</button>`).join('')}</div>`:''}
   </div>`;
 }
 async function saveScaffPlaces(items){ const ok=await saveSettings('scaffPlaces', {items}); if(ok){ scaffPlaceEdit=null; renderRegAll('scaff'); } return ok; }
 // live "≈ km" line under a trip's odometer fields
-function updateScaffKm(root){
+let _kmTimer=null;
+function updateScaffKm(root, noFetch){
   (root||document).querySelectorAll('[data-km-for]').forEach(el=>{
     const pre=el.dataset.kmFor, form=el.closest('form'); if(!form) return;
-    const q=k=>{ const x=form.querySelector(`[data-sd="${pre}${k}"],[data-rf="${pre}${k}"]`); return x?x.value:''; };
-    const toEl=form.querySelector('[data-rf="location"]'), to=toEl?toEl.value:(el.dataset.kmTo||'');
-    const from=q('From'), act=odoKm(q('OdoStart'), q('OdoEnd')), est=scaffEstKm(from, to);
-    const o=q('OdoStart'), e2=q('OdoEnd');
-    el.innerHTML = (o!=='' && e2!=='' && act==='') ? '<span class="badge warn">Odometer end is lower than start</span>'
-      : act!=='' ? `<strong>${fmtQty(act)} km</strong> driven (odometer)${est?` · map estimate ≈ ${est.km} km one way`:''}`
-      : est ? `≈ <strong>${est.km} km</strong> one way from ${esc(from)} to ${esc(to)} (estimate — straight line ${est.straight} km)`
-      : (from && to) ? `No km estimate yet — add a GPS point for ${[!placeOf(from)?esc(from):'', !placeOf(to)?esc(to):''].filter(Boolean).join(' and ')} in “Places &amp; km”.` : '';
+    const fromEl=form.querySelector(`[data-sd="${pre}From"],[data-rf="${pre}From"]`), toEl=form.querySelector('[data-rf="location"]');
+    const from=fromEl?fromEl.value.trim():'', to=toEl?toEl.value.trim():(el.dataset.kmTo||'');
+    if(!from || !to){ el.innerHTML=''; return; }
+    const d=scaffDistance(from, to), busy=[...scaffPending].length>0;
+    const missing=[from, to].filter(n=>!pointOf(n));
+    if(!d){
+      const notFound=missing.filter(n=>scaffGeo.get(placeKey(n))===null);
+      el.innerHTML = notFound.length ? `“${esc(notFound.join('” and “'))}” not found on the map — add the GPS point once in <button type="button" class="att-link" data-sp-edit="new:${esc(notFound[0])}">Places &amp; km</button> (paste GPS, a Google Maps or OsmAnd link).`
+        : `Finding ${esc(missing.join(' and '))} on the map…`;
+    } else {
+      el.innerHTML = d.src==='road' ? `Distance <strong>${d.km} km</strong> one way by road (OpenStreetMap route)${d.offKm>=1?` · includes ≈ ${d.offKm} km off-road to the GPS point`:''}`
+        : `≈ <strong>${d.km} km</strong> one way (estimate — straight line ${d.straight} km × ${SCAFF_KM_FACTOR})${busy?' · checking road route…':''}`;
+      const found=[from, to].map(n=>pointOf(n)).filter(x=>x && x.src==='map');
+      if(found.length) el.innerHTML+=`<div class="wsub">Found on the map: ${found.map(x=>esc(x.label||'')).join(' · ')} — saved to Places when you save this job.</div>`;
+    }
+    if(!noFetch && (!d || d.src!=='road')){ clearTimeout(_kmTimer); _kmTimer=setTimeout(()=>ensureDistance(from, to).then(()=>{ document.querySelectorAll('form').forEach(f=>{ if(f.querySelector('[data-km-for]')) updateScaffKm(f, true); }); }), 500); }
   });
 }
 function scaffDatalistsHtml(){ return `<datalist id="dl_scaffPlaces">${scaffPlaceOptions().map(o=>`<option value="${esc(o)}">`).join('')}</datalist><datalist id="dl_scaffVehicles">${scaffVehicleOptions().map(o=>`<option value="${esc(o)}">`).join('')}</datalist>`; }
@@ -5932,7 +6009,7 @@ function scaffDownHtml(r){
   const done=!scaffStanding(r), cancels=(r.downCancels||[]).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
   const lastFrom=r.downFrom || r.upFrom || '';
   const cancList=cancels.length?`<div class="subhead">Cancelled rig-down trips (${cancels.length})</div>${cancels.map(c=>`<div class="record-card"><div class="record-card-top"><div class="record-card-title"><span class="mono">${esc(c.date||'—')}</span> · <span class="badge warn">Cancelled</span> ${esc(c.stage||'')}</div>${canEdit()?`<div class="record-card-actions"><button type="button" class="icon-btn danger" data-scaff-candel="${esc(c.id)}" data-armed="0" aria-label="Delete">${ic('trash')}</button></div>`:''}</div>
-      <div class="record-fields">${c.reason?`<div class="rf"><span class="rf-k">Reason</span><span class="rf-v">${esc(c.reason)}</span></div>`:''}${c.cancelledBy?`<div class="rf"><span class="rf-k">Cancelled by</span><span class="rf-v">${esc(c.cancelledBy)}</span></div>`:''}${(c.crew||[]).length?`<div class="rf"><span class="rf-k">Crew</span><span class="rf-v">${esc(scaffCrewNames(c.crew).join(', '))}</span></div>`:''}${scaffKmText(c.km, c.estKm)?`<div class="rf"><span class="rf-k">Distance</span><span class="rf-v">${esc(scaffKmText(c.km, c.estKm))}${c.from?' from '+esc(c.from):''}</span></div>`:''}</div></div>`).join('')}`:'';
+      <div class="record-fields">${c.reason?`<div class="rf"><span class="rf-k">Reason</span><span class="rf-v">${esc(c.reason)}</span></div>`:''}${c.cancelledBy?`<div class="rf"><span class="rf-k">Cancelled by</span><span class="rf-v">${esc(c.cancelledBy)}</span></div>`:''}${(c.crew||[]).length?`<div class="rf"><span class="rf-k">Crew</span><span class="rf-v">${esc(scaffCrewNames(c.crew).join(', '))}</span></div>`:''}${scaffKmText(c.km, c.estKm, c.kmSrc)?`<div class="rf"><span class="rf-k">Distance</span><span class="rf-v">${esc(scaffKmText(c.km, c.estKm, c.kmSrc))}${c.from?' from '+esc(c.from):''}</span></div>`:''}</div></div>`).join('')}`:'';
   return `<p class="wsub" style="margin:0 0 12px;">Rigged up <strong>${esc(r.rigUpDate||'—')}</strong> at <strong>${esc(r.location||'—')}</strong>${r.volume?' · '+esc(r.volume):''}. ${done?`Rigged down after <strong>${scaffDays(r)}</strong> days.`:`Standing for <strong>${scaffDays(r)??'—'}</strong> days so far.`}</p>
     <form data-reg-custom="down"><div class="form-grid">
       ${done?'<input type="hidden" data-sd="downOutcome" value="Completed">':`<label>Outcome<select data-sd="downOutcome"><option>Completed</option><option value="Cancelled">Cancelled — trip did not happen / stopped</option></select></label>`}
@@ -5942,7 +6019,7 @@ function scaffDownHtml(r){
       <label data-showwhen="downOutcome=Cancelled">Cancelled by<input data-sd="cancelledBy" placeholder="Name / client"></label>
       <label data-showwhen="downOutcome=Completed">Rig-down requested by<input data-sd="downRequestedBy" value="${esc(r.downRequestedBy||'')}"></label>
       <label data-showwhen="downOutcome=Completed">Request / WO no.<input data-sd="downWorkOrder" value="${esc(r.downWorkOrder||'')}"></label>
-      ${scaffTripFieldsHtml('down', r, done?{from:r.downFrom, vehicle:r.downVehicle, odoStart:r.downOdoStart, odoEnd:r.downOdoEnd}:{from:lastFrom, vehicle:r.upVehicle||''})}
+      ${scaffTripFieldsHtml('down', r, done?{from:r.downFrom, vehicle:r.downVehicle}:{from:lastFrom, vehicle:r.upVehicle||''})}
       ${crewPickHtml({key:'rigDownCrew', label:'Crew', hint:done?'':'Pre-ticked with the rig-up crew — change it if a different crew went.'}, done?(r.rigDownCrew||[]):(r.rigUpCrew||[]), 'data-sd')}
     </div><div class="form-actions">${done?'<button type="button" class="btn btn-sm" data-scaff-undo="1" data-armed="0">Undo rig-down (still standing)</button>':''}<button type="submit" class="btn btn-primary">${done?'Save':'Save'}</button></div></form>
     ${cancList}${scaffDatalistsHtml()}`;
@@ -5958,14 +6035,14 @@ regDefine({
   badgesOf:r=>(!scaffUpDone(r)?`<span class="badge muted">Rig-up cancelled</span>`:scaffStanding(r)?`<span class="badge warn">Standing · ${scaffDays(r)??'—'} days</span>`:`<span class="badge ok">Rigged down · stood ${scaffDays(r)} days</span>`)+((r.downCancels||[]).length?` <span class="badge warn">${r.downCancels.length} cancelled rig-down trip${r.downCancels.length===1?'':'s'}</span>`:''),
   searchText:r=>[r.jobNo, r.location, r.tagNo, r.volume, r.client, r.requestedBy, r.workOrder, r.projectId?projectName(r.projectId):'', ...scaffCrewNames(r.rigUpCrew), ...scaffCrewNames(r.rigDownCrew)].join(' '),
   extraMatch:r=>scaffDash.project==='all' || r.projectId===scaffDash.project,
-  addFields:['rigUpDate','projectId','client','requestedBy','requesterPhone','workOrder','location','volume','lifts','tagNo','upOutcome','upCancelStage','upCancelReason','upCancelledBy','upFrom','upVehicle','upOdoStart','upOdoEnd','upKmNote','rigUpCrew','notes'], addDefaults:{rigUpDate:()=>localToday(), projectId:()=>scaffDash.project!=='all'?scaffDash.project:(scaffProjects().length===1?scaffProjects()[0].id:'')},
-  keepAddOpen:(f, d)=>{ for(const k of ['location','tagNo','lifts','notes','workOrder','upCancelReason','upCancelledBy','upOdoStart','upOdoEnd']){ const el=f.querySelector(`[data-rf="${k}"]`); if(el) el.value=''; } const v=f.querySelector('[data-rf="volume"]'); if(v) v.value='';
+  addFields:['rigUpDate','projectId','client','requestedBy','requesterPhone','workOrder','location','volume','lifts','tagNo','upOutcome','upCancelStage','upCancelReason','upCancelledBy','upFrom','upVehicle','upKmNote','rigUpCrew','notes'], addDefaults:{rigUpDate:()=>localToday(), projectId:()=>scaffDash.project!=='all'?scaffDash.project:(scaffProjects().length===1?scaffProjects()[0].id:'')},
+  keepAddOpen:(f, d)=>{ for(const k of ['location','tagNo','lifts','notes','workOrder','upCancelReason','upCancelledBy']){ const el=f.querySelector(`[data-rf="${k}"]`); if(el) el.value=''; } const v=f.querySelector('[data-rf="volume"]'); if(v) v.value='';
     const dl=document.getElementById('dl_location'); if(dl && d.location && ![...dl.options].some(o=>o.value===d.location)) dl.insertAdjacentHTML('beforeend', `<option value="${esc(d.location)}">`);
     const oc=f.querySelector('[data-rf="upOutcome"]'); if(oc){ oc.value='Completed'; applyShowWhen(f); } updateScaffKm(f);
     const loc=f.querySelector('[data-rf="location"]'); if(loc) loc.focus(); toast(d.upOutcome==='Cancelled'?'Cancelled trip saved':'Rig-up saved — date, project, client and crew are kept for the next one'); },
   segs:[{key:'standing', label:'Standing now', match:scaffStanding},{key:'down', label:'Rigged down', match:r=>scaffUpDone(r) && !!r.rigDownDate},{key:'canc', label:'Cancelled trips', match:r=>!scaffUpDone(r) || (r.downCancels||[]).length>0}],
   sort:(a,b)=>String(b.rigUpDate||'').localeCompare(String(a.rigUpDate||'')) || String(b.jobNo||'').localeCompare(String(a.jobNo||'')),
-  tabs:[{key:'main', label:'Rig-up', groups:[
+  tabs:[{key:'main', label:'Rig-up', pre:r=>{ const pt=pointOf(r.location); return pt?`<p class="wsub" style="margin:0 0 10px;">${ic('pin')} ${esc(r.location)} — open in ${placeLinksHtml(pt)}</p>`:''; }, groups:[
     {title:'Job', fields:[
       {key:'jobNo', label:'Job no.', required:true},
       {key:'rigUpDate', label:'Rig-up date', type:'date', required:true},
@@ -5988,8 +6065,6 @@ regDefine({
       {key:'upCancelledBy', label:'Cancelled by', showWhen:'upOutcome=Cancelled', placeholder:'Name / client'},
       {key:'upFrom', label:'Start from', type:'textlist', options:scaffPlaceOptions, placeholder:'e.g. Camp / Yard'},
       {key:'upVehicle', label:'Vehicle', type:'textlist', options:scaffVehicleOptions, placeholder:'e.g. OM 1234'},
-      {key:'upOdoStart', label:'Odometer start (km)', type:'number', min:0},
-      {key:'upOdoEnd', label:'Odometer end (km)', type:'number', min:0},
       {key:'upKmNote', label:'', type:'kmline'},
       {key:'rigUpCrew', label:'Crew', type:'crew'},
       {key:'notes', label:'Notes', type:'textarea', wide:true},
@@ -6013,14 +6088,12 @@ regDefine({
 });
 function scaffCleanTrip(d){
   if('upOutcome' in d && d.upOutcome!=='Cancelled'){ d.upCancelStage=''; d.upCancelReason=''; d.upCancelledBy=''; }
-  if('upOdoStart' in d || 'upOdoEnd' in d) d.upKm=odoKm(d.upOdoStart, d.upOdoEnd);
-  if('upFrom' in d || 'location' in d){ const est=scaffEstKm(d.upFrom, d.location); d.upEstKm=est?est.km:''; }
+  if('upFrom' in d || 'location' in d){ const dist=(d.upOutcome==='Cancelled' && d.upCancelStage==='Before leaving') ? null : scaffDistance(d.upFrom, d.location); d.upKm=dist?dist.km:''; d.upKmSrc=dist?dist.src:''; d.upEstKm=''; delete d.upOdoStart; delete d.upOdoEnd; }
   delete d.upKmNote;
   for(const k of ['client','requestedBy','requesterPhone','workOrder','upFrom','upVehicle','upCancelReason','upCancelledBy']) if(typeof d[k]==='string') d[k]=d[k].trim();
 }
 REG.scaff.validate=d=>{
   if(d.upOutcome==='Cancelled' && !String(d.upCancelReason||'').trim()) return 'Enter the reason the trip was cancelled';
-  if(d.upOdoStart!=='' && d.upOdoEnd!=='' && d.upOdoStart!=null && d.upOdoEnd!=null && Number(d.upOdoEnd)<Number(d.upOdoStart)) return 'Odometer end is lower than the start';
   return '';
 };
 REG.scaff.beforeCreate=d=>{ d.rigUpCrew=d.rigUpCrew||[]; d.rigDownCrew=d.rigDownCrew||[]; d.downCancels=[]; d.location=(d.location||'').trim(); d.upOutcome=d.upOutcome||'Completed';
@@ -6028,7 +6101,7 @@ REG.scaff.beforeCreate=d=>{ d.rigUpCrew=d.rigUpCrew||[]; d.rigDownCrew=d.rigDown
   scaffCleanTrip(d); d.open=d.upOutcome!=='Cancelled' && !d.rigDownDate; };
 REG.scaff.beforeUpdate=(data, cur)=>{
   if('location' in data) data.location=(data.location||'').trim();
-  if('upOutcome' in data || 'upOdoEnd' in data){ const msg=REG.scaff.validate({...cur, ...data}); if(msg){ toast(msg); return null; } }
+  if('upOutcome' in data){ const msg=REG.scaff.validate({...cur, ...data}); if(msg){ toast(msg); return null; } }
   if('upFrom' in data && !('location' in data)) data.location=cur.location||'';
   scaffCleanTrip(data);
   if('upOutcome' in data){ if(data.upOutcome==='Cancelled'){ if(cur.rigDownDate){ toast('This scaffold was already rigged down — undo the rig-down first'); return null; } data.open=false; } else data.open=!(data.rigDownDate!==undefined?data.rigDownDate:cur.rigDownDate); }
@@ -6037,22 +6110,24 @@ REG.scaff.beforeUpdate=(data, cur)=>{
   if('rigDownDate' in data) data.open=scaffUpDone({...cur, ...data}) && !data.rigDownDate;
   return data;
 };
-REG.scaff.afterSave=r=>{ if(scaffOlder.has(r.id)){ scaffOlder.set(r.id, {...scaffOlder.get(r.id), ...r}); if(scaffRefresh) scaffRefresh(); } };
+// before saving: look up the places / road route (max 6 s — otherwise the estimate is saved)
+REG.scaff.prepare=d=>{ const x=scaffDistance(d.upFrom, d.location); if(d.upFrom && d.location && (!x || x.src!=='road')) toast('Working out the distance…'); return Promise.race([ensureDistance(d.upFrom, d.location), new Promise(r=>setTimeout(r, 6000))]); };
+REG.scaff.afterSave=r=>{ scaffKeepFoundPlaces([r.upFrom, r.location, r.downFrom]); if(scaffOlder.has(r.id)){ scaffOlder.set(r.id, {...scaffOlder.get(r.id), ...r}); if(scaffRefresh) scaffRefresh(); } };
 REG.scaff.customSubmit={
   down: async (r, form)=>{
     const q=k=>{ const x=form.querySelector(`[data-sd="${k}"]`); return x?String(x.value||'').trim():''; };
     const date=q('rigDownDate'); if(!date){ toast('Pick the date'); return; }
     const crew=[...form.querySelectorAll('[data-sd="rigDownCrew"]:checked')].map(x=>x.value);
-    const from=q('downFrom'), veh=q('downVehicle'), os=q('downOdoStart'), oe=q('downOdoEnd');
-    if(os!=='' && oe!=='' && Number(oe)<Number(os)){ toast('Odometer end is lower than the start'); return; }
-    const km=odoKm(os===''?'':Number(os), oe===''?'':Number(oe)), est=scaffEstKm(from, r.location), estKm=est?est.km:'';
+    const from=q('downFrom'), veh=q('downVehicle');
+    await Promise.race([ensureDistance(from, r.location), new Promise(x=>setTimeout(x, 6000))]);
+    const dist=scaffDistance(from, r.location), km=dist?dist.km:'', kmSrc=dist?dist.src:'';
     if(q('downOutcome')==='Cancelled'){
       const reason=q('reason'); if(!reason){ toast('Enter the reason the trip was cancelled'); return; }
-      const c={id:'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), date, stage:q('stage'), reason, cancelledBy:q('cancelledBy'), crew, from, vehicle:veh, odoStart:os===''?'':Number(os), odoEnd:oe===''?'':Number(oe), km, estKm};
-      if(await regUpdate('scaff', r.id, {downCancels:(r.downCancels||[]).concat([c])}, true)) toast('Cancelled rig-down trip saved — the scaffold is still standing');
+      const c={id:'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), date, stage:q('stage'), reason, cancelledBy:q('cancelledBy'), crew, from, vehicle:veh, km:q('stage')==='Before leaving'?'':km, kmSrc:q('stage')==='Before leaving'?'':kmSrc};
+      if(await regUpdate('scaff', r.id, {downCancels:(r.downCancels||[]).concat([c])}, true)){ toast('Cancelled rig-down trip saved — the scaffold is still standing'); scaffKeepFoundPlaces([from]); }
       return;
     }
-    const upd={rigDownDate:date, rigDownCrew:crew, downFrom:from, downVehicle:veh, downOdoStart:os===''?'':Number(os), downOdoEnd:oe===''?'':Number(oe), downKm:km, downEstKm:estKm, downRequestedBy:q('downRequestedBy'), downWorkOrder:q('downWorkOrder')};
+    const upd={rigDownDate:date, rigDownCrew:crew, downFrom:from, downVehicle:veh, downKm:km, downKmSrc:kmSrc, downRequestedBy:q('downRequestedBy'), downWorkOrder:q('downWorkOrder')};
     if(await regUpdate('scaff', r.id, upd, true)) toast(`Rig-down saved — stood ${Math.max(0, daysBetween(r.rigUpDate||date, date))} days`);
   },
 };
@@ -11496,23 +11571,29 @@ document.addEventListener('DOMContentLoaded', ()=>{
   // --- Batch 37: scaffolding — outcome fields, km, places ---
   document.addEventListener('change', e=>{ const t=e.target; if(t.matches && t.matches('[data-rf],[data-sf],[data-sd]')){ const f=t.closest('form'); if(f){ applyShowWhen(f); updateScaffKm(f); } } });
   document.addEventListener('change', e=>{ const t=e.target; if(!t.matches || !t.matches('[data-rf="projectId"]')) return; const f=t.closest('form'); const c=f && f.querySelector('[data-rf="client"]'); if(!c || c.value.trim() || !f.closest('#scaffAddPanel,#regDrawer')) return; const s=activeSites().find(x=>x.id===t.value); if(s && s.clientName) c.value=s.clientName; });
-  document.addEventListener('input', e=>{ const t=e.target; if(t.matches && t.matches('[data-rf$="OdoStart"],[data-rf$="OdoEnd"],[data-rf$="From"],[data-rf="location"],[data-sd$="OdoStart"],[data-sd$="OdoEnd"],[data-sd$="From"]')){ const f=t.closest('form'); if(f) updateScaffKm(f); } });
+  document.addEventListener('input', e=>{ const t=e.target; if(t.matches && t.matches('[data-rf$="From"],[data-rf="location"],[data-sd$="From"]')){ const f=t.closest('form'); if(f) updateScaffKm(f); } });
   document.addEventListener('click', async e=>{
     if(e.target.closest('#scaffPlacesBtn')){ scaffPlacesOpen=!scaffPlacesOpen; scaffPlaceEdit=null; renderScaffTop(); if(scaffPlacesOpen){ const p=document.getElementById('scaffPlacesPanel'); if(p) p.scrollIntoView({block:'start', behavior:'smooth'}); } return; }
     if(e.target.closest('#scaffPlacesClose')){ scaffPlacesOpen=false; scaffPlaceEdit=null; renderScaffTop(); return; }
-    const ed=e.target.closest('[data-sp-edit]'); if(ed){ scaffPlaceEdit=ed.dataset.spEdit; const a=document.getElementById('spName'), c=document.getElementById('spCoords'); if(a) a.value=''; if(c) c.value=''; renderScaffTop(); const n=document.getElementById('spName'); if(n){ if(scaffPlaceEdit.startsWith('new:')) n.value=scaffPlaceEdit.slice(4); else { const pl=scaffPlaces().find(x=>x.id===scaffPlaceEdit); if(pl){ n.value=pl.name; document.getElementById('spCoords').value=pl.lat+', '+pl.lng; } } n.focus(); } return; }
+    const ed=e.target.closest('[data-sp-edit]'); if(ed){ if(!scaffPlacesOpen){ scaffPlacesOpen=true; if(document.getElementById('regDrawer') && !document.getElementById('regDrawer').hidden && ed.closest('#regDrawer')) closeRegDrawer(); } scaffPlaceEdit=ed.dataset.spEdit; const a=document.getElementById('spName'), c=document.getElementById('spCoords'); if(a) a.value=''; if(c) c.value=''; renderScaffTop(); const n=document.getElementById('spName'); if(n){ if(scaffPlaceEdit.startsWith('new:')) n.value=scaffPlaceEdit.slice(4); else { const pl=scaffPlaces().find(x=>x.id===scaffPlaceEdit); if(pl){ n.value=pl.name; document.getElementById('spCoords').value=pl.lat+', '+pl.lng; } } n.focus(); } return; }
     if(e.target.closest('#spCancel')){ scaffPlaceEdit=null; document.getElementById('spName').value=''; document.getElementById('spCoords').value=''; renderScaffTop(); return; }
-    if(e.target.closest('#spHere')){ const msg=document.getElementById('spMsg');
-      if(!navigator.geolocation){ if(msg) msg.textContent='This device cannot share its location.'; return; }
-      if(msg) msg.textContent='Getting your location… (allow location access if asked)';
-      navigator.geolocation.getCurrentPosition(pos=>{ const c=document.getElementById('spCoords'); if(c) c.value=`${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`; const m=document.getElementById('spMsg'); if(m) m.textContent=`Location found (accuracy about ${Math.round(pos.coords.accuracy)} m) — check the name and save.`; },
-        err=>{ const m=document.getElementById('spMsg'); if(m) m.textContent= err && err.code===1 ? 'Location access was blocked — allow it in the browser settings, or paste the GPS point.' : 'Could not get the location — try again outside, or paste the GPS point.'; }, {enableHighAccuracy:true, timeout:20000, maximumAge:0});
+    if(e.target.closest('#spFind')){ const n=document.getElementById('spName').value.trim(), msg=document.getElementById('spMsg'); if(!n){ toast('Type the place name first'); return; }
+      if(msg) msg.textContent='Searching the map…'; scaffGeo.delete(placeKey(n)); await geocodePlace(n); const g=scaffGeo.get(placeKey(n)); const m2=document.getElementById('spMsg');
+      if(g){ document.getElementById('spCoords').value=`${g.lat.toFixed(6)}, ${g.lng.toFixed(6)}`; if(m2) m2.textContent='Found: '+g.label+' — check it is the right place, then save.'; }
+      else if(m2) m2.textContent='Not found on the map (well heads and camps usually are not) — paste the GPS point or a Google Maps / OsmAnd link.';
       return; }
+    if(e.target.closest('#spExport')){ const blob=new Blob([placesGpx(scaffPlaces())], {type:'application/gpx+xml'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='Burhan_scaffolding_places.gpx'; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000); return; }
+    if(e.target.closest('#spImportCancel')){ scaffImport=null; renderScaffTop(); return; }
+    if(e.target.closest('#spImportOk')){ if(!scaffImport || !canEdit()) return; const add=scaffImport.items.filter(x=>!placeOf(x.name)).map((x,n)=>({id:'pl'+Date.now().toString(36)+n, name:x.name, lat:Math.round(x.lat*1e6)/1e6, lng:Math.round(x.lng*1e6)/1e6, src:'OsmAnd import'}));
+      scaffImport=null; if(await saveScaffPlaces(scaffPlaces().concat(add))) toast(`${add.length} place${add.length===1?'':'s'} added`); return; }
     const del=e.target.closest('[data-sp-del]'); if(del){ if(!canEdit()) return; if(del.dataset.armed!=='1'){ del.dataset.armed='1'; del.textContent='Click again'; setTimeout(()=>{ del.dataset.armed='0'; del.textContent='Remove'; },3000); return; }
       await saveScaffPlaces(scaffPlaces().filter(x=>x.id!==del.dataset.spDel)); return; }
     const cd=e.target.closest('[data-scaff-candel]'); if(cd){ const r=regCurrent(); if(!r || !canEdit()) return; if(cd.dataset.armed!=='1'){ cd.dataset.armed='1'; cd.classList.add('armed'); toast('Click again to delete this cancelled trip'); setTimeout(()=>{ cd.dataset.armed='0'; cd.classList.remove('armed'); },3000); return; }
       if(await regUpdate('scaff', r.id, {downCancels:(r.downCancels||[]).filter(x=>x.id!==cd.dataset.scaffCandel)}, true)) toast('Cancelled trip deleted'); return; }
   });
+  document.addEventListener('change', async e=>{ if(e.target.id!=='spImport' || !e.target.files[0]) return; const f=e.target.files[0];
+    try{ const items=parsePlacesFile(await f.text()); if(!items.length){ toast('No named points found in that file — export favourites from OsmAnd as GPX'); return; } scaffImport={file:f.name, items}; renderScaffTop(); }
+    catch(err){ console.error(err); toast('Could not read that file'); } });
   document.addEventListener('submit', async e=>{
     if(e.target.id!=='scaffPlaceForm') return; e.preventDefault(); if(!canEdit()) return;
     const name=document.getElementById('spName').value.trim(), co=parseCoords(document.getElementById('spCoords').value);
