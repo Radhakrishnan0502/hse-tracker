@@ -906,6 +906,12 @@ th.mx-cat-opal{box-shadow:inset 0 3px 0 var(--cat-1);} th.mx-cat-client{box-shad
 .crew-check .ic{width:14px; height:14px; vertical-align:-2px;}
 .crew-chips{display:flex; flex-wrap:wrap; gap:4px;} .crew-card{font-size:11.5px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); background:var(--surface);}
 .crew-card.c-gold{box-shadow:inset 3px 0 0 #c9a227;} .crew-card.c-blue{box-shadow:inset 3px 0 0 #2563eb;} .crew-card.c-amber{box-shadow:inset 3px 0 0 #f59e0b;} .crew-card.c-white{box-shadow:inset 3px 0 0 #cbd5e1;} .crew-card.c-green{box-shadow:inset 3px 0 0 #16a34a;} .crew-card.c-none{box-shadow:inset 3px 0 0 var(--danger);}
+
+/* ---- Batch 46: add-a-training box with 3 groups ---- */
+.req-addbox{margin-top:10px; border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--surface);}
+.req-add-cat{display:block; max-width:360px; margin-bottom:8px;}
+.req-addbox select#reqPdoSel{flex:1; min-width:0;}
+.req-add-clients{display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; margin-top:6px;}
 </style>
 </head>
 <body class="auth-open">
@@ -2565,7 +2571,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b45';
+const APP_BUILD='b46';
 let appOutdated=false;
 // Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
 let _verTag=null, _verLast=0;
@@ -3090,7 +3096,7 @@ function renderReqPanel(){
           <select data-cat-sel="${i}" aria-label="Group for ${esc(t)}">${TRAINING_CATS.map(c=>`<option value="${c.key}" ${m.cat===c.key?'selected':''}>${esc(c.label)}</option>`).join('')}</select>
           <span class="req-tclients" data-cat-clients="${i}" ${m.cat==='client'?'':'hidden'}>${kc.map(c=>`<label class="chk"><input type="checkbox" data-cat-client="${i}" value="${esc(c)}" ${(m.clients||[]).some(x=>clientKey(x)===clientKey(c))?'checked':''}>${esc(c)}</label>`).join('')}<input data-cat-other="${i}" value="${esc(extra.join(', '))}" placeholder="${kc.length?'Other client(s), comma separated':'Client name(s), e.g. PDO, OQ'}"><span class="wsub req-thint" ${(m.clients||[]).length?'hidden':''}>No client ticked = needed by everyone with the role</span></span>
           <button type="button" class="btn btn-sm btn-ghost req-rm" data-cat-remove="${i}" aria-label="Remove ${esc(t)}" title="Remove this training">${ic('close')}</button></div>`; }).join(''); })()}</div>` : '<span class="wsub">No trainings yet — add them below, or use the suggested list.</span>'}
-      <div class="req-add"><input id="reqNewTraining" list="trainingNameList" placeholder="Add a training, e.g. Rigging & Slinging" aria-label="New training name"><button type="button" class="btn btn-sm" id="reqAddTraining">+ Add training</button></div>
+      ${reqAddBoxHtml()}
       <datalist id="trainingNameList">${names.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist>
       <div class="subhead">Roles — tick the division(s) and the trainings each role needs</div>
       <div class="seg-tabs" id="reqDivTabs">${['all',...TRADE_CATEGORIES].map(d=>{ const n=d==='all'?reqEdit.roles.length:reqEdit.roles.filter(r=>r.divs.has(d)).length; return `<button type="button" class="seg-btn ${reqEdit.div===d?'active':''}" data-req-div-tab="${esc(d)}">${esc(d==='all'?'All':divShort(d))} (${n})</button>`; }).join('')}</div>
@@ -3114,7 +3120,6 @@ function renderReqPanel(){
       <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
         <button type="button" class="btn btn-sm" id="reqAddRole">+ Add role${reqEdit.div!=='all'?' to '+esc(divShort(reqEdit.div)):''}</button>
         <button type="button" class="btn btn-sm btn-ghost" id="reqAddCommon">+ Add suggested roles &amp; trainings</button>
-        <button type="button" class="btn btn-sm" id="reqPdoOpen">+ Add PDO trainings (SP-1157 / SP-1257)</button>
       </div>
       <p class="wsub" style="margin:8px 0 0;">New people joining with a new job title? Just add the role here (in their division's tab) and tick its trainings — it then appears in the Designation list for that division. Renaming a role here also updates the workers who have it. Removing a role doesn't change any worker — it just stops requiring trainings.</p>
       ${reqEdit.pdoOpen ? (()=>{ const have=new Set(reqEdit.catalogue.map(t=>{ const c=pdoCourseOf(t); return c?c.code:''; }).filter(Boolean)); const groups=[...new Set(PDO_COURSES.map(c=>c.lvl))];
@@ -3131,6 +3136,32 @@ function openReqEditor(){
   renderReqPanel();
 }
 function closeReqEditor(){ reqEdit=null; const p=document.getElementById('reqPanel'); p.hidden=true; p.innerHTML=''; }
+/* Batch 46: "Add a training" box — pick the group first: PDO training (drop-down of every SP-1157 / SP-1257 course),
+   Client requirement (type the name, tick the client) or Burhan internal (type the name). */
+function reqAddBoxHtml(){
+  const k=reqEdit.addCat||'opal', kc=knownClients();
+  const have=new Set(reqEdit.catalogue.map(t=>{ const c=pdoCourseOf(t); return c?c.code:''; }).filter(Boolean)), groups=[...new Set(PDO_COURSES.map(c=>c.lvl))];
+  const seg=`<label class="req-add-cat">Training group<select id="reqAddCat">${TRAINING_CATS.map(c=>`<option value="${c.key}" ${k===c.key?'selected':''}>${esc(c.key==='opal'?'PDO training (SP-1157 / SP-1257)':c.label)}</option>`).join('')}</select></label>`;
+  let body='';
+  if(k==='opal'){
+    const left=PDO_COURSES.filter(c=>!c.base && !have.has(c.code)).length;
+    body=`<div class="req-add"><select id="reqPdoSel" aria-label="PDO course"><option value="">Select a PDO course (SP-1157 / SP-1257) — ${left} not in the list yet…</option>${groups.map(g=>`<optgroup label="${esc(g)}">${PDO_COURSES.filter(c=>c.lvl===g && !c.base).map(c=>`<option value="${esc(c.code)}" ${have.has(c.code)?'disabled':''}>${esc(pdoCourseLabel(c))}${esc(pdoCardText(c))} — ${c.years?c.years+' yr'+(c.years>1?'s':''):'no expiry'}${have.has(c.code)?' (in list)':''}</option>`).join('')}</optgroup>`).join('')}</select><button type="button" class="btn btn-sm" id="reqAddTraining">+ Add training</button></div>
+      <p class="wsub" style="margin:4px 0 0;">Course names and validity as in PDO SP-1157 V4.1 and SP-1257 V7.0 (scaffolding CISRS cards &amp; work at height). <button type="button" class="att-link" id="reqPdoOpen">Tick several at once</button></p>`;
+  } else {
+    body=`<div class="req-add"><input id="reqNewTraining" list="trainingNameList" placeholder="${k==='client'?'Client training name, e.g. OQ Permit to Work':'Burhan training name, e.g. Rigging & Slinging'}" aria-label="New training name"><button type="button" class="btn btn-sm" id="reqAddTraining">+ Add training</button></div>
+      ${k==='client'?`<div class="req-tclients req-add-clients">${kc.map(c=>`<label class="chk"><input type="checkbox" data-add-client value="${esc(c)}">${esc(c)}</label>`).join('')}<input id="reqAddClientOther" placeholder="${kc.length?'Other client(s), comma separated':'Client name(s), e.g. PDO, OQ'}"><span class="wsub">No client ticked = needed by everyone with the role</span></div>`:''}`;
+  }
+  return `<div class="req-addbox"><div class="req-grp-h" style="margin:0 0 6px;">Add a training to the list</div>${seg}${body}</div>`;
+}
+// add what is typed / picked in the "Add a training" box; returns the name added, '' if nothing, null if already listed
+function reqAddFromBox(){
+  const k=reqEdit.addCat||'opal';
+  if(k==='opal'){ const sel=document.getElementById('reqPdoSel'), c=sel&&PDO_COURSES.find(x=>x.code===sel.value); if(!c) return ''; const n=pdoCourseLabel(c);
+    if(!reqAddTrainingName(n)) return null; reqEdit.meta.set(normTraining(n), {cat:'opal', clients:[]}); return n; }
+  const inp=document.getElementById('reqNewTraining'), n=inp?inp.value.trim():''; if(!n) return '';
+  const clients=k==='client'?[...document.querySelectorAll('[data-add-client]:checked')].map(x=>x.value).concat(String((document.getElementById('reqAddClientOther')||{}).value||'').split(',').map(x=>x.trim()).filter(Boolean)):[];
+  if(!reqAddTrainingName(n)) return null; reqEdit.meta.set(normTraining(n), {cat:k, clients}); return n;
+}
 function reqAddTrainingName(n){
   n=String(n||'').trim(); if(!n) return false;
   if(reqEdit.catalogue.some(x=>normTraining(x)===normTraining(n))) return false;
@@ -3138,7 +3169,7 @@ function reqAddTrainingName(n){
 }
 async function saveReqEditor(){
   readReqGrid();
-  { const inp=document.getElementById('reqNewTraining'); if(inp && inp.value.trim()) reqAddTrainingName(inp.value); }
+  reqAddFromBox();
   const seen=new Set(), roles=[], renames=new Map();
   for(const r of reqEdit.roles){
     const name=String(r.name||'').trim();
@@ -11612,10 +11643,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(b.id==='reqAddRole'){ readReqGrid(); reqEdit.roles.push({name:'', orig:'', set:new Set(), divs:new Set(reqEdit.div!=='all'?[reqEdit.div]:[])}); renderReqPanel(); const last=document.querySelector(`[data-role-name="${reqEdit.roles.length-1}"]`); if(last) last.focus(); return; }
     if(b.id==='reqAddTraining'){
       readReqGrid();
-      const inp=document.getElementById('reqNewTraining'), n=inp.value.trim();
-      if(!n){ inp.focus(); return; }
-      if(!reqAddTrainingName(n)){ toast(`“${n}” is already in the list`); return; }
-      renderReqPanel(); const again=document.getElementById('reqNewTraining'); if(again) again.focus();
+      const k=reqEdit.addCat||'opal', n=reqAddFromBox();
+      if(n===''){ const f=document.getElementById(k==='opal'?'reqPdoSel':'reqNewTraining'); if(f) f.focus(); toast(k==='opal'?'Select a PDO course first':'Type the training name first'); return; }
+      if(n===null){ toast('That training is already in the list'); return; }
+      renderReqPanel(); toast(`Added “${n}” as ${trainingCatInfo(k).label} — tick it for each role, then Save`); const again=document.getElementById(k==='opal'?'reqPdoSel':'reqNewTraining'); if(again) again.focus();
       return;
     }
     if(b.id==='reqPdoOpen'){ readReqGrid(); reqEdit.pdoOpen=true; renderReqPanel(); const p=document.querySelector('.req-pdo'); if(p) p.scrollIntoView({block:'nearest', behavior:'smooth'}); return; }
@@ -11655,7 +11686,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
       return;
     }
   });
-  document.getElementById('reqPanel').addEventListener('change', e=>{ const cb=e.target.closest('[data-cat-client],[data-cat-other]'); if(cb){ const box=cb.closest('.req-tclients'); const h=box&&box.querySelector('.req-thint'); if(h) h.hidden=!!box.querySelector('[data-cat-client]:checked') || !!(box.querySelector('[data-cat-other]')||{}).value; return; }
+  document.getElementById('reqPanel').addEventListener('change', e=>{ if(e.target.id==='reqAddCat'){ readReqGrid(); reqEdit.addCat=e.target.value; renderReqPanel(); const f=document.getElementById(reqEdit.addCat==='opal'?'reqPdoSel':'reqNewTraining'); if(f) f.focus(); return; }
+    const cb=e.target.closest('[data-cat-client],[data-cat-other]'); if(cb){ const box=cb.closest('.req-tclients'); const h=box&&box.querySelector('.req-thint'); if(h) h.hidden=!!box.querySelector('[data-cat-client]:checked') || !!(box.querySelector('[data-cat-other]')||{}).value; return; }
     const sel=e.target.closest('[data-cat-sel]'); if(!sel) return; sel.dataset.touched='1'; const box=document.querySelector(`[data-cat-clients="${sel.dataset.catSel}"]`); if(box) box.hidden=sel.value!=='client'; const row=sel.closest('.req-trow'); if(row) row.className='req-trow req-cat-'+sel.value; });
   document.getElementById('reqPanel').addEventListener('keydown', e=>{
     if(e.key==='Enter' && e.target.id==='reqNewTraining'){ e.preventDefault(); const b=document.getElementById('reqAddTraining'); if(b) b.click(); }
