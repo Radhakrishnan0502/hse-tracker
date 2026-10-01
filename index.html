@@ -816,6 +816,7 @@ label.sj-inline select{width:auto; min-width:150px;}
 .sj-r .num, table .num{text-align:right; font-variant-numeric:tabular-nums;}
 .sj-loaded{margin:-4px 0 14px;}
 .sj-vol{white-space:nowrap;}
+.ext-add > summary{list-style:none; display:inline-flex; margin-top:6px;} .ext-add > summary::-webkit-details-marker{display:none;}
 </style>
 </head>
 <body class="auth-open">
@@ -901,6 +902,7 @@ label.sj-inline select{width:auto; min-width:150px;}
       <div class="notice" id="moveNote" hidden></div>
       <div class="notice" id="dupNote" hidden></div>
       <div class="notice" id="contractNote" hidden></div>
+      <div class="notice" id="sigNote" hidden></div>
       <div class="div-strip" id="divStrip" aria-label="Workers by division"></div>
 
       <div class="panel" id="addTempPanel" hidden>
@@ -916,7 +918,8 @@ label.sj-inline select{width:auto; min-width:150px;}
             <label>Project<select data-tfield="projectId" id="tempProject"></select></label>
             <label>Contract agreement no. *<input data-tfield="agreementNo" required placeholder="e.g. BOTS/TC/2026/014"></label>
             <label>Start date *<input type="date" data-tfield="start" required></label>
-            <label>End date *<input type="date" data-tfield="end" required></label>
+            <label>Contract runs<select data-tfield="endType" id="tempEndType"><option>Fixed end date</option><option>Until work is completed</option><option>Until the project ends</option></select></label>
+            <label>End date <span class="wsub" style="display:inline;">(not needed if open-ended)</span><input type="date" data-tfield="end"></label>
           </div>
           <p class="wsub" style="margin:8px 0 0;">After saving, upload the signed agreement (Contracts tab) and his training certificates and medical — the profile then shows whether he is <strong>cleared to start</strong>.</p>
           <div class="form-actions"><button type="button" class="btn" id="cancelAddTemp">Cancel</button><button type="submit" class="btn btn-primary">Save temporary worker</button></div>
@@ -1983,13 +1986,13 @@ function tradeSelectHtml(current){
 const INDUCTION_TYPES = ['Onboarding induction','Project induction'];
 function inductionTypeOf(r){ if(INDUCTION_TYPES.includes(r.inductionType)) return r.inductionType; return /onboard|company|general/i.test(String(r.site||'')) ? 'Onboarding induction' : (r.site ? 'Project induction' : ''); }
 function inductionTitle(r){ const t=inductionTypeOf(r); return t==='Onboarding induction' ? 'Onboarding induction' : t==='Project induction' ? `Project induction — ${r.site||'project not set'}` : (r.site||'Induction'); }
+const CONTRACT_END_TYPES=['Fixed end date','Until work is completed','Until the project ends'];
 const RECORD_TYPES = {
   inductions:{
-    title:'Induction records', addLabel:'+ Add induction record', hasExpiry:true, hasAttachment:true, attachLabel:'induction certificate',
+    title:'Induction records', addLabel:'+ Add induction record', hasExpiry:false, hasAttachment:true, attachLabel:'induction certificate',
     fields:[
       {key:'site', label:'Induction', type:'select', required:true, options:['Onboarding induction'], default:'Onboarding induction'},
       {key:'date', label:'Induction date', type:'date', required:true},
-      {key:'expiry', label:'Valid until', type:'date'},
       {key:'conductedBy', label:'Conducted by', type:'text', placeholder:'e.g. HSE Officer name'},
       {key:'notes', label:'Notes', type:'textarea'},
     ],
@@ -2040,12 +2043,13 @@ const RECORD_TYPES = {
   },
   contracts:{
     title:'Contracts', addLabel:'+ New contract', hasExpiry:true, hasAttachment:true, attachLabel:'signed agreement',
-    cardBadge:r=>{ const t=localToday(); if(!r.expiry) return '<span class="badge muted">No end date</span>'; if(r.expiry<t) return '<span class="badge muted">Ended</span>'; const d=daysBetween(t, r.expiry); return d<=3 ? `<span class="badge warn">Ends in ${d} day${d===1?'':'s'}</span>` : '<span class="badge ok">Running</span>'; },
+    cardBadge:r=>{ const t=localToday(), end=contractEnd(r); if(!end) return contractOpenEnded(r) ? `<span class="badge ok">${esc(r.endType)}</span>` : '<span class="badge muted">No end date</span>'; if(end<t) return '<span class="badge muted">Ended</span>'; const d=daysBetween(t, end); return d<=3 ? `<span class="badge warn">Ends in ${d} day${d===1?'':'s'}</span>` : '<span class="badge ok">Running</span>'; },
     fields:[
       {key:'agreementNo', label:'Contract agreement no.', type:'text', required:true, placeholder:'e.g. BOTS/TC/2026/014'},
       {key:'project', label:'Project', type:'select', get options(){ return activeSites().map(x=>x.siteName||'Project').filter(Boolean); }},
       {key:'date', label:'Start date', type:'date', required:true},
-      {key:'expiry', label:'End date', type:'date', required:true},
+      {key:'endType', label:'Contract runs', type:'select', options:CONTRACT_END_TYPES, default:'Fixed end date'},
+      {key:'expiry', label:'End date (leave empty if not known yet)', type:'date'},
       {key:'notes', label:'Work / notes', type:'textarea', placeholder:'e.g. Scaffolding erection — tank 3 shutdown'},
     ],
   },
@@ -2377,7 +2381,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b33';
+const APP_BUILD='b34';
 let appOutdated=false;
 async function checkAppVersion(){
   try{
@@ -2876,7 +2880,7 @@ function workerInductionStatusHtml(w){
   const recs=(w.inductions||[]).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
   const onb=recs.find(r=>inductionTypeOf(r)==='Onboarding induction');
   const line=(label, badge, txt)=>`<div class="rf"><span class="rf-k">${badge}</span><span class="rf-v"><strong>${esc(label)}</strong> · ${txt}</span></div>`;
-  const onbLine = onb ? line('Onboarding induction', badgeHtml(onb.expiry?statusFor(onb.expiry):'valid'), `done ${esc(onb.date||'—')}${onb.expiry?` · valid until ${esc(onb.expiry)}`:''}${onb.conductedBy?` · by ${esc(onb.conductedBy)}`:''}`)
+  const onbLine = onb ? line('Onboarding induction', badgeHtml('valid'), `done ${esc(onb.date||'—')} · no expiry${onb.conductedBy?` · by ${esc(onb.conductedBy)}`:''}`)
     : line('Onboarding induction', '<span class="badge danger">Missing</span>', 'not recorded yet — add it below');
   const att=projectInductionsForWorker(w.id);
   const site=w.projectId ? siteEquipmentList.find(x=>x.id===w.projectId && !x.deleted) : null;
@@ -6052,6 +6056,7 @@ function worstStatusOf(recs){ let worst='valid'; for(const r of recs){ const st=
 function aggFor(worker,key){
   const recs = worker[key]||[];
   if(recs.length===0) return key==='inductions' ? {status:'missing'} : {status:'none'};
+  if(key==='inductions') return {status:'valid'};   // Batch 34: induction (e.g. OPAL HSE induction) never expires
   return {status:worstStatusOf(currentRecs(recs, key))};
 }
 function civilIdStatus(w){
@@ -6275,6 +6280,7 @@ function renderAll(){
   renderMoveNote();
   renderDupNote();
   renderContractNote();
+  renderSigNote();
   autoEndContracts();
   renderTradeFilter();
   renderTable();
@@ -6606,18 +6612,30 @@ function renderDupNote(){
    They belong to the division they work for. When the latest contract has ended the tracker marks them
    inactive and releases them from the project (records + history kept); "+ New contract" brings them back. */
 function isTemp(w){ return !!w && w.empType==='Temporary'; }
+// Batch 34: open-ended contracts — "Until work is completed" (no end date; checked every 14 days) or "Until the project ends" (ends on the project's actual end date)
+const CONTRACT_CHECK_DAYS=14;
+function contractOpenEnded(c){ return !!c && (c.endType==='Until work is completed' || c.endType==='Until the project ends'); }
+function contractProjectEnd(c){ if(!c || c.endType!=='Until the project ends' || !c.project) return ''; const s=activeSites().find(x=>(x.siteName||'')===c.project); return s ? (s.actualEnd || '') : ''; }
+function contractEnd(c){ return !c ? '' : (c.expiry || contractProjectEnd(c) || ''); }
+function contractCheckDue(c){ if(!c || c.endType!=='Until work is completed' || contractEnd(c)) return false; const since=[c.checkedOn, c.date].filter(Boolean).sort().pop(); return !!since && daysBetween(since, localToday())>=CONTRACT_CHECK_DAYS; }
 function currentContract(w){ return (w.contracts||[]).filter(c=>c && (c.date||c.expiry)).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')) || String(b.expiry||'').localeCompare(String(a.expiry||'')))[0] || null; }
 function contractState(w){
   if(!isTemp(w)) return null;
-  const c=currentContract(w), t=localToday();
-  if(!c || !c.expiry) return {key:'none', text:c?'no end date':'no contract recorded'};
-  if(c.expiry<t) return {key:'ended', text:`contract ended ${c.expiry}`};
-  const d=daysBetween(t, c.expiry);
-  return {key:d<=3?'soon':'running', days:d, text: d===0 ? 'contract ends today' : `ends ${c.expiry}${d<=3?` (${d} day${d===1?'':'s'})`:''}`};
+  const c=currentContract(w), t=localToday(), end=contractEnd(c);
+  if(c && !end && contractOpenEnded(c)){
+    const so=c.date ? Math.max(0, daysBetween(c.date, t)) : null;
+    const base=c.endType==='Until the project ends' ? `until ${c.project||'the project'} ends` : 'until work is completed';
+    if(contractCheckDue(c)) return {key:'check', text:`${base} · still working? (${so} days)`};
+    return {key:'open', text:`${base}${so!==null?` · ${so} day${so===1?'':'s'} so far`:''}`};
+  }
+  if(!c || !end) return {key:'none', text:c?'no end date':'no contract recorded'};
+  if(end<t) return {key:'ended', text:`contract ended ${end}`};
+  const d=daysBetween(t, end);
+  return {key:d<=3?'soon':'running', days:d, text: d===0 ? 'contract ends today' : `ends ${end}${d<=3?` (${d} day${d===1?'':'s'})`:''}`};
 }
 function contractBadgeHtml(w){
   const st=contractState(w); if(!st) return '';
-  const cls={ended:'muted', soon:'warn', running:'ok', none:'danger'}[st.key];
+  const cls={ended:'muted', soon:'warn', running:'ok', none:'danger', open:'ok', check:'warn'}[st.key];
   return `<span class="badge ${cls}" title="Temporary contract worker">Temp · ${esc(st.text)}</span>`;
 }
 // Is this person cleared to start work? (role trainings, medical, Civil ID, induction for the project)
@@ -6638,29 +6656,51 @@ function workerClearance(w){
 function tempWorkerBoxHtml(w){
   if(!isTemp(w)) return '';
   const c=currentContract(w), st=contractState(w), cl=workerClearance(w);
-  const stBadge={ended:'<span class="badge muted">Ended</span>', soon:'<span class="badge warn">Ending</span>', running:'<span class="badge ok">Running</span>', none:'<span class="badge danger">No contract</span>'}[st.key];
+  const stBadge={ended:'<span class="badge muted">Ended</span>', soon:'<span class="badge warn">Ending</span>', running:'<span class="badge ok">Running</span>', none:'<span class="badge danger">No contract</span>', open:'<span class="badge ok">Open-ended</span>', check:'<span class="badge warn">Still working?</span>'}[st.key];
   return `<div class="panel req-box" style="margin-bottom:16px;">
     <div class="subhead" style="margin-top:0;">Temporary contract worker</div>
-    <div class="rf"><span class="rf-k">${stBadge}</span><span class="rf-v">${c ? `<strong>${esc(c.agreementNo||'Contract')}</strong> · ${esc(c.date||'?')} → ${esc(c.expiry||'?')}${c.project?' · '+esc(c.project):''} · ` : ''}${esc(st.text)}</span></div>
+    <div class="rf"><span class="rf-k">${stBadge}</span><span class="rf-v">${c ? `<strong>${esc(c.agreementNo||'Contract')}</strong> · ${esc(c.date||'?')} → ${esc(contractEnd(c)||(contractOpenEnded(c)?'open':'?'))}${c.project?' · '+esc(c.project):''} · ` : ''}${esc(st.text)}</span></div>
     <div class="rf"><span class="rf-k">${cl.ok?'<span class="badge ok">✓ Cleared</span>':'<span class="badge danger">✗ Not cleared</span>'}</span><span class="rf-v">${cl.ok ? 'Cleared to start work — trainings, medical and project induction in order.' : '<strong>Not cleared to start:</strong> '+esc(cl.why.join(' · '))}</span></div>
+    ${canEdit() && c && !contractEnd(c) && contractOpenEnded(c) && (w.status||'active')==='active' ? `<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">${c.endType==='Until work is completed'?`<button type="button" class="btn btn-sm" data-contract-still="${w.id}">Still working${c.checkedOn?` (last checked ${esc(c.checkedOn)})`:''}</button>`:''}<button type="button" class="btn btn-sm" data-contract-end="${w.id}" data-armed="0">End contract today</button></div>`:''}
     ${canEdit()?`<div style="margin-top:10px;"><button type="button" class="btn btn-sm" data-new-contract="1">+ New contract / extend</button> <span class="wsub" style="display:inline;">— agreement no., project and dates; upload the signed agreement in the Contracts tab.</span></div>`:''}
   </div>`;
 }
 // workers whose contract ends within 3 days, and those released recently
 function contractNotices(){
-  const t=localToday(), soon=[], ended=[];
+  const t=localToday(), soon=[], ended=[], check=[];
   for(const w of activeWorkers()){ if(!isTemp(w)) continue; const st=contractState(w); if(!st) continue;
     if((w.status||'active')==='active' && st.key==='soon') soon.push(w);
-    const c=currentContract(w); if(st.key==='ended' && c && daysBetween(c.expiry, t)<=7) ended.push(w); }
-  return {soon, ended};
+    if((w.status||'active')==='active' && st.key==='check') check.push(w);
+    const c=currentContract(w); if(st.key==='ended' && c && daysBetween(contractEnd(c), t)<=7) ended.push(w); }
+  return {soon, ended, check};
 }
 function renderContractNote(){
   const el=document.getElementById('contractNote'); if(!el) return;
-  const {soon, ended}=auth.currentUser ? contractNotices() : {soon:[], ended:[]};
-  el.hidden=!(soon.length||ended.length);
+  const {soon, ended, check}=auth.currentUser ? contractNotices() : {soon:[], ended:[], check:[]};
+  el.hidden=!(soon.length||ended.length||check.length);
   const link=w=>`<button type="button" class="att-link" data-open-contract="${w.id}">${esc(w.fullName||'Worker')}</button>`;
   el.innerHTML=[soon.length?`${ic('clock')} <strong>Contract ending soon:</strong> ${soon.map(w=>`${link(w)} (${esc(contractState(w).text)})`).join(' · ')} — extend or let it end.`:'',
-    ended.length?`<strong>Contract ended — released from project:</strong> ${ended.map(link).join(' · ')}`:''].filter(Boolean).join('<br>');
+    ended.length?`<strong>Contract ended — released from project:</strong> ${ended.map(link).join(' · ')}`:'',
+    check.length?`${ic('clock')} <strong>Open-ended contracts — still working?</strong> ${check.map(w=>`${link(w)}${canEdit()?` <button type="button" class="att-link" data-contract-still="${w.id}">Still working</button> / <button type="button" class="att-link" data-contract-end="${w.id}" data-armed="0">End today</button>`:''}`).join(' · ')} — checked every ${CONTRACT_CHECK_DAYS} days.`:''].filter(Boolean).join('<br>');
+}
+async function contractAction(wid, kind){
+  const w=workers.find(x=>x.id===wid); if(!w || !canEdit()) return;
+  const c=currentContract(w); if(!c) return;
+  const t=localToday();
+  const arr=(w.contracts||[]).map(x=>x.id===c.id ? (kind==='still' ? {...x, checkedOn:t} : {...x, expiry:t}) : x);
+  if(await updateWorker(w.id, {contracts:arr})) toast(kind==='still' ? `${w.fullName||'Worker'} — still working, next check in ${CONTRACT_CHECK_DAYS} days` : `${w.fullName||'Worker'} — contract ends today; he is released from the project tomorrow`);
+}
+// Batch 34: signatures are no longer kept — offer to delete the ones stored before
+function renderSigNote(){
+  const el=document.getElementById('sigNote'); if(!el) return;
+  const list=auth.currentUser && canEdit() ? workers.filter(w=>w.signature && w.signature.url) : [];
+  el.hidden=!list.length;
+  el.innerHTML=list.length?`${ic('alert')} <strong>${list.length} worker${list.length===1?' has':'s have'} a signature stored from before.</strong> Signatures are no longer kept in the tracker. <button type="button" class="att-link" id="sigDeleteAll" data-armed="0">Delete all stored signatures</button>`:'';
+}
+async function deleteAllSignatures(){
+  const list=workers.filter(w=>w.signature && w.signature.url); let n=0;
+  for(const w of list){ const old=w.signature; try{ await db.collection('workers').doc(w.id).update(stamp({signature:null})); n++; if(old && old.path) deleteStorageFile(old.path); }catch(e){ console.warn('signature delete', e); } }
+  toast(`${n} stored signature${n===1?'':'s'} deleted`);
 }
 // When an editor opens the tracker, temporary workers whose contract has ended are released (once).
 const _autoEnded=new Set();
@@ -6669,9 +6709,9 @@ async function autoEndContracts(){
   const t=localToday();
   for(const w of activeWorkers()){
     if(!isTemp(w) || (w.status||'active')!=='active' || _autoEnded.has(w.id)) continue;
-    const c=currentContract(w); if(!c || !c.expiry || c.expiry>=t) continue;
+    const c=currentContract(w), end=contractEnd(c); if(!c || !end || end>=t) continue;
     _autoEnded.add(w.id);
-    try{ await db.collection('workers').doc(w.id).update(stamp({status:'inactive', contractEnded:c.expiry, ...moveWorkerUpdate(w, null)})); }catch(e){ console.warn('auto end contract', e); }
+    try{ await db.collection('workers').doc(w.id).update(stamp({status:'inactive', contractEnded:end, ...moveWorkerUpdate(w, null)})); }catch(e){ console.warn('auto end contract', e); }
   }
 }
 function renderMoveNote(){
@@ -6708,13 +6748,62 @@ function siteDocsSummary(s){
   return {count:(s.hseDocs||[]).length, expired, expiring};
 }
 function projectStatus(s){ return s.status || 'Active'; }
+/* Batch 34: project duration — start, planned end (optional), actual end, extensions */
+function fmtDays(n){ return `${n} day${n===1?'':'s'}`; }
+function projectDuration(s){
+  const t=localToday(), st=s.startDate||'', plan=s.endDate||'', act=s.actualEnd||'';
+  const out={started:!!st && st<=t, planned: st&&plan ? daysBetween(st, plan) : null};
+  if(act){ out.done=true; out.days= st ? daysBetween(st, act) : null; if(plan) out.vsPlan=daysBetween(plan, act); return out; }
+  if(st && st>t){ out.startsIn=daysBetween(t, st); return out; }
+  if(st) out.days=daysBetween(st, t);
+  if(plan) out.left=daysBetween(t, plan);   // negative = past planned end
+  return out;
+}
+function projectDurationText(s){
+  const d=projectDuration(s);
+  if(d.done) return d.days!==null ? `took ${fmtDays(d.days)}` : `finished ${s.actualEnd}`;
+  if(d.startsIn!==undefined) return `starts in ${fmtDays(d.startsIn)}`;
+  const parts=[]; if(d.days!==undefined && d.days!==null) parts.push(`${fmtDays(d.days)} so far`);
+  if(d.left!==undefined) parts.push(d.left>=0 ? `${fmtDays(d.left)} left` : `${fmtDays(-d.left)} past planned end`);
+  else if(s.startDate) parts.push('open-ended');
+  return parts.join(' · ');
+}
+function projectDurationBoxHtml(s){
+  const d=projectDuration(s), ext=s.extensions||[];
+  if(!s.startDate && !s.endDate && !s.actualEnd) return `<div class="panel req-box" style="margin-bottom:14px;"><div class="subhead" style="margin-top:0;">Duration</div><p class="wsub" style="margin:0;">Enter the start date below — the duration is then counted automatically. The planned end date is optional (leave it empty if the end is not known).</p></div>`;
+  const row=(k,v)=>`<div class="rf"><span class="rf-k">${k}</span><span class="rf-v">${v}</span></div>`;
+  let h='';
+  if(s.startDate) h+=row('Started', `${esc(s.startDate)}${d.startsIn!==undefined?` · starts in ${fmtDays(d.startsIn)}`:''}`);
+  if(d.done) h+=row('Finished', `${esc(s.actualEnd)}${d.days!==null&&d.days!==undefined?` · <strong>${fmtDays(d.days)}</strong> in total`:''}${d.vsPlan!==undefined?` · ${d.vsPlan>0?`${fmtDays(d.vsPlan)} after`:d.vsPlan<0?`${fmtDays(-d.vsPlan)} before`:'on'} the planned end (${esc(s.endDate)})`:''}`);
+  else {
+    if(d.days!==undefined && d.days!==null) h+=row('Running', `<strong>${fmtDays(d.days)}</strong> so far`);
+    h+=row('Planned end', s.endDate ? `${esc(s.endDate)}${d.planned!==null?` (planned ${fmtDays(d.planned)})`:''}${d.left!==undefined?` · ${d.left>=0?`<strong>${fmtDays(d.left)}</strong> left`:`<span class="badge warn">${fmtDays(-d.left)} past planned end</span>`}`:''}` : '<span class="badge muted">Not fixed</span> open-ended — until the work is completed');
+  }
+  if(ext.length) h+=row('Extensions', `${ext.length} · original planned end ${esc(s.originalEnd||ext[0].oldEnd||'—')}`);
+  return `<div class="panel req-box" style="margin-bottom:14px;"><div class="subhead" style="margin-top:0;">Duration <span class="wsub" style="display:inline; font-weight:400;">— counted automatically</span></div>${h}</div>`;
+}
+function projectExtensionsHtml(s){
+  const ext=(s.extensions||[]).slice();
+  const cards=ext.length ? ext.map((x,i)=>`<div class="record-card"><div class="record-card-top"><div class="record-card-title">Extended to ${esc(x.newEnd||'—')} <span class="badge muted">from ${esc(x.oldEnd||'no end date')}</span></div>
+      ${canEdit() && i===ext.length-1 ? `<div class="record-card-actions"><button type="button" class="icon-btn danger" data-ext-del="${esc(x.id)}" data-armed="0" aria-label="Remove extension">${ic('trash')}</button></div>`:''}</div>
+      <div class="record-fields">${x.reason?`<div class="rf"><span class="rf-k">Reason</span><span class="rf-v">${esc(x.reason)}</span></div>`:''}${x.approvedBy?`<div class="rf"><span class="rf-k">Approved by</span><span class="rf-v">${esc(x.approvedBy)}</span></div>`:''}${x.date?`<div class="rf"><span class="rf-k">Approved on</span><span class="rf-v">${esc(x.date)}</span></div>`:''}</div></div>`).join('') : '<p class="wsub">No extensions recorded.</p>';
+  const form = canEdit() && !s.actualEnd ? `<details class="ext-add"><summary class="btn btn-sm">+ Record an extension</summary>
+      <form id="siteExtForm" style="margin-top:10px;"><div class="form-grid">
+        <label>New planned end date *<input type="date" data-xfield="newEnd" required min="${esc(s.startDate||'')}"></label>
+        <label>Approved by<input data-xfield="approvedBy" placeholder="e.g. PDO Contract Holder / Client rep"></label>
+        <label>Approved on<input type="date" data-xfield="date" value="${localToday()}"></label>
+        <label class="span-all">Reason *<input data-xfield="reason" required placeholder="e.g. Additional scope — 2 more well heads; client letter ref."></label>
+      </div><div class="form-actions"><button type="submit" class="btn btn-primary btn-sm">Save extension</button></div></form></details>` : '';
+  return `<div class="section-head" style="margin-top:20px;"><h3>Extensions (${ext.length})</h3></div>
+    <p class="wsub" style="margin:0 0 10px;">Each extension moves the planned end date and keeps a record of who approved it and why${s.endDate?'':' (a planned end date is needed first — or leave the project open-ended)'}.</p>${cards}${form}`;
+}
 function projectStatusBadge(s){
   const st=projectStatus(s);
   const cls = st==='Active' ? 'ok' : st==='On hold' ? 'warn' : 'muted';
   let extra='';
-  if(st==='Active' && s.endDate){
+  if(st==='Active' && s.endDate && !s.actualEnd){
     const d=daysUntil(s.endDate);
-    if(d!==null && d<0) extra=` <span class="badge danger">End date passed</span>`;
+    if(d!==null && d<0) extra=` <span class="badge warn">Past planned end</span>`;
     else if(d!==null && d<=14) extra=` <span class="badge warn">Ends in ${d} day${d===1?'':'s'}</span>`;
   }
   return `<span class="badge ${cls}">${esc(st)}</span>${extra}`;
@@ -6767,7 +6856,8 @@ function renderSiteTable(){
     const team=workersAtSite(s.id), teamIssues=team.filter(w=>workerIssues(w).length).length;
     const vans=vehiclesAtSite(s.id), vanIssues=vans.filter(v=>vehicleIssues(v).length).length;
     const certWorst = (m.expired||d.expired) ? 'expired' : (m.expiring||d.expiring) ? 'expiring' : ((m.count||d.count) ? 'valid' : 'none');
-    const dates = (s.startDate&&s.endDate) ? `<div class="wsub mono">${esc(s.startDate)} → ${esc(s.endDate)}</div>` : s.endDate ? `<div class="wsub mono">until ${esc(s.endDate)}</div>` : s.startDate ? `<div class="wsub mono">from ${esc(s.startDate)}</div>` : '';
+    const dur=projectDurationText(s);
+    const dates = (s.startDate||s.endDate||s.actualEnd) ? `<div class="wsub mono">${s.startDate?esc(s.startDate):'?'} → ${s.actualEnd?esc(s.actualEnd):s.endDate?esc(s.endDate)+' (planned)':'open'}</div>${dur?`<div class="wsub">${esc(dur)}${(s.extensions||[]).length?` · extended ${(s.extensions||[]).length}×`:''}</div>`:''}` : '';
     return `<tr data-id="${s.id}">
       <td><div class="wname">${esc(s.siteName)}</div>${dates}</td>
       <td>${esc(divLabel(s.division||'Civil'))}</td>
@@ -7152,6 +7242,7 @@ function siteProfileTabHtml(s){
   const statusOpts=PROJECT_STATUSES.map(v=>`<option value="${esc(v)}" ${projectStatus(s)===v?'selected':''}>${esc(v)}</option>`).join('');
   return `${updatedNoteHtml(s)}
   <div style="margin-bottom:14px;">${projectStatusBadge(s)}</div>
+  ${projectDurationBoxHtml(s)}
   <form id="siteProfileForm">
     <div class="subhead">Project details</div>
     <div class="form-grid">
@@ -7159,7 +7250,8 @@ function siteProfileTabHtml(s){
       <label>Division<select data-sfield="division">${divisionOptionsHtml(s.division||'Civil')}</select></label>
       <label>Status<select data-sfield="status">${statusOpts}</select></label>
       <label>Start date<input type="date" data-sfield="startDate" value="${esc(s.startDate||'')}"></label>
-      <label>End date<input type="date" data-sfield="endDate" value="${esc(s.endDate||'')}"></label>
+      <label>Planned end date <span class="wsub" style="display:inline;">(optional)</span><input type="date" data-sfield="endDate" value="${esc(s.endDate||'')}"></label>
+      <label>Actual end date <span class="wsub" style="display:inline;">(when work is completed)</span><input type="date" data-sfield="actualEnd" value="${esc(s.actualEnd||'')}" max="${localToday()}"></label>
       <label>Location<input data-sfield="location" value="${esc(s.location||'')}" placeholder="e.g. Fahud, Duqm"></label>
       <label>Project handled by<input data-sfield="projectHandledBy" value="${esc(s.projectHandledBy||'')}" placeholder="e.g. Project Manager / Supervisor name"></label>
       <label>Duration notes<input data-sfield="projectDuration" value="${esc(s.projectDuration||'')}" placeholder="optional, e.g. 6 months + extension"></label>
@@ -7177,6 +7269,7 @@ function siteProfileTabHtml(s){
     </div>
     <div class="form-actions" style="margin-top:16px;"><button type="submit" class="btn btn-primary">Save changes</button></div>
   </form>
+  ${projectExtensionsHtml(s)}
   <div class="danger-zone">
     <p>Removing a project moves it to Deleted projects, where its full record can be restored at any time — or permanently removed for good (its HSE document files are deleted, its equipment goes back to store, and its team and vehicles are un-assigned).</p>
     <button type="button" class="btn btn-danger btn-sm" id="deleteSiteBtn" data-armed="0">Delete project</button>
@@ -8464,7 +8557,6 @@ function profileTabHtml(w){
   const updatedNote = updatedNoteHtml(w);
   const photo = attachmentBlock(w,null,null,'photo','photo');
   const civilScan = attachmentBlock(w,null,null,'Civil ID scan','civilIdScan');
-  const signaturePreview = attachmentPreviewHtml(w.signature, 'signature', 'signature');
   const gcc=parseFloat(w.experienceGCCYears)||0, other=parseFloat(w.experienceOtherYears)||0;
   const total=(gcc+other);
   return `${updatedNote}
@@ -8515,16 +8607,7 @@ function profileTabHtml(w){
   ${photo}
   <div class="section-head" style="margin-top:16px;"><h3>Civil ID scan</h3></div>
   ${civilScan}
-  <div class="section-head" style="margin-top:16px;"><h3>Signature on file</h3></div>
-  <div class="att-block">${signaturePreview}</div>
-  <div class="sig-pad-wrap">
-    <canvas id="sigPad" class="sig-canvas" width="420" height="140"></canvas>
-    <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-      <button type="button" class="btn btn-sm" id="sigClearBtn">Clear pad</button>
-      <button type="button" class="btn btn-primary btn-sm" id="sigSaveBtn">Save drawn signature</button>
-      <label class="upload-btn">Upload signature image<input type="file" hidden data-attach-for="signature"></label>
-    </div>
-  </div>
+  ${w.signature&&w.signature.url&&canEdit()?`<div class="notice" style="margin-top:16px;">${ic('alert')} A signature image from before is still stored for this worker. Signatures are no longer kept in the tracker. <button type="button" class="att-link" data-remove-attach="signature" data-armed="0">Delete stored signature</button></div>`:''}
   <div class="danger-zone">
     <p>Removing a worker moves them to Deleted workers, where their full record can be restored at any time — or permanently removed for good (this also frees up the storage space used by their photo, scans and certificates).</p>
     <button type="button" class="btn btn-danger btn-sm" id="deleteWorkerBtn" data-armed="0">Delete worker</button>
@@ -8751,8 +8834,7 @@ async function buildProfilePdf(w){
   section('Violations','violations',RECORD_TYPES.violations);
   if(isTemp(w) || (w.contracts||[]).length) section('Contracts','contracts',RECORD_TYPES.contracts);
 
-  if(w.signature && w.signature.url){
-    h2('Signature on file');
+  if(false){   // Batch 34: signatures are no longer printed
     const sigUrl=await fetchImageDataUrl(w.signature.url);
     if(sigUrl){ ensure(66); try{ doc.addImage(sigUrl, imgFormat(sigUrl), marginX, y, 150, 55); y+=62; }catch(e){ para('Signature on file (view it in the register).'); } }
     else para('Signature on file (view it in the register).');
@@ -8901,7 +8983,9 @@ async function buildSitePdf(s){
 
   h2('Project details');
   kv('Project name', s.siteName); kv('Division', divLabel(s.division||'Civil')); kv('Status', projectStatus(s));
-  kv('Start date', s.startDate); kv('End date', s.endDate);
+  kv('Start date', s.startDate); kv('Planned end date', s.endDate||'Open-ended'); if(s.actualEnd) kv('Actual end date', s.actualEnd);
+  { const dt=projectDurationText(s); if(dt) kv('Duration', dt); }
+  if((s.extensions||[]).length){ kv('Original planned end', s.originalEnd||s.extensions[0].oldEnd||'—'); for(const x of s.extensions) kv('Extension', `to ${x.newEnd||'—'}${x.reason?' — '+x.reason:''}${x.approvedBy?' (approved by '+x.approvedBy+(x.date?', '+x.date:'')+')':''}`); }
   kv('Location', s.location); kv('Project handled by', s.projectHandledBy);
   if(s.projectDuration) kv('Duration notes', s.projectDuration);
   if(s.scopeOfWork){ ensure(15); doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(100,105,98); doc.text('Scope of work', marginX, y); doc.setTextColor(20,20,20); y+=12; doc.setFont('helvetica','normal'); doc.setFontSize(9); const lines=doc.splitTextToSize(s.scopeOfWork, pageW-2*marginX); lines.forEach(l=>{ ensure(11); doc.text(l, marginX, y); y+=11; }); y+=4; }
@@ -9327,16 +9411,18 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('addTempForm').addEventListener('submit', async e=>{
     e.preventDefault();
     const v={}; e.target.querySelectorAll('[data-tfield]').forEach(el=>{ v[el.dataset.tfield]=String(el.value||'').trim(); });
-    if(v.end < v.start){ toast('The end date is before the start date'); return; }
+    if(v.endType==='Fixed end date' && !v.end){ toast('Enter the end date — or choose “Until work is completed”'); return; }
+    if(v.endType==='Until the project ends' && !v.projectId){ toast('Pick the project — the contract ends when that project ends'); return; }
+    if(v.end && v.end < v.start){ toast('The end date is before the start date'); return; }
     const k=normKey(v.civilId); const dup=k && workers.find(w=>normKey(w.civilId)===k);
     if(dup){ toast(`${dup.fullName||'A worker'} already has Civil ID ${v.civilId}${dup.deleted?' (in Deleted workers)':''} — open him and use “+ New contract” instead`); return; }
     const site=v.projectId ? siteEquipmentList.find(x=>x.id===v.projectId) : null;
     const now=new Date().toISOString(), me=(auth.currentUser&&auth.currentUser.email)||'';
     const data={fullName:v.fullName, civilId:v.civilId, mobileNumber:v.mobileNumber, trade:v.trade, designation:v.designation||'', empType:'Temporary', contractor:'Individual — temporary contract', status:'active',
-      contracts:[{id:genId(), agreementNo:v.agreementNo, project:site?(site.siteName||''):'', date:v.start, expiry:v.end}],
+      contracts:[{id:genId(), agreementNo:v.agreementNo, project:site?(site.siteName||''):'', date:v.start, endType:v.endType||'Fixed end date', expiry:v.end}],
       projectId:site?site.id:null, projectAssignedAt:site?now:null, projectHistory:site?[{projectId:site.id, name:site.siteName||'', from:v.start, to:''}]:[],
       inductions:[],trainings:[],competency:[],medical:[],licenses:[],warnings:[],violations:[], createdAt:now, createdBy:me};
-    try{ await db.collection('workers').add(data); toast(`${v.fullName} added — contract ${v.start} → ${v.end}`); e.target.reset(); document.getElementById('addTempPanel').hidden=true; }
+    try{ await db.collection('workers').add(data); toast(`${v.fullName} added — contract ${v.start} → ${v.end || v.endType.toLowerCase()}`); e.target.reset(); document.getElementById('addTempPanel').hidden=true; }
     catch(err){ console.error(err); toast('Could not add worker'); }
   });
   document.getElementById('addWorkerBtn').addEventListener('click', ()=>{
@@ -9457,6 +9543,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const cfg=RECORD_TYPES[activeTab];
       const data={}; e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]= el.closest('label[hidden]') ? '' : el.value; });
       if(activeTab==='inductions') data.inductionType = data.site==='Onboarding induction' ? 'Onboarding induction' : 'Project induction';
+      if(activeTab==='contracts'){
+        if((data.endType||'Fixed end date')==='Fixed end date' && !data.expiry){ toast('Enter the end date — or choose “Until work is completed” if it is not known'); return; }
+        if(data.expiry && data.date && data.expiry<data.date){ toast('The end date is before the start date'); return; }
+      }
       const arr=(w[activeTab]||[]).slice();
       if(editingRecordId){
         const idx=arr.findIndex(r=>r.id===editingRecordId);
@@ -9467,7 +9557,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       editingRecordId=null; addFormOpen=false; recordPrefill=null;
       if(activeTab==='contracts'){
         const cur=currentContract({contracts:arr}), extra={};
-        if(cur && cur.expiry && cur.expiry>=localToday()){ extra.status='active'; extra.contractEnded=''; extra.empType='Temporary';
+        if(cur && (contractEnd(cur) ? contractEnd(cur)>=localToday() : contractOpenEnded(cur))){ extra.status='active'; extra.contractEnded=''; extra.empType='Temporary';
           const site=cur.project ? activeSites().find(x=>(x.siteName||'')===cur.project) : null;
           if(site && site.id!==w.projectId) Object.assign(extra, moveWorkerUpdate(w, site.id)); }
         _autoEnded.delete(w.id);
@@ -9501,6 +9591,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(mb){ if(await moveWorker(w.id, w.returnProjectId)) toast('Moved back to '+projectName(w.returnProjectId)); return; }
   });
   document.getElementById('contractNote').addEventListener('click', e=>{ const b=e.target.closest('[data-open-contract]'); if(b) openDrawer(b.dataset.openContract); });
+  document.addEventListener('click', e=>{
+    const st=e.target.closest('[data-contract-still]'); if(st){ contractAction(st.dataset.contractStill, 'still'); return; }
+    const en=e.target.closest('[data-contract-end]'); if(en){ if(en.dataset.armed!=='1'){ en.dataset.armed='1'; const t=en.textContent; en.textContent='Click again to confirm'; setTimeout(()=>{ en.dataset.armed='0'; en.textContent=t; },3000); return; } contractAction(en.dataset.contractEnd, 'end'); return; }
+    const sd=e.target.closest('#sigDeleteAll'); if(sd){ if(sd.dataset.armed!=='1'){ sd.dataset.armed='1'; sd.textContent='Click again — delete them all'; setTimeout(()=>{ sd.dataset.armed='0'; sd.textContent='Delete all stored signatures'; },4000); return; } deleteAllSignatures(); return; }
+  });
   document.getElementById('dupNote').addEventListener('click', e=>{ const b=e.target.closest('[data-dup-civil]'); if(!b) return; filters.q=b.dataset.dupCivil; filters.trade='all'; const si=document.getElementById('searchInput'); if(si) si.value=filters.q; const tf=document.getElementById('tradeFilter'); if(tf) tf.value='all'; renderTable(); renderTiles(); });
   document.getElementById('moveNote').addEventListener('click', e=>{ const b=e.target.closest('[data-open-due]'); if(b){ openDrawer(b.dataset.openDue); } });
   document.getElementById('drawerBody').addEventListener('click', async e=>{
@@ -9898,11 +9993,29 @@ document.addEventListener('DOMContentLoaded', ()=>{
       await updateSite(s.id, {emergency:data});
       return;
     }
+    if(e.target.id==='siteExtForm'){
+      e.preventDefault(); const s=currentSite(); if(!s || !canEdit()) return;
+      const v={}; e.target.querySelectorAll('[data-xfield]').forEach(el=>{ v[el.dataset.xfield]=String(el.value||'').trim(); });
+      if(!v.newEnd || !v.reason){ toast('Enter the new planned end date and the reason'); return; }
+      if(s.startDate && v.newEnd<s.startDate){ toast('The new end date is before the project start'); return; }
+      const ext=(s.extensions||[]).concat([{id:genId(), newEnd:v.newEnd, oldEnd:s.endDate||'', reason:v.reason, approvedBy:v.approvedBy, date:v.date}]);
+      if(await updateSite(s.id, {extensions:ext, endDate:v.newEnd, originalEnd:s.originalEnd || s.endDate || ''})) toast(`Extension saved — planned end is now ${v.newEnd}`);
+      return;
+    }
     if(e.target.id==='siteProfileForm'){
       e.preventDefault();
       const s=currentSite(); if(!s) return;
       const data={};
       e.target.querySelectorAll('[data-sfield]').forEach(el=>{ data[el.dataset.sfield]=el.value; });
+      if(data.startDate && data.endDate && data.endDate<data.startDate){ toast('The planned end date is before the start date'); return; }
+      if(data.startDate && data.actualEnd && data.actualEnd<data.startDate){ toast('The actual end date is before the start date'); return; }
+      if(data.actualEnd && data.actualEnd>localToday()){ toast('The actual end date cannot be in the future'); return; }
+      const wasDone=projectStatus(s)==='Completed';
+      if(data.status==='Completed' && !data.actualEnd){ data.actualEnd=localToday(); toast('Actual end date set to today — change it if the work finished earlier'); }
+      else if(data.status!=='Completed' && data.actualEnd){
+        if(wasDone && data.actualEnd===(s.actualEnd||'')){ data.actualEnd=''; toast('Project re-opened — actual end date cleared'); }
+        else data.status='Completed';
+      }
       const divisionChanged = data.division && data.division!==(s.division||'Civil');
       if(!(await updateSite(s.id,data))) return;
       if(divisionChanged){   // every Monthly Report entry of this project moves to the new division (toolbox talks, man-hours, incidents, observations…)
@@ -10025,6 +10138,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
       if(key==='toolboxTalks') removeToolboxFromReport(s.id, rid);
       return;
     }
+    const extDel=e.target.closest('[data-ext-del]');
+    if(extDel){ const s=currentSite(); if(!s || !canEdit()) return;
+      if(extDel.dataset.armed!=='1'){ extDel.dataset.armed='1'; extDel.classList.add('armed'); toast('Click again to remove this extension'); setTimeout(()=>{ extDel.dataset.armed='0'; extDel.classList.remove('armed'); },3000); return; }
+      const ext=(s.extensions||[]).slice(), last=ext.pop(); if(!last || last.id!==extDel.dataset.extDel) return;
+      if(await updateSite(s.id, {extensions:ext, endDate:last.oldEnd||'', ...(ext.length?{}:{originalEnd:''})})) toast('Extension removed — planned end set back to '+(last.oldEnd||'none'));
+      return; }
     const delSiteBtn=e.target.closest('#deleteSiteBtn');
     if(delSiteBtn){
       if(delSiteBtn.dataset.armed!=='1'){
