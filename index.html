@@ -919,6 +919,22 @@ th.mx-cat-opal{box-shadow:inset 0 3px 0 var(--cat-1);} th.mx-cat-client{box-shad
 .lb-cat{font-size:17px; font-weight:800;} .lb-sub{font-size:13px; margin-top:3px;} .lb-verdict{margin-top:8px; font-weight:700; font-size:13px;} .lv-fail{color:var(--danger);} .lv-ok{color:var(--ok);}
 .lb-verdict .ic{width:16px; height:16px; vertical-align:-3px;}
 ul.lift-ctl{margin:4px 0 6px 18px; padding:0; font-size:12.5px;} ul.lift-ctl li{margin:1px 0;}
+/* Batch 56: incidents — PDO RAM, ICAM */
+.pram-wrap{display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; margin:8px 0 12px;}
+.pram{display:grid; grid-template-columns:34px repeat(5, 46px); gap:3px; font-size:11px;}
+.pram-h,.pram-corner{display:flex; align-items:center; justify-content:center; font-weight:700; color:var(--muted);}
+.pram-c{height:26px; display:flex; align-items:center; justify-content:center; border-radius:5px; font-weight:700; font-size:11px; color:#10202e; opacity:.5;}
+.pram-L{background:#7fd1a8;} .pram-M{background:#ffd666;} .pram-H{background:#ff7b7b;}
+.pram-on{opacity:1; outline:3px solid var(--ink); outline-offset:-1px;}
+.pram-res{display:grid; gap:6px; font-size:13px; min-width:220px; flex:1;}
+.pram-help summary{cursor:pointer; color:var(--muted); font-size:12px;}
+.icam{display:grid; gap:6px; margin-bottom:8px;}
+.icam-find{max-width:420px;}
+details.icam-grp{border:1px solid var(--line); border-radius:8px; padding:4px 10px; margin-bottom:6px;}
+details.icam-grp > summary{cursor:pointer; font-weight:600; font-size:13px; padding:4px 0;}
+details.icam-grp .cause-list{margin:6px 0;}
+.inc-snap{border:1px solid var(--line); border-radius:10px; padding:8px 10px; display:grid; gap:4px; font-size:12.5px;}
+.inc-snap .ic{width:14px; height:14px; vertical-align:-2px;}
 .crew-chips{display:flex; flex-wrap:wrap; gap:4px;} .crew-card{font-size:11.5px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); background:var(--surface);}
 .crew-card.c-gold{box-shadow:inset 3px 0 0 #c9a227;} .crew-card.c-blue{box-shadow:inset 3px 0 0 #2563eb;} .crew-card.c-amber{box-shadow:inset 3px 0 0 #f59e0b;} .crew-card.c-white{box-shadow:inset 3px 0 0 #cbd5e1;} .crew-card.c-green{box-shadow:inset 3px 0 0 #16a34a;} .crew-card.c-none{box-shadow:inset 3px 0 0 var(--danger);}
 
@@ -2715,7 +2731,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b55';
+const APP_BUILD='b56';
 let appOutdated=false;
 // Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
 let _verTag=null, _verLast=0;
@@ -3872,9 +3888,9 @@ function wireLibDateAuto(e){
    close-out. Each incident also appears once in the Monthly Report (fixed id
    'inc_<id>'), so LTI / MTI / FAC / near-miss figures are never typed twice.
    ===================================================================== */
-const INCIDENT_TYPES = ['Injury','Occupational illness','Near miss','Dangerous occurrence','Property / equipment damage','Vehicle incident (RTA)','Fire / explosion','Environmental (spill / release)','Security incident'];
-const INJURY_CLASSES = ['Not applicable (no injury)','First aid case (FAC)','Medical treatment case (MTC)','Restricted work case (RWC)','Lost time injury (LTI)','Fatality'];
-const INJURY_SHORT = {'Not applicable (no injury)':'No injury','First aid case (FAC)':'FAC','Medical treatment case (MTC)':'MTC','Restricted work case (RWC)':'RWC','Lost time injury (LTI)':'LTI','Fatality':'Fatality'};
+const INCIDENT_TYPES = ['Injury','Occupational illness','Near miss','Unsafe act / unsafe condition','Dangerous occurrence','Property / equipment damage','Vehicle incident (RTA)','Fire / explosion','Environmental (spill / release)','Security incident'];
+const INJURY_CLASSES = ['Not applicable (no injury)','First aid case (FAC)','Medical treatment case (MTC)','Restricted work case (RWC)','Lost time injury (LTI)','Fatality','Non-accidental death (NAD)'];
+const INJURY_SHORT = {'Non-accidental death (NAD)':'NAD','Not applicable (no injury)':'No injury','First aid case (FAC)':'FAC','Medical treatment case (MTC)':'MTC','Restricted work case (RWC)':'RWC','Lost time injury (LTI)':'LTI','Fatality':'Fatality'};
 const SEVERITY_LEVELS = ['1 · Slight','2 · Minor','3 · Moderate','4 · Major','5 · Catastrophic'];
 const LIKELIHOOD_LEVELS = ['1 · Rare','2 · Unlikely','3 · Possible','4 · Likely','5 · Almost certain'];
 const INCIDENT_STATUSES = ['Reported','Under investigation','Actions in progress','Closed'];
@@ -3901,8 +3917,8 @@ function currentInc(){ return incidentList.find(i=>i.id===activeIncId); }
 function sevNum(v){ const n=parseInt(String(v||''),10); return n>=1&&n<=5 ? n : null; }
 function riskScore(i){ const c=sevNum(i.potentialSeverity)||sevNum(i.actualSeverity), l=sevNum(i.likelihood); return (c&&l) ? c*l : null; }
 function riskBand(score){ if(score===null) return null; return score>=15?{t:'Extreme',cls:'danger'}: score>=10?{t:'High',cls:'danger'}: score>=5?{t:'Medium',cls:'warn'}:{t:'Low',cls:'ok'}; }
-function isRecordable(i){ return ['Medical treatment case (MTC)','Restricted work case (RWC)','Lost time injury (LTI)','Fatality'].includes(i.injuryClass); }
-function investigationRequired(i){ return isRecordable(i) || (sevNum(i.actualSeverity)||0)>=3 || (sevNum(i.potentialSeverity)||0)>=4; }
+function isRecordable(i){ if(!incStatsCounted(i)) return false; return ['Medical treatment case (MTC)','Restricted work case (RWC)','Lost time injury (LTI)','Fatality'].includes(i.injuryClass); }
+function investigationRequired(i){ return incIsPdo(i) || isRecordable(i) || (sevNum(i.actualSeverity)||0)>=3 || (sevNum(i.potentialSeverity)||0)>=4; }
 function incCapaOpen(i){ return (i.capa||[]).filter(a=>(a.status||'Open')!=='Closed'); }
 function incCapaOverdue(i){ return incCapaOpen(i).filter(a=>a.targetDate && daysUntil(a.targetDate)<0); }
 function incInvestigationOverdue(i){ return i.status!=='Closed' && investigationRequired(i) && !i.invCompleted && i.invDue && daysUntil(i.invDue)<0; }
@@ -3918,10 +3934,11 @@ function nextIncNo(dateStr){
 // Monthly Report category for this incident (one entry per incident)
 function incReportCategory(i){
   const c=i.injuryClass||'';
+  if(c==='Non-accidental death (NAD)' || (c && c!=='Not applicable (no injury)' && !incStatsCounted(i))) return 'incident';
   if(c==='Lost time injury (LTI)' || c==='Fatality') return 'lti';
   if(c==='Medical treatment case (MTC)' || c==='Restricted work case (RWC)') return 'mti';
   if(c==='First aid case (FAC)') return 'fac';
-  if(i.type==='Near miss') return 'nearMiss';
+  if(i.type==='Near miss' || i.type==='Unsafe act / unsafe condition') return 'nearMiss';
   if(i.type==='Vehicle incident (RTA)') return 'vehicleIncident';
   return 'incident';
 }
@@ -3975,12 +3992,12 @@ function renderIncidentAll(){
 function renderIncTiles(){
   const y=incFilters.year, list=activeIncidents().filter(i=>y==='all' || incYear(i)===y);
   const inj=list.filter(i=>i.injuryClass && i.injuryClass!=='Not applicable (no injury)').length, nm=list.filter(i=>i.type==='Near miss').length;
-  const rec=list.filter(isRecordable), lti=list.filter(i=>['Lost time injury (LTI)','Fatality'].includes(i.injuryClass)).length;
+  const rec=list.filter(isRecordable), lti=list.filter(i=>['Lost time injury (LTI)','Fatality'].includes(i.injuryClass) && incStatsCounted(i)).length;
   const openInv=activeIncidents().filter(i=>i.status!=='Closed' && investigationRequired(i) && !i.invCompleted), invOver=openInv.filter(incInvestigationOverdue).length;
   const capaOpen=activeIncidents().reduce((n,i)=>n+incCapaOpen(i).length,0), capaOver=activeIncidents().reduce((n,i)=>n+incCapaOverdue(i).length,0);
   const yl = y==='all' ? 'all years' : y;
   document.getElementById('incTiles').innerHTML=[
-    {label:'Incidents '+yl, num:list.length, cls:'', sub:`${inj} with injury · ${nm} near misses`, icon:'alert'},
+    {label:'Incidents '+yl, num:list.length, cls:'', sub:`${inj} with injury · ${nm} near misses · ${list.filter(x=>incHiPoClass(x)==='HiPo').length} HiPo`, icon:'alert'},
     {label:'Recordable injuries', num:rec.length, cls:rec.length?'danger':'ok', sub:`${lti} LTI / fatality · MTC + RWC + LTI`, icon:'firstaid'},
     {label:'Open investigations', num:openInv.length, cls:invOver?'danger':(openInv.length?'warn':'ok'), sub:`${invOver} past the due date`, icon:'search'},
     {label:'Open incident actions', num:capaOpen, cls:capaOver?'danger':(capaOpen?'warn':'ok'), sub:`${capaOver} overdue`, icon:'clipcheck'},
@@ -4013,14 +4030,14 @@ function renderIncTable(){
   if(!list.length){ tb.innerHTML='<tr><td colspan="8" class="empty-state">No incidents match your filters.</td></tr>'; return; }
   tb.innerHTML=list.map(i=>{
     const rb=riskBand(riskScore(i)), open=incCapaOpen(i).length, over=incCapaOverdue(i).length;
-    const flags=[incInvestigationOverdue(i)?'<span class="badge danger">Investigation overdue</span>':'', incReportedLate(i)?'<span class="badge warn">Reported late</span>':''].join(' ');
+    const flags=[incInvestigationOverdue(i)?'<span class="badge danger">Investigation overdue</span>':'', incReportedLate(i)?'<span class="badge danger">Hidden (reported late)</span>':'', incMilestonesOverdue(i).length?`<span class="badge danger">SP-1418 milestone overdue</span>`:''].join(' ');
     return `<tr data-id="${i.id}">
       <td class="mono" style="white-space:nowrap;"><strong>${esc(i.incNo||'—')}</strong></td>
       <td class="mono" style="white-space:nowrap;">${esc(i.date||'—')}${i.time?`<div class="wsub">${esc(i.time)}</div>`:''}</td>
       <td>${i.projectId?esc(projectName(i.projectId)):'<span class="wsub">—</span>'}<div class="wsub">${esc(i.location||'')}</div></td>
       <td>${esc(i.type||'—')}<div class="wsub">${esc(String(i.description||'').slice(0,70))}${(i.description||'').length>70?'…':''}</div></td>
       <td>${i.injuryClass && i.injuryClass!=='Not applicable (no injury)' ? `<span class="badge ${isRecordable(i)?'danger':'warn'}">${esc(INJURY_SHORT[i.injuryClass]||i.injuryClass)}</span>` : '<span class="wsub">No injury</span>'}</td>
-      <td>${rb?`<span class="badge ${rb.cls}">${rb.t} · ${riskScore(i)}</span>`:'<span class="wsub">—</span>'}</td>
+      <td>${incRiskBadge(i)}</td>
       <td>${incStatusBadge(i)} ${flags}</td>
       <td>${(i.capa||[]).length ? `<span class="pill-count ${over?'danger':open?'warn':''}">${open}/${(i.capa||[]).length}</span>` : '<span class="wsub">—</span>'}</td>
     </tr>`;
@@ -4034,15 +4051,186 @@ function incFieldHtml(f, v, attr){
   return `<label${cls}>${esc(f.label)}${req}<input type="${f.type||'text'}" ${attr}="${f.key}" value="${esc(v||'')}" ${f.required?'required':''} placeholder="${esc(f.placeholder||'')}"></label>`;
 }
 function projectOptionsHtml(sel){ return `<option value="">— No project (office / other) —</option>`+activeSites().map(s=>`<option value="${s.id}" ${s.id===sel?'selected':''}>${esc(s.siteName||'Project')}</option>`).join(''); }
+
+/* =====================================================================
+   Batch 56: INCIDENT INVESTIGATION TO PDO SP-1418 (v5.0, Dec 2022) + HSG245 (UK HSE)
+   SP-1418 is the governing standard (Burhan works for PDO); HSG245 adds the investigation questions,
+   human-failure types and the action-plan / learning steps.
+   · PDO RAM (CP-122 sheet 31): severity 0–5 × likelihood A–E for People / Asset / Environment / Reputation.
+     Potential written as e.g. "D4 (P)". Colours (red / yellow / green) follow the SP-1418 Att.10 examples and Table 6.1.
+   · HiPo = potential RAM 4+ or red; HPE (Failed Safe) when the barrier worked, HiPo (Failed Lucky) when it did not (Att.14).
+   · SP-1418 investigation process (MSE3 IRC) for Fatality, NAD, LTI, HiPo, HVL, hidden incidents; Tier 1 / 2 process
+     safety events follow the 70-day MSE8 schedule (Tables 1.2 / 1.3). Others: due 7 / 14 / 21 days by potential risk.
+   · ICAM cause tables (Att.12): immediate causes 1–8, underlying causes 9–23, management system failures 24–33.
+   ===================================================================== */
+const PDO_SEV=['0 · None','1 · Slight','2 · Minor','3 · Moderate (people: major injury)','4 · Major (people: PTD or 1–3 fatalities)','5 · Massive (people: more than 3 fatalities)'];
+const PDO_LIK=['A · Never heard of in the industry','B · Heard of in the industry','C · Has happened in the Company','D · Happens more than once a year in the Company','E · Happens more than once a year at the location'];
+const PDO_CATS=['People (P)','Asset (A)','Environment (E)','Reputation (R)'];
+const PDO_RAM_GRID={0:'LLLLL',1:'LLLLL',2:'LLLMM',3:'LLMMH',4:'LMMHH',5:'MMHHH'};
+const PDO_COLOUR={L:{t:'Low',cls:'ok',name:'green'},M:{t:'Medium',cls:'warn',name:'yellow'},H:{t:'High',cls:'danger',name:'red'}};
+const PDO_RAM_HELP=[
+  ['0','No injury or health effect','No damage','No effect','No impact'],
+  ['1','Slight — first aid case','Slight, under US$10k','Slight, within the premises','Local awareness, no concern'],
+  ['2','Minor — MTC, RWC / LWC up to 5 days','Minor, US$10k–100k','Minor, no lasting effect','Local concern / local media'],
+  ['3','Major — LWC / RWC over 5 days, long-term disability','Moderate, US$100k–1M','Moderate, needs clean-up','Regional concern / media'],
+  ['4','Permanent total disability or 1–3 fatalities','Major, US$1M–10M','Major, extensive restoration','National concern / media'],
+  ['5','More than 3 fatalities','Massive, over US$10M','Massive, wide-area loss','International concern'],
+];
+const TOP_EVENTS=['Dropped / falling object','Hands & fingers','Slip, trip or fall (same level)','Fall from height','Struck by / caught between','Lifting operation','Road / vehicle (MVI)','Mobile plant / equipment','Fire / explosion','Electrical','Hazardous substance / gas exposure','Spill / loss of containment','Heat stress / illness','Manual handling / ergonomics','Excavation / collapse','Security / other'];
+const WORK_REL=['Work related — reportable and recordable','Work related — reportable but not recordable (e.g. third-party injury)','Not work related'];
+const PSE_TIERS=['Not a process safety event','Tier 1 (API RP-754)','Tier 2 (API RP-754)','Loss of containment below Tier 2'];
+const BARRIER_OPTS=['Yes — a barrier was in place and worked (Failed Safe → HPE)','No — no barrier, or the barrier failed (Failed Lucky → HiPo)'];
+const HF_TYPES=['No human failure identified','Slip (skill-based error)','Lapse (skill-based error — memory)','Mistake — rule-based','Mistake — knowledge-based','Violation (deliberate rule breaking / shortcut)'];
+const HF_FACTORS=['Job: attention demand / distraction','Job: inadequate procedure','Job: time pressure','Human: physical ability','Human: competence (knowledge, skill, experience)','Human: fatigue, stress or morale','Organisation: work pressure / long hours','Organisation: resources','Organisation: quality of supervision','Organisation: safety culture','Equipment: controls unclear','Equipment: not designed to prevent errors','Equipment: workplace layout'];
+const JUST_CULTURE=['No individual action — system / organisational failure','Coaching and retraining','Consequence management (deliberate violation / LSR — consequence matrix)'];
+const LEARNING_TYPES=['Covered in our management system but missed','Not covered — procedure / specification needs to be updated'];
+const INC_ALERT_TYPES=['First alert (initial learning)','Second alert (final learning)','Awareness alert','Action alert (immediate action needed)','Not shared'];
+const IRC_OUTCOMES=['Endorsed','Endorsed with comments','Re-investigate / revise the report'];
+const CAPA_HIERARCHY=['1 Eliminate','2 Substitute','3 Isolation','4 Engineering / design','5 Training','6 Administrative controls','7 PPE'];
+const EVIDENCE_LIST=['Witness names and statements','Photos / video of the scene','Measurements / sketch of the scene','Permit to work, JSA / risk assessment','Equipment records / certificates','Training and competence records','Weather and lighting recorded','Alcohol / drug test result (if relevant)','Damaged equipment secured for examination'];
+const HSG_QUESTIONS=[
+  ['q5Unusual','5. Was there anything unusual or different about the working conditions?'],
+  ['q6Procedures','6. Were there adequate safe working procedures, and were they followed?'],
+  ['q8Mode','8. How did the injury occur — what was the agent (object, substance) and how was it sustained?'],
+  ['q9RiskKnown','9. Was the risk known? Was there a risk assessment / JSA / permit, was it adequate, and why was the risk not controlled?'],
+  ['q10Organisation','10. Did the organisation and arrangement of the work influence it (supervision, planning, manning, pressure)?'],
+  ['q11Maintenance','11. Was maintenance and housekeeping sufficient?'],
+  ['q12Competence','12. Were the people involved competent and suitable (training, cards, experience, fitness)?'],
+  ['q13Layout','13. Did the workplace layout influence it?'],
+  ['q14Materials','14. Did the nature or shape of the materials influence it?'],
+  ['q15Equipment','15. Did difficulties using the plant or equipment influence it?'],
+  ['q16SafetyEquip','16. Was the safety equipment / PPE sufficient, used and in good condition?'],
+  ['q17Other','17. Did other conditions influence it (weather, communication, third party)?'],
+];
+const SP1418_TEAM={L:'Contractor HSE Adviser, Contractor Operations Manager, PDO Contract Holder, PDO HSE Adviser, HII-trained incident investigator',
+  M:'Contractor HSE Manager, Contract Manager, PDO Manager, Team Leader, Contract Holder, PDO HSE Adviser, Directorate HSE Team Leader, HII-trained incident investigator',
+  H:'Contractor CEO / MD, Contract Manager, Department Manager, Contractor HSE Manager, Directorate PDO Manager, Team Leaders, Contract Holder, Directorate HSE Team Leader, MSE3 (for a fatality), HII-trained incident investigator'};
+const SP1418_PERSONAL=[['kickoff','Kick-off meeting',1],['draft1','First draft',10],['draft2','Second draft',16],['draftFinal','Final draft',21],['mse3Irc','PDO MSE3 IRC',24],['dirIrc','Director IRC',30],['mdIrc','MD-IRC',42,'md']];
+const SP1418_PROCESS=[['kickoff','Kick-off meeting',3],['mdIrcInit','MD-IRC initial update',10,'md'],['draftFinal','Final draft',40],['cfdhLfi','CFDH approval of learnings',50],['mse8Irc','PDO MSE8 IRC',52],['dirIrc','Director IRC',62],['mdIrc','MD-IRC',70,'md']];
+
+/* ICAM tables — SP-1418 Attachment 12 (codes and short titles) */
+const ICAM={
+  imm:{label:'Immediate causes', groups:[
+    ['1','Following procedures / communication','Violation by individual|Violation by group|Violation by supervisor|Operation of equipment without authority|Improper position or posture for task|Overexertion of physical capability|Work or motion at improper speed|Improper lifting|Improper loading|Shortcuts|Other'],
+    ['2','Use of tools and equipment','Improper use of equipment|Improper use of tools|Use of defective equipment (aware)|Use of defective tools (aware)|Improper placement of tools, equipment or materials|Operation of equipment at improper speed|Operation of equipment without authority|Servicing of equipment in operation|Other'],
+    ['3','Use of protective methods','Lack of knowledge of hazards present|PPE not used|Improper use of PPE|Servicing of energized equipment|Equipment or materials not secured|Disabled guards, warning systems or safety devices|Removal or overriding of guards, warning systems or safety devices|PPE not available|Other'],
+    ['4','Inattention / lack of awareness','Improper decision making or lack of judgement|Distracted by other concerns|Inattention to footing and surroundings|Horseplay|Acts of violence|Failure to warn / make safe|Use of drugs or alcohol|Routine activity without thought|Other'],
+    ['5','Protective systems','Inadequate guards or protective devices|Defective guards or protective devices|Inadequate PPE|Defective PPE|Inadequate warning systems|Defective warning systems|Inadequate isolation of process or equipment|Inadequate safety devices|Defective safety devices|Other'],
+    ['6','Transportation, equipment and tools','Defective vehicle / plant|Inadequate vehicle / plant for the purpose|Improperly prepared vehicle / plant|Defective equipment|Inadequate equipment for the purpose|Improperly prepared equipment|Defective tools|Inadequate tools|Improperly prepared tools|Other'],
+    ['7','Work exposure','Fire and explosion|Noise or vibration|Energized electrical systems|Energized systems, other than electrical|Radiation|Temperature extremes|Hazardous chemicals|Mechanical hazards|Physical hazards|Clutter or debris|Storms or acts of nature|Slippery floors or walkways|Other'],
+    ['8','Workplace environment / layout','Congestion or restricted motion|Inadequate or excessive illumination|Inadequate ventilation|Unprotected height|Inadequate workplace layout|Other'],
+  ]},
+  und:{label:'Underlying causes', groups:[
+    ['9','Physical capabilities','Vision deficiency|Hearing deficiency|Other sensory deficiency|Reduced respiratory capacity|Other permanent physical disabilities|Temporary disabilities|Inability to sustain body positions|Restricted range of body movement|Substance sensitivities or allergies|Inadequate size or strength|Diminished capacity due to medication|Diminished capacity due to inadequate intake (water, food)|Other'],
+    ['10','Physical conditions','Previous injury or illness|Fatigue|Diminished performance|Blood sugar deficiency|Impairment due to drug or alcohol use|Other'],
+    ['11','Mental state','Poor judgement|Memory failure|Poor coordination or reaction time|Emotional disturbance|Fears or phobias|Low mechanical aptitude|Low learning aptitude|Influenced by medication|Depression|Other'],
+    ['12','Mental stress','Preoccupation with problems|Frustration|Confusing directions / demands|Conflicting directions / demands|"Meaningless" or "degrading" activities|Emotional overload|Extreme judgement / decision demands|Extreme concentration or perception demands|Extreme boredom|Other'],
+    ['13','Conduct','Improper performance is rewarded|Improper supervisory example|Inadequate identification of critical safe behaviours|Inadequate reinforcement of critical behaviours|Inappropriate aggression|Improper use of production incentives|Supervisor implied haste|Employee perceived haste|Habit / personal performance|Vandalism|Other'],
+    ['14','Skill level','Inadequate assessment of required skills|Inadequate practice of skill|Infrequent performance of skill|Lack of coaching on skill|Insufficient review of instruction to establish skill|Other'],
+    ['15','Training / knowledge transfer','Inadequate knowledge transfer|Inadequate recall of training materials|Inadequate training effort|No training provided|Other'],
+    ['16','Management / supervision / employee leadership','Conflicting roles / responsibilities|Inadequate leadership / supervision|Inadequate identification of worksite / job hazards|Inadequate correction of worksite / job hazards|Inadequate management of change system|Inadequate incident reporting / investigation system|Inadequate or lack of safety meetings|Inadequate performance measurement and assessment|Inadequate application of work performance standards|No or inadequate visible felt leadership|Other'],
+    ['17','Contractor selection and oversight','Lack of contractor pre-qualification|Inadequate contractor pre-qualification|Inadequate contractor selection|Use of a non-approved contractor|Lack of job oversight|Inadequate oversight|Other'],
+    ['18','Engineering design','Inadequate technical design|No / inadequate risk assessment|Inadequate standards, specifications and / or design criteria|Inadequate assessment of potential failure|Inadequate ergonomic design|Inadequate monitoring of construction|Inadequate assessment of operational readiness|Inadequate monitoring of initial operation|Inadequate evaluation and / or documentation of change|Other'],
+    ['19','Work planning','Inadequate work planning or scheduling|Inadequate preventive maintenance or inspection|Inadequate repair or refurbishment|Excessive wear and tear|Inadequate reference materials or publications|Inadequate audit / inspection / monitoring|Inadequate job placement (wrong person for the job)|Other'],
+    ['20','Purchasing, material handling and material control','Incorrect item received|Inadequate research on materials / equipment|Inadequate mode or route of shipping|Improper handling of materials|Improper storage of material or spare parts|Inadequate material packing|Material shelf life exceeded|Improper identification of hazardous materials|Improper salvage or waste disposal|Inadequate use of health and safety data|Other'],
+    ['21','Tools and equipment','Inadequate assessment of needs and risks|Inadequate human factors / ergonomics consideration|Inadequate standards or specifications|Inadequate availability|Inadequate adjustment / repair / maintenance|Inadequate salvage and reclamation|Inadequate removal or replacement of unsuitable items|No equipment record history|Inadequate equipment record history|Other'],
+    ['22','Work rules / policies / standards / procedures (PSP)','Lack of PSP for the task|Inadequate development of PSP|Inadequate implementation of PSP, due to deficiencies|Inadequate enforcement of PSP|Inadequate communication of PSP|Inadequate task observation of PSP|Other'],
+    ['23','Communication','Inadequate horizontal communication between peers|Inadequate vertical communication between supervisor and person|Inadequate communication between different organizations|Inadequate communication between work groups|Inadequate communication between shifts|Inadequate communication methods|No communication method available|Incorrect instructions|Inadequate communication due to job turnover|Inadequate communication of safety and health data, regulations or guidelines|Standard terminology not used|Verification / repeat-back techniques not used|Messages too long|Speech interference|Cultural / ethnic communication barriers|Other'],
+  ]},
+  msf:{label:'Management system failures', groups:[
+    ['24','Leadership','Management failed to show leadership in HSE|Insufficient process to ensure adequate budgets or funding|Inadequate provision of a suitable and sufficient annual HSE plan|Inadequate implementation of the annual HSE plan|Inadequate assurance of the implementation of the annual HSE plan|Management encouraged focus on operations / profit at expense of HSE|Management encouraged unsafe behaviour by inappropriate incentive targets|Management failed to invest sufficient time and energy in HSE management|Management failed to enforce consequence management appropriately|Management failed to prioritise HSE as a key business requirement|Other'],
+    ['25','Risk management','Inadequate systems for learning from incidents|Inadequate implementation of systems for learning from incidents|Inappropriate safeguards and management checks to avoid shortcuts / shortfalls|Inadequate provision or use of safeguards for step-outs|Inadequate processes and / or resource for quality check of HEMPs|Inadequate processes for communication of HEMP in TBTs, safety briefings etc.|Inappropriate systems to ensure the quality or update of specifications or procedures|Other'],
+    ['26','Strategy and planning','Inadequate PDO or contractor HSE strategy|Inadequate HSE annual plan for maintaining and improving HSE standards|HSE plan does not address key HSE business exposure|Inadequate HSE project plans to ensure suitable project management|Other'],
+    ['27','People and competency','Inadequate resource to ensure competent contract holders and site reps|Inappropriate competency standards for work / tasks|Inappropriate compliance with contract minimum competency for safety-critical positions|Inappropriate use of contract resource for work they are not competent for|Inadequate processes to ensure competency of HSE staff for HEMP / HRA|Inappropriate resource levels for supervision and management|Other'],
+    ['28','Asset integrity management','Inappropriate quality control systems for maintenance and inspection|Inappropriate asset and integrity strategies|Inappropriate methodologies for testing integrity of equipment / materials|Inappropriate criteria for material specification|Inappropriate methodology for initial designs and specifications|Inappropriate execution protocols for HAZOP etc.|Inappropriate protocols for authority levels to override controls / alarms|Inappropriate hazard analysis for operating outside the normal envelope|Other'],
+    ['29','Procedures','Inadequate focus on keeping procedures up to date|Inadequate process implementation for STOP|Inadequate process implementation for IVMS|Inadequate process implementation for SJM|Inadequate process implementation for sub-contractor management|Inadequate controls for management of access / egress|Inadequate process implementation for commissioning|Inadequate process implementation for permit to work|Inadequate process implementation for confined space entry|Inadequate process implementation for working at height|Inadequate process implementation for working in H2S areas|Inappropriate process for concurrent work in the permit to work system|Inappropriate process implementation for work with lifting equipment|Inappropriate process implementation for vehicle movement or loading / offloading|Inappropriate process implementation for plant shutdown / start-up|Inappropriate process implementation for pressure systems|Inappropriate process implementation for electricity and power systems|Inappropriate process implementation for other procedures or processes|Other'],
+    ['30','Contractor and supplier management','Inappropriate contracting and procurement processes|Inadequate contract management HSE reviews|Inadequate vetting model for a new contractor in tendering|Inappropriate C9 validation in contract tendering|Inappropriate quality assurance of resources in tendering|Inadequate levels of engagement in contract management|Inadequate resource for management of contracts|Other'],
+    ['31','Operating responsibility','Inadequate management of permit to work systems|Inappropriate controls for lone working|Inadequate processes for management of change|Other'],
+    ['32','Crisis and emergency response','Inappropriate systems for crisis management|Inappropriate drills for crisis management|Inadequate processes to assure competency of crisis management resources|Inadequate planning for crisis management|Other'],
+    ['33','Performance and assurance','Inadequate surveillance protocol of HSE standards|Inadequate quality assurance of surveillance protocols|Inadequate processes to assure design specifications|Inadequate processes to assure quality of systems|Inadequate processes to ensure competency of the designer|Inadequate systems to ensure guarantees from suppliers|Inadequate audit and assurance processes|Inadequate assurance of close-out of actions from incidents or audits|Inadequate assurance of systems for learning from incidents|Inadequate system for assuring competency standards have been met|Inadequate assurance of implementation of management of change|Other'],
+  ]},
+};
+function icamItems(kind){ return ICAM[kind].groups.flatMap(([n,g,items])=>items.split('|').map((t,k)=>`${n}.${k+1} ${t}`)); }
+function icamCode(s){ return String(s||'').split(' ')[0]; }
+const INC_ICAM_FIELD={imm:'icamImmediate', und:'icamUnderlying', msf:'icamMsf'};
+
+/* ---- PDO RAM ---- */
+function pdoSev(v){ const m=/^([0-5])\s*·/.exec(String(v||'')); return m?Number(m[1]):null; }
+function pdoLik(v){ const m=/^([A-E])\s*·/.exec(String(v||'')); return m?m[1]:null; }
+function pdoColour(sev, lik){ if(sev===null || sev===undefined || !lik) return null; return (PDO_RAM_GRID[sev]||'')['ABCDE'.indexOf(lik)]||null; }
+function pdoCatLetter(v){ const m=/\(([PAER])\)/.exec(String(v||'')); return m?m[1]:''; }
+function incIsPdo(i){ return !!i && (i.ram==='PDO' || !!pdoLik(i.likelihood)); }
+function incRam(i){
+  if(!incIsPdo(i)){ const sc=riskScore(i), rb=riskBand(sc); return {pdo:false, text:rb?`${rb.t} · ${sc}`:'', cls:rb?rb.cls:'', hipo:(sevNum(i.potentialSeverity)||0)>=4, col:null}; }
+  const as=pdoSev(i.actualSeverity), ps=pdoSev(i.potentialSeverity), pl=pdoLik(i.likelihood), col=pdoColour(ps, pl), ac=pdoCatLetter(i.actualCat), pc=pdoCatLetter(i.potentialCat);
+  const actual=as===null?'':`${as}${ac?' ('+ac+')':''}`, potential=(ps===null||!pl)?'':`${pl}${ps}${pc?' ('+pc+')':''}`;
+  return {pdo:true, as, ps, pl, col, actual, potential, cls:col?PDO_COLOUR[col].cls:'', text:potential?`${potential} · ${PDO_COLOUR[col].t}`:'', hipo:(ps!==null && ps>=4) || col==='H'};
+}
+function incRiskBadge(i){ const r=incRam(i); if(!r.text) return '<span class="wsub">—</span>'; const hp=incHiPoClass(i); return `<span class="badge ${r.cls}">${esc(r.text)}</span>${hp?` <span class="badge ${hp==='HiPo'?'danger':'warn'}">${hp}</span>`:''}`; }
+function incHiPoClass(i){ if(!incRam(i).hipo) return ''; return String(i.barrierWorked||'').startsWith('Yes')?'HPE':'HiPo'; }
+function incPimClass(i){ return i.type==='Unsafe act / unsafe condition' ? 'Unsafe act / unsafe condition (potential incident)' : i.type==='Near miss' ? 'Near miss' : 'Incident with consequence'; }
+function incStatsCounted(i){ return !i.workRelated || i.workRelated===WORK_REL[0]; }
+function incMdIrcRequired(i){ const r=incRam(i); return i.injuryClass==='Fatality' || /^Tier 1/.test(i.pse||'') || (r.pdo && r.as!==null && r.as>=4) || incReportedLate(i) || i.mdIrcSelected==='Yes'; }
+function incTrack(i){
+  const r=[], c=i.injuryClass||'';
+  if(c==='Fatality') r.push('Fatality'); if(c==='Non-accidental death (NAD)') r.push('Non-accidental death'); if(c==='Lost time injury (LTI)') r.push('LTI');
+  if(incHiPoClass(i)==='HiPo') r.push('HiPo (potential RAM 4+ / red)');
+  if(i.hvl==='Yes') r.push('High Value Learning');
+  if(incReportedLate(i)) r.push('Hidden incident (reported late)');
+  const pse=/^Tier [12]/.test(i.pse||''); if(pse) r.push(String(i.pse).split(' (')[0]+' process safety event');
+  return {on:r.length>0, process:pse, reasons:r};
+}
+function incStartDate(i){ return i.reportedDate||i.date||''; }
+function incMilestones(i){
+  const t=incTrack(i); if(!t.on) return []; const s=incStartDate(i), md=incMdIrcRequired(i);
+  return (t.process?SP1418_PROCESS:SP1418_PERSONAL).filter(m=>m[3]!=='md'||md).map(([k,l,d])=>({key:k, label:l, days:d, due:s?dateAdd(s,d):'', done:i['ms_'+k]||''}));
+}
+function incMilestonesOverdue(i){ if(i.status==='Closed') return []; const t=localToday(); return incMilestones(i).filter(m=>!m.done && m.due && m.due<t); }
+function incDueDays(i){ const t=incTrack(i); if(t.on) return t.process?40:21; const c=incRam(i).col; return c==='H'?7:c==='M'?14:c==='L'?21:14; }
+function incAutoDue(i){ const s=incStartDate(i); return s?dateAdd(s, incDueDays(i)):''; }
+function incLevel(i){ const r=incRam(i); let c=r.col||'L'; if(r.pdo && r.as!==null){ if(r.as>=4) c='H'; else if(r.as>=3 && c==='L') c='M'; } if(incTrack(i).on && c==='L') c='M'; return c; }
+function incPdoLead(i){ const r=incRam(i); if(!r.pdo) return ''; let k=1; const a=r.as||0, p=r.ps||0, col=r.col;
+  if(a>=5 || (col==='H' && p>=5)) k=4; else if(a>=4 || (col==='H' && p>=3) || (col==='M' && p>=5)) k=3; else if(a>=3 || p>=3) k=2;
+  return ['','Coordinator','Team Leader','Manager','Director'][k]; }
+function incWorkingDaysAdd(d, n){ if(!d) return ''; let x=d, k=0; while(k<n){ x=dateAdd(x,1); const wd=new Date(x+'T00:00:00').getDay(); if(wd!==5 && wd!==6) k++; } return x; }
+function incFormalComm(i){
+  const r=[], c=i.injuryClass||'';
+  if(['Fatality','Non-accidental death (NAD)','Lost time injury (LTI)'].includes(c)) r.push(`${INJURY_SHORT[c]||c} → PDO MSE3 (through the Contract Holder)`);
+  if(/^Tier 1/.test(i.pse||'')) r.push('Tier 1 process safety event → PDO MSE8');
+  if((Number(i.spillM3)||0)>10) r.push('Spill over 10 m³ → PDO MSE2 (who informs the Ministry)');
+  return {need:r.length>0, reasons:r, due:r.length?incWorkingDaysAdd(i.date, 2):''};
+}
+function incCompany(i){ return String(i.company||'Burhan Oil & Trade Services').trim().toLowerCase(); }
+function incRepeatOf(i){
+  if(!i || !i.date) return []; const from=dateAdd(i.date,-1095), codes=a=>new Set((a||[]).map(icamCode));
+  const im=codes(i.icamImmediate), un=codes([...(i.icamUnderlying||[]), ...(i.icamMsf||[])]);
+  return activeIncidents().filter(x=>x.id!==i.id && x.date && x.date<=i.date && x.date>=from).map(x=>{ const why=[];
+    if(i.topEvent && x.topEvent===i.topEvent) why.push('same top event');
+    const xi=codes(x.icamImmediate); if([...im].some(c=>xi.has(c))) why.push('same immediate cause');
+    const xu=codes([...(x.icamUnderlying||[]), ...(x.icamMsf||[])]); if([...un].some(c=>xu.has(c))) why.push('same underlying cause / MSF');
+    if(incCompany(x)===incCompany(i)) why.push('same company');
+    return {x, why}; }).filter(o=>o.why.length>=3).sort((a,b)=>String(b.x.date).localeCompare(String(a.x.date)));
+}
+function incSimilar(i){
+  if(!i || !i.date) return []; const from=dateAdd(i.date,-730);
+  return activeIncidents().filter(x=>x.id!==i.id && x.date && x.date<=i.date && x.date>=from && ((i.topEvent && x.topEvent===i.topEvent) || (x.type===i.type && i.type!=='Near miss' && i.type!=='Unsafe act / unsafe condition') || (i.equipmentInvolved && x.equipmentInvolved && String(x.equipmentInvolved).toLowerCase()===String(i.equipmentInvolved).toLowerCase())))
+    .sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,10);
+}
+function incMsfWithoutAction(i){ const linked=new Set((i.capa||[]).map(a=>icamCode(a.causeRef)).filter(Boolean)); return (i.icamMsf||[]).filter(m=>!linked.has(icamCode(m))); }
+function incCostTotal(i){ return ['costMedical','damageCost','costDowntime','costOther'].reduce((n,k)=>n+(Number(i[k])||0),0); }
+
 const INC_QUICK_FIELDS = [
   {key:'date', label:'Date of incident', type:'date', required:true},
   {key:'time', label:'Time', type:'time'},
   {key:'location', label:'Exact location', type:'text', required:true, placeholder:'e.g. Tank T-12 roof, scaffold level 3'},
   {key:'type', label:'Incident type', type:'select', required:true, options:INCIDENT_TYPES},
   {key:'injuryClass', label:'Injury classification', type:'select', required:true, options:INJURY_CLASSES},
-  {key:'actualSeverity', label:'Actual severity', type:'select', required:true, options:SEVERITY_LEVELS},
-  {key:'potentialSeverity', label:'Potential severity (worst credible)', type:'select', options:SEVERITY_LEVELS},
-  {key:'likelihood', label:'Likelihood of recurrence', type:'select', options:LIKELIHOOD_LEVELS},
+  {key:'topEvent', label:'Top event', type:'select', options:TOP_EVENTS},
+  {key:'actualSeverity', label:'Actual severity — PDO RAM (0–5)', type:'select', required:true, options:PDO_SEV},
+  {key:'actualCat', label:'Actual — consequence to', type:'select', options:PDO_CATS},
+  {key:'potentialSeverity', label:'Potential severity — worst credible (0–5)', type:'select', required:true, options:PDO_SEV},
+  {key:'likelihood', label:'Potential likelihood (A–E)', type:'select', required:true, options:PDO_LIK},
+  {key:'potentialCat', label:'Potential — consequence to', type:'select', options:PDO_CATS},
   {key:'reportedBy', label:'Reported by', type:'text', required:true},
   {key:'description', label:'What happened (brief)', type:'textarea', required:true, wide:true, placeholder:'Sequence of events in plain words'},
   {key:'immediateActions', label:'Immediate actions taken', type:'textarea', wide:true, placeholder:'e.g. area barricaded, first aid given, work stopped'},
@@ -4055,7 +4243,7 @@ function openAddIncForm(){
 function closeAddIncForm(){ document.getElementById('addIncPanel').hidden=true; document.getElementById('addIncForm').reset(); }
 
 /* ---------- incident drawer ---------- */
-const INC_TABS=[{key:'overview',label:'Overview'},{key:'people',label:'People'},{key:'investigation',label:'Investigation'},{key:'actions',label:'Actions'},{key:'closeout',label:'Close-out'},{key:'files',label:'Photos & files'}];
+const INC_TABS=[{key:'overview',label:'Overview'},{key:'people',label:'People'},{key:'investigation',label:'Investigation'},{key:'findings',label:'Findings & learning'},{key:'actions',label:'Actions'},{key:'closeout',label:'Close-out'},{key:'files',label:'Photos & files'}];
 function openIncDrawer(id, tab){
   raiseDrawer('incDrawerOverlay','incDrawer');
   activeIncId=id; activeIncTab=tab||'overview'; incEditPerson=null; incPersonFormOpen=false; incEditCapa=null; incCapaFormOpen=false;
@@ -4077,7 +4265,7 @@ function renderIncDrawer(){
     return `<button type="button" class="tab-btn ${t.key===activeIncTab?'active':''}" data-itab="${t.key}">${t.label}${extra}</button>`;
   }).join('');
   const b=document.getElementById('incDrawerBody');
-  b.innerHTML = activeIncTab==='people' ? incPeopleHtml(i) : activeIncTab==='investigation' ? incInvestigationHtml(i) : activeIncTab==='actions' ? incActionsHtml(i) : activeIncTab==='closeout' ? incCloseoutHtml(i) : activeIncTab==='files' ? incFilesHtml(i) : incOverviewHtml(i);
+  b.innerHTML = activeIncTab==='people' ? incPeopleHtml(i) : activeIncTab==='investigation' ? incInvestigationHtml(i) : activeIncTab==='findings' ? incFindingsHtml(i) : activeIncTab==='actions' ? incActionsHtml(i) : activeIncTab==='closeout' ? incCloseoutHtml(i) : activeIncTab==='files' ? incFilesHtml(i) : incOverviewHtml(i);
 }
 function riskMatrixHtml(i){
   const c=sevNum(i.potentialSeverity)||sevNum(i.actualSeverity), l=sevNum(i.likelihood);
@@ -4091,7 +4279,7 @@ function riskMatrixHtml(i){
     <div class="rm-x">Likelihood →</div>
     <div class="rm-result">${band?`Risk rating: <span class="badge ${band.cls}">${band.t} · ${riskScore(i)}</span>`:'Set potential severity and likelihood to rate the risk.'}</div></div>`;
 }
-function incOverviewHtml(i){
+function incOverviewHtmlOld(i){
   const flags=[];
   if(investigationRequired(i)) flags.push(`<span class="badge ${i.invCompleted?'ok':'danger'}">${i.invCompleted?'Investigation complete':'Formal investigation required'}</span>`);
   if(incInvestigationOverdue(i)) flags.push('<span class="badge danger">Investigation overdue</span>');
@@ -4157,7 +4345,7 @@ const PERSON_FIELDS=[
   {key:'returnDate', label:'Returned to work on', type:'date'},
   {key:'notes', label:'Notes', type:'textarea', wide:true},
 ];
-function incPeopleHtml(i){
+function incPeopleHtmlBase(i){
   const list=i.persons||[];
   const editing = incEditPerson ? list.find(p=>p.id===incEditPerson) : null;
   const cards = list.length ? list.map(p=>`<div class="record-card"><div class="record-card-top"><div class="record-card-title">${esc(p.name||'—')} ${p.injuryNature?`<span class="badge warn">${esc(p.injuryNature)}</span>`:''} ${(parseInt(p.daysLost,10)||0)?`<span class="badge danger">${esc(p.daysLost)} days lost</span>`:''}</div>
@@ -4174,7 +4362,7 @@ function causeChecks(groups, selected, attr){
   const sel=new Set(selected||[]);
   return Object.entries(groups).map(([g,items])=>`<div class="cause-group"><div class="cause-title">${esc(g)}</div><div class="cause-list">${items.map(c=>`<label class="chk"><input type="checkbox" ${attr}="1" value="${esc(c)}" ${sel.has(c)?'checked':''}>${esc(c)}</label>`).join('')}</div></div>`).join('');
 }
-function incInvestigationHtml(i){
+function incInvestigationHtmlOld(i){
   const need=investigationRequired(i), whys=i.whys||[];
   const f=(k,l,t,o)=>incFieldHtml({key:k,label:l,type:t||'text',...(o||{})}, i[k]);
   return `${need?`<div class="notice">${ic('alert')} A formal investigation is required for this incident (recordable injury or high severity).${i.invDue?` Due by <strong>${esc(i.invDue)}</strong>.`:''}</div>`:'<p class="wsub" style="margin:0 0 12px;">A formal investigation is optional for this incident, but recording causes still helps prevent repeats.</p>'}
@@ -4207,13 +4395,18 @@ function incInvestigationHtml(i){
 const CAPA_FIELDS=[
   {key:'action', label:'Action', type:'text', required:true, wide:true},
   {key:'kind', label:'Type', type:'select', options:['Corrective','Preventive']},
+  {key:'term', label:'Short / long term', type:'select', options:['Short term (immediate cause)','Long term (underlying / management system)']},
+  {key:'hierarchy', label:'Hierarchy of control', type:'select', options:CAPA_HIERARCHY},
+  {key:'causeRef', label:'Cause it fixes', type:'select', options:[]},
+  {key:'pimNo', label:'PIM action no.', type:'text'},
+  {key:'agreed', label:'Agreed with the action party', type:'select', options:['Yes','No']},
   {key:'owner', label:'Owner', type:'text', required:true},
   {key:'targetDate', label:'Target date', type:'date', required:true},
   {key:'status', label:'Status', type:'select', options:COMPLAINT_STATUSES, required:true},
   {key:'closedDate', label:'Closed on', type:'date'},
   {key:'verification', label:'Verification / evidence', type:'textarea', wide:true},
 ];
-function incActionsHtml(i){
+function incActionsHtmlOld(i){
   const list=(i.capa||[]).slice().sort((a,b)=>(a.targetDate||'').localeCompare(b.targetDate||''));
   const editing = incEditCapa ? list.find(a=>a.id===incEditCapa) : null;
   const form = incCapaFormOpen ? `<form id="incCapaForm" style="margin-bottom:16px;"><div class="form-grid">${CAPA_FIELDS.map(f=>incFieldHtml(f, editing?editing[f.key]:(f.key==='status'?'Open':f.key==='kind'?'Corrective':''), 'data-cfield')).join('')}</div>
@@ -4225,7 +4418,7 @@ function incActionsHtml(i){
   return `<div class="section-head"><h3>Corrective &amp; preventive actions (${list.length})</h3><button type="button" class="btn btn-sm" id="incCapaToggle">${incCapaFormOpen?'Cancel':'+ Add action'}</button></div>${form}${cards}
     <p class="wsub">Overdue actions go into the daily reminder email and the Command Centre.</p>`;
 }
-function incCloseoutHtml(i){
+function incCloseoutHtmlOld(i){
   const need=investigationRequired(i), open=incCapaOpen(i).length;
   const checks=[
     {ok:!!(i.description && i.type && i.injuryClass), t:'Incident details and classification recorded'},
@@ -4271,8 +4464,414 @@ function renderIncTrashBody(){
     <div class="record-fields"><div class="rf"><span class="rf-k">Date</span><span class="rf-v">${esc(i.date||'—')}</span></div><div class="rf"><span class="rf-k">Deleted on</span><span class="rf-v">${esc(isoToLocalDate(i.deletedAt||'')||'—')}</span></div></div></div>`).join('') : '<p class="wsub">Nothing in the trash.</p>';
 }
 
-/* ---------- incident report PDF ---------- */
+
+/* ---- drawer tabs (SP-1418 / HSG245) ---- */
+function incChecksHtml(list, selected, attr, cls){ const sel=new Set(selected||[]); return `<div class="cause-list ${cls||''}">${list.map(c=>`<label class="chk"><input type="checkbox" ${attr}="1" value="${esc(c)}" ${sel.has(c)?'checked':''}>${esc(c)}</label>`).join('')}</div>`; }
+function incRamMatrixHtml(i){
+  const r=incRam(i); if(!r.pdo) return riskMatrixHtml(i);
+  let g='<div class="pram"><div class="pram-corner">Sev.</div>'+'ABCDE'.split('').map(l=>`<div class="pram-h">${l}</div>`).join('');
+  for(let s=5;s>=0;s--){ g+=`<div class="pram-h">${s}</div>`; for(const l of 'ABCDE'){ const c=pdoColour(s,l); g+=`<div class="pram-c pram-${c} ${r.ps===s&&r.pl===l?'pram-on':''}" title="${l}${s} — ${PDO_COLOUR[c].t}">${l}${s}</div>`; } }
+  g+='</div>';
+  const hp=incHiPoClass(i);
+  return `<div class="pram-wrap">${g}<div class="pram-res">
+    <div>Actual: <strong>${esc(r.actual||'not rated')}</strong></div>
+    <div>Potential: ${r.potential?`<span class="badge ${r.cls}">${esc(r.potential)} · ${esc(PDO_COLOUR[r.col].t)}</span>`:'<span class="wsub">set potential severity and likelihood</span>'}</div>
+    ${hp?`<div><span class="badge ${hp==='HiPo'?'danger':'warn'}">${hp==='HiPo'?'HiPo — High Potential Incident (Failed Lucky)':'HPE — High Potential Event (Failed Safe)'}</span></div>`:''}
+    <details class="pram-help"><summary>PDO RAM severity definitions (SP-1418 Att. 10)</summary><div class="table-wrap"><table><thead><tr><th>Sev.</th><th>People (P)</th><th>Asset (A)</th><th>Environment (E)</th><th>Reputation (R)</th></tr></thead><tbody>${PDO_RAM_HELP.map(x=>`<tr>${x.map((c,n)=>n?`<td>${esc(c)}</td>`:`<td class="mono"><strong>${esc(c)}</strong></td>`).join('')}</tr>`).join('')}</tbody></table></div>
+    <p class="wsub">Likelihood (potential, worst credible case with no barriers): ${PDO_LIK.map(esc).join(' · ')}. Where the effects are equal, People takes priority. Check against CP-122 sheet 31.</p></details>
+  </div></div>`;
+}
+function incFlagsHtml(i){
+  const t=incTrack(i), fc=incFormalComm(i), rep=incRepeatOf(i), hp=incHiPoClass(i), out=[];
+  out.push(`<span class="badge muted">PIM: ${esc(incPimClass(i))}</span>`);
+  if(hp) out.push(`<span class="badge ${hp==='HiPo'?'danger':'warn'}">${hp}</span>`);
+  if(t.on) out.push(`<span class="badge danger" title="${esc(t.reasons.join(' · '))}">SP-1418 investigation process${t.process?' (process safety)':''}</span>`);
+  if(incReportedLate(i)) out.push('<span class="badge danger">Hidden incident — reported more than 24 h late</span>');
+  if(rep.length) out.push(`<span class="badge danger" title="${esc(rep.map(o=>o.x.incNo+': '+o.why.join(', ')).join(' | '))}">Repeated incident (${rep.length})</span>`);
+  if(fc.need) out.push(`<span class="badge ${i.formalCommDate?'ok':'danger'}">Formal communication ${i.formalCommDate?'done '+esc(i.formalCommDate):'due by '+esc(fc.due)}</span>`);
+  if(!incStatsCounted(i)) out.push(`<span class="badge muted">Not counted in injury statistics</span>`);
+  if((i.lsrViolated||[]).length) out.push(`<span class="badge danger">Life-Saving Rule violated</span>`);
+  return out.join(' ');
+}
+function incOverviewHtml(i){
+  const flags=[];
+  if(investigationRequired(i)) flags.push(`<span class="badge ${i.invCompleted?'ok':'danger'}">${i.invCompleted?'Investigation complete':'Investigation required'}</span>`);
+  if(incInvestigationOverdue(i)) flags.push('<span class="badge danger">Investigation overdue</span>');
+  if(isRecordable(i)) flags.push('<span class="badge danger">Recordable</span>');
+  const reportCat=REPORT_CATEGORIES[incReportCategory(i)];
+  const f=(k,l,t,o)=>incFieldHtml({key:k,label:l,type:t||'text',...(o||{})}, i[k]);
+  const fc=incFormalComm(i), oldRating=!incIsPdo(i) && (i.actualSeverity||i.potentialSeverity||i.likelihood);
+  return `<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">${incStatusBadge(i)} ${flags.join(' ')}</div>
+  <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">${incFlagsHtml(i)}</div>
+  ${updatedNoteHtml(i)}
+  <p class="wsub" style="margin:0 0 12px;">Counted in the Monthly Report as <strong>${esc(reportCat?reportCat.label:'—')}</strong>${i.projectId?` for ${esc(projectName(i.projectId))}`:''}.</p>
+  <form id="incOverviewForm">
+    <div class="subhead">Notification (SP-1418 §3 — in PIM within 24 hours)</div>
+    <div class="form-grid">
+      ${f('incNo','Incident no.','text',{required:true})}
+      ${f('date','Date of incident','date',{required:true})}
+      ${f('time','Time','time')}
+      ${f('reportedDate','Date reported','date')}
+      ${f('reportedBy','Reported by')}
+      <label>Project<select data-ifield="projectId">${projectOptionsHtml(i.projectId)}</select></label>
+      ${f('location','Exact location','text',{required:true})}
+      ${f('company','Company of the people / work involved','text',{placeholder:'Burhan Oil & Trade Services'})}
+      ${f('shift','Shift','select',{options:['Day','Night']})}
+      ${f('activity','4. Work activity at the time','text',{placeholder:'e.g. scaffold dismantling'})}
+      ${f('permitNo','Permit to work no.','text')}
+      ${f('conditions','Weather / lighting','text',{placeholder:'e.g. 46 °C, windy, daylight'})}
+      ${f('pimNo','PDO PIM no.','text')}
+      ${f('contractNo','PDO contract no.','text')}
+      ${f('contractHolder','PDO Contract Holder','text')}
+      ${f('csrName','Company Site Representative (CSR)','text')}
+      ${f('chNotified','CH / CSR notified on','datetime-local')}
+      ${f('status','Status','select',{options:INCIDENT_STATUSES, required:true})}
+    </div>
+    <div class="subhead">Classification (SP-1418 §4)</div>
+    <div class="form-grid">
+      ${f('type','Incident type','select',{options:INCIDENT_TYPES, required:true})}
+      ${f('topEvent','Top event','select',{options:TOP_EVENTS})}
+      ${f('injuryClass','Injury classification','select',{options:INJURY_CLASSES, required:true})}
+      ${f('workRelated','Work relatedness','select',{options:WORK_REL})}
+      ${f('pse','Process safety event (API RP-754)','select',{options:PSE_TIERS})}
+      ${f('hvl','Selected as High Value Learning (HVL)','select',{options:['No','Yes']})}
+    </div>
+    <div class="subhead">PDO RAM rating</div>
+    ${oldRating?`<div class="notice">${ic('alert')} Rated with the old 1–5 matrix (${esc([i.actualSeverity, i.potentialSeverity, i.likelihood].filter(Boolean).join(' / '))}). Please re-rate with the PDO RAM below and save.</div>`:''}
+    <div class="form-grid">
+      ${incFieldHtml({key:'actualSeverity', label:'Actual severity (0–5)', type:'select', options:PDO_SEV, required:true}, pdoSev(i.actualSeverity)!==null&&incIsPdo(i)?i.actualSeverity:'')}
+      ${f('actualCat','Actual — consequence to','select',{options:PDO_CATS})}
+      ${incFieldHtml({key:'potentialSeverity', label:'Potential severity (worst credible, 0–5)', type:'select', options:PDO_SEV}, pdoSev(i.potentialSeverity)!==null&&incIsPdo(i)?i.potentialSeverity:'')}
+      ${incFieldHtml({key:'likelihood', label:'Potential likelihood (A–E)', type:'select', options:PDO_LIK}, pdoLik(i.likelihood)?i.likelihood:'')}
+      ${f('potentialCat','Potential — consequence to','select',{options:PDO_CATS})}
+      ${f('barrierWorked','If HiPo: did a barrier work as intended? (Att. 14)','select',{options:BARRIER_OPTS, wide:true})}
+    </div>
+    ${incRamMatrixHtml(i)}
+    <div class="subhead">Notification of client / authority</div>
+    <div class="form-grid">
+      ${f('clientNotified','Client notified','select',{options:['Yes','No','Not required']})}
+      ${f('clientNotifiedDate','Client notified on','date')}
+      ${f('authorityNotified','Authority notified (MoL / ROP / EA)','select',{options:['Yes','No','Not required']})}
+      ${f('authorityRef','Authority / reference','text')}
+      ${fc.need?`<div class="span-all notice">${ic('alert')} Formal communication within 2 working days (SP-1418 §5) — ${esc(fc.reasons.join(' · '))}. Due by <strong>${esc(fc.due)}</strong>.</div>`:''}
+      ${f('formalCommDate','Formal communication sent on','date')}
+    </div>
+    <div class="subhead">Life-Saving Rules (SP-1418 Att. 13)</div>
+    ${incChecksHtml(LSR_RULES, i.lsrViolated, 'data-lsr')}
+    <div class="subhead">Description</div>
+    <div class="form-grid">
+      ${f('description','3. What happened — sequence of events','textarea',{required:true, wide:true})}
+      ${f('timeline','Timeline of events (one line each: time — what happened)','textarea',{wide:true, placeholder:'07:30 — Toolbox talk at the rig site\n09:15 — Crane lifted the skid\n09:20 — Sling parted, load dropped 1 m'})}
+      ${f('immediateActions','Immediate actions taken (emergency response, area made safe, scene preserved)','textarea',{wide:true})}
+      ${f('equipmentInvolved','Equipment / material involved (make, model, ID / tag no.)','text')}
+      ${f('vehicleNo','Vehicle no. (if any)','text')}
+      ${f('damageCost','Estimated damage cost (OMR)','number')}
+      ${f('envRelease','Environmental release (substance)','text')}
+      ${f('spillM3','Spilled volume, m³','number')}
+      ${f('witnesses','Witnesses (names · contact)','textarea',{wide:true})}
+    </div>
+    <div class="form-actions"><button type="submit" class="btn btn-primary">Save overview</button></div>
+  </form>
+  <div class="danger-zone"><p>Deleting moves this incident to Deleted incidents and removes it from the Monthly Report. It can be restored.</p><button type="button" class="btn btn-danger btn-sm" id="deleteIncBtn" data-armed="0">Delete incident</button></div>`;
+}
+// HSG245 Q12 / Q16 — the person's records on the incident date
+function incPersonSnapshot(i, p){
+  const w=p.workerId && workers.find(x=>x.id===p.workerId); if(!w) return '';
+  const d=i.date||localToday(), tr=(w.trainings||[]).filter(t=>t.name), exp=tr.filter(t=>t.expiry && t.expiry<d), ok=tr.filter(t=>!t.expiry || t.expiry>=d);
+  const med=(w.medical||[]).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0], medBad=med && med.expiry && med.expiry<d;
+  const ppe=(w.ppeIssued||[]).filter(r=>r.date && r.date<=d), ppeOld=ppe.filter(r=>r.expiry && r.expiry<d);
+  const lsr=(w.violations||[]).filter(v=>v.date && v.date<=d);
+  return `<div class="inc-snap"><div class="wsub" style="margin:0 0 4px;"><strong>Records on ${esc(d)}</strong> (HSG245 Q12 competence · Q16 PPE)</div>
+    <div>${ic(exp.length?'alert':'checkcircle')} Training: ${ok.length} in date${exp.length?` · <span class="text-danger">${exp.length} expired: ${esc(exp.slice(0,4).map(t=>t.name).join(', '))}${exp.length>4?' …':''}</span>`:''}</div>
+    <div>${ic(medBad||!med?'alert':'checkcircle')} Medical fitness: ${med?`${esc(med.date||'')}${med.expiry?' valid until '+esc(med.expiry):''}${medBad?' <span class="text-danger">— expired</span>':''}`:'no record'}</div>
+    <div>${ic(ppe.length&&!ppeOld.length?'checkcircle':'alert')} PPE issued before the incident: ${ppe.length?esc([...new Set(ppe.map(r=>r.item))].slice(0,6).join(', ')):'none recorded'}${ppeOld.length?` · <span class="text-danger">${ppeOld.length} past replacement date</span>`:''}</div>
+    ${lsr.length?`<div>${ic('alert')} Earlier violations on record: ${lsr.length}</div>`:''}</div>`;
+}
+function incPeopleHtml(i){
+  const base=incPeopleHtmlBase(i), snaps=(i.persons||[]).map(p=>{ const s=incPersonSnapshot(i,p); return s?`<div class="subhead">${esc(p.name||'—')}</div>${s}`:''; }).join('');
+  return base + (snaps?`<div class="subhead" style="margin-top:16px;">Competence & PPE check (from Workforce)</div>${snaps}`:'');
+}
+function incIcamHtml(i, kind){
+  const field=INC_ICAM_FIELD[kind], sel=new Set(i[field]||[]);
+  return `<div class="icam" data-icam-box="${kind}"><input type="search" class="icam-find" placeholder="Find a ${esc(ICAM[kind].label.toLowerCase().replace(/s$/,''))}… (e.g. PPE, supervision, procedure)" data-icam-find>
+    ${ICAM[kind].groups.map(([n,g,items])=>{ const list=items.split('|').map((t,k)=>`${n}.${k+1} ${t}`), cnt=list.filter(x=>sel.has(x)).length;
+      return `<details class="icam-grp" ${cnt?'open':''}><summary><span class="mono">${n}</span> ${esc(g)}${cnt?` <span class="pill-count warn">${cnt}</span>`:''}</summary><div class="cause-list">${list.map(x=>`<label class="chk"><input type="checkbox" data-icam="${kind}" value="${esc(x)}" ${sel.has(x)?'checked':''}>${esc(x)}</label>`).join('')}</div></details>`; }).join('')}</div>`;
+}
+function incInvestigationHtml(i){
+  const need=investigationRequired(i), whys=i.whys||[], t=incTrack(i), lv=incLevel(i), ms=incMilestones(i), today=localToday();
+  const f=(k,l,ty,o)=>incFieldHtml({key:k,label:l,type:ty||'text',...(o||{})}, i[k]);
+  const lead=incPdoLead(i), oldCauses=(i.immediateCauses||[]).length || (i.rootCauses||[]).length;
+  return `${need?`<div class="notice">${ic('alert')} ${t.on?`<strong>SP-1418 investigation process</strong> — ${esc(t.reasons.join(' · '))}. Full report with ICAM, IRC review and the timeline below.`:`Investigation level: <strong>${esc(PDO_COLOUR[lv].t)} potential risk</strong> — a low-severity investigation report (SP-1418 Att. 5) is enough.`}${i.invDue?` Due by <strong>${esc(i.invDue)}</strong>.`:''}</div>`:'<p class="wsub" style="margin:0 0 12px;">Rate the incident with the PDO RAM on the Overview tab to set the investigation level.</p>'}
+  <form id="incInvestigationForm">
+    <div class="subhead">Kick-off & investigation team (SP-1418 §6)</div>
+    <p class="wsub" style="margin:-4px 0 8px;">Minimum team for a <strong>${esc(PDO_COLOUR[lv].t.toLowerCase())}</strong> potential-risk contractor investigation (Table 6.4): ${esc(SP1418_TEAM[lv])}.${lead?` PDO investigation lead level (Table 6.1): <strong>${esc(lead)}</strong>.`:''}</p>
+    <div class="form-grid">
+      ${f('incOwner','Incident owner (manager responsible)')}
+      ${f('leadInvestigator','Investigation lead')}
+      ${f('icamTrained','HII / ICAM-trained investigator')}
+      ${f('method','Method used','select',{options:['ICAM (SP-1418 mandatory for contractors)', ...INVESTIGATION_METHODS]})}
+      ${f('team','Team members (name — position, one per line)','textarea',{wide:true})}
+      ${f('kickoffDate','Kick-off meeting held on','date')}
+      ${f('invStart','Investigation started','date')}
+      ${f('invDue','Investigation due by','date')}
+      ${f('invCompleted','Investigation completed','date')}
+    </div>
+    ${ms.length?`<div class="subhead">SP-1418 timeline (from notification ${esc(incStartDate(i))})</div>
+      <div class="table-wrap"><table><thead><tr><th>Milestone</th><th>Day</th><th>Due</th><th>Done on</th></tr></thead><tbody>${ms.map(m=>`<tr><td>${esc(m.label)}</td><td class="num">${m.days}</td><td class="mono ${!m.done&&m.due<today?'text-danger':''}">${esc(m.due)}${!m.done&&m.due<today?' · overdue':''}</td><td><input type="date" data-ifield="ms_${m.key}" value="${esc(m.done)}"></td></tr>`).join('')}
+        <tr><td>Actions entered in PIM</td><td class="num">—</td><td class="wsub">within 7 working days after the IRC</td><td><input type="date" data-ifield="ms_pimActions" value="${esc(i.ms_pimActions||'')}"></td></tr></tbody></table></div>
+      <div class="form-grid">${f('mdIrcSelected','Selected for MD-IRC','select',{options:['No','Yes']})}</div>`:''}
+    <div class="subhead">Information gathering (HSG245 step 1 · SP-1418 §7.2)</div>
+    <div class="wsub" style="margin:-4px 0 6px;">Evidence collected (SP-1418 Att. 8)</div>
+    ${incChecksHtml(EVIDENCE_LIST, i.evidence, 'data-evid')}
+    <div class="form-grid" style="margin-top:8px;">${HSG_QUESTIONS.map(([k,l])=>f(k,l,'textarea',{wide:true})).join('')}</div>
+    <div class="subhead">ICAM analysis (SP-1418 Att. 12)</div>
+    <p class="wsub" style="margin:-4px 0 8px;">Tick what applies at each level. Every management system failure needs an action (SP-1418 §8.3). "Operator error" alone is never an acceptable conclusion (HSG245).</p>
+    <div class="subhead" style="font-size:12px;">A. Immediate causes — unsafe acts (1–4) and unsafe conditions (5–8)</div>${incIcamHtml(i,'imm')}
+    <div class="subhead" style="font-size:12px;">B. Underlying causes — human factors (9–14) and workplace factors (15–23)</div>${incIcamHtml(i,'und')}
+    <div class="subhead" style="font-size:12px;">C. Management system failures (24–33)</div>${incIcamHtml(i,'msf')}
+    ${oldCauses?`<p class="wsub">Causes recorded before ICAM: ${esc([...(i.immediateCauses||[]), ...(i.rootCauses||[])].join('; '))}</p>`:''}
+    <div class="subhead">5 Whys</div>
+    <div class="whys">${[0,1,2,3,4].map(n=>`<label>Why ${n+1}?<input data-why="${n}" value="${esc(whys[n]||'')}" placeholder="${n===0?'Why did the incident happen?':'Why?'}"></label>`).join('')}</div>
+    <div class="subhead">Human failure (HSG245)</div>
+    <div class="form-grid">
+      ${f('hfType','Type of human failure','select',{options:HF_TYPES})}
+      ${f('justCulture','Fair / just culture outcome','select',{options:JUST_CULTURE})}
+    </div>
+    <div class="wsub" style="margin:6px 0;">Factors that influenced the behaviour</div>
+    ${incChecksHtml(HF_FACTORS, i.hfFactors, 'data-hff')}
+    <div class="form-actions"><button type="submit" class="btn btn-primary">Save investigation</button></div>
+  </form>
+  <div class="subhead">Investigation report file</div>
+  <div class="att-block">${i.reportFile && i.reportFile.url ? libFileBlockHtml(i.reportFile,false) : '<span class="att-none">No report uploaded</span>'}<label class="upload-btn">${i.reportFile&&i.reportFile.url?'Replace':'Upload'} investigation report<input type="file" hidden data-inc-report></label></div>`;
+}
+function incFindingsHtml(i){
+  const f=(k,l,t,o)=>incFieldHtml({key:k,label:l,type:t||'text',...(o||{})}, i[k]);
+  const rep=incRepeatOf(i), sim=incSimilar(i), docs=activeLibDocs().filter(d=>(d.status||'Current')!=='Obsolete' && ['Procedure','Risk assessment','JSA','Method statement','Work instruction','SOP','PTW','Form','HSE checklist'].includes(d.docType)).sort((a,b)=>libSortKey(a).localeCompare(libSortKey(b)));
+  const sel=new Set(i.reviewDocs||[]), days=incDaysLost(i), cost=incCostTotal(i);
+  const incLine=x=>`<div class="rf"><span class="rf-k mono">${esc(x.incNo||'—')}</span><span class="rf-v">${esc(x.date||'')} · ${esc(x.type||'')}${x.topEvent?' · '+esc(x.topEvent):''} — ${esc(String(x.description||'').slice(0,90))}</span></div>`;
+  return `<form id="incFindingsForm">
+    <div class="subhead">Findings (SP-1418 §8.2)</div>
+    <div class="form-grid">
+      ${f('findings','Key findings','textarea',{wide:true})}
+      ${f('supplementalFindings','Supplemental findings','textarea',{wide:true})}
+    </div>
+    <div class="subhead">Learnings (SP-1418 §8.4 · HSG245 Q20–21)</div>
+    <div class="form-grid">
+      ${f('lessons','Learnings','textarea',{wide:true})}
+      ${f('learningType','Type of learning','select',{options:LEARNING_TYPES, wide:true})}
+      ${f('similarElsewhere','20. Do similar risks exist elsewhere? Where?','textarea',{wide:true})}
+    </div>
+    <div class="subhead">21. Similar incidents before</div>
+    ${rep.length?`<div class="notice">${ic('alert')} <strong>Repeated incident</strong> (SP-1418: at least 3 of 4 the same — top event, immediate cause, underlying cause, company). The investigation must find out why it happened again.</div>${rep.map(o=>`${incLine(o.x)}<div class="wsub" style="margin:-2px 0 6px 0;">${esc(o.why.join(' · '))}</div>`).join('')}`:''}
+    ${sim.length?sim.map(incLine).join(''):'<p class="wsub">No similar incidents in the last 2 years (same top event, type or equipment).</p>'}
+    <div class="form-grid">${f('similarBefore','Notes on similar incidents','textarea',{wide:true})}</div>
+    <div class="subhead">23. Risk assessments and procedures to review</div>
+    <details class="icam-grp" ${sel.size?'open':''}><summary>Choose from the QHSE Library (${sel.size} selected)</summary><input type="search" class="icam-find" placeholder="Find a document…" data-icam-find>
+      <div class="cause-list">${docs.map(d=>`<label class="chk"><input type="checkbox" data-revdoc="1" value="${esc(d.id)}" ${sel.has(d.id)?'checked':''}>${esc(libTitle(d))}</label>`).join('')||'<span class="wsub">No procedures or risk assessments in the library yet.</span>'}</div></details>
+    <div class="form-grid">${f('reviewDone','Review of these documents','select',{options:['Done — reviewed and updated','In progress','Not needed']})}</div>
+    <div class="subhead">Sharing the learning (SP-1418 §10)</div>
+    <div class="form-grid">
+      ${f('alertType','Alert type','select',{options:INC_ALERT_TYPES})}
+      ${f('alertShared','Safety alert shared with all sites','select',{options:['Yes','No']})}
+      ${f('alertDate','Shared on','date')}
+      ${f('commTo','27. Findings communicated to (name — date, one per line)','textarea',{wide:true})}
+    </div>
+    <div class="subhead">24. Cost of the incident</div>
+    <div class="form-grid">
+      ${f('costMedical','Medical cost (OMR)','number')}
+      ${f('costDowntime','Downtime / lost production (OMR)','number')}
+      ${f('costOther','Other cost — fines, hire, overtime (OMR)','number')}
+      <div class="span-all wsub">Damage cost (Overview): ${esc(String(Number(i.damageCost)||0))} OMR · Days lost (People): ${days} · <strong>Total cost ${cost.toLocaleString()} OMR</strong></div>
+    </div>
+    <div class="subhead">Incident Review Committee & sign-off (SP-1418 §9 · HSG245 Q25)</div>
+    <div class="form-grid">
+      ${f('ircOutcome','IRC outcome','select',{options:IRC_OUTCOMES})}
+      ${f('ircComments','IRC comments / points raised','textarea',{wide:true})}
+      ${f('signedBy','Signed on behalf of the investigation team')}
+      ${f('signedDate','Date','date')}
+    </div>
+    <div class="form-actions"><button type="submit" class="btn btn-primary">Save findings</button></div>
+  </form>`;
+}
+function incActionsHtml(i){
+  const causes=[...(i.icamMsf||[]), ...(i.icamUnderlying||[]), ...(i.icamImmediate||[])];
+  const fields=CAPA_FIELDS.map(f=>f.key==='causeRef'?{...f, options:[...causes, 'General / other']}:f);
+  const list=(i.capa||[]).slice().sort((a,b)=>(a.targetDate||'').localeCompare(b.targetDate||''));
+  const editing = incEditCapa ? list.find(a=>a.id===incEditCapa) : null;
+  const form = incCapaFormOpen ? `<form id="incCapaForm" style="margin-bottom:16px;"><div class="form-grid">${fields.map(f=>incFieldHtml(f, editing?editing[f.key]:(f.key==='status'?'Open':f.key==='kind'?'Corrective':f.key==='term'?'Short term (immediate cause)':''), 'data-cfield')).join('')}</div>
+    <div class="form-actions"><button type="submit" class="btn btn-primary btn-sm">${editing?'Save changes':'Add action'}</button></div></form>` : '';
+  const cards = list.length ? list.map(a=>`<div class="record-card"><div class="record-card-top"><div class="record-card-title">${esc(a.action||'—')} ${complaintBadges(a)} ${a.kind?`<span class="badge muted">${esc(a.kind)}</span>`:''}${a.hierarchy?` <span class="badge muted">${esc(a.hierarchy)}</span>`:''}</div>
+      <div class="record-card-actions"><button type="button" class="icon-btn" data-cedit="${a.id}" aria-label="Edit">${ic('pencil')}</button><button type="button" class="icon-btn danger" data-cdel="${a.id}" data-armed="0" aria-label="Delete">${ic('trash')}</button></div></div>
+      <div class="record-fields">${['causeRef','term','owner','targetDate','pimNo','agreed','closedDate','verification'].filter(k=>a[k]).map(k=>`<div class="rf"><span class="rf-k">${esc((CAPA_FIELDS.find(f=>f.key===k)||{label:k}).label)}</span><span class="rf-v">${esc(a[k])}</span></div>`).join('')}</div></div>`).join('')
+    : '<p class="wsub">No actions yet. Add an action for each cause — and one for every management system failure.</p>';
+  const miss=incMsfWithoutAction(i);
+  return `<form id="incPlanForm" class="form-grid" style="margin-bottom:10px;">${incFieldHtml({key:'actionPlanOwner', label:'Senior manager responsible for the whole action plan (HSG245 Q22)', type:'text', wide:true}, i.actionPlanOwner)}<div class="form-actions" style="grid-column:1/-1; margin-top:0;"><button type="submit" class="btn btn-sm">Save plan owner</button></div></form>
+    ${miss.length?`<div class="notice">${ic('alert')} ${miss.length} management system failure${miss.length===1?' has':'s have'} no action yet (SP-1418 §8.3): ${esc(miss.map(icamCode).join(', '))}</div>`:''}
+    <div class="section-head"><h3>Corrective &amp; preventive actions (${list.length})</h3><button type="button" class="btn btn-sm" id="incCapaToggle">${incCapaFormOpen?'Cancel':'+ Add action'}</button></div>${form}${cards}
+    <p class="wsub">Actions must be SMART (specific, measurable, achievable, realistic, time-bound), use the hierarchy of controls, be agreed with the action party and be entered in PIM within 7 working days after the IRC. Overdue actions go into the daily reminder email.</p>`;
+}
+function incCloseoutChecks(i){
+  const need=investigationRequired(i), open=incCapaOpen(i).length, pdo=incIsPdo(i), t=incTrack(i), fc=incFormalComm(i), ram=incRam(i);
+  const imm=(i.icamImmediate||[]).length || (i.immediateCauses||[]).length, deep=(i.icamUnderlying||[]).length + (i.icamMsf||[]).length + (i.rootCauses||[]).length, miss=incMsfWithoutAction(i);
+  const c=[
+    {ok:!!(i.description && i.type && i.injuryClass), t:'Incident details and classification recorded'},
+    {ok:!pdo || !!(ram.actual && ram.potential), t:'Rated with the PDO RAM (actual and potential)'},
+    {ok:!!(i.persons||[]).length || i.injuryClass==='Not applicable (no injury)', t:'People involved recorded'},
+    {ok:!need || !!i.invCompleted, t:need?'Investigation completed':'Investigation not required'},
+    {ok:!need || !!imm, t:'Immediate causes identified'},
+    {ok:!need || !!deep, t:'Underlying causes / management system failures identified'},
+    {ok:!miss.length, t:miss.length?`${miss.length} management system failure${miss.length===1?'':'s'} without an action`:'Every management system failure has an action'},
+    {ok:!!(i.capa||[]).length || !need, t:'Corrective actions raised'},
+    {ok:open===0, t: open?`${open} action${open===1?'':'s'} still open`:'All actions closed'},
+    {ok:!need || !!String(i.lessons||'').trim(), t:'Learnings recorded'},
+    {ok:!(i.reviewDocs||[]).length || /^Done|^Not needed/.test(i.reviewDone||''), t:'Risk assessments / procedures reviewed'},
+  ];
+  if(fc.need) c.push({ok:!!i.formalCommDate, t:'Formal communication sent (within 2 working days)'});
+  if(t.on) c.push({ok:!!(i.ms_mse3Irc||i.ms_mse8Irc||i.ms_dirIrc), t:'Reviewed at the Incident Review Committee (IRC)'});
+  return c;
+}
+function incCloseoutHtml(i){
+  const checks=incCloseoutChecks(i), ready=checks.every(c=>c.ok);
+  const f=(k,l,t,o)=>incFieldHtml({key:k,label:l,type:t||'text',...(o||{})}, i[k]);
+  return `<div class="section-head"><h3>Close-out checklist</h3>${incStatusBadge(i)}</div>
+    <div class="checklist">${checks.map(c=>`<div class="ck ${c.ok?'ok':'no'}">${ic(c.ok?'checkcircle':'xcircle')} ${esc(c.t)}</div>`).join('')}</div>
+    <form id="incCloseForm" style="margin-top:14px;">
+      <div class="form-grid">
+        ${f('closedBy','Closed by (HSE)')}
+        ${f('closedDate','Closure date','date')}
+        ${f('effectivenessVerified','Actions verified effective','select',{options:['Yes','No','Pending']})}
+        ${f('closureNotes','Closure remarks','textarea',{wide:true})}
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn">Save close-out details</button>
+        ${i.status==='Closed' ? '<button type="button" class="btn" id="incReopenBtn">Reopen incident</button>' : `<button type="button" class="btn btn-primary" id="incCloseBtn" ${ready?'':'data-force="1"'}>${ic('check')} Close incident</button>`}
+      </div>
+      ${ready||i.status==='Closed' ? '' : '<p class="wsub" style="text-align:right;">Some checklist items are not complete — closing now will ask you to confirm.</p>'}
+    </form>`;
+}
+document.addEventListener('input', e=>{ const t=e.target; if(!t || !t.matches || !t.matches('[data-icam-find]')) return; const q=t.value.trim().toLowerCase(), box=t.parentElement;
+  box.querySelectorAll('label.chk').forEach(l=>{ l.hidden=!!q && !l.textContent.toLowerCase().includes(q); });
+  box.querySelectorAll('details.icam-grp').forEach(d=>{ if(q){ const any=[...d.querySelectorAll('label.chk')].some(l=>!l.hidden); d.hidden=!any; if(any) d.open=true; } else d.hidden=false; }); });
+
+/* ---- Incident investigation report PDF — SP-1418 §8.2 minimum content, HSG245 parts 1–4, Burhan format ---- */
 function buildIncidentPdf(i){
+  const doc=pdfDoc({unit:'pt', format:'a4', docKey:'incident', docSub:[i.incNo, i.type, 'SP-1418 / HSG245'].filter(Boolean).join(' · '), docRef:i.incNo});
+  const M=34, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight(), CW=W-2*M, FS=8.6, LH=10.4;
+  const INK=[20,22,28], GREY=[226,229,234], FILL={ok:[221,241,229], warn:[253,240,212], danger:[250,218,218], fail:[250,218,218], info:[242,244,247], muted:[242,244,247]};
+  let y=34;
+  const newPage=()=>{ doc.addPage(); y=34; };
+  const ensure=h=>{ if(y+h>H-28) newPage(); };
+  const blank=v=>v===undefined||v===null||v===''||(Array.isArray(v)&&!v.length);
+  const linesOf=cl=>{ doc.setFont('helvetica', cl.bold?'bold':'normal'); doc.setFontSize(cl.size||FS); return doc.splitTextToSize(String(blank(cl.t)?(cl.keepBlank?'':'—'):cl.t), Math.max(10, cl.w-8)); };
+  const row=(cells, opt)=>{ opt=opt||{};
+    const pc=cells.map(cl=>({...cl, lines:linesOf(cl)}));
+    const h=Math.max(opt.minH||16, ...pc.map(cl=>cl.lines.length*LH*((cl.size||FS)/FS)+6));
+    if(y+h>H-28){ newPage(); if(opt.head) opt.head(); }
+    let x=M;
+    for(const cl of pc){
+      if(cl.fill){ doc.setFillColor(...cl.fill); doc.rect(x, y, cl.w, h, 'F'); }
+      doc.setDrawColor(110,116,126); doc.setLineWidth(0.5); doc.rect(x, y, cl.w, h);
+      doc.setFont('helvetica', cl.bold?'bold':'normal'); doc.setFontSize(cl.size||FS); doc.setTextColor(...(cl.color||INK));
+      const lh=LH*((cl.size||FS)/FS);
+      cl.lines.forEach((l,n)=>{ const ty=y+11+n*lh; if(cl.align==='center') doc.text(l, x+cl.w/2, ty, {align:'center'}); else doc.text(l, x+4, ty); });
+      x+=cl.w;
+    }
+    y+=h; doc.setTextColor(...INK);
+  };
+  const bar=(t,need)=>{ ensure(need||46); y+=8; row([{t, w:CW, bold:true, fill:GREY, size:9.5}]); };
+  const thead=(labels, widths)=>{ const f=()=>row(labels.map((t,n)=>({t, w:widths[n], bold:true, fill:[236,238,242], keepBlank:true}))); f(); return f; };
+  const K=128;
+  const kv=(k, v, k2, v2)=>{ if(k2===undefined) row([{t:k, w:K, bold:true, fill:[246,247,249]},{t:v, w:CW-K}]);
+    else { const hw=(CW-2*K)/2; row([{t:k, w:K, bold:true, fill:[246,247,249]},{t:v, w:hw},{t:k2, w:K, bold:true, fill:[246,247,249]},{t:v2, w:hw}]); } };
+  const note=(t, color)=>{ doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...(color||[90,96,106])); const ls=doc.splitTextToSize(t, CW-4); ensure(ls.length*10+6); ls.forEach(l=>{ y+=10; doc.text(l, M+2, y); }); y+=4; doc.setTextColor(...INK); };
+  const list=a=>(a||[]).filter(Boolean).join('\n');
+  const ram=incRam(i), t=incTrack(i), fc=incFormalComm(i), hp=incHiPoClass(i), rep=incRepeatOf(i);
+
+  // ---------- Part 1 — overview & notification ----------
+  bar('1.  Overview & notification');
+  kv('Incident no.', i.incNo, 'PIM no.', i.pimNo);
+  kv('Date / time', [i.date, i.time].filter(Boolean).join(' '), 'Reported on', [i.reportedDate, incReportedLate(i)?'(HIDDEN — reported late)':''].filter(Boolean).join(' '));
+  kv('Project', i.projectId?projectName(i.projectId):'—', 'Location', i.location);
+  kv('Company', i.company||'Burhan Oil & Trade Services', 'Reported by', i.reportedBy);
+  kv('PDO contract no.', i.contractNo, 'Contract Holder / CSR', [i.contractHolder, i.csrName].filter(Boolean).join(' / '));
+  kv('CH / CSR notified', String(i.chNotified||'').replace('T',' '), 'Permit to work no.', i.permitNo);
+  kv('Work activity', i.activity, 'Shift / weather', [i.shift, i.conditions].filter(Boolean).join(' · '));
+  // ---------- classification ----------
+  bar('2.  Classification (SP-1418 §4)');
+  kv('Incident type', i.type, 'PIM classification', incPimClass(i));
+  kv('Top event', i.topEvent, 'Injury classification', i.injuryClass);
+  kv('Work relatedness', i.workRelated||WORK_REL[0], 'Process safety', i.pse||'Not a process safety event');
+  if(ram.pdo){ kv('Actual severity (RAM)', ram.actual||'—', 'Potential risk (RAM)', ram.potential?`${ram.potential} — ${PDO_COLOUR[ram.col].t} (${PDO_COLOUR[ram.col].name})`:'—'); }
+  else kv('Severity / likelihood', [i.actualSeverity, i.potentialSeverity, i.likelihood].filter(Boolean).join(' / ')||'—', 'Risk rating', ram.text||'—');
+  kv('HiPo / HPE', hp?(hp==='HiPo'?'HiPo — Failed Lucky (barrier failed or absent)':'HPE — Failed Safe (barrier worked)'):'No', 'SP-1418 process', t.on?t.reasons.join(' · '):'Low-severity investigation');
+  kv('Repeated incident', rep.length?rep.map(o=>`${o.x.incNo} (${o.why.join(', ')})`).join('; '):'No', 'Life-Saving Rules violated', (i.lsrViolated||[]).join(', ')||'None');
+  kv('Client notified', [i.clientNotified, i.clientNotifiedDate].filter(Boolean).join(' · '), 'Authority notified', [i.authorityNotified, i.authorityRef].filter(Boolean).join(' · '));
+  if(fc.need) kv('Formal communication', `${fc.reasons.join(' · ')} — due ${fc.due}`, 'Sent on', i.formalCommDate||'NOT YET');
+  // ---------- description ----------
+  bar('3.  What happened');
+  kv('Description', i.description);
+  if(i.timeline){ const hd=thead(['Time','Event'], [90, CW-90]); String(i.timeline).split('\n').filter(s=>s.trim()).forEach(s=>{ const m=/^\s*([^—–-]{1,24}?)\s*[—–-]\s*(.+)$/.exec(s); row(m?[{t:m[1], w:90},{t:m[2], w:CW-90}]:[{t:'', w:90, keepBlank:true},{t:s.trim(), w:CW-90}], {head:hd}); }); }
+  kv('Immediate actions', i.immediateActions);
+  kv('Equipment / material', i.equipmentInvolved, 'Vehicle no.', i.vehicleNo);
+  kv('Damage cost (OMR)', i.damageCost, 'Release / spill', [i.envRelease, i.spillM3?i.spillM3+' m³':''].filter(Boolean).join(' · '));
+  kv('Witnesses', i.witnesses);
+  // ---------- people ----------
+  bar(`4.  People involved (${(i.persons||[]).length})`);
+  { const cw=[120, 110, CW-120-110-90-60, 90, 60]; const hd=thead(['Name','Company / job','Injury (body part · nature)','Treatment','Days lost'], cw);
+    if(!(i.persons||[]).length) row([{t:'None recorded', w:CW}]);
+    (i.persons||[]).forEach(p=>row([{t:p.name, w:cw[0], bold:true},{t:[p.employer==='Burhan Oil & Trade Services'?'Burhan':(p.employerName||p.employer), p.designation].filter(Boolean).join(' · '), w:cw[1]},{t:[p.bodyPart, p.injuryNature].filter(Boolean).join(' · '), w:cw[2]},{t:p.treatment, w:cw[3]},{t:[p.daysLost, p.restrictedDays?`+${p.restrictedDays} restr.`:''].filter(Boolean).join(' '), w:cw[4], align:'center'}], {head:hd})); }
+  // ---------- investigation set-up ----------
+  bar('5.  Investigation team & timeline (SP-1418 §6)');
+  kv('Incident owner', i.incOwner, 'Investigation lead', i.leadInvestigator);
+  kv('HII / ICAM-trained investigator', i.icamTrained, 'Method', i.method);
+  kv('Team members', i.team);
+  kv('Kick-off meeting', i.kickoffDate, 'Started / due / completed', [i.invStart, i.invDue, i.invCompleted].map(x=>x||'—').join('  /  '));
+  { const ms=incMilestones(i); if(ms.length){ const cw=[CW-90-90-90, 90, 90, 90]; const hd=thead(['SP-1418 milestone','Due','Done','Status'], cw); const td=localToday();
+      ms.forEach(m=>row([{t:`${m.label} (day ${m.days})`, w:cw[0]},{t:m.due, w:cw[1], align:'center'},{t:m.done, w:cw[2], align:'center'},{t:m.done?'Done':m.due<td?'OVERDUE':'Open', w:cw[3], align:'center', fill:m.done?FILL.ok:m.due<td?FILL.fail:undefined}], {head:hd})); } }
+  // ---------- information gathering ----------
+  bar('6.  Information gathering (HSG245 questions 5–17)', 90);
+  if((i.evidence||[]).length) kv('Evidence collected', (i.evidence||[]).join(' · '));
+  HSG_QUESTIONS.filter(([k])=>!blank(i[k])).forEach(([k,l])=>kv(l, i[k]));
+  if(!HSG_QUESTIONS.some(([k])=>!blank(i[k]))) note('No answers recorded.');
+  // ---------- analysis ----------
+  bar('7.  Analysis — causes (ICAM, SP-1418 Att. 12)', 90);
+  kv('Key findings', i.findings);
+  if(i.supplementalFindings) kv('Supplemental findings', i.supplementalFindings);
+  kv('A. Immediate causes', list(i.icamImmediate) || list(i.immediateCauses));
+  kv('B. Underlying causes', list(i.icamUnderlying) || (blank(i.icamImmediate)?list(i.rootCauses):''));
+  kv('C. Management system failures', list(i.icamMsf));
+  if((i.whys||[]).some(Boolean)) kv('5 Whys', (i.whys||[]).map((w,n)=>w?`Why ${n+1}: ${w}`:'').filter(Boolean).join('\n'));
+  if(i.hfType || (i.hfFactors||[]).length) kv('Human failure', [i.hfType, (i.hfFactors||[]).join(', '), i.justCulture?'Outcome: '+i.justCulture:''].filter(Boolean).join('\n'));
+  // ---------- actions ----------
+  bar(`8.  Risk control action plan (${(i.capa||[]).length})`, 90);
+  if(i.actionPlanOwner) kv('Action plan owner (senior manager)', i.actionPlanOwner);
+  { const cw=[CW-90-70-70-62-58, 90, 70, 70, 62, 58]; const hd=thead(['Action (cause · control type)','Owner','Target','Term','PIM no.','Status'], cw);
+    if(!(i.capa||[]).length) row([{t:'None recorded', w:CW}]);
+    (i.capa||[]).slice().sort((a,b)=>(a.targetDate||'').localeCompare(b.targetDate||'')).forEach(a=>{ const st=a.status||'Open', od=st!=='Closed' && a.targetDate && a.targetDate<localToday();
+      row([{t:[a.action, [a.causeRef?icamCode(a.causeRef):'', a.hierarchy].filter(Boolean).join(' · ')].filter(Boolean).join('\n'), w:cw[0]},{t:a.owner, w:cw[1]},{t:a.targetDate, w:cw[2], align:'center'},{t:String(a.term||'').split(' (')[0], w:cw[3], align:'center'},{t:a.pimNo, w:cw[4], align:'center'},{t:st+(a.closedDate?'\n'+a.closedDate:''), w:cw[5], align:'center', fill:st==='Closed'?FILL.ok:od?FILL.fail:undefined}], {head:hd}); }); }
+  { const miss=incMsfWithoutAction(i); if(miss.length) note(`Management system failures without an action: ${miss.map(icamCode).join(', ')} (SP-1418 §8.3 — every MSF needs an action).`, [200,16,46]); }
+  // ---------- learning ----------
+  bar('9.  Learnings & sharing (SP-1418 §8.4 / §10)', 90);
+  kv('Learnings', i.lessons); kv('Type of learning', i.learningType, 'Alert', [i.alertType, i.alertShared==='Yes'?'shared '+(i.alertDate||''):''].filter(Boolean).join(' · '));
+  kv('Similar risks elsewhere', i.similarElsewhere);
+  { const sim=incSimilar(i); kv('Similar incidents before', [sim.map(x=>`${x.incNo} ${x.date} ${x.type}`).join('; '), i.similarBefore].filter(Boolean).join('\n')||'None found'); }
+  { const docs=(i.reviewDocs||[]).map(id=>libDocs.find(d=>d.id===id)).filter(Boolean); kv('Documents to review', docs.length?docs.map(libTitle).join('\n'):'—', 'Review status', i.reviewDone); }
+  kv('Communicated to', i.commTo);
+  kv('Cost of the incident', `Medical ${Number(i.costMedical)||0} · damage ${Number(i.damageCost)||0} · downtime ${Number(i.costDowntime)||0} · other ${Number(i.costOther)||0} = ${incCostTotal(i).toLocaleString()} OMR · ${incDaysLost(i)} days lost`);
+  // ---------- review & close-out ----------
+  bar('10.  IRC review, sign-off & close-out', 120);
+  kv('IRC outcome', i.ircOutcome, 'IRC comments', i.ircComments);
+  kv('Signed for the investigation team', i.signedBy, 'Date', i.signedDate);
+  kv('Closed by', i.closedBy, 'Closure date', i.closedDate);
+  kv('Actions verified effective', i.effectivenessVerified, 'Remarks', i.closureNotes);
+  { const cw=[CW-60, 60]; const hd=thead(['Close-out check','Done'], cw); incCloseoutChecks(i).forEach(c=>row([{t:c.t, w:cw[0]},{t:c.ok?'Yes':'No', w:cw[1], align:'center', fill:c.ok?FILL.ok:FILL.fail}], {head:hd})); }
+  ensure(70); y+=34; doc.setDrawColor(150); doc.line(M, y, M+180, y); doc.line(W-M-180, y, W-M, y); doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(100); doc.text('HSE Manager', M, y+12); doc.text('Project / Operations Manager', W-M-180, y+12); doc.setTextColor(...INK);
+  y+=24; note('Investigation to PDO SP-1418 Incident Investigation, Reporting and Learning (v5.0) and HSE HSG245 Investigating accidents and incidents.');
+  return doc;
+}
+
+/* ---------- incident report PDF (old layout, kept for reference) ---------- */
+function buildIncidentPdfOld(i){
   const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4', docKey:'incident', docSub:[i.incNo, i.type].filter(Boolean).join(' · '), docRef:i.incNo});
   const M=40, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight(); let y=48;
   const ensure=h=>{ if(y+h>H-40){ doc.addPage(); y=48; } };
@@ -5103,7 +5702,7 @@ function alertFromIncident(i){
   return {alertType: incidentNeedsLfi(i)?'Initial LFI (within 7 days)':'Lessons learned (2-page)', status:'Draft', source:'Our incident', incidentId:i.id,
     title:`${i.type||'Incident'} — ${String(i.description||'').slice(0,70)}`, issueDate:localToday(), dueDate:due, projectId:i.projectId||'', location:i.location||'',
     eventDate:i.date||'', eventType:[i.type, i.injuryClass&&!/^Not applicable/.test(i.injuryClass)?i.injuryClass:''].filter(Boolean).join(' · '), actualSeverity:i.actualSeverity||'', potentialSeverity:i.potentialSeverity||'',
-    whatHappened:i.description||'', whatWentWrong:(i.immediateCauses||[]).join('\n'), whyItHappened:[...(i.rootCauses||[]), i.findings||''].filter(Boolean).join('\n'),
+    whatHappened:i.description||'', whatWentWrong:[...(i.icamImmediate||[]), ...(i.immediateCauses||[])].join('\n'), whyItHappened:[...(i.icamUnderlying||[]), ...(i.icamMsf||[]), ...(i.rootCauses||[]), i.findings||''].filter(Boolean).join('\n'),
     keyLessons:i.lessons||'', askYourself:'', mgmtLearning:'', audience:['All divisions'], photos:images,
     actions:[], briefings:[]};
 }
@@ -7940,7 +8539,7 @@ async function buildClientPack(opts){
   const ltiRec=ccLtiStreak('all', proj, refDay);
   const lastLti=ltiRec && ltiRec.lastLti;
   const daysSince=lastLti ? ltiRec.days : null;
-  const fatal=i=>i.injuryClass==='Fatality' && inProj(i) && !i.deleted;
+  const fatal=i=>i.injuryClass==='Fatality' && inProj(i) && !i.deleted && incStatsCounted(i);
   const fatM=activeIncidents().filter(i=>fatal(i) && String(i.date||'').startsWith(month)).reduce((n,i)=>n+Math.max(1,(i.persons||[]).filter(p=>/fatal/i.test(p.treatment||p.injuryNature||'')).length||1),0);
   const fatY=activeIncidents().filter(i=>fatal(i) && String(i.date||'').startsWith(year) && String(i.date)<=monthEndKey).reduce((n,i)=>n+Math.max(1,(i.persons||[]).filter(p=>/fatal/i.test(p.treatment||p.injuryNature||'')).length||1),0);
   h2('1. HSE statistics');
@@ -13293,7 +13892,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const u=auth.currentUser;
     const data={...d, projectId:d.projectId||'', division:(site&&site.division)||'', incNo:nextIncNo(d.date), status:'Reported', reportedDate:localToday(),
       persons:[], capa:[], files:[], immediateCauses:[], rootCauses:[], whys:[], createdAt:new Date().toISOString(), createdBy:(u&&u.email)||''};
-    if(investigationRequired(data)) data.invDue=addDays(d.date, ['Lost time injury (LTI)','Fatality'].includes(d.injuryClass)?7:14);
+    data.ram='PDO'; data.workRelated=data.workRelated||WORK_REL[0]; data.invDue=incAutoDue(data); data.invDueAuto=data.invDue;
     incBusy=true;
     try{
       const ref=await db.collection('incidents').add(stamp(data));
@@ -13321,19 +13920,28 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const d=readF(f,'data-ifield');
       if(d.incNo && activeIncidents().some(x=>x.id!==i.id && x.incNo===d.incNo)){ toast(`${d.incNo} is already used by another incident`); return; }
       const site=siteEquipmentList.find(s=>s.id===d.projectId); d.division=(site&&site.division)||i.division||'';
+      d.lsrViolated=[...f.querySelectorAll('[data-lsr]:checked')].map(x=>x.value); d.ram='PDO';
       const merged={...i, ...d};
-      if(investigationRequired(merged) && !merged.invDue) d.invDue=addDays(merged.date, 14);
+      if(investigationRequired(merged) && (!i.invDue || i.invDue===i.invDueAuto)){ d.invDue=incAutoDue(merged); d.invDueAuto=d.invDue; }
       await updateInc(i.id, d);
     } else if(f.id==='incInvestigationForm'){
       const d=readF(f,'data-ifield');
-      d.immediateCauses=[...f.querySelectorAll('[data-icause]:checked')].map(x=>x.value);
-      d.rootCauses=[...f.querySelectorAll('[data-rcause]:checked')].map(x=>x.value);
+      d.icamImmediate=[...f.querySelectorAll('[data-icam="imm"]:checked')].map(x=>x.value);
+      d.icamUnderlying=[...f.querySelectorAll('[data-icam="und"]:checked')].map(x=>x.value);
+      d.icamMsf=[...f.querySelectorAll('[data-icam="msf"]:checked')].map(x=>x.value);
+      d.evidence=[...f.querySelectorAll('[data-evid]:checked')].map(x=>x.value);
+      d.hfFactors=[...f.querySelectorAll('[data-hff]:checked')].map(x=>x.value);
       d.whys=[...f.querySelectorAll('[data-why]')].map(x=>x.value.trim());
       if(i.status!=='Closed'){
         if(d.invCompleted) d.status = incCapaOpen(i).length ? 'Actions in progress' : (i.status==='Reported'||i.status==='Under investigation' ? 'Actions in progress' : i.status);
         else if((i.status||'Reported')==='Reported' && (d.leadInvestigator || d.invStart)) d.status='Under investigation';
       }
       await updateInc(i.id, d);
+    } else if(f.id==='incFindingsForm'){
+      const d=readF(f,'data-ifield'); d.reviewDocs=[...f.querySelectorAll('[data-revdoc]:checked')].map(x=>x.value);
+      await updateInc(i.id, d);
+    } else if(f.id==='incPlanForm'){
+      await updateInc(i.id, readF(f,'data-ifield'));
     } else if(f.id==='incPersonForm'){
       const d=readF(f,'data-pfield');
       if(!d.name){ toast('Enter the person’s name'); return; }
