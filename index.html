@@ -904,6 +904,21 @@ th.mx-cat-opal{box-shadow:inset 0 3px 0 var(--cat-1);} th.mx-cat-client{box-shad
 .crew-check{border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-size:12.5px; color:var(--ink); display:grid; gap:4px;}
 .crew-check.bad{border-color:var(--warn); background:var(--warn-bg);} .crew-check.ok{border-color:var(--ok); background:var(--ok-bg);}
 .crew-check .ic{width:14px; height:14px; vertical-align:-2px;}
+/* Batch 53: lift plans */
+.lift-calc{border:1px solid var(--line); border-radius:10px; padding:4px 10px; font-size:12.5px; color:var(--ink);}
+.lift-calc .lc-title{font-weight:700; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); padding:5px 0; display:flex; gap:6px; align-items:center;}
+.lc-row{display:grid; grid-template-columns:18px minmax(120px,1.1fr) minmax(96px,.8fr) 2fr; gap:8px; padding:6px 0; border-top:1px solid var(--line); align-items:start;}
+.lift-calc > .lc-row:first-child{border-top:0;}
+.lc-ic .ic{width:15px; height:15px; vertical-align:-3px;}
+.lc-ok .lc-ic{color:var(--ok);} .lc-warn .lc-ic{color:var(--warn);} .lc-fail .lc-ic{color:var(--danger);}
+.lc-k{font-weight:600;} .lc-v{font-weight:700; font-variant-numeric:tabular-nums;} .lc-fail .lc-v{color:var(--danger);} .lc-warn .lc-v{color:var(--warn);}
+.lc-n{color:var(--muted); font-size:12px;}
+@media (max-width:700px){ .lc-row{grid-template-columns:18px 1fr;} .lc-v,.lc-n{grid-column:2;} }
+.lift-banner{border-radius:12px; padding:12px 14px; margin-bottom:6px; border:1px solid var(--line);}
+.lift-banner.lb-ok{background:var(--ok-bg); border-color:var(--ok);} .lift-banner.lb-warn{background:var(--warn-bg); border-color:var(--warn);} .lift-banner.lb-danger{background:var(--danger-bg); border-color:var(--danger);}
+.lb-cat{font-size:17px; font-weight:800;} .lb-sub{font-size:13px; margin-top:3px;} .lb-verdict{margin-top:8px; font-weight:700; font-size:13px;} .lv-fail{color:var(--danger);} .lv-ok{color:var(--ok);}
+.lb-verdict .ic{width:16px; height:16px; vertical-align:-3px;}
+ul.lift-ctl{margin:4px 0 6px 18px; padding:0; font-size:12.5px;} ul.lift-ctl li{margin:1px 0;}
 .crew-chips{display:flex; flex-wrap:wrap; gap:4px;} .crew-card{font-size:11.5px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); background:var(--surface);}
 .crew-card.c-gold{box-shadow:inset 3px 0 0 #c9a227;} .crew-card.c-blue{box-shadow:inset 3px 0 0 #2563eb;} .crew-card.c-amber{box-shadow:inset 3px 0 0 #f59e0b;} .crew-card.c-white{box-shadow:inset 3px 0 0 #cbd5e1;} .crew-card.c-green{box-shadow:inset 3px 0 0 #16a34a;} .crew-card.c-none{box-shadow:inset 3px 0 0 var(--danger);}
 
@@ -985,6 +1000,7 @@ th.mx-cat-opal{box-shadow:inset 0 3px 0 var(--cat-1);} th.mx-cat-client{box-shad
     <button type="button" class="sidenav-btn" data-section="site">Project Details</button>
     <button type="button" class="sidenav-btn" data-section="scaff">Scaffolding Jobs</button>
     <button type="button" class="sidenav-btn" data-section="civil">Civil Progress</button>
+    <button type="button" class="sidenav-btn" data-section="lift">Lift Plans</button>
     <button type="button" class="sidenav-btn" data-section="subcons">Subcontractors</button>
     <div class="nav-group">Safety</div>
     <button type="button" class="sidenav-btn" data-section="incidents">Incident Register</button>
@@ -2026,6 +2042,7 @@ const PDF_DOCS={
   incident:{title:'Incident Investigation Report'}, audit:{title:'Audit Report'}, assurance:{title:'HSE Assurance Plan'}, kpi:{title:'HSE KPI Scorecard'},
   actions:{title:'HSE Action Tracker'}, alert:{title:'Safety Alert'}, star:{title:'Safety Star Certificate'},
   ppeList:{title:'Approved PPE List'}, ppeIssue:{title:'PPE Issue Record'}, workerProfile:{title:'Employee HSE Record'}, vehicle:{title:'Vehicle HSE Record'}, site:{title:'Project HSE Record'},
+  liftPlan:{title:'Lift Plan'},
 };
 function docControl(key){ return (((settingsDocs||{}).docControl||{}).docs||{})[key]||{}; }
 let pdfLogoData=null;
@@ -2697,7 +2714,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b52';
+const APP_BUILD='b53';
 let appOutdated=false;
 // Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
 let _verTag=null, _verLast=0;
@@ -4652,6 +4669,7 @@ function applyShowWhen(root){
 }
 function regFieldHtml0(f, v, attr){
   attr=attr||'data-rf';
+  if(f.type==='liftcalc') return `<div class="span-all" data-lift-calc="${esc(f.calc||'all')}"></div>`;
   if(f.type==='crewcheck') return `<div class="span-all" data-crew-check="${esc(f.crewKey||'rigUpCrew')}" data-attr="${attr}"></div>`;
   if(f.type==='kmline') return `<div class="span-all wsub sj-km" data-km-for="${esc(f.key.replace(/KmNote$/,''))}"></div>`;
   const req=f.required?' *':'', cls=f.wide?' class="span-all"':'';
@@ -4800,6 +4818,7 @@ function renderRegDrawer(){
   else b.innerHTML=regFormTabHtml(cfg, r, t);
   if(t.key==='history') loadRegHistory(cfg.collection, r.id);
   applyShowWhen(b); if(activeReg==='scaff'){ updateScaffKm(b); updateCrewCheck(b); }
+  if(activeReg==='lift') updateLiftCalc(b);
 }
 function regFormTabHtml(cfg, r, t){
   const head = t.key==='main' ? `${cfg.badgesOf?`<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">${cfg.badgesOf(r)}</div>`:''}${updatedNoteHtml(r)}` : '';
@@ -7019,6 +7038,714 @@ REG.scaff.customSubmit={
     if(await regUpdate('scaff', r.id, upd, true)) toast(`Rig-down saved — stood ${Math.max(0, daysBetween(r.rigUpDate||date, date))} days`);
   },
 };
+
+
+/* =====================================================================
+   Batch 53: LIFT PLANS — SP-2273 "Lift Planning and Execution" (PDO, Version 4, Feb 2024)
+   Plan · Calculate · Approve. Follows the Appendix 1 (mobile crane) and Appendix 3 (forklift / tele-handler) forms.
+   Rules used (all from SP-2273):
+     Table 1  — Category 1 Routine (load < 50 % of crane capacity, everything known, single crane, day, simple rigging, normal weather)
+                Category 2 Simple (50–85 %, or any "abnormal" condition) · Category 3 Complex (> 85 %, people, two cranes, power line, live plant …)
+     9.3.3    — ground bearing pressure must stay below the ground bearing capacity; 10 t/m² maximum when nothing is known about the soil
+     9.3.4    — safe distance from slopes: D ≥ 4B  or  D + d ≥ 2H
+     12.1     — minimum approach to live lines 3.0 m (33 kV and below, 66 kV) / 3.5 m (132 kV)
+     12.6.3   — maximum wind: the maker's figure, or 12.8 m/s when there is none
+   Sling load by angle (T = load ÷ (legs carrying × sin angle)) is standard rigging engineering, not an SP-2273 table.
+   ===================================================================== */
+const LIFT_TYPES=['Mobile crane','Two cranes (dual lift)','Forklift / tele-handler','Truck-mounted crane (HIAB)'];
+const LIFT_DUAL='Two cranes (dual lift)', LIFT_FORK='Forklift / tele-handler';
+const LIFT_STATUSES=['Draft','Submitted for approval','Approved','Lift done','Cancelled'];
+const LIFT_LOAD_TYPES=['Equipment / skid','Pipe / spool','Vessel / tank','Steel / structure','Container / cabin','Pallet / bagged material','Scaffold material','Concrete / precast','Other'];
+const LIFT_LIMITS={routineBelow:50, complexAbove:85, wind:12.8, soilDefault:10, tipping:100};
+const LIFT_LINES=['No overhead line near the lift','33 kV and below','66 kV','132 kV (portal line)','132 kV (steel tower line)'];
+const LIFT_MSAD={'33 kV and below':3.0,'66 kV':3.0,'132 kV (portal line)':3.5,'132 kV (steel tower line)':3.5};
+const LIFT_HITCH=['Vertical / bridle (legs to the hook)','Basket','Choker'];
+const LIFT_COMMS=['Radio','Verbal','Hand signals'];
+// conditions that move a lift out of Category 1 (Table 1)
+const LIFT_COND=[
+  {t:'Night operation', cat:2, why:'Night operation (all night lifts are non-routine — SP-2273 12.3)'},
+  {t:'Abnormal operating condition', cat:2, why:'Abnormal operating condition'},
+  {t:'Abnormal weather / environment', cat:2, why:'Abnormal environment / weather'},
+  {t:'Uneven weight distribution / centre of gravity may shift', cat:2, why:'Uneven weight distribution / CoG may shift'},
+  {t:'Load of unusual shape or excessive dimensions', cat:2, why:'Unusual shape or excessive dimensions'},
+  {t:'Complex rigging method', cat:2, why:'Complex rigging method'},
+  {t:'Lifting or lowering people', cat:3, why:'Lifting or lowering people'},
+  {t:'Restricted area / confined space / blind lift', cat:3, why:'Restricted area, confined space or blind lift'},
+  {t:'Over or close to live plant', cat:3, why:'Lifting over or close to live plant'},
+  {t:'Load transferred from one lifting appliance to another', cat:3, why:'Load transferred from one lifting appliance to another'},
+  {t:'Load to be tilted or rotated', cat:3, why:'Load to be tilted or rotated'},
+  {t:'Subsea lift', cat:3, why:'Subsea lift'},
+];
+const LIFT_CAT_INFO={
+  1:{name:'Category 1 — Routine', risk:'Low', approver:'Contractor (qualified appointed person)', cls:'ok', docs:['Generic lift plan','PTW','Generic risk assessment','Tool box talk','Valid inspection certificates','Valid competency cards']},
+  2:{name:'Category 2 — Simple (non-routine)', risk:'Medium', approver:'Company (PDO)', cls:'warn', docs:['Specific lift plan','Specific risk assessment','GBC calculation','Tool box talk','Company approval','Valid inspection certificates','Valid competency cards']},
+  3:{name:'Category 3 — Complex (non-routine)', risk:'High', approver:'Company (PDO)', cls:'danger', docs:['Specific lift plan','Specific risk assessment','Method statement','Step-by-step instruction','GBC calculation','Tool box talk','Company approval','Valid inspection certificates','Valid competency cards']},
+};
+const LIFT_CHECKLIST=[
+  '1.1 Responsibilities of lifting personnel are clearly defined','1.2a Personnel names and permit numbers are included','1.2b Equipment identification / register numbers and model numbers are indicated',
+  '1.3 HSE controls and safety are included','1.4 Sequence of lifting operation (step-by-step procedure) is covered','1.5 The 10 questions for a safe lift are included',
+  '1.6 Lift plan meets the requirements of SP-2273','1.7 Method statement meets the requirements of SP-2275 and SP-2273','1.8 The crane is from the PDO approved list',
+  '1.9 NDT report is available for all welded lifting pad eyes / lugs','2. Lift plan sketch (AutoCAD preferred) with clear rigging details','3. Rigging calculation table is filled correctly',
+  '4. The correct crane load chart is attached','5.1 Crane valid certificates with RAS report','5.2 Lifting accessories — valid PDO-approved third-party certificates',
+  '5.3 Qualified slinger, signaller, lifting supervisor and operator permits','5.4 HEMP (Health & Effects Management Process)','5.5 TRA (Task Risk Assessment) specific for non-routine lift',
+  '5.6 Agreed communication (hand / radio signals) details','5.7 Contingency / emergency rescue plan (for critical lift)','5.8 Man riding / night lifting as per SP-2273 (if applicable)','5.9 Ground bearing capacity (for critical lift)',
+];
+const LIFT_QUESTIONS=[
+  'Is everyone aware of and do they fully understand the lifting procedures?',
+  'Has everyone attended the toolbox talk?',
+  'Has a pre-use inspection of the lifting equipment been carried out and are the lifting accessories tagged or marked with: Safe Working Load · a unique identification number · a valid certification date?',
+  'Are all safety devices working?',
+  'Does everyone know the lifting supervisor of the lift?',
+  'Is everyone competent and aware of his or her tasks?',
+  'Is there a current lift plan and risk assessment and does everybody understand the job and precautions?',
+  'Is everyone aware about environmental limits (e.g. maximum permissible wind speed) for the lift?',
+  'Is the lift area controlled and is the lifting path clear?',
+  'Are signalling methods and communication agreed and understood?',
+];
+const LIFT_ROLES=['Appointed person','Lifting supervisor (PIC)','Crane / appliance operator','Signaller / banksman','Slinger / rigger','Other'];
+
+/* ---- numbers ---- */
+function liftN(v){ if(v===''||v===null||v===undefined) return null; const n=Number(v); return Number.isFinite(n)?n:null; }
+function liftF(n, dp){ if(n===null||n===undefined||!Number.isFinite(n)) return '—'; const d=dp===undefined?2:dp, k=Math.pow(10,d); return String(Math.round(n*k)/k); }
+function liftRiggingKg(r, crane){ return (r.rigging||[]).filter(x=>(x.crane||'Crane 1')===crane).reduce((s,x)=>s+(liftN(x.qty)||1)*(liftN(x.weight)||0),0); }
+function liftPlanDay(r){ return r.liftDate||r.planDate||localToday(); }
+function liftCatOf(u){ return u===null?null:(u<LIFT_LIMITS.routineBelow?1:u<=LIFT_LIMITS.complexAbove?2:3); }
+
+/* ---- one crane: utilisation, ground bearing pressure, sling angle ---- */
+function liftCraneCalc(r, i){
+  const p='c'+i, dual=r.liftType===LIFT_DUAL, W=liftN(r.loadWeight);
+  const s1=liftN(r.loadShare1)===null?50:liftN(r.loadShare1), share=dual?(i===1?s1:100-s1):100;
+  const load=W===null?null:W*share/100, rig=liftRiggingKg(r,'Crane '+i)/1000, hook=liftN(r[p+'Hook'])||0, cap=liftN(r[p+'Cap']), swl=liftN(r[p+'Swl']);
+  const net=r.chartBasis==='Net chart';
+  const hookLoad=load===null?null:load+rig+(net?0:hook);
+  const util=(hookLoad!==null && cap)?hookLoad/cap*100:null;
+  const crane=liftN(r[p+'Gross']), gross=(load===null||crane===null)?null:crane+hook+rig+load;
+  const L=liftN(r[p+'MatL']), Wd=liftN(r[p+'MatW']), area=(L&&Wd)?L*Wd:null, react=liftN(r[p+'OutLoad']);
+  const outLoad=react!==null?react:gross, soil=liftN(r.soilGbc), limit=soil||LIFT_LIMITS.soilDefault;
+  const gbp=(area&&outLoad)?outLoad/area:null;
+  const legs=liftN(r[p+'Legs']), carryIn=liftN(r[p+'Carry']), ang=liftN(r[p+'Angle']), wll=liftN(r[p+'Wll']);
+  const carry=carryIn||(legs>=4?3:legs), hf=r[p+'Hitch']==='Choker'?0.8:1;
+  let tension=null, slingUtil=null, factor=null;
+  if(load!==null && legs && carry && wll){ const th=legs===1?90:ang; if(th && th>0 && th<=90){ factor=1/Math.sin(th*Math.PI/180); tension=load/carry*factor; slingUtil=tension/(wll*hf)*100; } }
+  return {i, load, share, rig, hook, cap, swl, hookLoad, util, net, crane, gross, area, react, outLoad, soil, limit, gbp, legs, carry, ang:legs===1?90:ang, wll, hf, tension, slingUtil, factor, certs:r[p+'Cert']||''};
+}
+function liftForkCalc(r){
+  const load=liftN(r.loadWeight), att=liftN(r.fkAttachWt)||0, netCap=liftN(r.fkNetCap), total=load===null?null:load+att;
+  return {load, att, total, netCap, util:(total!==null&&netCap)?total/netCap*100:null, boom:liftN(r.fkBoom), outreach:liftN(r.fkOutreach), cap:liftN(r.fkCap)};
+}
+
+/* ---- everything: category, approver and every pass / check / fail ---- */
+function liftCompute(r){
+  r=r||{}; const rows=[], why=[], fork=r.liftType===LIFT_FORK, dual=r.liftType===LIFT_DUAL, day=liftPlanDay(r);
+  const add=(part, crane, st, k, v, n)=>rows.push({part, crane, st, k, v, n:n||''});
+  const cr=fork?[]:(dual?[liftCraneCalc(r,1), liftCraneCalc(r,2)]:[liftCraneCalc(r,1)]), fk=fork?liftForkCalc(r):null;
+  let cat=1; const bump=(c,t)=>{ if(c>cat) cat=c; if(c>1) why.push(t); };
+  // --- load & category
+  const W=liftN(r.loadWeight); const missing=[];
+  if(W===null) missing.push('load weight');
+  const utils=[];
+  if(fork){ if(fk.util===null) missing.push('tele-handler / forklift net capacity at the outreach'); else utils.push(fk.util); }
+  else cr.forEach(c=>{ if(c.util===null && c.cap===null) missing.push(`crane ${c.i} chart capacity at the working radius`); else if(c.util!==null) utils.push(c.util); });
+  const umax=utils.length?Math.max(...utils):null;
+  if(umax!==null){ const c=liftCatOf(umax); if(c===2) bump(2, `Uses ${liftF(umax,1)} % of the rated capacity (50–85 %)`); if(c===3) bump(3, `Uses ${liftF(umax,1)} % of the rated capacity (over 85 %)`); }
+  if(dual) bump(3,'More than one lifting appliance at the same time');
+  if(r.weightBasis==='Estimated') bump(2,'Weight of the load is estimated, not known');
+  if(r.cogKnown==='Unknown') bump(3,'Centre of gravity is unknown');
+  if(r.pointsKnown==='Unknown') bump(2,'Lifting points are unknown');
+  for(const c of LIFT_COND) if((r.conds||[]).includes(c.t)) bump(c.cat, c.why);
+  if(r.lineVoltage && r.lineVoltage!==LIFT_LINES[0]) bump(3,'Near an overhead power line');
+  const info=LIFT_CAT_INFO[cat];
+  add('cat',0,cat===1?'ok':'warn','Lift category', info.name, `Risk ${info.risk} · approved by ${info.approver}`);
+  if(why.length) add('cat',0,'info','Why not Category 1', why.length+' reason'+(why.length===1?'':'s'), why.join(' · '));
+  if(missing.length) add('cat',0,'warn','Not complete yet','Enter '+missing[0]+(missing.length>1?' (+'+(missing.length-1)+' more)':''), 'The category and utilisation are provisional until these are filled in.');
+  // --- crane(s)
+  cr.forEach(c=>{
+    const t=c.i, own=dual?`Crane ${t} — `:'';
+    if(c.util!==null){
+      const st=c.util>=LIFT_LIMITS.tipping?'fail':c.util>LIFT_LIMITS.complexAbove?'warn':'ok';
+      add('util',t,st,own+'Crane utilization', liftF(c.util,1)+' %', `Load on hook ${liftF(c.hookLoad)} t (load ${liftF(c.load)} + rigging ${liftF(c.rig,3)}${c.net?'':' + hook block '+liftF(c.hook)}) ÷ chart capacity ${liftF(c.cap)} t at the working radius${c.util>=LIFT_LIMITS.tipping?' — OVERLOADED, the lift must not go ahead':c.util>LIFT_LIMITS.complexAbove?' — over 85 % is a Category 3 (Complex) lift':''}`);
+    } else add('util',t,'info',own+'Crane utilization','—','Enter the load weight and the capacity from the crane load chart at the working radius.');
+    if(c.cap && c.swl && c.cap>c.swl) add('util',t,'warn',own+'Chart capacity above rated capacity', `${liftF(c.cap)} t > ${liftF(c.swl)} t`, 'Capacity at the working radius cannot be more than the crane rated capacity — check the load chart reading.');
+    if(c.tension!==null){
+      const st=c.slingUtil>100||c.ang<30?'fail':(c.ang<45||c.slingUtil>80)?'warn':'ok';
+      add('sling',t,st,own+'Sling load by angle', `${liftF(c.tension)} t per leg`, `${c.legs} leg${c.legs===1?'':'s'}, ${c.carry} carrying · angle ${liftF(c.ang,0)}° (factor ${liftF(c.factor,2)}) · WLL ${liftF(c.wll)} t${c.hf<1?' × 0.8 choker':''} = ${liftF(c.slingUtil,0)} % used${c.slingUtil>100?' — SLING OVERLOADED':c.ang<30?' — angle under 30° is not acceptable':c.ang<45?' — angle under 45°: keep slings steeper if you can':''}`);
+    } else if(c.load!==null && !c.legs) add('sling',t,'info',own+'Sling load by angle','—','Enter the number of sling legs, the angle and the sling WLL to check the rigging.');
+    else if(c.legs>1 && !c.ang) add('sling',t,'info',own+'Sling load by angle','—','Enter the sling angle (from horizontal) and WLL.');
+    else if(c.load!==null && c.legs && !c.wll) add('sling',t,'info',own+'Sling load by angle','—','Enter the sling WLL (single leg, straight pull).');
+    if(c.gbp!==null){
+      const st=c.gbp>=c.limit?'fail':c.gbp>c.limit*0.8?'warn':'ok';
+      add('ground',t,st,own+'Ground bearing pressure', `${liftF(c.gbp)} t/m² (${liftF(c.gbp*9.80665,0)} kPa)`, `${liftF(c.outLoad)} t on one mat of ${liftF(c.area)} m²${c.react!==null?' (maker\'s outrigger load)':' (whole gross weight on one mat — the Appendix 1 method; enter the maker\'s outrigger load for a closer figure)'} · limit ${liftF(c.limit)} t/m² (${c.soil?'site value':'SP-2273 default — no soil data'})${c.gbp>=c.limit?' — GROUND TOO WEAK: use bigger mats':''}`);
+    } else if(c.area===null && (c.crane!==null || c.react!==null)) add('ground',t,cat>=2?'warn':'info',own+'Ground bearing pressure','—','Enter the outrigger mat size.'+(cat>=2?' A ground bearing calculation is required for Category 2 and 3 lifts.':''));
+    else if(c.area && c.outLoad===null) add('ground',t,'info',own+'Ground bearing pressure','—','Enter the crane gross weight (or the maker\'s outrigger load).');
+    if(c.certs){ if(c.certs<day) add('certs',t,'fail',own+'Crane certificate','Expired '+c.certs,'The thorough examination certificate is not valid on the lift date (SP-2275).'); else add('certs',t,'ok',own+'Crane certificate','Valid until '+c.certs,''); }
+    else add('certs',t,'warn',own+'Crane certificate','Not recorded','Record the third-party certificate valid-until date (SP-2275).');
+  });
+  if(fk){
+    if(fk.util!==null){ const st=fk.util>=100?'fail':fk.util>LIFT_LIMITS.complexAbove?'warn':'ok'; add('util',1,st,'% of chart capacity used', liftF(fk.util,1)+' %', `Load + attachments ${liftF(fk.total)} t ÷ net capacity ${liftF(fk.netCap)} t at the outreach${fk.util>=100?' — OVERLOADED':''}`); }
+    else add('util',1,'info','% of chart capacity used','—','Enter the load weight and the net capacity from the load chart at the outreach.');
+    if(r.fkAttach==='Yes' && r.fkAttachCert!=='Yes') add('util',1,'fail','Attachments certified','No','Attachments used for lifting must have a valid third-party certificate (SP-2273 13.1).');
+    if(r.fkCert){ if(r.fkCert<day) add('certs',1,'fail','Equipment certificate','Expired '+r.fkCert,''); else add('certs',1,'ok','Equipment certificate','Valid until '+r.fkCert,''); } else add('certs',1,'warn','Equipment certificate','Not recorded','');
+  }
+  // --- rigging accessories certificates
+  const rigBad=(r.rigging||[]).filter(x=>x.cert && x.cert<day), rigNone=(r.rigging||[]).filter(x=>!x.cert);
+  if((r.rigging||[]).length){
+    if(rigBad.length) add('certs',0,'fail','Lifting accessories certificates', rigBad.length+' expired', rigBad.map(x=>x.description||x.tagNo||'item').join(', ')+' — certificate not valid on the lift date.');
+    else if(rigNone.length) add('certs',0,'warn','Lifting accessories certificates', rigNone.length+' without a date', 'Record the certificate date for every sling, shackle and spreader.');
+    else add('certs',0,'ok','Lifting accessories certificates','All valid','');
+  } else if(!fork) add('certs',0,'warn','Lifting accessories','None listed','List every sling, shackle and beam with SWL, ID and certificate date (Appendix 1, section 2).');
+  // --- site & environment
+  const wind=liftN(r.windMax), oem=liftN(r.windOem), wlim=oem||LIFT_LIMITS.wind;
+  if(wind!==null) add('site',0,wind>wlim?'fail':wind>wlim*0.8?'warn':'ok','Wind speed', `${liftF(wind,1)} m/s (${liftF(wind*3.6,0)} km/h)`, `Limit ${liftF(wlim,1)} m/s (${oem?'maker\'s figure':'SP-2273 maximum when the maker gives none'})${wind>wlim?' — EXCEEDED: stop the lift':wind>wlim*0.8?' — close to the limit: keep measuring':''}`);
+  else add('site',0,'info','Wind speed','—','Enter the expected / measured maximum wind. Limit is '+liftF(wlim,1)+' m/s. Wind must be measured during the lift.');
+  const H=liftN(r.slopeH), D=liftN(r.slopeD), d=liftN(r.slopeRun), B=(()=>{ const a=liftN(r.c1MatL), b=liftN(r.c1MatW); return a&&b?Math.min(a,b):(a||b||null); })();
+  if(H){ if(D!==null && B){ const okA=D>=4*B, okB=D+(d||0)>=2*H; add('site',0,(okA||okB)?'ok':'fail','Distance from slope / excavation', `D = ${liftF(D,1)} m`, `H ${liftF(H,1)} m, mat width B ${liftF(B,1)} m, run d ${liftF(d||0,1)} m · needs D ≥ 4B (${liftF(4*B,1)} m) or D + d ≥ 2H (${liftF(2*H,1)} m)${(okA||okB)?'':' — TOO CLOSE: move the crane back or take expert advice (SP-2273 9.3.4)'}`); } else add('site',0,'info','Distance from slope / excavation','—','Enter the distance D from the mat edge and the mat size.'); }
+  if(r.lineVoltage && r.lineVoltage!==LIFT_LINES[0]){
+    const need=LIFT_MSAD[r.lineVoltage], dist=liftN(r.lineDist);
+    if(dist!==null) add('site',0,dist>=need?'ok':'fail','Overhead power line', `${liftF(dist,1)} m`, `${r.lineVoltage}: minimum safe approach ${liftF(need,1)} m${dist>=need?'':' — TOO CLOSE'} · within 15 m of a live line, safety barriers at least 6 m from the line (SP-2273 12.1) · refer to SP-1242`);
+    else add('site',0,'warn','Overhead power line','—',`${r.lineVoltage}: keep ${liftF(need,1)} m or more from every conductor — enter the closest distance.`);
+  }
+  if((r.conds||[]).includes('Over or close to live plant')) add('site',0,'warn','Live plant','Contingency plan needed','Lifting over live plant: all risks documented and ALARP, a contingency plan for loss of containment / fire, and defined exclusion zones (SP-2273 12.4).');
+  if((r.conds||[]).includes('Night operation')) add('site',0,'warn','Night operation','Lifting engineer approval','Adequate lighting, lit escape route, emergency lighting, clear assembly point and agreed signalling (SP-2273 12.3).');
+  if((r.conds||[]).includes('Lifting or lowering people')) add('site',0,'warn','Lifting people','MEWP / basket rules apply','Only equipment designed for lifting people (MEWP, EN 280), full visibility between operator, signaller and person lifted (SP-2273 11).');
+  // --- people & documents
+  const crew=r.crew||[], roles=LIFT_ROLES.slice(0,5).filter(x=>!crew.some(c=>c.role===x));
+  const badCards=crew.filter(c=>c.validUntil && c.validUntil<day);
+  if(!crew.length) add('docs',0,'warn','Lifting crew','None listed','Name the appointed person, lifting supervisor, operator, signaller and slinger with their card numbers.');
+  else { if(badCards.length) add('docs',0,'fail','Competence cards', badCards.length+' expired', badCards.map(c=>c.name).join(', ')+' — card not valid on the lift date.'); else if(roles.length) add('docs',0,'warn','Lifting crew roles','Missing '+roles.length, 'Not listed: '+roles.join(', ')+(roles.length&&roles.includes('Signaller / banksman')?' (the lifting supervisor may also be the signaller / banksman on a routine lift)':'')); else add('docs',0,'ok','Lifting crew','All roles listed',''); }
+  add('docs',0,(r.hemp||[]).length?'ok':'warn','Risk assessment (HEMP)', (r.hemp||[]).length+' hazard'+((r.hemp||[]).length===1?'':'s'), cat>=2?'A specific risk assessment is needed for Category 2 and 3.':'');
+  add('docs',0,String(r.steps||'').trim()?'ok':(cat>=2?'warn':'info'),'Steps of the lifting operation', String(r.steps||'').trim()?'Written':'Not written', cat===3?'Method statement with step-by-step instruction is required for Category 3.':'');
+  const sk=(r.sketches||[]).length; add('docs',0,sk?'ok':(cat>=2?'warn':'info'),'Sketch & rigging arrangement', sk?sk+' file'+(sk===1?'':'s'):'None attached', sk?'':'Attach the sketch (AutoCAD preferred) under Files.');
+  const an=LIFT_QUESTIONS.map((q,n)=>r['q'+(n+1)]||''), noQ=an.filter(x=>x==='No').length, yesQ=an.filter(x=>x==='Yes').length;
+  if(noQ) add('docs',0,'fail','10 questions for a safe lift', noQ+' answered No','Do not start the lift until every answer is Yes.'); else add('docs',0,yesQ===10?'ok':'info','10 questions for a safe lift', yesQ===10?'All Yes':yesQ+' of 10 answered','Answered by the lifting supervisor at the pre-start meeting.');
+  const fails=rows.filter(x=>x.st==='fail').length, warns=rows.filter(x=>x.st==='warn').length;
+  return {cat, info, why, rows, fails, warns, umax, utils, cr, fk, missing, dual, fork, verdict:fails?'fail':warns?'warn':'ok'};
+}
+
+/* ---- default risk assessment rows: SP-2273 Appendix 2 (mobile crane) and Appendix 4 (forklift / tele-handler) ---- */
+const LIFT_RECOVERY='Emergency escape route\nFirst aid\nEmergency response';
+const LIFT_HEMP_CRANE=[
+  ['Defective lifting equipment','Injury to personnel\nDamage to equipment','4','C','Medium',['Ensure lifting equipment (appliances and accessories) has valid certification','Ensure that lifting accessories are correctly colour coded','Inspect equipment prior to use','Ensure equipment is regularly maintained',"Follow manufacturer's instructions"]],
+  ['Incorrect use of lifting equipment','Injury to personnel\nDamage to equipment','4','C','Medium',['Slingers, signaller, lifting supervisor, crane operator etc. shall be competent and qualified']],
+  ['Abrupt movements','Injury to personnel\nDamage to equipment','4','B','Medium',['Load to be lifted / lowered carefully','Watch out for objects in the way of the load','Operator to follow the signals of the signaller']],
+  ['Unstable, uneven ground','Injury to personnel\nDamage to equipment','4','C','Medium',['Position crane on stable and even ground','Ensure the outriggers are set correctly','Use mats under the outriggers to distribute ground pressure','Keep enough distance from the edge of trenches','Ensure slingers, signaller, lifting supervisor, crane operator are qualified']],
+  ['Improper handling of load','Injury to personnel\nDamage to equipment','3','C','Medium',['Check suitability of crane position in relation to radius, boom length and load chart','Make sure load down area is safe','In case of loading a vehicle ensure its position is suitable','Ensure correct and certified rigging is used','Use tag lines to avoid swinging of the load','Lift the load carefully 10–20 cm before proceeding','Ensure slingers, signaller, lifting supervisor, crane operator are qualified / certified','Ensure crane operator will follow signals of signaller','Direct supervision']],
+  ['Suspended load','Injury to personnel / fatality\nDamage to equipment','4','C','Medium',['Personnel never to be allowed under suspended load or within swinging radius','No tools, food or drinks to be allowed near moving crane parts','Use tag lines to avoid swinging of the load','Cordon off area','Restrict area to and limit number of authorized persons','Crane operator shall not leave controls unattended','Never leave load unattended','Direct supervision']],
+  ['Overloading crane','Injury to personnel / fatality\nDamage to equipment','4','C','Medium',['Ensure correct capacity crane is selected','Ensure load computer is working correctly','Ensure load charts and boom angle indicator are available','SWL, inspection and next due date are displayed prominently on the boom','Load only to be lifted vertically','Load not to be dragged','Crane not to be operated on a slope','Do not lift loads with unknown weight and centre of gravity','Use correct and certified rigging (correct colour coding)','Do not override (load) safety devices','Inspect equipment prior to use','Strictly adhere to lift plan','Direct supervision']],
+  ['Inadequate workspace / congested area','Injury to personnel / fatality\nDamage to equipment','4','C','Medium',['Plan the work to avoid congestion and conflicting tasks in that area','Ensure adequate space is available to work and manoeuvre crane and vehicle','Parking not to be allowed in the area','Provide proper storage area','Maintain good housekeeping','Use only qualified / certified slingers, signaller, lifting supervisor, crane operator','Direct supervision']],
+  ['Insufficient communication','Injury to personnel / fatality\nDamage to equipment','4','C','Medium',['Use only qualified / certified slingers, signaller, lifting supervisor, crane operator','Ensure it is clear who is the lifting supervisor','Ensure signaller is easily recognized by wearing a coloured vest','Ensure signaller signals are understood and followed','Restrict area to and limit number of authorized persons']],
+  ['Bad weather','Injury to personnel\nDamage to equipment','3','C','Medium',['Follow strictly crane manufacturer\'s requirements for wind speed','Stop work']],
+];
+const LIFT_HEMP_FORK=[
+  ['Fire','Injury to personnel\nDamage to equipment',['Portable firefighting equipment and signs','Fire doors to avoid fire propagation','Signs and instruction on fire action to be taken','Fire alarm','Smoking only in designated areas']],
+  ['Electrical systems / equipment','Injury to personnel\nDamage to equipment',['Electrical installations and devices are maintained and in good condition','Correct selection and use of equipment','Portable Appliance Testing','Training, supervision and instruction provided to all those required to complete battery care and maintenance','Trainees always under close supervision']],
+  ['Chemicals','Injury to personnel\nDamage to equipment',['PPE available and used by all those required to complete battery care and maintenance — inspected regularly for wear','PPE available for diesel re-fuelling activities or gas bottle exchange etc.','Training, supervision and instruction provided to all those required to complete battery care and maintenance and diesel and gas re-fuelling where appropriate','Trainees always under close supervision']],
+  ['Manual handling','Injury to personnel\nDamage to equipment',['Good housekeeping','Safe proper storage','PPE available e.g. gloves for moving of pallets']],
+  ['Fall hazards','Injury to personnel\nDamage to equipment',['Firm, level ground and non-slippery surfaces','No leads, cables or goods left in pedestrian routes etc.','No climbing on equipment / loads / vehicles or unauthorised working at height','All equipment parked in designated areas','Round and unsymmetrical objects']],
+  ['Falling objects','Injury to personnel\nDamage to equipment',['All pallets / loads are checked periodically for security and positioning','Load storage and racking systems are checked periodically for integrity and any signs of damage','All lifting accessories are checked in accordance with local regulations and the lifting plan','Broken or unusable stock is removed and destroyed','Full supervision (Person in Charge) provided during lifts etc.','Pipes and round objects secured properly']],
+  ['Vehicle loading','Injury to personnel\nDamage to equipment',['Loads are inspected for movement during transport before restraints are removed','Road vehicle is securely parked, and driver is aware of the operation','The area is controlled','Pedestrians are kept clear']],
+  ['Dust or fumes','Injury to personnel\nDamage to equipment',['Adequate ventilation','Adequate PPE']],
+  ['Lift trucks','Injury to personnel\nDamage to equipment',['Operators are suitably trained and appropriately experienced','No equipment is used until a pre-use inspection is conducted','Key control measures are in place and adhered to','Operational areas are restricted access','Trucks are serviced annually and thoroughly examined in accordance with local regulations','Anyone in the operating area must always be authorised and wear hi-viz vests','No pedestrians allowed near fork truck activity','All lifts to follow the lifting plan']],
+];
+function liftDefaultHemp(type){
+  const id=n=>'h'+Date.now().toString(36)+n+Math.random().toString(36).slice(2,5);
+  const crane=LIFT_HEMP_CRANE.map((x,n)=>({id:id('c'+n), hazard:x[0], effects:x[1], sev:x[2], lik:x[3], risk:x[4], controls:x[5].join('\n'), residual:'Low', recovery:LIFT_RECOVERY, actionBy:''}));
+  if(type!==LIFT_FORK) return crane;
+  const fork=LIFT_HEMP_FORK.map((x,n)=>({id:id('f'+n), hazard:x[0], effects:x[1], sev:'', lik:'', risk:'', controls:x[2].join('\n'), residual:'', recovery:'', actionBy:''}));
+  const keep=['Defective lifting equipment','Incorrect use of lifting equipment','Abrupt movements','Unstable, uneven ground','Improper handling of load','Suspended load','Inadequate workspace / congested area'];
+  return fork.concat(crane.filter(x=>keep.includes(x.hazard)).map(x=>({...x, sev:'', lik:'', risk:'', residual:'', recovery:''})));
+}
+function liftDefaultSteps(type){
+  if(type===LIFT_FORK) return [
+    '1. Operator carries out and records the pre-use inspection of the forklift / tele-handler (SWL, ID number and inspection date marked; safety devices working).',
+    '2. Lifting supervisor (PIC) checks the lift plan, load weight and the load chart for the outreach; confirms the load plus attachments is within the net capacity.',
+    '3. Toolbox talk: everyone reviews this method statement, the risk assessment and the 10 questions for a safe lift, and signs attendance.',
+    '4. Barricade the working area. Only the operator, slinger and signaller inside; pedestrians kept clear, hi-viz worn.',
+    '5. Check the ground is firm, level and clear of cables and obstructions. Load is placed securely on the forks or on a certified attachment.',
+    '6. Lift the load a little, check stability. Travel with the load low and at walking speed (below 5 km/h); no movement with the load raised.',
+    '7. Place the load on its supports, lower the forks, check the load is stable and free before the slinger approaches.',
+    '8. Park the machine in the designated area, lower the forks, switch off. Remove barricades and tidy the area. Report any incident or near miss.',
+  ].join('\n');
+  return [
+    '1. Lifting supervisor (PIC) checks the lift plan, permit to work and the wind / weather; defines the exclusion zone.',
+    '2. Toolbox talk: everyone reviews this lift plan, the risk assessment and the 10 questions for a safe lift, and signs attendance.',
+    '3. Barricade the lift area: lift-off point, laydown point, travel path and the crane tail-swing radius. Keep non-essential persons out.',
+    '4. Position the crane on firm, level ground. Extend all outriggers fully and equally, with mats under every pad. Check the crane is level.',
+    '5. Operator carries out the pre-use inspection and tests the safety devices (load indicator / limiter, limit switches). Load chart available in the cab.',
+    '6. Slinger inspects the slings and shackles (colour code, SWL, ID number, certificate date) and rigs the load as shown in the rigging arrangement. Tag line attached to the load only.',
+    '7. Signaller confirms communication (radio / hand signals) and that everyone is clear. Trial lift of 10–20 cm: hold, check stability, rigging and brakes.',
+    '8. Lift, slew and lower slowly, taking signals from the signaller only. Nobody under or within the swing of the suspended load. Operator never leaves the controls with a load suspended.',
+    '9. Land the load on prepared supports. Slinger disconnects only when the load is stable and free. Hook block secured.',
+    '10. Stow the boom, retract the outriggers, remove barricades and tidy the area. Report any incident or near miss.',
+  ].join('\n');
+}
+
+/* ---- form fields ---- */
+function liftCraneGroups(i){
+  const p='c'+i, T=i===1?'Crane':'Crane 2';
+  return [
+    {title:`${T} & load chart`, fields:[
+      {key:p+'Name', label:'Make & model', placeholder:'e.g. 50 t all-terrain mobile crane'},
+      {key:p+'Id', label:'Register / ID no.'},
+      {key:p+'Cert', label:'Third-party certificate valid until', type:'date'},
+      {key:p+'Swl', label:'Rated (maximum) capacity, t', type:'number', min:0},
+      {key:p+'Gross', label:'Gross weight of crane, t', type:'number', min:0},
+      {key:p+'Hook', label:'Hook block weight, t', type:'number', min:0},
+      {key:p+'Boom', label:'Required boom length, m', type:'number', min:0},
+      {key:p+'Radius', label:'Maximum working radius, m', type:'number', min:0},
+      {key:p+'Cap', label:'Capacity at that radius — from the load chart, t', type:'number', min:0},
+      ...(i===1?[{key:'chartBasis', label:'Load chart value is (Gross: hook block is added to the load · Net: hook block already taken off)', type:'select', options:['Gross chart','Net chart'], default:'Gross chart', wide:true}]:[]),
+    ]},
+    {title:'Slings — load by angle', fields:[
+      {key:p+'Legs', label:'Sling legs', type:'select', options:['1','2','3','4']},
+      {key:p+'Carry', label:'Legs carrying the load (blank = all; 4 legs = 3)', type:'number', min:1, max:4},
+      {key:p+'Angle', label:'Sling angle from horizontal, °', type:'number', min:1, max:90},
+      {key:p+'Wll', label:'Sling WLL per leg (straight pull), t', type:'number', min:0},
+      {key:p+'Hitch', label:'Hitch', type:'select', options:LIFT_HITCH},
+    ]},
+    {title:'Outriggers & mats — ground bearing pressure', fields:[
+      {key:p+'MatL', label:'Mat length, m', type:'number', min:0},
+      {key:p+'MatW', label:'Mat width, m', type:'number', min:0},
+      {key:p+'MatType', label:'Mat type', placeholder:'e.g. steel / timber spreader mat'},
+      {key:p+'OutLoad', label:'Maximum outrigger load from the crane maker, t (optional)', type:'number', min:0},
+      {key:'_lc_c'+i, label:'', type:'liftcalc', calc:'crane'+i},
+    ]},
+  ];
+}
+function liftRiskBadge(v){ return v?`<span class="badge ${v==='High'?'danger':v==='Medium'?'warn':'ok'}">${esc(v)}</span>`:''; }
+function liftCatBadge(r){ const c=liftCompute(r); return `<span class="badge ${c.info.cls}">Cat ${c.cat} · ${esc(c.info.name.split('— ')[1]||'')}</span>`; }
+function liftStatusBadge(r){ const s=r.status||'Draft'; return `<span class="badge ${s==='Approved'||s==='Lift done'?'ok':s==='Cancelled'?'muted':'warn'}">${esc(s)}</span>`; }
+
+regDefine({
+  key:'lift', collection:'liftPlans', singular:'Lift plan', title:'Lift Plans', tagline:'PDO SP-2273 · Plan · Calculate · Approve',
+  addLabel:'+ New lift plan', addTitle:'New lift plan', noField:'planNo', noPrefix:'LP', noYear:true, dateField:'planDate', yearFilter:true,
+  statuses:LIFT_STATUSES, statusOf:r=>r.status||'Draft',
+  headerButtons:'<button class="btn btn-sm reg-edit-only" type="button" id="liftSampleBtn" title="Create a lift plan filled with example numbers, to see how it works">'+ic('crane')+' Sample plan</button>',
+  searchPlaceholder:'Search plan no., activity, location, load, crane…',
+  emptyEditor:'No lift plans yet — click “+ New lift plan”, or “Sample plan” to see a filled-in example.', emptyViewer:'No lift plans yet.',
+  titleOf:r=>r.activity||'Lift plan', subOf:r=>[r.liftType, r.location, r.projectId?projectName(r.projectId):'', r.liftDate?'lift '+r.liftDate:''].filter(Boolean).join(' · '),
+  badgesOf:r=>{ const c=liftCompute(r); return `${liftStatusBadge(r)} ${liftCatBadge(r)} ${c.fails?`<span class="badge danger">${c.fails} check${c.fails===1?'':'s'} failed</span>`:c.warns?`<span class="badge warn">${c.warns} to check</span>`:'<span class="badge ok">Checks pass</span>'}`; },
+  searchText:r=>[r.planNo, r.activity, r.location, r.client, r.loadDesc, r.liftType, r.c1Name, r.c2Name, r.fkName, r.projectId?projectName(r.projectId):''].join(' '),
+  sort:(a,b)=>String(b.planDate||'').localeCompare(String(a.planDate||'')) || String(b.planNo||'').localeCompare(String(a.planNo||'')),
+  addFields:['planDate','liftDate','projectId','client','activity','location','liftType'],
+  addDefaults:{status:'Draft', planRev:'0', contractor:'Burhan Oil & Trade Services'},
+  segs:[{key:'open', label:'Waiting for approval', match:r=>['Draft','Submitted for approval'].includes(r.status||'Draft')},
+    {key:'cat3', label:'Complex (Cat 3)', match:r=>liftCompute(r).cat===3},
+    {key:'fail', label:'Failed checks', match:r=>liftCompute(r).fails>0}], segAllLabel:'All lift plans',
+  tabs:[
+    {key:'main', label:'Plan', groups:[
+      {fields:[
+        {key:'planNo', label:'Lift plan no.', required:true},
+        {key:'planRev', label:'Revision', placeholder:'0'},
+        {key:'status', label:'Status', type:'select', options:LIFT_STATUSES},
+        {key:'liftType', label:'Lifting appliance', type:'select', options:LIFT_TYPES, required:true},
+        {key:'planDate', label:'Date prepared', type:'date', required:true},
+        {key:'liftDate', label:'Date of lift', type:'date'},
+        {key:'projectId', label:'Project', type:'project'},
+        {key:'client', label:'Client', type:'textlist', options:()=>[...new Set(['PDO', ...activeSites().map(x=>x.clientName)].filter(Boolean))].sort(), placeholder:'e.g. PDO'},
+        {key:'contractor', label:'Contractor'},
+        {key:'location', label:'Location / rig / unit no.', required:true},
+        {key:'activity', label:'Activity', required:true, wide:true, placeholder:'e.g. Lift pump skid from trailer onto foundation'},
+      ]},
+      {title:'Communication & controls', fields:[
+        {key:'comms', label:'Method(s) of communication', type:'checks', options:LIFT_COMMS},
+        {key:'handsFree', label:'Hands-free method (tag line, push-pull pole)', placeholder:'e.g. Tag lines'},
+        {key:'ptwNo', label:'Permit to work no.'},
+      ]},
+      {title:'Steps of lifting operation', fields:[
+        {key:'steps', label:'Step-by-step method (one step per line)', type:'textarea', wide:true},
+        {key:'notes', label:'Other notes', type:'textarea', wide:true},
+        {key:'_lc_main', label:'', type:'liftcalc', calc:'main'},
+      ]}]},
+    {key:'load', label:'Load', groups:[
+      {title:'Load details', fields:[
+        {key:'loadDesc', label:'Load description', wide:true, placeholder:'e.g. Pump skid on steel base frame, 4 lifting lugs'},
+        {key:'loadWeight', label:'Total weight of the load, t', type:'number', min:0, required:true},
+        {key:'loadType', label:'Type of load', type:'select', options:LIFT_LOAD_TYPES},
+        {key:'loadL', label:'Length, m', type:'number', min:0},
+        {key:'loadW', label:'Width, m', type:'number', min:0},
+        {key:'loadH', label:'Height, m', type:'number', min:0},
+        {key:'weightBasis', label:'Weight is', type:'select', options:['Known','Estimated']},
+        {key:'cogKnown', label:'Centre of gravity is', type:'select', options:['Known','Unknown']},
+        {key:'pointsKnown', label:'Lifting points are', type:'select', options:['Known','Unknown']},
+        {key:'loadShare1', label:'Two-crane lift: share of the load on crane 1, % (crane 2 takes the rest)', type:'number', min:0, max:100, placeholder:'50'},
+      ]},
+      {title:'Conditions (Table 1 — these raise the lift category)', fields:[
+        {key:'conds', label:'Tick everything that applies', type:'checks', options:LIFT_COND.map(c=>c.t)},
+        {key:'_lc_load', label:'', type:'liftcalc', calc:'load'},
+      ]}]},
+    {key:'crane', label:'Crane', showIf:r=>r.liftType!==LIFT_FORK, groups:liftCraneGroups(1)},
+    {key:'crane2', label:'Crane 2', showIf:r=>r.liftType===LIFT_DUAL, groups:liftCraneGroups(2)},
+    {key:'fork', label:'Equipment', showIf:r=>r.liftType===LIFT_FORK, intro:'SP-2273 Appendix 3 — forklift / tele-handler. Read the net capacity from the machine\'s load chart for this boom length and outreach (with the attachment fitted).', groups:[
+      {title:'Forklift / tele-handler', fields:[
+        {key:'fkName', label:'Make & model'},
+        {key:'fkId', label:'Register / ID no.'},
+        {key:'fkCert', label:'Third-party certificate valid until', type:'date'},
+        {key:'fkCap', label:'Rated capacity, t', type:'number', min:0},
+        {key:'fkAttach', label:'With attachment?', type:'select', options:['No','Yes']},
+        {key:'fkAttachCert', label:'Attachments certified?', type:'select', options:['Yes','No']},
+        {key:'fkAttachWt', label:'Attachment weight, t', type:'number', min:0},
+        {key:'fkBoom', label:'Main boom length, m', type:'number', min:0},
+        {key:'fkOutreach', label:'Outreach, m', type:'number', min:0},
+        {key:'fkNetCap', label:'Net capacity at that outreach — from the load chart, t', type:'number', min:0},
+        {key:'_lc_fork', label:'', type:'liftcalc', calc:'fork'},
+      ]}]},
+    {key:'sub:rigging', label:'Rigging', sub:'rigging', showIf:r=>r.liftType!==LIFT_FORK, pre:r=>liftRiggingPre(r)},
+    {key:'site', label:'Site', groups:[
+      {title:'Ground', fields:[
+        {key:'soilGbc', label:'Site ground bearing capacity, t/m² (blank = 10, the SP-2273 limit when the soil is unknown)', type:'number', min:0, wide:true},
+      ]},
+      {title:'Slope or excavation near the crane (SP-2273 9.3.4)', fields:[
+        {key:'slopeH', label:'Depth of slope / excavation H, m', type:'number', min:0},
+        {key:'slopeD', label:'Distance D from mat edge to the edge of the slope, m', type:'number', min:0},
+        {key:'slopeRun', label:'Horizontal run of the slope d, m', type:'number', min:0},
+      ]},
+      {title:'Weather & power lines', fields:[
+        {key:'windMax', label:'Expected / measured maximum wind, m/s', type:'number', min:0},
+        {key:'windOem', label:'Maker\'s maximum operating wind, m/s (blank = 12.8)', type:'number', min:0},
+        {key:'lineVoltage', label:'Overhead power line', type:'select', options:LIFT_LINES},
+        {key:'lineDist', label:'Closest distance of boom / load to the line, m', type:'number', min:0},
+        {key:'_lc_site', label:'', type:'liftcalc', calc:'site'},
+      ]}]},
+    {key:'sub:crew', label:'Crew', sub:'crew'},
+    {key:'sub:hemp', label:'Risk', sub:'hemp', pre:()=>`<p class="wsub" style="margin:0 0 10px;">Hazard and effects (HEMP) — started from the SP-2273 example (Appendix ${''}2 for cranes, Appendix 4 for forklifts). Edit each row for this lift and add any site hazards.</p>`},
+    {key:'signoff', label:'Sign-off', groups:[
+      {title:'10 questions for a safe lift (answered at the pre-start meeting)', fields:LIFT_QUESTIONS.map((q,n)=>({key:'q'+(n+1), label:`${String(n+1).padStart(2,'0')}. ${q}`, type:'select', options:['Yes','No'], wide:true}))},
+      {title:'Lift plan checklist (SP-2273 Appendix 6)', fields:[
+        {key:'chk', label:'Tick what is covered / attached', type:'checks', options:LIFT_CHECKLIST},
+        {key:'verifiedBy', label:'Verified & confirmed by (appointed person)'},
+      ]},
+      {title:'Approval', fields:[
+        {key:'preparerName', label:'Lift plan prepared by'},
+        {key:'preparerDate', label:'Date', type:'date'},
+        {key:'approverName', label:'Reviewed / approved by'},
+        {key:'approverDate', label:'Date', type:'date'},
+        {key:'validUntil', label:'Valid until', type:'date'},
+      ]}]},
+    {key:'calc', label:'Results', html:r=>liftResultsHtml(r)},
+  ],
+  subs:{
+    rigging:{label:'Lifting accessories (slings, shackles, beams)', addLabel:'Add accessory', empty:'No accessories listed — add every sling, shackle, master link and spreader beam with its SWL, ID and certificate date.',
+      defaults:r=>({crane:'Crane 1', qty:1}),
+      fields:[{key:'crane', label:'Used on', type:'select', options:['Crane 1','Crane 2']},{key:'qty', label:'Qty', type:'number', min:1},
+        {key:'description', label:'Description', required:true, wide:true, placeholder:'e.g. 4-leg chain sling 13 mm, 4 t per leg'},
+        {key:'tagNo', label:'ID / tag no.'},{key:'swl', label:'SWL / WLL, t', type:'number', min:0},{key:'weight', label:'Weight each, kg', type:'number', min:0},
+        {key:'cert', label:'Certificate valid until', type:'date'},{key:'colour', label:'Colour code'}],
+      hideInCard:['description','qty'], sort:(a,b)=>String(a.crane||'').localeCompare(String(b.crane||'')),
+      title:x=>`${esc(String(x.qty||1))} × ${esc(x.description||'—')}`},
+    crew:{label:'Lifting crew & competence', addLabel:'Add person', empty:'Add the appointed person, lifting supervisor (PIC), operator, signaller and slinger with their competence card numbers.',
+      defaults:()=>({role:'Slinger / rigger'}),
+      fields:[{key:'role', label:'Role', type:'select', options:LIFT_ROLES, required:true},{key:'name', label:'Name', type:'textlist', required:true, options:()=>activeWorkers().map(w=>w.fullName).filter(Boolean).sort()},
+        {key:'cardNo', label:'Competence card / permit no.'},{key:'validUntil', label:'Card valid until', type:'date'}],
+      hideInCard:['role','name'], sort:(a,b)=>LIFT_ROLES.indexOf(a.role)-LIFT_ROLES.indexOf(b.role),
+      title:(x,r)=>`<strong>${esc(x.name||'—')}</strong> · ${esc(x.role||'')}${x.validUntil&&x.validUntil<liftPlanDay(r)?' <span class="badge danger">Card expired</span>':''}`},
+    hemp:{label:'Hazards & controls', addLabel:'Add hazard', empty:'No hazards — add the hazards of this lift.',
+      defaults:()=>({effects:'Injury to personnel\nDamage to equipment', residual:'Low', recovery:LIFT_RECOVERY}),
+      fields:[{key:'hazard', label:'Hazard', required:true},{key:'effects', label:'Effects', type:'textarea'},
+        {key:'sev', label:'Severity (1–5)', type:'select', options:['1','2','3','4','5']},{key:'lik', label:'Likelihood (A–E)', type:'select', options:['A','B','C','D','E']},
+        {key:'risk', label:'Risk', type:'select', options:['Low','Medium','High']},
+        {key:'controls', label:'Control measures (one per line)', type:'textarea', wide:true},
+        {key:'residual', label:'Residual risk', type:'select', options:['Low','Medium','High']},
+        {key:'recovery', label:'Recovery measures (one per line)', type:'textarea'},{key:'actionBy', label:'Action by'}],
+      hideInCard:['hazard','controls','risk','residual','sev','lik'],
+      title:x=>`<strong>${esc(x.hazard||'—')}</strong> ${x.sev||x.lik?`<span class="wsub" style="display:inline;">${esc([x.sev,x.lik].filter(Boolean).join(''))}</span> `:''}${liftRiskBadge(x.risk)}${x.residual?' → '+liftRiskBadge(x.residual):''}`,
+      body:x=>x.controls?`<ul class="lift-ctl">${String(x.controls).split('\n').filter(s=>s.trim()).map(s=>`<li>${esc(s.trim())}</li>`).join('')}</ul>`:''},
+  },
+  multiFiles:{key:'sketches', label:'Sketch, rigging arrangement, load chart & photos', accept:'image/*,.pdf', hint:'Add the lift sketch (AutoCAD preferred), the load chart page used, and photos of the lift area. Pictures are printed in the lift plan PDF.'},
+  columns:[
+    {label:'Plan', cls:'mono', html:r=>`<strong>${esc(r.planNo||'—')}</strong><div class="wsub">${esc(r.planDate||'')}${r.planRev&&r.planRev!=='0'?' · Rev '+esc(r.planRev):''}</div>`},
+    {label:'Activity', html:r=>`<div class="wname">${esc(r.activity||'—')}</div><div class="wsub">${esc([r.location, r.projectId?projectName(r.projectId):'', r.liftDate?'lift '+r.liftDate:''].filter(Boolean).join(' · ')||'—')}</div>`},
+    {label:'Appliance & load', html:r=>`${esc(r.liftType||'—')}<div class="wsub">${r.loadWeight!==''&&r.loadWeight!=null?esc(String(r.loadWeight))+' t':'weight not entered'}${r.loadDesc?' · '+esc(String(r.loadDesc).slice(0,40)):''}</div>`},
+    {label:'Category', html:r=>liftCatBadge(r)},
+    {label:'Utilization', cls:'num', html:r=>{ const c=liftCompute(r); return c.umax===null?'<span class="wsub">—</span>':`<strong class="${c.umax>=100?'text-danger':''}">${liftF(c.umax,1)} %</strong>`; }},
+    {label:'Status', html:r=>{ const c=liftCompute(r); return `${liftStatusBadge(r)}${c.fails?`<div><span class="badge danger">${c.fails} failed</span></div>`:''}`; }},
+  ],
+  tiles:list=>{ const y=String(new Date().getFullYear()), live=list.filter(r=>!['Cancelled','Lift done'].includes(r.status||'Draft')), cs=live.map(r=>({r, c:liftCompute(r)}));
+    return [{label:'Lift plans', num:list.length, sub:`${list.filter(r=>String(r.planDate||'').startsWith(y)).length} this year · ${list.filter(r=>(r.status||'')==='Lift done').length} lifts done`, icon:'crane'},
+      {label:'Waiting for approval', num:live.filter(r=>['Draft','Submitted for approval'].includes(r.status||'Draft')).length, cls:'', sub:'draft or submitted', icon:'clock'},
+      {label:'Complex lifts (Cat 3)', num:cs.filter(x=>x.c.cat===3).length, cls:cs.some(x=>x.c.cat===3)?'warn':'', sub:`${cs.filter(x=>x.c.cat===2).length} simple (Cat 2) · ${cs.filter(x=>x.c.cat===1).length} routine`, icon:'alert'},
+      {label:'Failed checks', num:cs.filter(x=>x.c.fails).length, cls:cs.some(x=>x.c.fails)?'danger':'ok', sub:'overload, ground, wind, expired certificates…', icon:'siren'}]; },
+  pdf:r=>downloadLiftPlanPdf(r), pdfLabel:'Lift plan PDF',
+});
+REG.lift.validate=d=>(!String(d.activity||'').trim()?'Enter the activity':'');
+REG.lift.beforeCreate=d=>{
+  d.rigging=d.rigging||[]; d.crew=d.crew||[]; d.sketches=d.sketches||[];
+  if(!(d.hemp||[]).length) d.hemp=liftDefaultHemp(d.liftType);
+  if(!String(d.steps||'').trim()) d.steps=liftDefaultSteps(d.liftType);
+  d.liftType=d.liftType||LIFT_TYPES[0]; d.status=d.status||'Draft'; d.planRev=d.planRev||'0'; d.contractor=d.contractor||'Burhan Oil & Trade Services';
+  if(!d.client && d.projectId){ const s=activeSites().find(x=>x.id===d.projectId); if(s && s.clientName) d.client=s.clientName; }
+  if(!d.comms) d.comms=['Radio','Hand signals']; if(!d.handsFree) d.handsFree='Tag lines';
+};
+function liftRiggingPre(r){
+  const dual=r.liftType===LIFT_DUAL, rows=(dual?['Crane 1','Crane 2']:['Crane 1']).map(c=>`<span class="badge muted">${esc(dual?c+': ':'')}total rigging weight ${liftF(liftRiggingKg(r,c),1)} kg (${liftF(liftRiggingKg(r,c)/1000,3)} t)</span>`).join(' ');
+  return `<p class="wsub" style="margin:0 0 8px;">SP-2273 Appendix 1, section 2 — every accessory with SWL, ID number and a valid third-party certificate (SP-2275). The weights are added to the load on the hook. Sling angle and WLL are entered on the Crane tab.</p><div style="margin-bottom:10px;">${rows}</div>`;
+}
+
+/* ---- live check panels inside the forms + the Results tab ---- */
+function liftRowsHtml(rows){
+  return rows.map(x=>`<div class="lc-row lc-${x.st}"><span class="lc-ic">${x.st==='ok'?ic('checkcircle'):x.st==='info'?'':ic(x.st==='fail'?'xcircle':'alert')}</span><span class="lc-k">${esc(x.k)}</span><span class="lc-v">${esc(x.v)}</span><span class="lc-n">${esc(x.n||'')}</span></div>`).join('');
+}
+function liftModeRows(c, mode){
+  const f={main:x=>x.part==='cat', load:x=>x.part==='cat'||x.part==='util',
+    crane1:x=>x.crane===1 && !c.fork, crane2:x=>x.crane===2, fork:x=>c.fork && x.crane===1, site:x=>x.part==='site'}[mode]||(()=>true);
+  return c.rows.filter(f);
+}
+function liftFormRecord(form, base){
+  const d={...(base||{})}, seen=new Set();
+  form.querySelectorAll('[data-rf]').forEach(el=>{ const k=el.dataset.rf; if(el.type==='checkbox'){ if(!seen.has(k)){ seen.add(k); d[k]=[]; } if(el.checked) d[k].push(el.value); } else d[k]=el.value; });
+  return d;
+}
+function liftLiveHtml(rec, mode){
+  const c=liftCompute(rec), rows=liftModeRows(c, mode); if(!rows.length) return '';
+  return `<div class="lift-calc"><div class="lc-title">${ic('chart')} Live check — SP-2273</div>${liftRowsHtml(rows)}</div>`;
+}
+function updateLiftCalc(root){
+  (root||document).querySelectorAll('[data-lift-calc]').forEach(el=>{ const form=el.closest('form'); if(!form) return;
+    const base=(activeReg==='lift' && regCurrent()) || {}; el.innerHTML=liftLiveHtml(liftFormRecord(form, base), el.dataset.liftCalc); });
+}
+document.addEventListener('input', e=>{ const f=e.target && e.target.closest && e.target.closest('form'); if(f && f.querySelector('[data-lift-calc]')) updateLiftCalc(f); });
+document.addEventListener('change', e=>{ const f=e.target && e.target.closest && e.target.closest('form'); if(f && f.querySelector('[data-lift-calc]')) updateLiftCalc(f); });
+function liftResultsHtml(r){
+  const c=liftCompute(r), i=c.info;
+  const verdict=c.fails?`${ic('xcircle')} ${c.fails} check${c.fails===1?'':'s'} failed — the lift must not go ahead until they are fixed.`:c.warns?`${ic('alert')} No failed checks — ${c.warns} item${c.warns===1?'':'s'} still to check or complete.`:`${ic('checkcircle')} All calculations and checks pass.`;
+  const grp=(title, rows)=>rows.length?`<div class="subhead">${esc(title)}</div><div class="lift-calc">${liftRowsHtml(rows)}</div>`:'';
+  const crane=n=>c.rows.filter(x=>x.crane===n && ['util','sling','ground','certs'].includes(x.part));
+  return `<div class="lift-banner lb-${i.cls}"><div class="lb-cat">${esc(i.name)}</div><div class="lb-sub">Risk rating <strong>${esc(i.risk)}</strong> · Approver <strong>${esc(i.approver)}</strong>${c.umax!==null?` · Highest utilization <strong>${liftF(c.umax,1)} %</strong>`:''}</div>
+      <div class="lb-verdict lv-${c.verdict}">${verdict}</div></div>
+    ${grp('Lift category (SP-2273 Table 1)', c.rows.filter(x=>x.part==='cat'))}
+    <div class="subhead">Documents needed for ${esc(i.name.split(' — ')[0])}</div><div class="cause-list" style="margin-bottom:6px;">${i.docs.map(d=>`<span class="badge muted">${esc(d)}</span>`).join(' ')}</div>
+    ${c.fork?grp('Forklift / tele-handler', c.rows.filter(x=>x.crane===1)):grp(c.dual?'Crane 1':'Crane', crane(1))+(c.dual?grp('Crane 2', crane(2)):'')}
+    ${grp('Site & environment', c.rows.filter(x=>x.part==='site'))}
+    ${grp('Accessories, crew & documents', c.rows.filter(x=>x.crane===0 && ['certs','docs'].includes(x.part)))}
+    <p class="wsub" style="margin-top:14px;">These calculations help the appointed person prepare the plan. The capacity at the radius must be read from the crane's own load chart for the actual configuration, and the plan must be checked and signed by a competent appointed person (SP-2273 6.1). Sling load by angle is standard rigging practice (not an SP-2273 table).</p>`;
+}
+
+/* ---- sample plan (example numbers, clearly marked) ---- */
+function liftSampleData(){
+  const t=localToday(), sid=()=>'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  const site=activeSites()[0];
+  return {planDate:t, liftDate:dateAdd(t,3), activity:'SAMPLE — Lift 8 t pump skid from trailer onto foundation', location:'Yard 2 — pump station (sample)', projectId:site?site.id:'', client:'PDO', contractor:'Burhan Oil & Trade Services',
+    liftType:'Mobile crane', status:'Draft', planRev:'0', comms:['Radio','Hand signals'], handsFree:'Tag lines (2)', ptwNo:'PTW-SAMPLE-001',
+    loadDesc:'Pump skid on steel base frame with 4 lifting lugs (SAMPLE VALUES — replace with real data)', loadWeight:8, loadL:3.2, loadW:1.8, loadH:1.9, loadType:'Equipment / skid', weightBasis:'Known', cogKnown:'Known', pointsKnown:'Known', conds:[],
+    chartBasis:'Gross chart', c1Name:'50 t all-terrain mobile crane (SAMPLE — not a real load chart)', c1Id:'CR-SAMPLE-01', c1Cert:dateAdd(t,120), c1Swl:50, c1Gross:36, c1Hook:0.8, c1Boom:20.5, c1Radius:10, c1Cap:14.5,
+    c1Legs:'4', c1Carry:3, c1Angle:60, c1Wll:4, c1Hitch:LIFT_HITCH[0], c1MatL:1.5, c1MatW:1.5, c1MatType:'Steel spreader mat', c1OutLoad:30,
+    soilGbc:20, slopeH:'', slopeD:'', slopeRun:'', windMax:6, windOem:'', lineVoltage:LIFT_LINES[0], lineDist:'',
+    rigging:[{id:sid(), crane:'Crane 1', qty:1, description:'4-leg chain sling 13 mm, 4 t per leg', tagNo:'SL-S01', swl:4, weight:42, cert:dateAdd(t,90), colour:'Yellow'},
+      {id:sid(), crane:'Crane 1', qty:4, description:'Bow shackle 4.75 t', tagNo:'SH-S11 to S14', swl:4.75, weight:2.5, cert:dateAdd(t,90), colour:'Yellow'}],
+    crew:[{id:sid(), role:'Appointed person', name:'Sample — Appointed Person', cardNo:'AP-0000', validUntil:dateAdd(t,300)},
+      {id:sid(), role:'Lifting supervisor (PIC)', name:'Sample — Lifting Supervisor', cardNo:'LS-0000', validUntil:dateAdd(t,300)},
+      {id:sid(), role:'Crane / appliance operator', name:'Sample — Crane Operator', cardNo:'CO-0000', validUntil:dateAdd(t,300)},
+      {id:sid(), role:'Signaller / banksman', name:'Sample — Signaller', cardNo:'SG-0000', validUntil:dateAdd(t,300)},
+      {id:sid(), role:'Slinger / rigger', name:'Sample — Slinger', cardNo:'SL-0000', validUntil:dateAdd(t,300)}],
+    preparerName:'', notes:'This is a SAMPLE lift plan with example numbers to show how the calculations work. Do not use it for a real lift.'};
+}
+document.addEventListener('click', async e=>{ if(!e.target.closest || !e.target.closest('#liftSampleBtn')) return; if(!canEdit()) return; await regCreate('lift', liftSampleData(), 'calc'); });
+
+/* ---- Lift plan PDF — Burhan format (logo, border, Doc No. box), contents to PDO SP-2273 Appendix 1 / 3 ---- */
+function liftImgDims(u){ return new Promise(res=>{ try{ const i=new Image(); i.onload=()=>res({w:i.naturalWidth||1, h:i.naturalHeight||1}); i.onerror=()=>res(null); i.src=u; }catch(e){ res(null); } }); }
+async function downloadLiftPlanPdf(r){
+  try{
+    const c=liftCompute(r), fork=c.fork, dual=c.dual, info=c.info;
+    const title=fork?'Forklift / Tele-handler Plan':'Lift Plan for Lifting Operation';
+    const doc=pdfDoc({unit:'pt', format:'a4', docKey:'liftPlan', docTitle:title, docSub:[r.planNo, 'Rev '+(r.planRev||'0'), 'Prepared to PDO SP-2273'].filter(Boolean).join(' · '), docRef:r.planNo||''});
+    const M=34, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight(), CW=W-2*M, FS=8.6, LH=10.4;
+    let y=34;
+    const INK=[20,22,28], GREY=[226,229,234], HEAD=[20,30,48], FILL={ok:[221,241,229], warn:[253,240,212], fail:[250,218,218], info:[242,244,247]};
+    const newPage=()=>{ doc.addPage(); y=34; };
+    const ensure=h=>{ if(y+h>H-28) newPage(); };
+    const blank=v=>v===undefined||v===null||v===''||(Array.isArray(v)&&!v.length);
+    const val=(v, unit)=>blank(v)?'—':String(v)+(unit?' '+unit:'');
+    const linesOf=cl=>{ doc.setFont('helvetica', cl.bold?'bold':'normal'); doc.setFontSize(cl.size||FS); return doc.splitTextToSize(String(blank(cl.t)?(cl.keepBlank?'':'—'):cl.t), Math.max(10, cl.w-8)); };
+    const row=(cells, opt)=>{ opt=opt||{};
+      const pc=cells.map(cl=>({...cl, lines:linesOf(cl)}));
+      const h=Math.max(opt.minH||16, ...pc.map(cl=>cl.lines.length*LH*((cl.size||FS)/FS)+6));
+      if(y+h>H-28){ newPage(); if(opt.head) opt.head(); }
+      let x=M;
+      for(const cl of pc){
+        if(cl.fill){ doc.setFillColor(...cl.fill); doc.rect(x, y, cl.w, h, 'F'); }
+        doc.setDrawColor(110,116,126); doc.setLineWidth(0.5); doc.rect(x, y, cl.w, h);
+        doc.setFont('helvetica', cl.bold?'bold':'normal'); doc.setFontSize(cl.size||FS); doc.setTextColor(...(cl.color||INK));
+        const lh=LH*((cl.size||FS)/FS), top=y+(cl.vmid?(h-cl.lines.length*lh)/2+lh-3:11);
+        cl.lines.forEach((l,n)=>{ const ty=top+n*lh; if(cl.align==='center') doc.text(l, x+cl.w/2, ty, {align:'center'}); else if(cl.align==='right') doc.text(l, x+cl.w-4, ty, {align:'right'}); else doc.text(l, x+4, ty); });
+        x+=cl.w;
+      }
+      y+=h; doc.setTextColor(...INK);
+    };
+    const bar=(t,need)=>{ ensure(need||46); y+=8; row([{t, w:CW, bold:true, fill:GREY, size:9.5}]); };
+    const thead=(labels, widths)=>{ const f=()=>row(labels.map((t,i)=>({t, w:widths[i], bold:true, fill:[236,238,242], align:i?'center':undefined, keepBlank:true}))); f(); return f; };
+    const note=(t, color)=>{ doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...(color||[90,96,106])); const ls=doc.splitTextToSize(t, CW-4); ensure(ls.length*10+6); ls.forEach(l=>{ y+=10; doc.text(l, M+2, y); }); y+=4; doc.setTextColor(...INK); };
+    const tick=b=>b?'[X]':'[  ]';
+    const K=120;   // label column
+    const kv=(k, v, k2, v2)=>{ if(k2===undefined) row([{t:k, w:K, bold:true, fill:[246,247,249], vmid:true},{t:v, w:CW-K}]);
+      else { const hw=(CW-2*K)/2; row([{t:k, w:K, bold:true, fill:[246,247,249], vmid:true},{t:v, w:hw},{t:k2, w:K, bold:true, fill:[246,247,249], vmid:true},{t:v2, w:hw}]); } };
+    const catShort=info.name.replace(' (non-routine)','');
+
+    // ---------- header block ----------
+    kv('PROJECT', r.projectId?projectName(r.projectId):(r.client||'—'));
+    kv('ACTIVITY', r.activity);
+    kv('CONTRACTOR', r.contractor||'Burhan Oil & Trade Services', 'CLIENT', r.client);
+    kv('LIFTING CATEGORY', `${catShort} · ${c.cat===1?'Routine':'Non-routine'} · risk ${info.risk}`, 'LOCATION / UNIT NO', r.location);
+    kv('LIFT PLAN NO.', `${val(r.planNo)}  ·  Rev ${r.planRev||'0'}`, 'DATE OF LIFT', r.liftDate||'—');
+    kv('LIFTING APPLIANCE', r.liftType, 'PERMIT TO WORK', r.ptwNo);
+    if(fork){ const fk=c.fk; kv('CAPACITY', val(r.fkCap,'t'), 'WITH ATTACHMENT?', r.fkAttach||'No'); kv('TOTAL WEIGHT', fk.total===null?'—':liftF(fk.total)+' t', 'ATTACHMENTS CERTIFIED?', r.fkAttach==='Yes'?(r.fkAttachCert||'—'):'N/A'); }
+    kv('OBJECTIVE', 'To ensure safety of the personnel / equipment / asset involved in lifting activities.');
+    kv('MANPOWER', fork?'• Deploy individuals with valid certifications (lifting appliance operator, lifting supervisor & slingers)\n• A designated lifting supervisor (person in charge PIC and signaller)'
+      :'• Deploy competent individuals with valid competence cards\n• A designated lifting supervisor (person in charge PIC and banksman)');
+    kv('RESPONSIBILITIES', fork?'Lifting supervisor (PIC): co-ordinate and control all aspects of lifting operations on site (the signaller can be the lifting supervisor if competent).\nOperator: pre-use inspection of the lifting appliance; operate it and perform the lift in a safe manner, taking signals from the signaller only, unless in an emergency.\nSlinger and signaller: co-ordinate the lifting movements and maintain communication with the operator.'
+      :'Signaller: co-ordinate the lifting movements and maintain radio and/or visual communication with the crane operator and persons close to the load.\nSlinger: inspect the rigging, select rigging to suit the load, install the accessories and connect / disconnect the load.\nLifting supervisor (PIC): co-ordinate and control all aspects of lifting operations on site (the banksman can be the lifting supervisor for a routine lift) and ensure the lift is carried out according to this lift plan.\nCrane operator: pre-use inspection and rig-up of the crane; operate the crane and perform the lift in a safe manner, taking signals from the banksman / signaller only, unless in an emergency.');
+    kv('LIFTING EQUIPMENT', 'All lifting equipment carrying out the actual lifting shall have valid third-party certification as per SP-2275.');
+    ensure(30); y+=20; doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(200,16,46); doc.text('IF YOU ARE IN DOUBT – STOP THE JOB AND ASK', W/2, y, {align:'center'}); doc.setTextColor(...INK); y+=8;
+
+    // ---------- 1. load ----------
+    bar('1.  Load details');
+    const dims=[r.loadL,r.loadW,r.loadH].some(v=>!blank(v))?`${val(r.loadL)} × ${val(r.loadW)} × ${val(r.loadH)} m (L × W × H)`:'—';
+    { const w=[90,(CW-270)/3,90,(CW-270)/3,90,(CW-270)/3];
+      row([{t:'Total weight', w:w[0], bold:true},{t:blank(r.loadWeight)?'—':r.loadWeight+' t', w:w[1]},{t:'Load dimensions', w:w[2], bold:true},{t:dims, w:w[3]},{t:'Type of load', w:w[4], bold:true},{t:r.loadType, w:w[5]}]);
+      row([{t:'Weight is', w:w[0], bold:true},{t:r.weightBasis, w:w[1]},{t:'Centre of gravity', w:w[2], bold:true},{t:r.cogKnown, w:w[3]},{t:'Lifting points', w:w[4], bold:true},{t:r.pointsKnown, w:w[5]}]); }
+    kv('Description', r.loadDesc);
+    kv('Method(s) of communication', LIFT_COMMS.map(m=>`${tick((r.comms||[]).includes(m))} ${m}`).join('     '), 'Hands-free method', r.handsFree);
+    kv('Conditions (Table 1)', (r.conds||[]).length?(r.conds||[]).join(' · '):'None — normal day lift, regular load');
+    if(dual) kv('Load share', `Crane 1: ${liftF(c.cr[0].share,0)} %  ·  Crane 2: ${liftF(c.cr[1].share,0)} %`);
+
+    if(!fork){
+      // ---------- 2. accessories ----------
+      const colours=[...new Set((r.rigging||[]).map(x=>x.colour).filter(Boolean))].join(', ')||'—';
+      bar(`2.  Lifting accessories details                                         Current colour code = ${colours}`, 110);
+      const aw=[34, CW-34-80-56-60-80, 80, 56, 60, 80];
+      (dual?['Crane 1','Crane 2']:['Crane 1']).forEach(cn=>{
+        if(dual){ ensure(20); row([{t:cn, w:CW, bold:true, fill:[246,247,249]}]); }
+        const hd=thead(['Qty','Description','ID no.','SWL (t)','Weight (kg)','Cert. valid until'], aw);
+        const items=(r.rigging||[]).filter(x=>(x.crane||'Crane 1')===cn);
+        if(!items.length) row([{t:'', w:aw[0], keepBlank:true},{t:'No accessories listed', w:aw[1], color:[150,40,40]},{t:'',w:aw[2],keepBlank:true},{t:'',w:aw[3],keepBlank:true},{t:'',w:aw[4],keepBlank:true},{t:'',w:aw[5],keepBlank:true}]);
+        items.forEach(x=>{ const bad=x.cert && x.cert<liftPlanDay(r); row([{t:String(x.qty||1), w:aw[0], align:'center'},{t:x.description, w:aw[1]},{t:x.tagNo, w:aw[2], align:'center'},{t:blank(x.swl)?'—':String(x.swl), w:aw[3], align:'center'},{t:blank(x.weight)?'—':String(x.weight), w:aw[4], align:'center'},{t:x.cert||'—', w:aw[5], align:'center', fill:bad?FILL.fail:undefined}], {head:hd}); });
+        const kg=liftRiggingKg(r, cn); row([{t:'Total rigging weight', w:aw[0]+aw[1]+aw[2]+aw[3], bold:true, color:[200,16,46], align:'right'},{t:`${liftF(kg,1)} kg (${liftF(kg/1000,3)} t)`, w:aw[4]+aw[5], bold:true, align:'center'}]);
+      });
+      // ---------- 3. rigging ----------
+      bar('3.  Rigging method & sling load by angle', 210);
+      const hitches=c.cr.map(x=>r['c'+x.i+'Hitch']).filter(Boolean);
+      kv('Rigging method', `${tick(hitches.some(h=>h.startsWith('Vertical')))} Vertical / bridle hitch     ${tick(hitches.includes('Basket'))} Basket hitch     ${tick(hitches.includes('Choker'))} Choker hitch`);
+      { const cw=dual?[CW-2*120,120,120]:[CW-150,150]; const hd=thead(['Sling calculation', ...c.cr.map(x=>dual?'Crane '+x.i:'Value')], cw);
+        const line=(label, f, st)=>row([{t:label, w:cw[0]}, ...c.cr.map((x,n)=>({t:f(x), w:cw[n+1], align:'center', fill:st?FILL[st(x)]:undefined}))], {head:hd});
+        line('Sling legs / legs carrying the load', x=>x.legs?`${x.legs} / ${x.carry}`:'—');
+        line('Sling angle from horizontal', x=>x.ang?liftF(x.ang,0)+'°':'—');
+        line('Angle factor (1 ÷ sin angle)', x=>x.factor?liftF(x.factor,3):'—');
+        line('Load carried by the slings, t', x=>x.load===null?'—':liftF(x.load));
+        line('Tension in each leg = load ÷ (legs × sin angle), t', x=>x.tension===null?'—':liftF(x.tension));
+        line('Sling WLL per leg (straight pull)'+(c.cr.some(x=>x.hf<1)?' × 0.8 choker':'')+', t', x=>x.wll?liftF(x.wll*x.hf):'—');
+        line('% of sling WLL used', x=>x.slingUtil===null?'—':liftF(x.slingUtil,0)+' %', x=>x.slingUtil===null?'info':(x.slingUtil>100||x.ang<30)?'fail':(x.slingUtil>80||x.ang<45)?'warn':'ok'); }
+      note('Keep sling angles at 45° or more from horizontal (60° preferred); never below 30°. Tag lines are attached to the load only (SP-2273 9.5). UNF eye bolts and stainless steel shackles must not be used for lifting (SP-2273 9.7).');
+      // ---------- 4. crane & chart ----------
+      bar('4.  Crane and load chart details', 270);
+      { const cw=dual?[CW-2*130,130,130]:[CW-170,170]; const hd=thead(['Item', ...c.cr.map(x=>dual?'CRANE-'+x.i:'CRANE-1')], cw);
+        const line=(label, f, st, bold)=>row([{t:label, w:cw[0], bold, color:bold?[200,16,46]:undefined}, ...c.cr.map((x,n)=>({t:f(x), w:cw[n+1], align:'center', bold, fill:st?FILL[st(x)]:undefined}))], {head:hd});
+        const g=k=>x=>val(r['c'+x.i+k]);
+        line('Crane make & model', g('Name')); line('Register / ID no.', g('Id')); line('Certificate valid until', x=>r['c'+x.i+'Cert']||'—', x=>!r['c'+x.i+'Cert']?'warn':r['c'+x.i+'Cert']<liftPlanDay(r)?'fail':'ok');
+        line('Crane SWL (rated capacity), t', x=>x.swl===null?'—':liftF(x.swl)); line('Gross weight of crane, t', x=>x.crane===null?'—':liftF(x.crane));
+        line('Hook block weight, t', x=>liftF(x.hook)); line('Required boom length, m', g('Boom')); line('Maximum radius, m', g('Radius'));
+        line('Capacity @ max radius (load chart), t', x=>x.cap===null?'—':liftF(x.cap));
+        line('Load on this crane, t', x=>x.load===null?'—':liftF(x.load)); line('Rigging weight, t', x=>liftF(x.rig,3));
+        line(c.cr[0].net?'Total load on hook (load + rigging; net chart), t':'Total load on hook (load + rigging + hook block), t', x=>x.hookLoad===null?'—':liftF(x.hookLoad));
+        line('Crane utilization (%)', x=>x.util===null?'—':liftF(x.util,1)+' %', x=>x.util===null?'info':x.util>=100?'fail':x.util>85?'warn':'ok', true); }
+      note('Crane utilization = total load on hook ÷ capacity at the working radius. Under 50 % = Category 1 (Routine); 50–85 % = Category 2 (Simple); over 85 % = Category 3 (Complex) — SP-2273 Table 1. The capacity must be read from this crane\'s own load chart for the actual configuration.');
+      // ---------- 5. ground ----------
+      bar(`5.  Ground bearing pressure${c.cat===1?' (not required for a routine lift)':''}`, 170);
+      { const lim=c.cr[0].limit; kv('Maximum site ground bearing capacity', `${liftF(lim)} t/m² (${liftF(lim*9.80665,0)} kPa)${liftN(r.soilGbc)?'':' — SP-2273 9.3.3 limit when there is no soil information'}`); }
+      { const cw=dual?[CW-2*130,130,130]:[CW-170,170]; const hd=thead(['Item', ...c.cr.map(x=>dual?'CRANE-'+x.i:'CRANE-1')], cw);
+        const line=(label, f, st, bold)=>row([{t:label, w:cw[0], bold, color:bold?[200,16,46]:undefined}, ...c.cr.map((x,n)=>({t:f(x), w:cw[n+1], align:'center', bold, fill:st?FILL[st(x)]:undefined}))], {head:hd});
+        line('Gross weight (crane + hook block + rigging + load), t', x=>x.gross===null?'—':liftF(x.gross));
+        line('Load on one outrigger used, t', x=>x.outLoad===null?'—':liftF(x.outLoad)+(x.react!==null?' (maker)':' (gross)'));
+        line('Outrigger spreader mat size & type', x=>{ const L=r['c'+x.i+'MatL'], Wd=r['c'+x.i+'MatW']; return (blank(L)||blank(Wd))?'—':`${L} × ${Wd} m${r['c'+x.i+'MatType']?' '+r['c'+x.i+'MatType']:''}`; });
+        line('Mat area, m²', x=>x.area===null?'—':liftF(x.area));
+        line('Ground bearing pressure = load ÷ mat area', x=>x.gbp===null?'—':`${liftF(x.gbp)} t/m² (${liftF(x.gbp*9.80665,0)} kPa)`, x=>x.gbp===null?'info':x.gbp>=x.limit?'fail':x.gbp>x.limit*0.8?'warn':'ok', true); }
+      note('NOTE: Ground bearing pressure shall not exceed the maximum site ground bearing capacity (SP-2273 9.3.3). If the crane maker\'s outrigger load is not entered, the whole gross weight is taken on one mat (conservative).', [200,16,46]);
+    } else {
+      // ---------- forklift / tele-handler ----------
+      const fk=c.fk;
+      bar('2.  Equipment');
+      kv('Make & model', r.fkName, 'Register / ID no.', r.fkId);
+      kv('Certificate valid until', r.fkCert||'—', 'Rated capacity', val(r.fkCap,'t'));
+      bar('3.  Calculation (tele-handler / forklift)', 130);
+      const cw=[40, CW-40-80-110, 80, 110]; const hd=thead(['NO','Description','Unit','Value'], cw);
+      [['01','Total weight (load + attachments)','tonnes', fk.total===null?'—':liftF(fk.total)],['02','Main boom length','m', fk.boom===null?'—':liftF(fk.boom,1)],['03','Outreach','m', fk.outreach===null?'—':liftF(fk.outreach,1)],['04','Net capacity of tele-handler at this outreach','tonnes', fk.netCap===null?'—':liftF(fk.netCap)],['05','% of chart capacity used','%', fk.util===null?'—':liftF(fk.util,1)]]
+        .forEach((x,n)=>row([{t:x[0], w:cw[0], align:'center'},{t:x[1], w:cw[1], bold:n===4},{t:x[2], w:cw[2], align:'center'},{t:x[3], w:cw[3], align:'center', bold:n===4, fill:n===4&&fk.util!==null?FILL[fk.util>=100?'fail':fk.util>85?'warn':'ok']:undefined}], {head:hd}));
+    }
+    // ---------- 6. support documents ----------
+    bar(fork?'4.  Attachments':'6.  Support documents');
+    const chk=r.chk||[], has=t=>chk.some(x=>x.startsWith(t));
+    const docsList=fork?[['Sketch / calculation of lifting plan mentioning load, radius, boom length and capacity of tele-handler', (r.sketches||[]).length>0],['Load chart of tele-handler', has('4.')],['Risk assessment (specific HEMP)', (r.hemp||[]).length>0],['Equipment certificates', !!r.fkCert],['Lifting personnel permits', (r.crew||[]).length>0]]
+      :[['Sketch and rigging arrangement', (r.sketches||[]).length>0 || has('2.')],['Specific load chart', has('4.')],['Task risk assessment *', (r.hemp||[]).length>0],['Lifting crew competence cards', (r.crew||[]).length>0],['Lifting equipment certificates i.e. cranes and lifting gears', has('5.1')&&has('5.2')]];
+    docsList.forEach(([t,b])=>row([{t:tick(b), w:34, align:'center'},{t, w:CW-34}]));
+    if(!fork) note('* For non-routine operation, step-by-step instruction with a specific TRA shall be attached.', [200,16,46]);
+    // ---------- 7. steps ----------
+    bar(fork?'5.  Steps of the operation':'7.  Steps of lifting operation');
+    String(r.steps||'—').split('\n').filter(s=>s.trim()).forEach(s=>row([{t:s.trim(), w:CW}]));
+    // ---------- 8. sketch ----------
+    bar(fork?'6.  Sketch / calculation drawing':'8.  Sketch and rigging arrangement');
+    const files=r.sketches||[], imgs=files.filter(f=>/^image\//.test(f.contentType||'') || /\.(png|jpe?g)$/i.test(f.name||''));
+    let drawn=0;
+    for(const f of imgs){
+      const data=await fetchImageDataUrl(f.url).catch(()=>null); if(!data || !/^data:image\/(png|jpe?g)/i.test(data)) continue;
+      const dm=await liftImgDims(data); const ar=dm?dm.h/dm.w:0.6; let w=CW-10, h=w*ar; if(h>330){ h=330; w=h/ar; }
+      ensure(h+24); try{ doc.addImage(data, imgFormat(data), M+(CW-w)/2, y+6, w, h); doc.setDrawColor(110,116,126); doc.rect(M, y, CW, h+12); drawn++; }catch(e){ console.warn('lift sketch', e); continue; }
+      y+=h+14; doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(90,96,106); doc.text(String(f.name||'sketch'), M+2, y+8); doc.setTextColor(...INK); y+=12;
+    }
+    const others=files.filter(f=>!imgs.includes(f)); if(others.length) note('Attached separately: '+others.map(f=>f.name||'file').join(', '));
+    if(!drawn){ ensure(170); doc.setDrawColor(110,116,126); doc.rect(M, y, CW, 160); doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(140,146,156); doc.text('Sketch of the lift: crane position, radius, load pick-up and set-down points, exclusion zone, rigging arrangement', M+8, y+14); doc.setTextColor(...INK); y+=164; }
+
+    // ---------- 9. category & checks ----------
+    bar(`${fork?'7':'9'}.  Lift categorisation & calculation checks (SP-2273)`, 220);
+    kv('Lift category', `${info.name} — risk rating ${info.risk}`, 'Approved by', info.approver);
+    kv('Why', c.why.length?c.why.join(' · '):'All Category 1 conditions met (under 50 % of capacity, weight / CoG / lifting points known, single appliance, day, simple rigging, normal weather).');
+    kv('Documents needed', info.docs.join(' · '));
+    { const cw=[150, 110, CW-260]; const hd=thead(['Check','Result','Details'], cw);
+      c.rows.filter(x=>x.part!=='cat').forEach(x=>row([{t:x.k, w:cw[0], bold:true},{t:(x.st==='ok'?'PASS — ':x.st==='fail'?'FAIL — ':x.st==='warn'?'CHECK — ':'')+x.v, w:cw[1], fill:FILL[x.st], bold:x.st==='fail'},{t:x.n||'', w:cw[2], keepBlank:true, size:7.8}], {head:hd})); }
+    note(c.fails?`RESULT: ${c.fails} check(s) FAILED — the lift must not go ahead until they are fixed and the plan is re-approved.`:c.warns?`RESULT: no failed checks; ${c.warns} item(s) to confirm before the lift.`:'RESULT: all calculations and checks pass.', c.fails?[200,16,46]:[20,90,60]);
+
+    // ---------- crew ----------
+    bar(`${fork?'8':'10'}.  Lifting crew & competence`, 130);
+    { const cw=[150, CW-150-130-90, 130, 90]; const hd=thead(['Role','Name','Card / permit no.','Valid until'], cw);
+      const crew=(r.crew||[]).slice().sort((a,b)=>LIFT_ROLES.indexOf(a.role)-LIFT_ROLES.indexOf(b.role));
+      if(!crew.length) LIFT_ROLES.slice(0,5).forEach(x=>row([{t:x, w:cw[0]},{t:'', w:cw[1], keepBlank:true},{t:'', w:cw[2], keepBlank:true},{t:'', w:cw[3], keepBlank:true}], {head:hd}));
+      crew.forEach(x=>row([{t:x.role, w:cw[0]},{t:x.name, w:cw[1]},{t:x.cardNo, w:cw[2], align:'center'},{t:x.validUntil||'—', w:cw[3], align:'center', fill:x.validUntil&&x.validUntil<liftPlanDay(r)?FILL.fail:undefined}], {head:hd})); }
+
+    // ---------- 10 questions ----------
+    bar('10 questions for a safe lift', 300);
+    { const cw=[34, CW-34-56-56, 56, 56]; const hd=()=>row([{t:'NO', w:cw[0], bold:true, fill:[236,238,242], align:'center'},{t:'DESCRIPTION', w:cw[1], bold:true, fill:[236,238,242], align:'center'},{t:'Yes', w:cw[2], bold:true, fill:[205,232,190], align:'center'},{t:'No', w:cw[3], bold:true, fill:[240,90,90], color:[255,255,255], align:'center'}]); hd();
+      LIFT_QUESTIONS.forEach((q,n)=>{ const a=r['q'+(n+1)]||''; const qq=fork&&n===2?'Has a pre-use inspection of the forklift / tele-handler been carried out and is it marked with: Safe Working Load · a unique identification number · inspection date?':q;
+        row([{t:String(n+1).padStart(2,'0'), w:cw[0], align:'center'},{t:qq, w:cw[1]},{t:a==='Yes'?'X':'', w:cw[2], align:'center', bold:true, keepBlank:true},{t:a==='No'?'X':'', w:cw[3], align:'center', bold:true, keepBlank:true, fill:a==='No'?FILL.fail:undefined}], {head:hd}); }); }
+    note('Note: Never start any lifting operation until all concerned have been briefed in a pre-start meeting, ensuring that they understand their role and responsibilities and that they have signed onto the permit-to-work or record of attendance at the pre-start meeting.');
+
+    // ---------- approval ----------
+    bar('Approval', 120);
+    { const cw=[130, CW-130-100-80-80, 100, 80, 80]; const hd=thead(['','Name','Signature','Date','Valid until'], cw);
+      row([{t:'Lift plan preparer', w:cw[0], bold:true},{t:r.preparerName, w:cw[1], keepBlank:true},{t:'', w:cw[2], keepBlank:true},{t:r.preparerDate, w:cw[3], align:'center', keepBlank:true},{t:r.validUntil, w:cw[4], align:'center', keepBlank:true}], {minH:26, head:hd});
+      row([{t:'Reviewed / approved by', w:cw[0], bold:true},{t:r.approverName, w:cw[1], keepBlank:true},{t:'', w:cw[2], keepBlank:true},{t:r.approverDate, w:cw[3], align:'center', keepBlank:true},{t:r.validUntil, w:cw[4], align:'center', keepBlank:true}], {minH:26, head:hd}); }
+    note(`Approval needed for this lift: ${info.approver}. Generic / routine lift plans can be reviewed and approved by the contractor's qualified appointed person; Category 2 and 3 lifts need Company approval (SP-2273 Table 1).`);
+
+    // ---------- HEMP ----------
+    if((r.hemp||[]).length){
+      newPage(); bar(`Hazard and effects management (HEMP) — ${fork?'SP-2273 Appendix 4':'SP-2273 Appendix 2'}`);
+      const rated=(r.hemp||[]).some(x=>x.sev||x.lik||x.risk);
+      const cw=rated?[86, 76, 18, 18, 34, CW-86-76-18-18-34-50-90, 50, 90]:[100, 90, CW-100-90-80, 80];
+      const hd=thead(rated?['Hazard','Effects','S','L','Risk','Control measures','Residual','Recovery measures']:['Hazards','Effect','Control measures','Action by'], cw);
+      const bl=t=>String(t||'').split('\n').filter(s=>s.trim()).map(s=>'• '+s.trim()).join('\n');
+      const rf=v=>v==='High'?FILL.fail:v==='Medium'?FILL.warn:v==='Low'?FILL.ok:undefined;
+      (r.hemp||[]).forEach(x=>row(rated?[{t:x.hazard, w:cw[0], bold:true},{t:x.effects, w:cw[1], size:7.8},{t:x.sev, w:cw[2], align:'center'},{t:x.lik, w:cw[3], align:'center'},{t:x.risk?x.risk[0]:'', w:cw[4], align:'center', fill:rf(x.risk), keepBlank:true},{t:bl(x.controls), w:cw[5], size:7.8},{t:x.residual?x.residual[0]:'', w:cw[6], align:'center', fill:rf(x.residual), keepBlank:true},{t:bl(x.recovery), w:cw[7], size:7.8, keepBlank:true}]
+        :[{t:x.hazard, w:cw[0], bold:true},{t:x.effects, w:cw[1], size:7.8},{t:bl(x.controls), w:cw[2], size:7.8},{t:x.actionBy, w:cw[3], keepBlank:true}], {head:hd}));
+      if(rated) note('S = severity (1–5), L = likelihood (A–E), risk L = low, M = medium, H = high.');
+    }
+    // ---------- checklist ----------
+    if(!fork){
+      bar('Lift plan checklist (SP-2273 Appendix 6)', LIFT_CHECKLIST.length*16+70);
+      const cw=[CW-50, 50]; const hd=thead(['Description','Done'], cw);
+      LIFT_CHECKLIST.forEach(t=>row([{t, w:cw[0]},{t:chk.includes(t)?'X':'', w:cw[1], align:'center', bold:true, keepBlank:true, fill:chk.includes(t)?FILL.ok:undefined}], {head:hd}));
+      kv('Verified & confirmed by (AP)', r.verifiedBy||' ', 'Date and signature', ' ');
+    }
+    note('Lift plan prepared according to PDO SP-2273 Specification for Lift Planning and Execution (Version 4) and SP-2275 lifting equipment requirements.');
+    const fn=`Lift_Plan_${String(r.planNo||'draft').replace(/[^\w.-]+/g,'_')}.pdf`;
+    doc.save(fn); toast('Lift plan PDF downloaded');
+    return doc;
+  }catch(e){ console.error(e); toast('Could not generate the lift plan PDF'); }
+}
 
 /* ---- CLIENT MONTHLY REPORT PACK ---- */
 function openClientPack(){
