@@ -2029,6 +2029,7 @@ const PDF_DOCS={
 };
 function docControl(key){ return (((settingsDocs||{}).docControl||{}).docs||{})[key]||{}; }
 let pdfLogoData=null;
+let docCtlBase='';
 function renderDocCtl(){
   const el=document.getElementById('docCtlPanel'); if(!el || el.hidden) return; const ed=canEdit();
   el.innerHTML=`<div class="section-head"><h3>PDF document numbers — document register</h3><button type="button" class="btn btn-sm" id="docCtlClose">Close</button></div>
@@ -2036,7 +2037,7 @@ function renderDocCtl(){
     <form id="docCtlForm"><div class="table-wrap"><table><thead><tr><th>Document (PDF)</th><th>Doc. No.</th><th>Revision</th><th>Issue date</th></tr></thead><tbody>${Object.entries(PDF_DOCS).map(([k,v])=>{ const d=docControl(k); return `<tr><td>${esc(v.title)}</td><td><input data-dc="${k}|no" value="${esc(d.no||'')}" placeholder="e.g. BOTS-HSE-F-001" ${ed?'':'disabled'}></td><td><input data-dc="${k}|rev" value="${esc(d.rev||'')}" placeholder="e.g. 00" style="max-width:90px;" ${ed?'':'disabled'}></td><td><input type="date" data-dc="${k}|date" value="${esc(d.date||'')}" ${ed?'':'disabled'}></td></tr>`; }).join('')}</tbody></table></div>
     ${ed?`<div class="form-actions"><button type="submit" class="btn btn-primary">Save document numbers</button></div>`:''}</form>`;
 }
-function preloadPdfLogo(){ if(pdfLogoData) return; fetchImageDataUrl('logo.png').then(d=>{ if(d) pdfLogoData=d; }).catch(()=>{}); }
+function preloadPdfLogo(){ if(pdfLogoData) return; fetchImageDataUrl('logo.png').then(d=>{ if(d && /^data:image\/(png|jpe?g)/i.test(d)) pdfLogoData=d; }).catch(()=>{}); }
 const PDF_FRAME={m:16, head:56, foot:22, gap:6};
 function pdfFrameBox(d){ const W=d.internal.pageSize.getWidth(), H=d.internal.pageSize.getHeight(), F=PDF_FRAME;
   const top=F.m+F.head+F.gap, bottom=F.m+F.foot+F.gap, s=(H-top-bottom)/H; return {W, H, s, tx:(W-W*s)/2, ty:bottom}; }
@@ -2696,7 +2697,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b51';
+const APP_BUILD='b52';
 let appOutdated=false;
 // Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
 let _verTag=null, _verLast=0;
@@ -2950,11 +2951,11 @@ const PDO_COURSES=[
   {lvl:'Level 2', code:'CHM', name:'Chemical Handling Management', years:null, alias:/chemical handling/},
   {lvl:'Level 2', code:'NORMM', name:'Naturally Occurring Radioactive Material Management', years:4, alias:/\bnorm\b|radioactive/},
   {lvl:'Level 2', code:'NORMM-R', name:'NORM Management Reassessment', years:4, base:['NORMM']},
-  {lvl:'Level 3', code:'IOSH-MS', name:'IOSH Managing Safely', years:null, alias:/iosh/},
+  {lvl:'Level 3', code:'IOSH-MS', name:'IOSH Managing Safely', years:null, alias:/iosh.*manag/},
   {lvl:'Level 3', code:'NEBOSH IGC', name:'NEBOSH International General Certificate', years:null, alias:/nebosh.*(igc|general)/},
   {lvl:'Level 3', code:'NEBOSH Dip', name:'NEBOSH International Diploma', years:null, alias:/nebosh.*dip/},
-  {lvl:'Level 3', code:'NVQ3OSH', name:'NVQ Level 3 in Occupational Safety & Health', years:null, alias:/nvq.*3/},
-  {lvl:'Level 3', code:'NVQ5OSH', name:'NVQ Level 5 Diploma in Occupational Safety & Health', years:null, alias:/nvq.*5/},
+  {lvl:'Level 3', code:'NVQ3OSH', name:'NVQ Level 3 in Occupational Safety & Health', years:null, alias:/nvq\D*\b3\b/},
+  {lvl:'Level 3', code:'NVQ5OSH', name:'NVQ Level 5 Diploma in Occupational Safety & Health', years:null, alias:/nvq\D*\b5\b/},
   {lvl:'Level 3', code:'VMN', name:'Goods Vehicle Marshal', years:3, alias:/vehicle marshal/},
   {lvl:'Level 3', code:'TBP', name:'Tripod Beta Practitioner', years:null, alias:/tripod/},
   {lvl:'Defensive driving', code:'LV', name:'Defensive Driving, Light Vehicles, Blacktop Roads', years:3, alias:/defensive driving.*(light|\blv\b)|light vehicle.*defensive|\bdd ?01\b/},
@@ -2965,7 +2966,7 @@ const PDO_COURSES=[
   {lvl:'Defensive driving', code:'RT', name:'Defensive Driving Recertification', years:3, base:['LV','HV','GR','TN','LB/HB'], alias:/defensive driving.*(recert|refresher)/},
   {lvl:'Defensive driving', code:'EVA', name:'Defensive Driving, Ambulance Drivers', years:1, alias:/ambulance/},
   {lvl:'Defensive driving', code:'EVF', name:'Defensive Driving, Fire-tender & Emergency Response Vehicle', years:1, alias:/fire.?tender|emergency response vehicle/},
-  {lvl:'Defensive driving', code:'SJM', name:'Safe Journey Manager', years:2, alias:/journey manag/},
+  {lvl:'Defensive driving', code:'SJM', name:'Safe Journey Manager', years:2, alias:/journey manager/},
   {lvl:'Defensive driving', code:'SJMR', name:'Safe Journey Manager Reassessment', years:3, base:['SJM']},
   /* Batch 45: SP-1257 V7.0 (Mar 2024) Appendix B — CISRS scaffolding cards (card colour as PDO record card) and other work-at-height training.
      covers = a higher card also satisfies these lower requirements. Validity: CISRS / PASMA / IPAF cards 5 years, IRATA 3 years (scheme rules). */
@@ -2993,7 +2994,7 @@ const PDO_HOURS={'HSEI':8,'H2SI':8,'H2SR':2,'SCBA':8,'SCBA-R':2,'AHA':14,'EA':4,
 PDO_COURSES.forEach(c=>{ if(PDO_HOURS[c.code]!=null) c.hrs=PDO_HOURS[c.code]; });
 function pdoCourseLabel(c){ return `(${c.code}) ${c.name}`; }
 function pdoCardText(c){ return c.card ? ` — ${c.card} card` : ''; }
-const SCAFF_CARD_RANK={'CISRS SUP':6,'CISRS SUP-R':6,'CISRS ADV':5,'CISRS ASI':4,'CISRS SCAF':4,'CISRS BSI':3,'CISRS BASE':2,'CISRS TRN':1,'CISRS LAB':0};
+const SCAFF_CARD_RANK={'CISRS SUP':6,'CISRS SUP-R':6,'CISRS ADV':5,'CISRS SCAF':4,'CISRS ASI':3.5,'CISRS BSI':3,'CISRS BASE':2,'CISRS TRN':1,'CISRS LAB':0};
 const _pdoCache=new Map();
 function pdoCourseOf(name){
   const raw=String(name||'').trim(); if(!raw) return null;
@@ -3008,8 +3009,11 @@ function pdoCourseOf(name){
 function trainingStatusFor(w, reqName){
   const key=normTraining(reqName); if(!key) return {status:'na'};
   const reqC=pdoCourseOf(reqName);
+  const holds=reqC ? (w.trainings||[]).some(r=>{ const c=pdoCourseOf(r.name); return c && c.code===reqC.code; }) : false;
   const recs=(w.trainings||[]).filter(r=>{ const n=normTraining(r.name); if(n && (n===key || (' '+n+' ').includes(' '+key+' '))) return true;
-    if(!reqC) return false; const rc=pdoCourseOf(r.name); return !!rc && (rc.code===reqC.code || (rc.base||[]).includes(reqC.code) || (rc.covers||[]).includes(reqC.code)); });
+    if(!reqC) return false; const rc=pdoCourseOf(r.name); if(!rc) return false;
+    if(rc.code===reqC.code || (rc.covers||[]).includes(reqC.code)) return true;
+    return (rc.base||[]).includes(reqC.code) && ((rc.base||[]).length===1 || holds); });
   if(!recs.length) return {status:'missing'};
   let best=null;
   for(const r of recs){
@@ -4205,7 +4209,7 @@ function targetActuals(year, upto){
   return {
     lti:m.lti, ltif: m.manHours ? m.lti*1e6/m.manHours : null, trcf: m.manHours ? (m.lti+m.mti)*1e6/m.manHours : null,
     training:trainingCompliancePct(), tbtPerMonth:per(m.tbt), inspPerMonth:per(m.siteVisit+m.internalAudit+m.vehicleInspection),
-    nearMiss:m.nearMiss, drills:m.mockDrill, trainingHoursPw:(t=>t.perWorker)(trainingHoursFor('all', year, 'all')), capaOnTime: judged ? Math.round(closedOnTime*100/judged) : null, _months:months,
+    nearMiss:m.nearMiss, drills:m.mockDrill, trainingHoursPw:trainingHoursUpTo('all', String(year), upto, 'all').perWorker, capaOnTime: judged ? Math.round(closedOnTime*100/judged) : null, _months:months,
     ...extraKpiActuals(year, m, upto),
   };
 }
@@ -4652,7 +4656,7 @@ function regFieldHtml0(f, v, attr){
   if(f.type==='kmline') return `<div class="span-all wsub sj-km" data-km-for="${esc(f.key.replace(/KmNote$/,''))}"></div>`;
   const req=f.required?' *':'', cls=f.wide?' class="span-all"':'';
   if(f.type==='project') return `<label${cls}>${esc(f.label)}${req}<select ${attr}="${f.key}">${projectOptionsHtml(v||'')}</select></label>`;
-  if(f.type==='pick'){ const opts=regOptions(f); return `<label${cls}>${esc(f.label)}${req}<select ${attr}="${f.key}" ${f.required?'required':''}><option value="">${esc(f.empty||'Select…')}</option>${opts.map(o=>`<option value="${esc(o.value)}" ${o.value===v?'selected':''}>${esc(o.label)}</option>`).join('')}</select></label>`; }
+  if(f.type==='pick'){ const opts=regOptions(f).slice(); if(v && !opts.some(o=>o.value===v)){ const w=workers.find(x=>x.id===v); opts.unshift({value:v, label:w?`${w.fullName||'—'} (not active)`:String(v)}); } return `<label${cls}>${esc(f.label)}${req}<select ${attr}="${f.key}" ${f.required?'required':''}><option value="">${esc(f.empty||'Select…')}</option>${opts.map(o=>`<option value="${esc(o.value)}" ${o.value===v?'selected':''}>${esc(o.label)}</option>`).join('')}</select></label>`; }
   if(f.type==='checks'){ const sel=new Set((v||[]).map(canonTrade)); return `<div class="span-all"><div class="pick-label">${esc(f.label)}</div><div class="cause-list">${regOptions(f).map(o=>`<label class="chk"><input type="checkbox" ${attr}="${f.key}" value="${esc(o)}" ${sel.has(o)?'checked':''}>${esc(o)}</label>`).join('')}</div></div>`; }
   if(f.type==='crew') return crewPickHtml(f, v, attr);
   if(f.type==='textlist'){ const lid='dl_'+f.key; const opts=regOptions(f); return `<label${cls}>${esc(f.label)}${req}<input ${attr}="${f.key}" list="${lid}" value="${esc(v||'')}" ${f.required?'required':''} placeholder="${esc(f.placeholder||'')}" autocomplete="off"></label><datalist id="${lid}">${opts.map(o=>`<option value="${esc(o)}">`).join('')}</datalist>`; }
@@ -4694,7 +4698,7 @@ function startRegData(){
 }
 function stopRegData(){ for(const key of Object.keys(regState)){ const st=regState[key]; if(st.unsub){ st.unsub(); st.unsub=null; } st.list=[]; } }
 async function regUpdate(key, id, data, quiet){
-  if(REG[key].prepare) await REG[key].prepare({...(regState[key].list.find(x=>x.id===id)||{}), ...data});
+  if(REG[key].prepare){ const cur=regState[key].list.find(x=>x.id===id)||{}; await REG[key].prepare({...cur, ...data}, data, cur); }
   if(REG[key].beforeUpdate){ data=REG[key].beforeUpdate({...data}, regState[key].list.find(x=>x.id===id)||{}); if(!data) return false; }
   try{ await db.collection(REG[key].collection).doc(id).update(stamp(deltaize(regState[key].list.find(x=>x.id===id), data))); if(!quiet) toast('Saved'); if(REG[key].afterSave) REG[key].afterSave({...(regState[key].list.find(x=>x.id===id)||{}), ...data, id}); return true; }
   catch(e){ console.error(e); toast(e&&e.code==='permission-denied'?RULES_UPDATE_MSG:'Could not save — '+((e&&e.code)||'error')); return false; }
@@ -4705,6 +4709,12 @@ async function regCreate(key, data, openTab){
   for(const s of Object.keys(cfg.subs||{})) if(!d[s]) d[s]=[];
   if(cfg.noField && !d[cfg.noField]) d[cfg.noField]=regNextNo(key, d[cfg.dateField||'date']);
   if(cfg.validate){ const msg=cfg.validate(d); if(msg){ toast(msg); return null; } }
+  if(cfg.noField && d[cfg.noField]){ try{   // Batch 52: check the number is free in the database, not just in what is loaded
+    const orig=d[cfg.noField];
+    for(let k=0;k<30;k++){ const snap=await db.collection(cfg.collection).where(cfg.noField,'==',d[cfg.noField]).limit(1).get(); if(snap.empty || !(snap.docs||[]).length) break;
+      const m=/^(.*-)(\d+)$/.exec(d[cfg.noField]); if(!m){ toast(`${d[cfg.noField]} is already used — give it another number`); return null; } d[cfg.noField]=m[1]+String(Number(m[2])+1).padStart(m[2].length,'0'); }
+    if(d[cfg.noField]!==orig) toast(`${orig} was already used — saved as ${d[cfg.noField]}`);
+  }catch(e){ console.warn('number check', e); } }
   if(cfg.prepare) await cfg.prepare(d);
   if(cfg.beforeCreate) cfg.beforeCreate(d);
   try{ const ref=await db.collection(cfg.collection).add(stamp(d)); toast(`${d[cfg.noField]||cfg.singular} saved`); if(cfg.afterSave) cfg.afterSave({...d, id:ref.id}); if(!cfg.keepAddOpen) openRegDrawer(key, ref.id, openTab); return ref.id; }
@@ -5877,7 +5887,7 @@ function cwProjects(){ const all=activeSites(); const cv=all.filter(s=>(s.divisi
 function cwFromDate(){ return monthAdd(localToday().slice(0,7), -2)+'-01'; }
 function cwListen(onList, onErr){
   const from=cwFromDate(), col=db.collection('civilWorks');
-  const qs=[col.where('open','==',true), col.where('finishedOn','>=',from), col.where('createdAt','>=',from)];
+  const qs=[col.where('open','==',true), col.where('finishedOn','>=',from), col.where('createdAt','>=',from), col.where('updatedAt','>=',from)];
   const parts=qs.map(()=>new Map());
   const emit=()=>{ const all=new Map(); for(const m of [cwOlder, ...parts]) for(const [id,d] of m) all.set(id,d); onList([...all.values()]); };
   cwRefresh=emit;
@@ -5893,7 +5903,8 @@ async function cwLoadOlder(){
 function cwComputed(r, entries){
   const x={...r, entries}, done=cwDone(x), last=(entries||[]).map(e=>e.date).filter(Boolean).sort().pop()||'';
   const out={doneQty:Math.round(done*100)/100, lastEntry:last};
-  if(cwTotal(x) && done>=cwTotal(x) && (r.status||'In progress')!=='Completed'){ out.status='Completed'; out.finishedOn=last||localToday(); out.open=false; setTimeout(()=>toast(`${r.activity||'Item'} reached 100% — marked Completed (change the status if work continues)`), 600); }
+  if(cwTotal(x) && done>=cwTotal(x) && (r.status||'In progress')!=='Completed'){ out.status='Completed'; out.finishedOn=last||localToday(); out.open=false; out.autoCompleted=true; setTimeout(()=>toast(`${r.activity||'Item'} reached 100% — marked Completed (change the status if work continues)`), 600); }
+  else if(r.autoCompleted && r.status==='Completed' && cwTotal(x) && done<cwTotal(x)){ out.status='In progress'; out.finishedOn=''; out.open=true; out.autoCompleted=false; setTimeout(()=>toast(`${r.activity||'Item'} is below 100% again — back to In progress`), 600); }
   return out;
 }
 function cwDailyChartHtml(r){
@@ -6045,7 +6056,7 @@ regDefine({
 REG.civil.beforeCreate=d=>{ d.entries=d.entries||[]; d.status=d.status||'In progress'; d.open=d.status!=='Completed'; d.doneQty=0; d.finishedOn=''; d.activity=(d.activity||'').trim(); };
 REG.civil.beforeUpdate=(data, cur)=>{
   if(data.startDate!==undefined || data.plannedEnd!==undefined){ const s=data.startDate!==undefined?data.startDate:cur.startDate, e=data.plannedEnd!==undefined?data.plannedEnd:cur.plannedEnd; if(s && e && e<s){ toast('The planned end date is before the start date'); return null; } }
-  if('status' in data){ data.open=data.status!=='Completed'; if(data.status==='Completed' && cur.status!=='Completed' && !data.finishedOn) data.finishedOn=cur.lastEntry||localToday(); if(data.status!=='Completed') data.finishedOn=''; }
+  if('status' in data){ data.open=data.status!=='Completed'; data.autoCompleted=false; if(data.status==='Completed' && cur.status!=='Completed' && !data.finishedOn) data.finishedOn=cur.lastEntry||localToday(); if(data.status!=='Completed') data.finishedOn=''; }
   return data;
 };
 REG.civil.afterSave=r=>{ if(cwOlder.has(r.id)){ cwOlder.set(r.id, {...cwOlder.get(r.id), ...r}); if(cwRefresh) cwRefresh(); } };
@@ -6303,10 +6314,11 @@ function ppeRecordsIn(fromD, toD){ const out=[]; for(const w of activeWorkers())
 function ppePeriodRange(){ const t=localToday(); if(ppeUi.period==='year') return [t.slice(0,4)+'-01-01', t, 'this year']; if(ppeUi.period==='12m') return [dateAdd(t,-365), t, 'last 12 months']; return [t.slice(0,7)+'-01', t, 'this month']; }
 // basic kit check: each active worker should have every kit item at least once (and not past its replacement date)
 function ppeKitGaps(){ const kit=ppeKitItems(); if(!kit.length) return null; const t=localToday();
-  return activeWorkers().filter(w=>(w.status||'active')==='active').map(w=>{ const miss=kit.filter(k=>{ const recs=(w.ppeIssued||[]).filter(r=>String(r.item||'').toLowerCase()===String(k.name).toLowerCase()); return !recs.length; }).map(k=>k.name); return {w, miss}; }); }
+  return activeWorkers().filter(w=>(w.status||'active')==='active').map(w=>{ const cur=currentRecs(w.ppeIssued||[], 'ppeIssued'); const miss=kit.filter(k=>{ const recs=cur.filter(r=>String(r.item||'').toLowerCase()===String(k.name).toLowerCase()); return !recs.some(r=>!r.expiry || r.expiry>=t); }).map(k=>k.name); return {w, miss}; }); }
 function renderPpe(live){
   const pane=document.getElementById('ppePane'); if(!pane || pane.hidden || !auth.currentUser) return;
   if(live && ppeUi.edit) return;   // don't wipe the item form while someone is typing in it
+  if(live && ppeUi.issueOpen && document.activeElement && pane.contains(document.activeElement) && /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)) return;
   if(ppeUi.fresh) ppeUi.fresh=false; else ppeReadIssueInputs();
   const keepScroll=window.scrollY;
   const [from, to, word]=ppePeriodRange(), recs=ppeRecordsIn(from, to), t=localToday();
@@ -6328,7 +6340,7 @@ function renderPpe(live){
     ${ppeUi.lastBatch?`<div class="notice">${ic('checkcircle')} <strong>${ppeUi.lastBatch.n} PPE record${ppeUi.lastBatch.n===1?'':'s'} saved</strong> for ${ppeUi.lastBatch.workers.length} worker${ppeUi.lastBatch.workers.length===1?'':'s'} (${esc(ppeUi.lastBatch.date)}). <button type="button" class="btn btn-sm" id="ppeSheetPdf">${ic('printer')} Signature sheet (PDF)</button> <button type="button" class="att-link" id="ppeBatchClose">Close</button></div>`:''}
     <div class="tiles tiles-4">
       <div class="tile"><div class="tile-head"><div class="tile-icon">${ic('hardhat')}</div><div class="tile-label">PPE items issued</div></div><div class="tile-num">${total}</div><div class="tile-sub">${word} · ${people} worker${people===1?'':'s'}</div></div>
-      <div class="tile"><div class="tile-head"><div class="tile-icon">${ic('vest')}</div><div class="tile-label">Basic kit complete</div></div><div class="tile-num ${gaps&&gapW.length?'warn':''}">${gaps?`${kitOk}/${gaps.length}`:'—'}</div><div class="tile-sub">${gaps?`${gapW.length} active worker${gapW.length===1?'':'s'} missing an item`:'tick "Basic kit" items in the approved list'}</div></div>
+      <div class="tile"><div class="tile-head"><div class="tile-icon">${ic('vest')}</div><div class="tile-label">Basic kit complete</div></div><div class="tile-num ${gaps&&gapW.length?'warn':''}">${gaps?`${kitOk}/${gaps.length}`:'—'}</div><div class="tile-sub">${gaps?`${gapW.length} active worker${gapW.length===1?'':'s'} missing an item (or past replacement)`:'tick "Basic kit" items in the approved list'}</div></div>
       <div class="tile"><div class="tile-head"><div class="tile-icon">${ic('clock')}</div><div class="tile-label">Replacement due</div></div><div class="tile-num ${soon.length?'warn':''}">${soon.length}</div><div class="tile-sub">in the next 30 days</div></div>
       <div class="tile"><div class="tile-head"><div class="tile-icon">${ic('alert')}</div><div class="tile-label">Replacement overdue</div></div><div class="tile-num ${overdue.length?'danger':''}">${overdue.length}</div><div class="tile-sub">past the replacement date</div></div>
     </div>
@@ -6372,7 +6384,8 @@ function ppeIssueFormHtml(){
   const projs=activeSites().filter(x=>projectStatus(x)!=='Completed').sort((a,b)=>(a.siteName||'').localeCompare(b.siteName||''));
   const q=ppeUi.q.toLowerCase();
   const ws=activeWorkers().filter(w=>(w.status||'active')==='active' && (ppeUi.project==='all' || w.projectId===ppeUi.project || ppeUi.workers.has(w.id))).sort((a,b)=>(a.fullName||'').localeCompare(b.fullName||''));
-  const shown=ws.filter(w=>!q || ((w.fullName||'')+' '+(w.civilId||'')+' '+(w.designation||'')).toLowerCase().includes(q));
+  const ptext=w=>[w.fullName, w.civilId, w.designation, w.projectId?projectName(w.projectId):''].filter(Boolean).join(' ').toLowerCase();
+  const shown=ws.filter(w=>!q || ptext(w).includes(q));
   const selW=activeWorkers().filter(w=>ppeUi.workers.has(w.id)).sort((a,b)=>(a.fullName||'').localeCompare(b.fullName||'')), selI=items.filter(i=>ppeUi.items.has(i.name));
   return `<div class="panel ppe-issue"><div class="section-head"><h3>Issue PPE to crew</h3><button type="button" class="btn btn-sm" id="ppeIssueClose">Close</button></div>
     <div class="form-grid">
@@ -6385,10 +6398,10 @@ function ppeIssueFormHtml(){
     <div class="ppe-chips">${items.map(i=>`<label class="chk"><input type="checkbox" data-ppe-item="${esc(i.name)}" ${ppeUi.items.has(i.name)?'checked':''}>${esc(i.name)}${i.kit?' <span class="wsub">(kit)</span>':''}</label>`).join('')}</div>
     <div class="subhead">2 · Workers (${ppeUi.workers.size} ticked) <button type="button" class="att-link" id="ppeAllW">Tick all shown</button> · <button type="button" class="att-link" id="ppeNoW">Clear</button></div>
     <input id="ppeQ" placeholder="Search name, civil ID, designation…" value="${esc(ppeUi.q)}" style="margin-bottom:6px;">
-    <div class="ppe-wlist">${shown.map(w=>`<label class="pick-row"><input type="checkbox" data-ppe-w="${esc(w.id)}" ${ppeUi.workers.has(w.id)?'checked':''}><span class="pick-main"><span class="wname">${esc(w.fullName||'—')}</span><span class="wsub">${esc([w.designation, w.projectId?projectName(w.projectId):''].filter(Boolean).join(' · ')||'—')}</span></span></label>`).join('')||'<p class="wsub">No workers.</p>'}</div>
+    <div class="ppe-wlist">${shown.map(w=>`<label class="pick-row" data-text="${esc(ptext(w))}"><input type="checkbox" data-ppe-w="${esc(w.id)}" ${ppeUi.workers.has(w.id)?'checked':''}><span class="pick-main"><span class="wname">${esc(w.fullName||'—')}</span><span class="wsub">${esc([w.designation, w.projectId?projectName(w.projectId):''].filter(Boolean).join(' · ')||'—')}</span></span></label>`).join('')||'<p class="wsub">No workers.</p>'}</div>
     ${selW.length&&selI.length?`<div class="subhead">3 · Sizes &amp; quantity <span class="wsub">(last size issued is filled in)</span></div>
-      <div class="table-wrap"><table class="ppe-sz"><thead><tr><th>Worker</th>${selI.map(i=>`<th>${esc(i.name)}</th>`).join('')}</tr></thead><tbody>${selW.map(w=>`<tr><td>${esc(w.fullName||'—')}</td>${selI.map(i=>{ const k=w.id+'|'+i.name, v=ppeUi.sizes[k]||{size:ppeLastSize(w,i.name), qty:1}; return `<td><span class="ppe-cell"><input data-ppe-size="${esc(k)}" value="${esc(v.size||'')}" placeholder="size"><input type="number" min="1" step="1" data-ppe-qty="${esc(k)}" value="${esc(v.qty||1)}" title="Quantity"></span></td>`; }).join('')}</tr>`).join('')}</tbody></table></div>
-      <div class="form-actions"><button type="button" class="btn btn-primary" id="ppeIssueSave" ${ppeUi.saving?'disabled':''}>Save — ${selW.length*selI.length} record${selW.length*selI.length===1?'':'s'}</button></div>`:`<p class="wsub">Tick at least one item and one worker.</p>`}
+      <div class="table-wrap"><table class="ppe-sz"><thead><tr><th>Worker</th>${selI.map(i=>`<th>${esc(i.name)}</th>`).join('')}</tr></thead><tbody>${selW.map(w=>`<tr><td>${esc(w.fullName||'—')}</td>${selI.map(i=>{ const k=w.id+'|'+i.name, v=ppeUi.sizes[k]||{size:ppeLastSize(w,i.name), qty:1}; if(ppeUi.limit && ppeUi.limit[w.id] && !ppeUi.limit[w.id].includes(i.name)) return `<td class="wsub">not needed</td>`; return `<td><span class="ppe-cell"><input data-ppe-size="${esc(k)}" value="${esc(v.size||'')}" placeholder="size"><input type="number" min="1" step="1" data-ppe-qty="${esc(k)}" value="${esc(v.qty||1)}" title="Quantity"></span></td>`; }).join('')}</tr>`).join('')}</tbody></table></div>
+      <div class="form-actions">${(n=>`<button type="button" class="btn btn-primary" id="ppeIssueSave" ${ppeUi.saving?'disabled':''}>Save — ${n} record${n===1?'':'s'}</button>`)(selW.reduce((t,w)=>t+selI.filter(i=>!(ppeUi.limit && ppeUi.limit[w.id] && !ppeUi.limit[w.id].includes(i.name))).length,0))}</div>`:`<p class="wsub">Tick at least one item and one worker.</p>`}
   </div>`;
 }
 function ppeReadIssueInputs(){
@@ -6397,8 +6410,8 @@ function ppeReadIssueInputs(){
   document.querySelectorAll('[data-ppe-size]').forEach(el=>{ const k=el.dataset.ppeSize; ppeUi.sizes[k]={...(ppeUi.sizes[k]||{}), size:el.value}; });
   document.querySelectorAll('[data-ppe-qty]').forEach(el=>{ const k=el.dataset.ppeQty; ppeUi.sizes[k]={...(ppeUi.sizes[k]||{}), qty:Number(el.value)||1}; });
 }
-function ppeOpenIssue(workerIds, items, condition){
-  ppeUi={...ppeUi, issueOpen:true, items:new Set(items||[]), workers:new Set(workerIds||[]), project:'all', q:'', sizes:{}, date:localToday(), condition:condition||'New issue', lastBatch:null, fresh:true};
+function ppeOpenIssue(workerIds, items, condition, limit){
+  ppeUi={...ppeUi, limit:limit||null, issueOpen:true, items:new Set(items||[]), workers:new Set(workerIds||[]), project:'all', q:'', sizes:{}, date:localToday(), condition:condition||'New issue', lastBatch:null, fresh:true};
   setWorkforceView('ppe'); if(ppeUi.fresh){ ppeUi.fresh=false; renderPpe(); } const p=document.querySelector('.ppe-issue'); if(p) p.scrollIntoView({block:'start', behavior:'smooth'});
 }
 async function ppeSaveIssue(){
@@ -6408,23 +6421,29 @@ async function ppeSaveIssue(){
   const batchId='ppe_'+Date.now().toString(36), date=ppeUi.date||localToday(); let n=0; const rows=[];
   ppeUi.saving=true; renderPpe();
   for(const id of selW){ const w=workers.find(x=>x.id===id); const add=[];
-    for(const it of selI){ const v=ppeUi.sizes[id+'|'+it]||{size:ppeLastSize(w,it), qty:1}, std=ppeStdOf(it);
+    for(const it of selI){ if(ppeUi.limit && ppeUi.limit[id] && !ppeUi.limit[id].includes(it)) continue; const v=ppeUi.sizes[id+'|'+it]||{size:ppeLastSize(w,it), qty:1}, std=ppeStdOf(it);
       add.push({id:genId(), item:it, size:String(v.size||'').trim(), quantity:Math.max(1, Number(v.qty)||1), date, expiry:std&&std.life?ppeAddMonths(date, std.life):'', issuedBy:ppeUi.issuedBy.trim(), condition:ppeUi.condition, notes:'Crew issue'+(ppeUi.project!=='all'?' — '+projectName(ppeUi.project):''), projectId:ppeUi.project!=='all'?ppeUi.project:(w.projectId||''), batchId}); }
-    try{ await db.collection('workers').doc(id).update(stamp({ppeIssued:[...(w.ppeIssued||[]), ...add]})); n+=add.length; rows.push({w, add}); }
+    if(!add.length) continue;
+    try{ const FV=fsFieldValue(); await db.collection('workers').doc(id).update(stamp({ppeIssued: FV ? FV.arrayUnion(...add) : [...(w.ppeIssued||[]), ...add]})); n+=add.length; rows.push({w, add}); }
     catch(e){ console.error(e); toast('Could not save for '+(w.fullName||'a worker')+' — '+(e.code||'error')); }
   }
   ppeUi.saving=false; ppeUi.issueOpen=false; ppeUi.lastBatch={n, date, project:ppeUi.project, issuedBy:ppeUi.issuedBy, condition:ppeUi.condition, workers:rows.map(r=>({name:r.w.fullName||'—', civilId:r.w.civilId||'', designation:r.w.designation||'', items:r.add.map(a=>({item:a.item, size:a.size, qty:a.quantity}))}))};
   toast(`${n} PPE record${n===1?'':'s'} saved`); renderPpe();
 }
 async function ppeSaveItem(form){
-  const id=form.dataset.id||genId(), get=k=>{ const el=form.querySelector(`[data-ppe-f="${k}"]`); return el?(el.type==='checkbox'?el.checked:el.value.trim()):''; };
+  if(ppeUi.savingItem) return; ppeUi.savingItem=true;
+  try{ await ppeSaveItem0(form); } finally{ ppeUi.savingItem=false; }
+}
+async function ppeSaveItem0(form){
+  if(!form.dataset.id) form.dataset.id=genId();
+  const id=form.dataset.id, get=k=>{ const el=form.querySelector(`[data-ppe-f="${k}"]`); return el?(el.type==='checkbox'?el.checked:el.value.trim()):''; };
   const name=get('name'); if(!name){ toast('Give the item a name'); return; }
   if(ppeList().some(x=>x.id!==id && String(x.name).trim().toLowerCase()===name.toLowerCase())){ toast('An item with that name is already in the list'); return; }
   const old=ppeList().find(x=>x.id===id)||{};
   const item={...old, id, cat:get('cat'), name, type:get('type'), std:get('std'), local:get('local'), colour:get('colour'), brand:get('brand'), sizes:get('sizes'), life:get('life')===''?'':Number(get('life')), status:get('status')||'Approved', kit:!!get('kit'), notes:get('notes')};
   const file=form.querySelector('[data-ppe-sheet]'); if(file && file.files && file.files[0]){ try{ toast('Uploading…'); item.sheet=await uploadToStorage(file.files[0]); }catch(e){ console.error(e); toast(e.userMsg||'Could not upload the file'); return; } }
   const items=ppeList().filter(x=>x.id!==id).concat([item]);
-  if(await saveSettings('ppeStandards', {items}, settingsStamp('ppeStandards'))){ ppeUi.edit=null; renderPpe(); }
+  if(await saveSettings('ppeStandards', {items}, ppeUi.editBase!==undefined?ppeUi.editBase:settingsStamp('ppeStandards'))){ ppeUi.edit=null; renderPpe(); }
 }
 function ppeTableRows(){ return ppeApproved().slice().sort((a,b)=>PPE_CATS.indexOf(a.cat)-PPE_CATS.indexOf(b.cat) || String(a.name).localeCompare(String(b.name))).map(x=>[x.cat||'', x.name+(x.type?' — '+x.type:''), x.std||'', x.local||'', x.colour||'', x.brand||'', x.sizes||'', ppeLifeText(x)]); }
 const PPE_TABLE_HEAD=['Category','Item / type','Standard (international)','Local / client requirement','Colour — who wears it','Approved brand / model','Sizes','Replace every'];
@@ -6463,7 +6482,7 @@ function ppeSheetPdf(){
   doc.text('I have received the PPE listed below in good condition. I will wear it as instructed, look after it and return it for replacement when worn or damaged.', 32, 72);
   const rows=b.workers.map((w,i)=>[String(i+1), w.name, w.civilId, w.designation, w.items.map(x=>`${x.item}${x.size?' ('+x.size+')':''}${x.qty>1?' ×'+x.qty:''}`).join(', '), '']);
   const y=ppePdfTable(doc, ['#','Name','Civil ID','Designation','PPE issued (size)','Signature'], rows, [24,140,70,100,300,140], 86, 32);
-  doc.setFontSize(9.5); const yy=Math.min(y+30, doc.internal.pageSize.getHeight()-30); doc.text('Issued by (name & signature): ______________________________          HSE: ______________________________', 32, yy);
+  doc.setFontSize(9.5); let yy=y+30; if(yy>doc.internal.pageSize.getHeight()-30){ doc.addPage(); yy=60; } doc.text('Issued by (name & signature): ______________________________          HSE: ______________________________', 32, yy);
   doc.save(`PPE_issue_${b.date}.pdf`);
 }
 
@@ -6514,7 +6533,8 @@ async function geocodePlace(name){
   try{
     const wait=Math.max(0, 1100-(Date.now()-_geoLast)); if(wait) await new Promise(r=>setTimeout(r, wait)); _geoLast=Date.now();   // map service allows 1 search a second
     const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=om&accept-language=en&q=${encodeURIComponent(name)}`);
-    const js=r.ok ? await r.json() : [];
+    if(!r.ok) return;   // busy / error: try again next time instead of remembering "not found"
+    const js=await r.json();
     scaffGeo.set(k, js && js[0] ? {lat:Number(js[0].lat), lng:Number(js[0].lon), label:js[0].display_name||name} : null);
   }catch(e){ console.warn('map search', e); }
   finally{ scaffPending.delete('g:'+k); }
@@ -6572,10 +6592,11 @@ function scaffCardOf(w, onDate){
     const code=c.code==='CISRS SUP-R'?'CISRS SUP':c.code; if(!best || SCAFF_CARD_RANK[code]>SCAFF_CARD_RANK[best.code]) best={code, course:PDO_COURSES.find(x=>x.code===code), expiry:r.expiry||''}; }
   return best;
 }
+function scaffHasCard(w, d, codes){ d=d||localToday(); return ((w && w.trainings)||[]).some(r=>{ const c=pdoCourseOf(r.name); if(!c) return false; const code=c.code==='CISRS SUP-R'?'CISRS SUP':c.code; return codes.includes(code) && !(r.expiry && r.expiry<d) && !(r.date && r.date>d); }); }
 function scaffCrewCheck(ids, onDate, chargehand){
   ids=(ids||[]).filter(Boolean); if(!ids.length) return {issues:[], members:[]};
-  const members=ids.map(id=>{ const w=workers.find(x=>x.id===id); return {id, name:w?(w.fullName||'—'):'removed worker', card:w?scaffCardOf(w, onDate):null}; });
-  const competent=members.filter(m=>m.card && ['CISRS SCAF','CISRS ADV','CISRS SUP'].includes(m.card.code)).length;
+  const members=ids.map(id=>{ const w=workers.find(x=>x.id===id); return {id, name:w?(w.fullName||'—'):'removed worker', card:w?scaffCardOf(w, onDate):null, comp:!!w && scaffHasCard(w, onDate, ['CISRS SCAF','CISRS ADV','CISRS SUP'])}; });
+  const competent=members.filter(m=>m.comp).length;
   const issues=[];
   if(!competent) issues.push('No competent Scaffolder (Blue or Gold CISRS card in date) in the crew — trainees and labourers may only work under a Scaffolder or Advanced Scaffolder.');
   else if(members.length/competent>4) issues.push(`Only ${competent} competent scaffolder${competent===1?'':'s'} for ${members.length} people — SP-1257 asks for a Scaffolder or Advanced Scaffolder per gang of 2–4.`);
@@ -6618,6 +6639,7 @@ function scaffInspState(r){
   if(!l.length) return {key:'nohandover', cls:'danger', text:'Handover inspection not recorded', days:daysBetween(r.rigUpDate||t, t)};
   const c=scaffInspComputed(l);
   if(c.lastTag==='red') return {key:'red', cls:'danger', text:`Red tag since ${c.lastInspection} — do not use`};
+  if(!c.handoverDone) return {key:'nohandover', cls:'danger', text:'Handover inspection not recorded', days:daysBetween(r.rigUpDate||t, t)};
   const d=daysBetween(t, c.inspectionDue);
   if(d<0) return {key:'overdue', cls:'danger', text:`Inspection overdue by ${-d} day${d===-1?'':'s'} (last ${c.lastInspection})`, days:d};
   if(d<=1) return {key:'due', cls:'warn', text:d===0?'Inspection due today':'Inspection due tomorrow', days:d};
@@ -6653,7 +6675,7 @@ function scaffLocations(){ return [...new Set(regActive('scaff').map(r=>(r.locat
 // date-limited live loading (4 small queries merged) + older months on request
 function scaffListen(onList, onErr){
   const from=scaffLoadFrom(), col=db.collection('scaffJobs');
-  const qs=[col.where('rigUpDate','>=',from), col.where('rigDownDate','>=',from), col.where('open','==',true), col.where('createdAt','>=',from)];
+  const qs=[col.where('rigUpDate','>=',from), col.where('rigDownDate','>=',from), col.where('open','==',true), col.where('createdAt','>=',from), col.where('updatedAt','>=',from)];
   const parts=qs.map(()=>new Map());
   const emit=()=>{ const all=new Map(); for(const m of [scaffOlder, ...parts]) for(const [id,d] of m) all.set(id,d); onList([...all.values()]); };
   scaffRefresh=emit;
@@ -6771,7 +6793,7 @@ async function exportScaffJobs(){
   const jobs=[['Job no.','Project','Client / company','Requested by','Requester phone','Request / WO no.','Location / well head','Scaffold tag','Volume','Lifts','Rig-up date','Rig-up outcome','Rig-up from','Rig-up vehicle','Rig-up km (one way)','Rig-up km how','Rig-up crew','Rig-down date','Rig-down from','Rig-down vehicle','Rig-down km (one way)','Rig-down km how','Rig-down crew','Cancelled rig-down trips','Days standing','Status','Notes'],
     ...list.map(r=>[r.jobNo||'', r.projectId?projectName(r.projectId):'', r.client||'', r.requestedBy||'', r.requesterPhone||'', r.workOrder||'', r.location||'', r.tagNo||'', r.volume||'', r.lifts===''||r.lifts==null?'':r.lifts, r.rigUpDate||'', scaffUpDone(r)?'Completed':`Cancelled — ${[r.upCancelStage, r.upCancelReason, r.upCancelledBy?'by '+r.upCancelledBy:''].filter(Boolean).join(' · ')}`, r.upFrom||'', r.upVehicle||'', r.upKm??'', kmHow(r.upKmSrc, r.upKm), scaffCrewNames(r.rigUpCrew).join(', '), r.rigDownDate||'', r.downFrom||'', r.downVehicle||'', r.downKm??'', kmHow(r.downKmSrc, r.downKm), scaffCrewNames(r.rigDownCrew).join(', '), (r.downCancels||[]).length||'', scaffDays(r)??'', !scaffUpDone(r)?'Cancelled':scaffStanding(r)?'Standing':'Rigged down', r.notes||''])];
   const inspRows=[['Job no.','Location','Project','Date','Time','Inspection','Inspector','Inspector card','Tag','Matters identified','Action','Reported to','Warnings']];
-  for(const r of list) for(const x of (r.inspections||[])){ const w=workers.find(q=>q.id===x.inspector), c=w?scaffCardOf(w, x.date):null; inspRows.push([r.jobNo||'', r.location||'', r.projectId?projectName(r.projectId):'', x.date||'', x.time||'', x.type||'', w?w.fullName:'', c?c.course.name:'', x.tag||'', x.matters||'', x.action||'', x.reportedTo||'', scaffInspectorIssues(x.inspector, x.date, r).join(' | ')]); }
+  for(const r of list) for(const x of (r.inspections||[])){ const w=workers.find(q=>q.id===x.inspector), c=w?((w.trainings||[]).map(t=>pdoCourseOf(t.name)).find(k=>k && ['CISRS ASI','CISRS BSI'].includes(k.code)) ? {course:(w.trainings||[]).map(t=>pdoCourseOf(t.name)).filter(k=>k && ['CISRS ASI','CISRS BSI'].includes(k.code)).sort((a,b)=>a.code.localeCompare(b.code))[0]} : scaffCardOf(w, x.date)):null; inspRows.push([r.jobNo||'', r.location||'', r.projectId?projectName(r.projectId):'', x.date||'', x.time||'', x.type||'', w?w.fullName:'', c?c.course.name:'', x.tag||'', x.matters||'', x.action||'', x.reportedTo||'', scaffInspectorIssues(x.inspector, x.date, r).join(' | ')]); }
   const cancRows=[['Date','Trip','Job no.','Project','Client','Location','Stage','Reason','Cancelled by','Crew','Km (one way)','Km how'], ...scaffCancelled(list).map(x=>[x.date, x.kind, x.r.jobNo||'', x.r.projectId?projectName(x.r.projectId):'', x.r.client||'', x.r.location||'', x.stage, x.reason, x.by, scaffCrewNames(x.crew).join(', '), x.km??'', kmHow(x.src, x.km)])];
   const days=new Map(); const bump=(d,i,v)=>{ if(!d) return; if(!days.has(d)) days.set(d,[0,0,0,0,0,0,0,0]); days.get(d)[i]++; const k=SCAFF_VOLUMES.indexOf(v); if(k>-1) days.get(d)[2+i*3+k]++; };
   list.forEach(r=>{ if(scaffUpDone(r)) bump(r.rigUpDate,0,r.volume); bump(r.rigDownDate,1,r.volume); });
@@ -6950,9 +6972,11 @@ regDefine({
       {label:'Standing now', num:st.length, cls:st.some(r=>{ const x=scaffInspState(r); return x && x.cls==='danger'; })?'warn':'', sub:st.length?`longest ${Math.max(...st.map(r=>scaffDays(r)||0))} days · ${st.filter(r=>{ const x=scaffInspState(r); return x && x.cls==='danger'; }).length} inspection overdue / missing / red`:'none standing', icon:'hourglass'},
       {label:'Average days standing', num:dm.length?Math.round(dm.reduce((n,r)=>n+(scaffDays(r)||0),0)/dm.length):'—', sub:`rigged down this month`, icon:'clock'}]; },
 });
-function scaffCleanTrip(d){
+function scaffTripChanged(data, cur){ return ['upFrom','location','upOutcome','upCancelStage'].some(k=>k in data && String(data[k]||'').trim()!==String((cur||{})[k]||'').trim()); }
+function scaffCleanTrip(d, cur){
   if('upOutcome' in d && d.upOutcome!=='Cancelled'){ d.upCancelStage=''; d.upCancelReason=''; d.upCancelledBy=''; }
-  if('upFrom' in d || 'location' in d){ const dist=(d.upOutcome==='Cancelled' && d.upCancelStage==='Before leaving') ? null : scaffDistance(d.upFrom, d.location); d.upKm=dist?dist.km:''; d.upKmSrc=dist?dist.src:''; d.upEstKm=''; delete d.upOdoStart; delete d.upOdoEnd; }
+  if(cur && !scaffTripChanged(d, cur) && cur.upKm!=='' && cur.upKm!=null){ /* same trip — keep the km already saved */ }
+  else if('upFrom' in d || 'location' in d){ const dist=(d.upOutcome==='Cancelled' && d.upCancelStage==='Before leaving') ? null : scaffDistance(d.upFrom, d.location); d.upKm=dist?dist.km:''; d.upKmSrc=dist?dist.src:''; d.upEstKm=''; delete d.upOdoStart; delete d.upOdoEnd; }
   delete d.upKmNote;
   for(const k of ['client','requestedBy','requesterPhone','workOrder','upFrom','upVehicle','upCancelReason','upCancelledBy']) if(typeof d[k]==='string') d[k]=d[k].trim();
 }
@@ -6967,7 +6991,7 @@ REG.scaff.beforeUpdate=(data, cur)=>{
   if('location' in data) data.location=(data.location||'').trim();
   if('upOutcome' in data){ const msg=REG.scaff.validate({...cur, ...data}); if(msg){ toast(msg); return null; } }
   if('upFrom' in data && !('location' in data)) data.location=cur.location||'';
-  scaffCleanTrip(data); delete data.crewCheck;
+  scaffCleanTrip(data, cur); delete data.crewCheck;
   if('upOutcome' in data){ if(data.upOutcome==='Cancelled'){ if(cur.rigDownDate){ toast('This scaffold was already rigged down — undo the rig-down first'); return null; } data.open=false; } else data.open=!(data.rigDownDate!==undefined?data.rigDownDate:cur.rigDownDate); }
   const up=data.rigUpDate!==undefined?data.rigUpDate:cur.rigUpDate, down=data.rigDownDate!==undefined?data.rigDownDate:cur.rigDownDate;
   if(up && down && down<up){ toast('Rig-down date cannot be before the rig-up date'); return null; }
@@ -6975,7 +6999,7 @@ REG.scaff.beforeUpdate=(data, cur)=>{
   return data;
 };
 // before saving: look up the places / road route (max 6 s — otherwise the estimate is saved)
-REG.scaff.prepare=d=>{ const x=scaffDistance(d.upFrom, d.location); if(d.upFrom && d.location && (!x || x.src!=='road')) toast('Working out the distance…'); return Promise.race([ensureDistance(d.upFrom, d.location), new Promise(r=>setTimeout(r, 6000))]); };
+REG.scaff.prepare=(d, data, cur)=>{ if(data && !scaffTripChanged(data, cur) && ((cur.upKm!=='' && cur.upKm!=null) || !('upFrom' in data || 'location' in data))) return; const x=scaffDistance(d.upFrom, d.location); if(d.upFrom && d.location && (!x || x.src!=='road')) toast('Working out the distance…'); return Promise.race([ensureDistance(d.upFrom, d.location), new Promise(r=>setTimeout(r, 6000))]); };
 REG.scaff.afterSave=r=>{ if(scaffOlder.has(r.id)){ scaffOlder.set(r.id, {...scaffOlder.get(r.id), ...r}); if(scaffRefresh) scaffRefresh(); } };
 REG.scaff.customSubmit={
   down: async (r, form)=>{
@@ -7451,11 +7475,18 @@ function trainingHoursFor(division, periodKey, project){
   o.perWorker=o.headcount ? r1(o.total/o.headcount) : null;
   return o;
 }
+// training hours for a year up to a month (YYYY-MM); per worker = total ÷ today's active headcount in scope
+function trainingHoursUpTo(division, year, upto, project){
+  if(!upto || upto.length!==7 || upto.slice(0,4)!==year) return trainingHoursFor(division, year, project);
+  const o=trainingHoursFor(division, upto, project); let total=o.total;
+  for(let m=1;m<Number(upto.slice(5,7));m++) total+=trainingHoursFor(division, `${year}-${String(m).padStart(2,'0')}`, project).total;
+  total=Math.round(total*10)/10; return {...o, total, perWorker:o.headcount?Math.round(total/o.headcount*10)/10:null};
+}
 function workerCourseHours(w, prefix){ return Math.round((w.trainings||[]).filter(r=>String(r.date||'').startsWith(prefix||'')).reduce((n,r)=>n+courseHours(r),0)*10)/10; }
-function driveEvents(e){ return Math.max(1, Math.round(Number(e.events)||1)); }
+function driveEvents(e){ if(e.events===undefined || e.events===null || e.events==='') return 1; return Math.max(0, Math.round(Number(e.events)||0)); }
 function per100k(n, km){ return km ? Math.round(n*100000/km*10)/10 : null; }
 function computeReportMetrics(entries){
-  const m={};
+  const m={}, kmRows=[];
   for(const key of Object.keys(REPORT_CATEGORIES)) m[key]=0;
   m.trainingAttendees=0; m.tbtAttendees=0; m.ltiDaysLost=0; m.internalAuditFindings=0;
   m.mockDrillParticipants=0; m.ppeIssuanceQty=0; m.inductionSessions=0;
@@ -7463,7 +7494,7 @@ function computeReportMetrics(entries){
     const cat=e.category;
     if(!REPORT_CATEGORIES[cat]) continue;
     if(cat==='manHours') m.manHours += Number(e.hours)||0;
-    else if(cat==='vehicleKm') m.vehicleKm += Number(e.km)||0;
+    else if(cat==='vehicleKm') kmRows.push(e);
     else if(cat==='induction'){ m.induction += Number(e.count)||0; m.inductionSessions += 1; }   // headcount for the tile, sessions for activity totals
     else if(DRIVE_CATS.includes(cat)) m[cat] += driveEvents(e);
     else {
@@ -7476,6 +7507,8 @@ function computeReportMetrics(entries){
       if(cat==='ppeIssuance') m.ppeIssuanceQty += Number(e.quantity)||0;
     }
   }
+  { const g=new Map(); for(const e of kmRows){ const k=`${e.division||''}|${e.projectId||''}|${String(e.date||'').slice(0,7)}`; const x=g.get(k)||{tot:0, hasTot:false, veh:0}; if(String(e.vehicleNumber||'').trim()) x.veh+=Number(e.km)||0; else { x.tot+=Number(e.km)||0; x.hasTot=true; } g.set(k,x); }
+    for(const x of g.values()) m.vehicleKm += x.hasTot ? x.tot : x.veh; }   // Batch 52: a month total replaces the per-vehicle rows of the same month
   m.proactiveTotal = ACTIVITY_DONUT_KEYS.reduce((n,k)=>n+(k==='induction'?m.inductionSessions:m[k]),0);
   m.safetyEventsTotal = m.nearMiss + m.lti + m.incident + m.vehicleIncident;
   return m;
@@ -7896,7 +7929,7 @@ function renderLangStrip(){
   const el=document.getElementById('langStrip'); if(!el) return;
   const save=filters.lang; filters.lang=''; const ws=workers.filter(matches).filter(w=>(w.status||'active')==='active'); filters.lang=save;
   const m=new Map(); let none=0; for(const w of ws){ const l=w.languages||[]; if(!l.length) none++; for(const x of l) m.set(x,(m.get(x)||0)+1); }
-  if(!m.size){ el.innerHTML=''; el.hidden=true; return; } el.hidden=false;
+  if(!m.size && !filters.lang){ el.innerHTML=''; el.hidden=true; return; } el.hidden=false;
   el.innerHTML=`<span class="lang-l">Languages (active workers in view):</span>${[...m].sort((a,b)=>b[1]-a[1]).map(([l,n])=>`<button type="button" class="lang-chip ${filters.lang===l?'active':''}" data-langchip="${esc(l)}">${esc(l)} <b>${n}</b></button>`).join('')}${none?`<span class="wsub">${none} not recorded</span>`:''}${filters.lang?`<button type="button" class="att-link" data-langchip="">Clear</button>`:''}`;
 }
 function renderTable(){
@@ -9342,6 +9375,7 @@ function ccDial(v, size, stroke, label, opts){
 // Round axis: a tidy step (1, 2, 2.5 or 5 × 10ⁿ) and a max that is a whole number of steps
 function ccAxis(v, parts){
   if(!(v>0)) return {max:parts, step:1};
+  if(v<=parts) return {max:Math.max(1, Math.ceil(v)), step:1};
   const raw=v/parts, p=Math.pow(10, Math.floor(Math.log10(raw)));
   const step=[1,2,2.5,5,10].map(m=>m*p).find(x=>x>=raw);
   return {max:Math.ceil(v/step)*step, step};
@@ -9411,7 +9445,7 @@ function renderCcDriving(entries, m, key, prev, prevName, months, monthly, scope
 function renderCcTrainHours(key, division, project, months, scope){
   const el=document.getElementById('ccTrainHours'); if(!el) return;
   const h=trainingHoursFor(division, key, project), word=key.length===4?'this year':'this month';
-  const yr=key.slice(0,4), y=key.length===4?h:trainingHoursFor(division, yr, project);
+  const yr=key.slice(0,4), y=key.length===4?h:trainingHoursUpTo(division, yr, key, project);
   const rows=[['Courses (PDO & other certificates)',h.course,'--cat-1'],['Internal training',h.internal,'--cat-3'],['Inductions',h.induction,'--cat-4'],['Toolbox talks',h.tbt,'--cat-2']];
   const max=Math.max(1,...rows.map(r=>r[1])), fmt=n=>Number(n).toLocaleString(undefined,{maximumFractionDigits:1});
   const trend=months.map(k=>trainingHoursFor(division, k, project).total);
@@ -9599,7 +9633,7 @@ function renderReportBar(){
   function rowsFor(keys){
     return DIVISIONS.map(div=>{
       const mm = computeReportMetrics(reportEntriesFor(div, reportPeriodKey(), reportProject));
-      const value = keys.reduce((n,k)=>n+mm[k],0);
+      const value = keys.reduce((n,k)=>n+(k==='induction'?mm.inductionSessions:mm[k]),0);
       return {label:divLabel(div), value, color:DIVISION_COLORS[div]};
     });
   }
@@ -9690,7 +9724,7 @@ function driverViolationRecord(entryId, d){
     actionTaken: d.actionTaken||'', reportedBy: 'Monthly Report — '+(cat==='lsr'?'LSR':cat.toUpperCase())};
 }
 async function syncDriverViolation(entryId, data, prevDriverId){
-  const vid='hl_'+entryId, newId=data && REPORT_CATEGORIES[data.category] && REPORT_CATEGORIES[data.category].drive ? (data.driverId||'') : '';
+  const vid='hl_'+entryId, newId=data && REPORT_CATEGORIES[data.category] && REPORT_CATEGORIES[data.category].drive && driveEvents(data)>0 ? (data.driverId||'') : '';
   for(const wid of [...new Set([prevDriverId, newId].filter(Boolean))]){
     const w=workers.find(x=>x.id===wid); if(!w) continue;
     const list=(w.violations||[]).filter(v=>v.id!==vid); if(wid===newId) list.push(driverViolationRecord(entryId, data));
@@ -9742,7 +9776,7 @@ function reportCategoryFieldsHtml(category, editing){
     : '';
   return cfg.fields.map(f=>{
     const val = editing ? (editing[f.key]!=null?editing[f.key]:'') : (f.default!=null?f.default:'');
-    if(f.type==='worker'){ const ws=activeWorkers().filter(w=>(w.status||'active')!=='inactive' || w.id===val).sort((a,b)=>(a.fullName||'').localeCompare(b.fullName||''));
+    if(f.type==='worker'){ const ws=workers.filter(w=>w.id===val || (!w.deleted && (w.status||'active')!=='inactive')).sort((a,b)=>(a.fullName||'').localeCompare(b.fullName||''));
       return `<label>${esc(f.label)}<select data-rfield="${f.key}"><option value="">— Not known / not one person —</option>${ws.map(w=>`<option value="${esc(w.id)}" ${w.id===val?'selected':''}>${esc(w.fullName||'—')}${w.designation?' — '+esc(w.designation):''}</option>`).join('')}</select></label>`; }
     if(f.type==='textarea') return `<label>${esc(f.label)}${f.required?' *':''}<textarea data-rfield="${f.key}" ${f.required?'required':''}>${esc(val)}</textarea></label>`;
     if(f.type==='select') return `<label>${esc(f.label)}${f.required?' *':''}<select data-rfield="${f.key}" ${f.required?'required':''}><option value="">Select…</option>${f.options.map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
@@ -11198,7 +11232,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     hint.textContent = c.years ? `Valid until set automatically: ${c.code}${c.card?' ('+c.card+' card)':''} is valid ${c.years} year${c.years>1?'s':''} — change it if the certificate / card says otherwise.` : `${c.code} has no re-certification — no expiry.`;
   }
   document.getElementById('drawerBody').addEventListener('change', e=>{
-    const pk=e.target.closest('[data-pdo-pick]'); if(pk){ const form=pk.closest('form'), c=PDO_COURSES.find(x=>x.code===pk.value), nm=form && form.querySelector('[data-field="name"]'); if(c && nm){ nm.value=pdoCourseLabel(c); { const hf=form.querySelector('[data-field="hours"]'); if(hf && c.hrs && (!hf.value || hf.dataset.auto)){ hf.value=c.hrs; hf.dataset.auto='1'; } } const ex=form.querySelector('[data-field="expiry"]'); if(ex && !ex.value) ex.dataset.auto='1'; pdoAutoExpiry(form); } return; }
+    const pk=e.target.closest('[data-pdo-pick]'); if(pk){ const form=pk.closest('form'), c=PDO_COURSES.find(x=>x.code===pk.value), nm=form && form.querySelector('[data-field="name"]'); if(c && nm){ nm.value=pdoCourseLabel(c); { const hf=form.querySelector('[data-field="hours"]'); if(hf && (!hf.value || hf.dataset.auto==='1')){ hf.value=c.hrs||''; hf.dataset.auto=c.hrs?'1':''; } } const ex=form.querySelector('[data-field="expiry"]'); if(ex && !ex.value) ex.dataset.auto='1'; pdoAutoExpiry(form); } return; }
     if(e.target.matches && e.target.matches('#recordForm [data-field="date"], #recordForm [data-field="name"]') && activeTab==='trainings'){ const form=e.target.closest('form'); const ex=form.querySelector('[data-field="expiry"]'); if(ex && !ex.value) ex.dataset.auto='1'; pdoAutoExpiry(form); }
     if(e.target.matches && e.target.matches('#recordForm [data-field="expiry"]')) e.target.dataset.auto='0';
   });
@@ -12088,11 +12122,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   // --- workforce view: register / training matrix ---
   /* Batch 51: document register */
-  document.getElementById('docCtlBtn').addEventListener('click', ()=>{ const el=document.getElementById('docCtlPanel'); el.hidden=!el.hidden; renderDocCtl(); if(!el.hidden) el.scrollIntoView({block:'start', behavior:'smooth'}); });
+  document.getElementById('docCtlBtn').addEventListener('click', ()=>{ const el=document.getElementById('docCtlPanel'); el.hidden=!el.hidden; docCtlBase=settingsStamp('docControl'); renderDocCtl(); if(!el.hidden) el.scrollIntoView({block:'start', behavior:'smooth'}); });
   document.getElementById('docCtlPanel').addEventListener('click', e=>{ if(e.target.closest('#docCtlClose')){ document.getElementById('docCtlPanel').hidden=true; } });
   document.getElementById('docCtlPanel').addEventListener('submit', async e=>{ if(e.target.id!=='docCtlForm') return; e.preventDefault(); if(!canEdit()) return;
     const docs={}; e.target.querySelectorAll('[data-dc]').forEach(el=>{ const [k,f]=el.dataset.dc.split('|'); (docs[k]=docs[k]||{})[f]=String(el.value||'').trim(); });
-    if(await saveSettings('docControl', {docs}, settingsStamp('docControl'))) toast('Document numbers saved — every PDF now shows them'); });
+    if(await saveSettings('docControl', {docs}, docCtlBase)){ toast('Document numbers saved — every PDF now shows them'); docCtlBase=settingsStamp('docControl'); } });
   /* Batch 49: PPE pane */
   document.getElementById('ppePane').addEventListener('click', async e=>{
     const b=e.target.closest('button, [data-ppe-period]'); if(!b) return;
@@ -12104,15 +12138,15 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(b.id==='ppeListPdf'){ ppeListPdf(); return; }
     if(b.id==='ppeListXlsx'){ ppeListXlsx(); return; }
     if(b.id==='ppeKitPick'){ ppeReadIssueInputs(); ppeKitItems().forEach(k=>ppeUi.items.add(k.name)); ppeUi.condition='New joiner kit'; renderPpe(); return; }
-    if(b.id==='ppeAllW'){ ppeReadIssueInputs(); document.querySelectorAll('[data-ppe-w]').forEach(x=>ppeUi.workers.add(x.dataset.ppeW)); renderPpe(); return; }
+    if(b.id==='ppeAllW'){ ppeReadIssueInputs(); document.querySelectorAll('.ppe-wlist .pick-row:not([hidden]) [data-ppe-w]').forEach(x=>ppeUi.workers.add(x.dataset.ppeW)); renderPpe(); return; }
     if(b.id==='ppeNoW'){ ppeReadIssueInputs(); ppeUi.workers.clear(); renderPpe(); return; }
     if(b.id==='ppeIssueSave'){ await ppeSaveIssue(); return; }
-    if(b.id==='ppeKitMissing'){ const g=(ppeKitGaps()||[]).filter(x=>x.miss.length); ppeOpenIssue(g.map(x=>x.w.id), [...new Set(g.flatMap(x=>x.miss))], 'New joiner kit'); return; }
-    if(b.id==='ppeAddItem'){ ppeUi.edit='new'; renderPpe(); const f=document.querySelector('#ppeItemForm [data-ppe-f="name"]'); if(f) f.focus(); return; }
+    if(b.id==='ppeKitMissing'){ const g=(ppeKitGaps()||[]).filter(x=>x.miss.length); ppeOpenIssue(g.map(x=>x.w.id), [...new Set(g.flatMap(x=>x.miss))], 'New joiner kit', Object.fromEntries(g.map(x=>[x.w.id, x.miss]))); return; }
+    if(b.id==='ppeAddItem'){ ppeUi.edit='new'; ppeUi.editBase=settingsStamp('ppeStandards'); renderPpe(); const f=document.querySelector('#ppeItemForm [data-ppe-f="name"]'); if(f) f.focus(); return; }
     if(b.id==='ppeItemCancel'){ ppeUi.edit=null; renderPpe(); return; }
     if(b.id==='ppeAddSuggested'){ const add=PPE_SUGGESTED.filter(x=>!ppeStdOf(x.name)).map(x=>({id:genId(), cat:x.cat, name:x.name, type:x.type, std:x.std, local:'', colour:'', brand:'', sizes:'', life:x.life, status:'Approved', kit:!!x.kit, notes:''}));
       if(await saveSettings('ppeStandards', {items:ppeList().concat(add)}, settingsStamp('ppeStandards'))){ toast(`${add.length} items added — now set colours, brands and local / client requirements`); renderPpe(); } return; }
-    const ed=b.dataset.ppeEdit; if(ed){ ppeUi.edit=ed; renderPpe(); return; }
+    const ed=b.dataset.ppeEdit; if(ed){ ppeUi.edit=ed; ppeUi.editBase=settingsStamp('ppeStandards'); renderPpe(); return; }
     const del=b.dataset.ppeDel; if(del){ if(b.dataset.armed!=='1'){ b.dataset.armed='1'; b.textContent='Click again to remove'; return; } if(await saveSettings('ppeStandards', {items:ppeList().filter(x=>x.id!==del)}, settingsStamp('ppeStandards'))){ ppeUi.edit=null; renderPpe(); } return; }
     const wk=b.dataset.ppeWorker; if(wk){ openDrawer(wk); activeTab='ppeIssued'; renderDrawer(); return; }
   });
@@ -12122,7 +12156,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(t.dataset.ppeW!==undefined){ ppeReadIssueInputs(); t.checked?ppeUi.workers.add(t.dataset.ppeW):ppeUi.workers.delete(t.dataset.ppeW); renderPpe(); return; }
     if(t.id==='ppeProj'){ ppeReadIssueInputs(); ppeUi.project=t.value; renderPpe(); return; }
   });
-  document.getElementById('ppePane').addEventListener('input', e=>{ if(e.target.id!=='ppeQ') return; const q=e.target.value.toLowerCase(); ppeUi.q=e.target.value; document.querySelectorAll('.ppe-wlist .pick-row').forEach(r=>{ r.hidden=!!q && !r.textContent.toLowerCase().includes(q); }); });
+  document.addEventListener('input', e=>{ if(e.target.matches && e.target.matches('#recordForm [data-field="hours"], #recordForm [data-field="expiry"]')) e.target.dataset.auto=''; });
+  document.getElementById('ppePane').addEventListener('input', e=>{ if(e.target.id!=='ppeQ') return; const q=e.target.value.toLowerCase(); ppeUi.q=e.target.value; document.querySelectorAll('.ppe-wlist .pick-row').forEach(r=>{ r.hidden=!!q && !String(r.dataset.text||'').includes(q); }); });
   document.getElementById('ppePane').addEventListener('submit', e=>{ if(e.target.id!=='ppeItemForm') return; e.preventDefault(); ppeSaveItem(e.target); });
   // worker drawer → PPE issued → "Issue new joiner kit"
   document.addEventListener('click', e=>{ const k=e.target.closest('[data-ppe-kit]'); if(!k) return; if(!ppeKitItems().length){ toast('Set the basic kit first: Workforce → PPE → Approved PPE list (tick "Basic kit")'); closeDrawer(); setWorkforceView('ppe'); return; } const id=k.dataset.ppeKit; closeDrawer(); ppeOpenIssue([id], ppeKitItems().map(x=>x.name), 'New joiner kit'); });
@@ -12130,7 +12165,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.addEventListener('change', e=>{
     if(!(e.target.matches && e.target.matches('#recordForm [data-field="item"], #recordForm [data-field="date"]')) || activeTab!=='ppeIssued') return;
     const f=e.target.closest('form'), it=f.querySelector('[data-field="item"]'), d=f.querySelector('[data-field="date"]'), ex=f.querySelector('[data-field="expiry"]'); if(!it||!d||!ex) return;
-    const std=ppeStdOf(it.value); if(!std || !std.life || !d.value) return; if(ex.value && !ex.dataset.auto) return;
+    if(ex.value && ex.dataset.auto!=='1') return;   // typed by hand — keep it
+    const std=ppeStdOf(it.value); if(!std || !std.life || !d.value){ if(ex.dataset.auto==='1'){ ex.value=''; ex.dataset.auto=''; } return; }
     ex.value=ppeAddMonths(d.value, std.life); ex.dataset.auto='1';
   });
   document.getElementById('workforceViewTabs').addEventListener('click', e=>{
@@ -12701,12 +12737,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(e.target.closest('#calAdd')){ calForm={}; renderCalendar(); const f=document.getElementById('cfTitle'); if(f) f.focus(); return; }
     if(e.target.closest('#cfCancel')){ calForm=null; renderCalendar(); return; }
     const ce=e.target.closest('[data-cal-edit]'); if(ce){ calForm={id:ce.dataset.calEdit}; renderCalendar(); return; }
-    const cdl=e.target.closest('[data-cal-del]'); if(cdl){ if(cdl.dataset.armed!=='1'){ cdl.dataset.armed='1'; cdl.textContent='Click again'; setTimeout(()=>{ cdl.dataset.armed='0'; cdl.textContent='Delete'; },3000); return; } await saveCal({events:(calData().events||[]).filter(x=>x.id!==cdl.dataset.calDel)}); return; }
+    const cdl=e.target.closest('[data-cal-del]'); if(cdl){ if(cdl.dataset.armed!=='1'){ cdl.dataset.armed='1'; cdl.textContent='Click again'; setTimeout(()=>{ cdl.dataset.armed='0'; cdl.textContent='Delete'; },3000); return; } const dk=Object.entries(calData().done||{}).filter(([k])=>k.startsWith('own-'+cdl.dataset.calDel+':')), FV=fsFieldValue();
+      if(await saveCal({events:(calData().events||[]).filter(x=>x.id!==cdl.dataset.calDel), ...(dk.length?{done:Object.fromEntries(dk.map(([k])=>[k, (FV&&FV.delete)?FV.delete():null]))}:{})})){ for(const [,v] of dk) if(v && v.logId){ try{ await db.collection('hseLogs').doc(v.logId).delete(); }catch(err){ console.warn(err); } } } return; }
     const dn=e.target.closest('[data-cal-done]'); if(dn){ calDone=calDone===dn.dataset.calDone?null:dn.dataset.calDone; renderCalendar(); return; }
     if(e.target.closest('#cdCancel')){ calDone=null; renderCalendar(); return; }
     const un=e.target.closest('[data-cal-undo]'); if(un){ if(un.dataset.armed!=='1'){ un.dataset.armed='1'; un.textContent='Click again'; setTimeout(()=>{ un.dataset.armed='0'; un.textContent='Undo'; },3000); return; }
-      const done={...(calData().done||{})}, old=done[un.dataset.calUndo]; delete done[un.dataset.calUndo];
-      if(await saveSettings('safetyCalendar', {done})){ if(old && old.logId){ try{ await db.collection('hseLogs').doc(old.logId).delete(); }catch(err){ console.warn(err); } } renderCalendar(); renderCcExtras(); } return; }
+      const old=(calData().done||{})[un.dataset.calUndo], FV=fsFieldValue();
+      if(await saveSettings('safetyCalendar', {done:{[un.dataset.calUndo]: (FV&&FV.delete)?FV.delete():null}})){ if(old && old.logId){ try{ await db.collection('hseLogs').doc(old.logId).delete(); }catch(err){ console.warn(err); } } renderCalendar(); renderCcExtras(); } return; }
     const hd=e.target.closest('[data-cal-hide]'); if(hd){ await saveCal({hidden:[...new Set([...(calData().hidden||[]), hd.dataset.calHide])]}); return; }
     const uh=e.target.closest('[data-cal-unhide]'); if(uh){ await saveCal({hidden:(calData().hidden||[]).filter(x=>x!==uh.dataset.calUnhide)}); return; }
     const sd=e.target.closest('[data-cal-setdate]'); if(sd){ const b=CAL_BUILTIN.find(x=>x.key===sd.dataset.calSetdate); const y=calYear||new Date().getFullYear(); const cur=(calData().dates||{})[b.key+':'+y]||(b.defaults||{})[y]||'';
@@ -12785,7 +12822,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const ld=e.target.closest('[data-sj-load]'); if(ld){ scaffLoadMonth(ld.dataset.sjLoad); return; }
     const un=e.target.closest('[data-scaff-undo]'); if(un){ const r=regCurrent(); if(!r || !canEdit()) return;
       if(un.dataset.armed!=='1'){ un.dataset.armed='1'; un.textContent='Click again — mark as still standing'; setTimeout(()=>{ un.dataset.armed='0'; un.textContent='Undo rig-down (still standing)'; },3000); return; }
-      regUpdate('scaff', r.id, {rigDownDate:'', rigDownCrew:[]}, true).then(ok=>{ if(ok) toast('Marked as still standing'); }); return; }
+      regUpdate('scaff', r.id, {rigDownDate:'', rigDownCrew:[], downFrom:'', downVehicle:'', downKm:'', downKmSrc:'', downRequestedBy:'', downWorkOrder:''}, true).then(ok=>{ if(ok) toast('Marked as still standing'); }); return; }
   });
   document.addEventListener('change', e=>{
     const s=e.target.closest('[data-sj]'); if(!s) return;
@@ -12867,7 +12904,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(p.dataset.armed!=='1'){ p.dataset.armed='1'; p.textContent='Click again — permanent'; setTimeout(()=>{ p.dataset.armed='0'; p.textContent='Delete forever'; },3000); return; }
     const cfg=REG[activeReg], r=regState[activeReg].list.find(x=>x.id===p.dataset.rpurge); if(!r) return;
     try{ for(const f of (cfg.files||[])) if(r[f.key]&&r[f.key].path) deleteStorageFile(r[f.key].path, r.id); if(cfg.multiFiles){ for(const f of (r[cfg.multiFiles.key]||[])) if(f.path) deleteStorageFile(f.path, r.id); }
-      await db.collection(cfg.collection).doc(r.id).delete(); toast('Deleted permanently'); } catch(err){ console.error(err); toast('Could not delete'); }
+      await db.collection(cfg.collection).doc(r.id).delete(); toast('Deleted permanently');
+      if(activeReg==='scaff' && scaffOlder.delete(r.id) && scaffRefresh) scaffRefresh(); if(activeReg==='civil' && cwOlder.delete(r.id) && cwRefresh) cwRefresh(); } catch(err){ console.error(err); toast('Could not delete'); }
   });
   // legal template
   $('legalTemplateBtn').addEventListener('click', async ()=>{
