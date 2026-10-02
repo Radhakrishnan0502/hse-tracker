@@ -2715,7 +2715,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b54';
+const APP_BUILD='b55';
 let appOutdated=false;
 // Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
 let _verTag=null, _verLast=0;
@@ -3577,6 +3577,21 @@ function libSortKey(d){
     return pm?`0|${pm[1]}|${pad(pm[2])}|1|${m[2]}${pad(m[3])}`:`0|${m[2]}|999|1|${pad(m[3])}`; }
   return `1|${String(LIB_TYPES.indexOf(d.docType)).padStart(2,'0')}|${no}`;
 }
+/* Batch 55: review period — 1 year for high-risk / operational procedures (and their forms), the IMS Manual and Policy;
+   2 years for the other BHN system procedures and their forms (company rule, to be written in BHN-P0750-01). */
+const IMS_REVIEW_1Y=new Set(['BHN-P0811-01','BHN-P0811-02','BHN-P0811-03','BHN-P0811-04','BHN-P0811-05','BHN-P0811-06','BHN-P0811-07','BHN-P0811-08','BHN-P0811-09','BHN-P0811-10','BHN-P0811-11','BHN-P0811-12','BHN-P0811-13','BHN-P0870-03','BHN-P1020-03','BHN-P0614-01']);
+function libReviewYears(d){
+  d=d||{}; const no=String(d.docNo||'').trim().toUpperCase(), par=String(d.parentNo||'').trim().toUpperCase();
+  if(['Manual','Policy'].includes(d.docType) || libGroupOf(d.docType)==='ops') return 1;
+  if(IMS_REVIEW_1Y.has(no) || IMS_REVIEW_1Y.has(par) || (!par && /^BHN-F0811-/.test(no))) return 1;
+  if(/^BHN-[PF]\d{4}-/.test(no)) return 2;
+  return 1;
+}
+function libFormReviewYears(form){
+  if(form.id==='libRevForm') return libReviewYears(currentLibDoc());
+  const cur=form.id==='addLibForm'?{}:(currentLibDoc()||{}), g=k=>{ const el=form.querySelector(`[data-libfield="${k}"]`); return el?el.value:''; };
+  return libReviewYears({...cur, docNo:g('docNo')||cur.docNo, docType:g('docType')||cur.docType});
+}
 function libSubParts(d){
   const pdf=d.pdfKey && PDF_DOCS[d.pdfKey] ? 'PDF made by the tracker' : '';
   return [d.parentNo?'Part of '+d.parentNo:'', d.projectId?projectName(d.projectId):'', d.appliesTo && d.appliesTo!=='All divisions'?d.appliesTo:'', d.activity||'', pdf].filter(Boolean);
@@ -3765,7 +3780,7 @@ function libDrawerBodyHtml(d){
       <div class="form-grid">
         <label>New revision no. *<input data-revfield="revision" required value="${esc(nextRevisionNo(d.revision))}"></label>
         <label>Revision date *<input type="date" data-revfield="lastRevDate" required value="${localToday()}"></label>
-        <label>Next revision date<input type="date" data-revfield="nextRevDate" value="${addYears(localToday(),1)}"></label>
+        <label>Next revision date <span class="wsub" style="display:inline;">(review every ${libReviewYears(d)} year${libReviewYears(d)===1?'':'s'})</span><input type="date" data-revfield="nextRevDate" value="${addYears(localToday(),libReviewYears(d))}"></label>
       </div>
       <label style="margin-top:8px;">What changed<input data-revfield="changeNote" placeholder="e.g. Updated emergency contacts; new client requirement"></label>
       <label style="margin-top:8px;">New file *<input type="file" id="libRevFile" required></label>
@@ -3837,16 +3852,16 @@ function libDocNoTaken(docNo, exceptId){
   const k=String(docNo||'').trim().toLowerCase(); if(!k) return false;
   return activeLibDocs().some(d=>d.id!==exceptId && String(d.docNo||'').trim().toLowerCase()===k);
 }
-// When "last revision date" changes, move "next revision date" to one year later
-// (until someone types their own next date in that form).
+// When "last revision date" (or the document no. / type) changes, set "next revision date" to 1 or 3 years later
+// by the review rule (libReviewYears) — until someone types their own next date in that form.
 function wireLibDateAuto(e){
-  const t=e.target;
-  const lastKeys=['[data-libfield="lastRevDate"]','[data-revfield="lastRevDate"]'], nextKeys=['[data-libfield="nextRevDate"]','[data-revfield="nextRevDate"]'];
+  const t=e.target; if(!t || !t.matches) return;
+  const lastKeys=['[data-libfield="lastRevDate"]','[data-revfield="lastRevDate"]'], nextKeys=['[data-libfield="nextRevDate"]','[data-revfield="nextRevDate"]'], idKeys=['[data-libfield="docNo"]','[data-libfield="docType"]'];
   if(nextKeys.some(k=>t.matches(k))){ t.dataset.touched='1'; return; }
-  if(!lastKeys.some(k=>t.matches(k))) return;
+  if(!lastKeys.some(k=>t.matches(k)) && !idKeys.some(k=>t.matches(k))) return;
   const form=t.closest('form'); if(!form) return;
-  const next=form.querySelector(nextKeys.join(',')); if(!next || next.dataset.touched==='1') return;
-  const v=addYears(t.value,1); if(v) next.value=v;
+  const next=form.querySelector(nextKeys.join(',')), last=form.querySelector(lastKeys.join(',')); if(!next || !last || next.dataset.touched==='1') return;
+  const v=addYears(last.value, libFormReviewYears(form)); if(v) next.value=v;
 }
 
 /* =====================================================================
