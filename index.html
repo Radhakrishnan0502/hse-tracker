@@ -2430,6 +2430,8 @@ const RECORD_TYPES = {
       {key:'description', label:'Description', type:'textarea', required:true},
       {key:'actionTaken', label:'Corrective action taken', type:'textarea'},
       {key:'reportedBy', label:'Reported by', type:'text'},
+      {key:'penaltyAmount', label:'Client penalty (OMR)', type:'number'},
+      {key:'penaltyRef', label:'Client penalty letter / ref.', type:'text'},
     ],
   },
 };
@@ -2731,7 +2733,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b56';
+const APP_BUILD='b57';
 let appOutdated=false;
 // Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
 let _verTag=null, _verLast=0;
@@ -8779,6 +8781,8 @@ const IVMS_TYPES=['Over-speeding','No seat belt','Unauthorised night driving','D
 const DFMS_TYPES=['Fatigue / eyes closed','Distraction / mobile phone','Smoking','No seat belt','Other'];
 const LSR_RULES=['Bypassing safety controls','Confined space','Driving','Energy isolation','Hot work','Line of fire','Safe mechanical lifting','Work authorisation','Working at height'];   // IOGP Life-Saving Rules (Report 459) as used by PDO
 const DRIVE_CATS=['ivms','dfms','lsr'];
+const LSR_PENALTY_STATUS=['Received — under review','Accepted / deducted','Disputed / appealed','Waived by client'];
+function lsrPenaltyCounts(e){ return e && e.category==='lsr' && e.penalty==='Yes' && e.penaltyStatus!=='Waived by client'; }
 const REPORT_CATEGORIES = {
   manHours:{ label:'Safe man-hours (monthly)', unit:'month', cat:'--cat-1',
     fields:[{key:'hours', label:'Man-hours', type:'number', required:true}] },
@@ -8812,7 +8816,14 @@ const REPORT_CATEGORIES = {
       {key:'events', label:'Number of events (monthly total: put the count)', type:'number', default:1},{key:'description', label:'Details / action taken', type:'textarea'}] },
   lsr:{ label:'LSR violation (Life-Saving Rules)', unit:'date', cat:'--cat-9', drive:true,
     fields:[{key:'rule', label:'Life-Saving Rule', type:'select', options:LSR_RULES, required:true},{key:'driverId', label:'Person', type:'worker'},
-      {key:'events', label:'Number of violations', type:'number', default:1},{key:'description', label:'What happened', type:'textarea', required:true},{key:'actionTaken', label:'Action taken (consequence management)', type:'textarea'}] },
+      {key:'events', label:'Number of violations', type:'number', default:1},{key:'description', label:'What happened', type:'textarea', required:true},{key:'actionTaken', label:'Action taken (consequence management)', type:'textarea'},
+      {key:'penalty', label:'Client penalty applied to Burhan?', type:'select', options:['No','Yes'], default:'No'},
+      {key:'penaltyClient', label:'Penalty from (client)', type:'text', pen:true, default:'PDO'},
+      {key:'penaltyAmount', label:'Penalty amount (OMR)', type:'number', pen:true},
+      {key:'penaltyRef', label:'Client letter / reference no.', type:'text', pen:true},
+      {key:'penaltyDate', label:'Penalty letter date', type:'date', pen:true},
+      {key:'penaltyStatus', label:'Penalty status', type:'select', pen:true, options:LSR_PENALTY_STATUS, default:LSR_PENALTY_STATUS[0]},
+      {key:'penaltyLetter', label:'Penalty letter (PDF / photo)', type:'file', pen:true}] },
   vehicleIncident:{ label:'Vehicle incident', unit:'date', cat:'--cat-9',
     fields:[{key:'vehicleNumber', label:'Vehicle number', type:'text', required:true},{key:'severity', label:'Severity', type:'select', options:['Minor','Major','Critical']},{key:'description', label:'Description', type:'textarea'}] },
   campaign:{ label:'HSE campaign / safety day', unit:'date', cat:'--cat-5',
@@ -8959,10 +8970,11 @@ function computeReportMetrics(entries){
   const m={}, kmRows=[];
   for(const key of Object.keys(REPORT_CATEGORIES)) m[key]=0;
   m.trainingAttendees=0; m.tbtAttendees=0; m.ltiDaysLost=0; m.internalAuditFindings=0;
-  m.mockDrillParticipants=0; m.ppeIssuanceQty=0; m.inductionSessions=0;
+  m.mockDrillParticipants=0; m.ppeIssuanceQty=0; m.inductionSessions=0; m.penalties=0; m.penaltyOmr=0;
   for(const e of entries){
     const cat=e.category;
     if(!REPORT_CATEGORIES[cat]) continue;
+    if(lsrPenaltyCounts(e)){ m.penalties+=1; m.penaltyOmr+=Number(e.penaltyAmount)||0; }
     if(cat==='manHours') m.manHours += Number(e.hours)||0;
     else if(cat==='vehicleKm') kmRows.push(e);
     else if(cat==='induction'){ m.induction += Number(e.count)||0; m.inductionSessions += 1; }   // headcount for the tile, sessions for activity totals
@@ -10902,7 +10914,7 @@ function renderCcDriving(entries, m, key, prev, prevName, months, monthly, scope
   // Batch 48: the 12-month chart sits in the right-hand column (fills the space under "Compliance now")
   { const tr=document.getElementById('ccDrvTrend'); if(tr) tr.innerHTML=`<div class="cc-title">Driving &amp; LSR violations <small>IVMS + DFMS + LSR · last 12 months</small></div><div class="cc-chart">${ccBarSvg(months, trend, 'IVMS, DFMS and LSR violations per month', 'ccBfDrv')}</div>`; }
   el.innerHTML=`<div class="cc-title">Driving safety &amp; Life-Saving Rules <small>${esc(scope)} · ${esc(periodLabel(key))}</small>${canEdit()?`<span class="dv-add"><button type="button" class="btn btn-sm" data-cc-log="ivms">+ IVMS</button><button type="button" class="btn btn-sm" data-cc-log="dfms">+ DFMS</button><button type="button" class="btn btn-sm" data-cc-log="lsr">+ LSR</button><button type="button" class="btn btn-sm" data-cc-log="vehicleKm">+ Km</button></span>`:''}</div>
-    <div class="dv-kpis">${kpi('truck','Km driven (IVMS)', m.vehicleKm.toLocaleString(), kmTrend, '')}${kpi('alert','IVMS violations', m.ivms, rate('ivms'), m.ivms?'warn':'good')}${kpi('clock','DFMS violations', m.dfms, rate('dfms'), m.dfms?'warn':'good')}${kpi('ban','LSR violations', m.lsr, m.lsr?'Life-Saving Rules broken '+periodWord:'none '+periodWord, m.lsr?'bad':'good')}</div>
+    <div class="dv-kpis">${kpi('truck','Km driven (IVMS)', m.vehicleKm.toLocaleString(), kmTrend, '')}${kpi('alert','IVMS violations', m.ivms, rate('ivms'), m.ivms?'warn':'good')}${kpi('clock','DFMS violations', m.dfms, rate('dfms'), m.dfms?'warn':'good')}${kpi('ban','LSR violations', m.lsr, m.penalties?`${m.penalties} client penalt${m.penalties===1?'y':'ies'} · ${m.penaltyOmr.toLocaleString()} OMR`:(m.lsr?'Life-Saving Rules broken '+periodWord:'none '+periodWord), m.lsr||m.penalties?'bad':'good')}</div>
     ${any?`<div class="dv-grid">
       ${bars('IVMS by type', by('ivms','type',IVMS_TYPES), '--cat-8', 'No IVMS violations '+periodWord)}
       ${bars('DFMS by type', by('dfms','type',DFMS_TYPES), '--cat-6', 'No DFMS violations '+periodWord)}
@@ -11141,7 +11153,7 @@ function renderReportTiles(m, cc){
     else if(key==='manHours') sub=periodWord;
     else if(key==='vehicleKm') sub=periodWord;
     else if(key==='ivms' || key==='dfms'){ const r=per100k(m[key], m.vehicleKm); sub=r===null?periodWord:`${r} per 100,000 km`; }
-    else if(key==='lsr') sub=periodWord;
+    else if(key==='lsr') sub=m.penalties?`${m.penalties} client penalt${m.penalties===1?'y':'ies'} · ${m.penaltyOmr.toLocaleString()} OMR`:periodWord;
     const num = key==='manHours' ? m.manHours.toLocaleString() : (key==='vehicleKm' ? m.vehicleKm.toLocaleString() : m[key]);
     return `<div class="tile" style="--tile-accent:var(${cfg.cat})">
       <div class="tile-head"><div class="tile-label">${esc(reportPeriod==='year' ? cfg.label.replace(' (monthly)','') : cfg.label)}</div></div>
@@ -11191,7 +11203,8 @@ function driverViolationRecord(entryId, d){
   return {id:'hl_'+entryId, fromReport:entryId, date:d.date||'', severity:cat==='lsr'?'Critical':'Major',
     category: cat==='lsr' ? 'LSR — '+(d.rule||'Life-Saving Rule') : `${cat.toUpperCase()} — ${d.type||'violation'}`,
     description: [n>1?n+' events':'', d.vehicleNumber?'Vehicle '+d.vehicleNumber:'', d.speed?'max '+d.speed+' km/h':'', d.description].filter(Boolean).join(' · ') || REPORT_CATEGORIES[cat].label,
-    actionTaken: d.actionTaken||'', reportedBy: 'Monthly Report — '+(cat==='lsr'?'LSR':cat.toUpperCase())};
+    actionTaken: d.actionTaken||'', reportedBy: 'Monthly Report — '+(cat==='lsr'?'LSR':cat.toUpperCase()),
+    ...(cat==='lsr' && d.penalty==='Yes' ? {penaltyAmount:d.penaltyAmount==null?'':d.penaltyAmount, penaltyRef:[d.penaltyClient, d.penaltyRef, d.penaltyStatus].filter(Boolean).join(' · ')} : {})};
 }
 async function syncDriverViolation(entryId, data, prevDriverId){
   const vid='hl_'+entryId, newId=data && REPORT_CATEGORIES[data.category] && REPORT_CATEGORIES[data.category].drive && driveEvents(data)>0 ? (data.driverId||'') : '';
@@ -11244,14 +11257,20 @@ function reportCategoryFieldsHtml(category, editing){
   const extra = category==='induction'
     ? workerPickFieldHtml({key:'attendeeIds', label:'Workers inducted — optional: tick them so it shows on each worker\'s profile'}, editing ? {attendeeIds:editing.attendeeIds||[]} : {attendeeIds:[]}, (()=>{ const pid=(document.getElementById('reportProjectSelect')||{}).value || (editing&&editing.projectId); return pid ? siteEquipmentList.find(x=>x.id===pid) : null; })())
     : '';
+  const penOn = editing ? editing.penalty==='Yes' : false;
   return cfg.fields.map(f=>{
     const val = editing ? (editing[f.key]!=null?editing[f.key]:'') : (f.default!=null?f.default:'');
+    if(f.pen){ const h=reportFieldHtml1(f, f.type==='file'?(editing?editing[f.key]:null):(editing&&editing[f.key]==null&&f.default!=null?f.default:val)); return h.replace(/^<label/, `<label data-pen ${penOn?'':'hidden'}`); }
+    return reportFieldHtml1(f, val);
+  }).join('') + extra;
+}
+function reportFieldHtml1(f, val){
     if(f.type==='worker'){ const ws=workers.filter(w=>w.id===val || (!w.deleted && (w.status||'active')!=='inactive')).sort((a,b)=>(a.fullName||'').localeCompare(b.fullName||''));
       return `<label>${esc(f.label)}<select data-rfield="${f.key}"><option value="">— Not known / not one person —</option>${ws.map(w=>`<option value="${esc(w.id)}" ${w.id===val?'selected':''}>${esc(w.fullName||'—')}${w.designation?' — '+esc(w.designation):''}</option>`).join('')}</select></label>`; }
     if(f.type==='textarea') return `<label>${esc(f.label)}${f.required?' *':''}<textarea data-rfield="${f.key}" ${f.required?'required':''}>${esc(val)}</textarea></label>`;
     if(f.type==='select') return `<label>${esc(f.label)}${f.required?' *':''}<select data-rfield="${f.key}" ${f.required?'required':''}><option value="">Select…</option>${f.options.map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
+    if(f.type==='file') return `<label>${esc(f.label)}${val&&val.url?` <a class="att-link" href="${esc(val.url)}" target="_blank" rel="noopener">View current file</a>`:''}<input type="file" data-rfile="${f.key}" accept="image/*,.pdf"></label>`;
     return `<label>${esc(f.label)}${f.required?' *':''}<input type="${f.type}" data-rfield="${f.key}" value="${esc(val)}" ${f.required?'required':''}></label>`;
-  }).join('') + extra;
 }
 function renderReportCategorySelect(selected){
   const sel=document.getElementById('reportCategorySelect');
@@ -11361,6 +11380,11 @@ async function buildReportPdf(division, month, project){
   kv('Vehicle KM driven', m.vehicleKm.toLocaleString());
   kv('Driving violations', `IVMS ${m.ivms} · DFMS ${m.dfms}${m.vehicleKm?`  (${per100k(m.ivms+m.dfms, m.vehicleKm)} per 100,000 km)`:''}`);
   kv('LSR violations (Life-Saving Rules)', m.lsr);
+  { const yE=reportEntriesFor(division, month.slice(0,4), project).filter(e=>entryMonth(e)<=month), ym=computeReportMetrics(yE);
+    kv('Client penalties (LSR)', `${m.penalties} this month${m.penalties?` (${m.penaltyOmr.toLocaleString()} OMR)`:''} · ${ym.penalties} year to date${ym.penalties?` (${ym.penaltyOmr.toLocaleString()} OMR)`:''}`);
+    const pl=entries.filter(e=>e.category==='lsr' && e.penalty==='Yes').sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+    if(pl.length){ h2('Client penalties — Life-Saving Rule violations');
+      for(const e of pl){ const w=e.driverId && workers.find(x=>x.id===e.driverId); kv(`${e.date||''} · ${e.rule||'LSR'}`, [w?w.fullName:'', e.penaltyClient, e.penaltyRef?'ref '+e.penaltyRef:'', e.penaltyAmount!=null&&e.penaltyAmount!==''?Number(e.penaltyAmount).toLocaleString()+' OMR':'', e.penaltyStatus].filter(Boolean).join(' · ')); } } }
 
   h2('Proactive activity mix');
   for(const k of ACTIVITY_DONUT_KEYS){ kv(REPORT_CATEGORIES[k].label, k==='induction' ? `${m.inductionSessions}${m.induction?` (${m.induction} people)`:''}` : m[k]); }
@@ -13492,6 +13516,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
   document.getElementById('cancelAddReportEntry').addEventListener('click', closeReportEntryForm);
   document.getElementById('addReportEntryForm').addEventListener('change', e=>{
+    if(e.target.matches('[data-rfield="penalty"]')){ e.currentTarget.querySelectorAll('[data-pen]').forEach(x=>{ x.hidden=e.target.value!=='Yes'; }); return; }
     if(!e.target.matches('[data-multi="attendeeIds"]')) return;
     const n=e.currentTarget.querySelectorAll('[data-multi="attendeeIds"]:checked').length, c=e.currentTarget.querySelector('[data-rfield="count"]');
     if(c && n && !(Number(c.value)>=n)) c.value=n;
@@ -13516,7 +13541,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
       if(data.attendeeIds.length && !(Number(data.count)>=data.attendeeIds.length)) data.count=data.attendeeIds.length;
     }
     if(!REPORT_CATEGORIES[data.category] || !REPORT_CATEGORIES[data.category].drive) delete data.driverId;
+    if(data.category==='lsr' && data.penalty!=='Yes'){ data.penaltyAmount=null; data.penaltyRef=''; data.penaltyDate=''; data.penaltyStatus=''; }
     try{
+      const fileInp=e.target.querySelector('[data-rfile]');
+      if(fileInp && fileInp.files && fileInp.files[0] && data.penalty==='Yes'){ toast('Uploading the penalty letter…'); data[fileInp.dataset.rfile]=await uploadToStorage(fileInp.files[0]); }
       let savedId=editingReportEntryId; const prevDriver=editingReportEntryId ? ((reportEntries.find(x=>x.id===editingReportEntryId)||{}).driverId||'') : '';
       if(editingReportEntryId){
         const prev=reportEntries.find(x=>x.id===editingReportEntryId);
