@@ -935,6 +935,7 @@ details.icam-grp > summary{cursor:pointer; font-weight:600; font-size:13px; padd
 details.icam-grp .cause-list{margin:6px 0;}
 .inc-snap{border:1px solid var(--line); border-radius:10px; padding:8px 10px; display:grid; gap:4px; font-size:12.5px;}
 .inc-snap .ic{width:14px; height:14px; vertical-align:-2px;}
+.ppe-exempt{border:1px solid var(--line); border-radius:10px; padding:8px 10px; margin:0 0 10px;}
 .crew-chips{display:flex; flex-wrap:wrap; gap:4px;} .crew-card{font-size:11.5px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); background:var(--surface);}
 .crew-card.c-gold{box-shadow:inset 3px 0 0 #c9a227;} .crew-card.c-blue{box-shadow:inset 3px 0 0 #2563eb;} .crew-card.c-amber{box-shadow:inset 3px 0 0 #f59e0b;} .crew-card.c-white{box-shadow:inset 3px 0 0 #cbd5e1;} .crew-card.c-green{box-shadow:inset 3px 0 0 #16a34a;} .crew-card.c-none{box-shadow:inset 3px 0 0 var(--danger);}
 
@@ -2733,7 +2734,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b58';
+const APP_BUILD='b59';
 let appOutdated=false;
 // Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
 let _verTag=null, _verLast=0;
@@ -7077,8 +7078,12 @@ function ppeLastSize(w, item){ const r=(w.ppeIssued||[]).filter(x=>x.item===item
 function ppeRecordsIn(fromD, toD){ const out=[]; for(const w of activeWorkers()) for(const r of (w.ppeIssued||[])) if(r.date && r.date>=fromD && r.date<=toD) out.push({...r, w}); return out; }
 function ppePeriodRange(){ const t=localToday(); if(ppeUi.period==='year') return [t.slice(0,4)+'-01-01', t, 'this year']; if(ppeUi.period==='12m') return [dateAdd(t,-365), t, 'last 12 months']; return [t.slice(0,7)+'-01', t, 'this month']; }
 // basic kit check: each active worker should have every kit item at least once (and not past its replacement date)
+/* Batch 59: designations that don't need the basic kit (e.g. Accountant, Accounts Manager) — set by HSE on the PPE tab */
+function ppeKitExemptList(){ return ((settingsDocs.ppeStandards||{}).kitExempt)||[]; }
+function ppeKitExempt(w){ const d=String((w&&w.designation)||'').trim().toLowerCase(); return !!d && ppeKitExemptList().some(x=>String(x).trim().toLowerCase()===d); }
+function ppeDesignations(){ const m=new Map(); for(const w of activeWorkers()){ const d=String(w.designation||'').trim(); if(d && !m.has(d.toLowerCase())) m.set(d.toLowerCase(), d); } for(const d of ppeKitExemptList()){ if(d && !m.has(String(d).toLowerCase())) m.set(String(d).toLowerCase(), d); } return [...m.values()].sort((a,b)=>a.localeCompare(b)); }
 function ppeKitGaps(){ const kit=ppeKitItems(); if(!kit.length) return null; const t=localToday();
-  return activeWorkers().filter(w=>(w.status||'active')==='active').map(w=>{ const cur=currentRecs(w.ppeIssued||[], 'ppeIssued'); const miss=kit.filter(k=>{ const recs=cur.filter(r=>String(r.item||'').toLowerCase()===String(k.name).toLowerCase()); return !recs.some(r=>!r.expiry || r.expiry>=t); }).map(k=>k.name); return {w, miss}; }); }
+  return activeWorkers().filter(w=>(w.status||'active')==='active' && !ppeKitExempt(w)).map(w=>{ const cur=currentRecs(w.ppeIssued||[], 'ppeIssued'); const miss=kit.filter(k=>{ const recs=cur.filter(r=>String(r.item||'').toLowerCase()===String(k.name).toLowerCase()); return !recs.some(r=>!r.expiry || r.expiry>=t); }).map(k=>k.name); return {w, miss}; }); }
 /* Batch 58: new joiner kit = helmet, coverall, safety shoes, safety glasses only (user, 2 Oct 2026).
    Gloves, ear plugs and other PPE are issued by task. One-time fix for lists saved with the old suggestion. */
 const PPE_KIT_REMOVED=['gloves (general)','ear plugs'];
@@ -7094,7 +7099,7 @@ async function ppeKitFix(){
 function renderPpe(live){
   const pane=document.getElementById('ppePane'); if(!pane || pane.hidden || !auth.currentUser) return;
   ppeKitFix();
-  if(live && ppeUi.edit) return;   // don't wipe the item form while someone is typing in it
+  if(live && (ppeUi.edit || ppeUi.exemptOpen)) return;   // don't wipe the item form while someone is typing in it
   if(live && ppeUi.issueOpen && document.activeElement && pane.contains(document.activeElement) && /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)) return;
   if(ppeUi.fresh) ppeUi.fresh=false; else ppeReadIssueInputs();
   const keepScroll=window.scrollY;
@@ -7117,7 +7122,7 @@ function renderPpe(live){
     ${ppeUi.lastBatch?`<div class="notice">${ic('checkcircle')} <strong>${ppeUi.lastBatch.n} PPE record${ppeUi.lastBatch.n===1?'':'s'} saved</strong> for ${ppeUi.lastBatch.workers.length} worker${ppeUi.lastBatch.workers.length===1?'':'s'} (${esc(ppeUi.lastBatch.date)}). <button type="button" class="btn btn-sm" id="ppeSheetPdf">${ic('printer')} Signature sheet (PDF)</button> <button type="button" class="att-link" id="ppeBatchClose">Close</button></div>`:''}
     <div class="tiles tiles-4">
       <div class="tile"><div class="tile-head"><div class="tile-icon">${ic('hardhat')}</div><div class="tile-label">PPE items issued</div></div><div class="tile-num">${total}</div><div class="tile-sub">${word} · ${people} worker${people===1?'':'s'}</div></div>
-      <div class="tile"><div class="tile-head"><div class="tile-icon">${ic('vest')}</div><div class="tile-label">Basic kit complete</div></div><div class="tile-num ${gaps&&gapW.length?'warn':''}">${gaps?`${kitOk}/${gaps.length}`:'—'}</div><div class="tile-sub">${gaps?`${gapW.length} active worker${gapW.length===1?'':'s'} missing an item (or past replacement)`:'tick "Basic kit" items in the approved list'}</div></div>
+      <div class="tile"><div class="tile-head"><div class="tile-icon">${ic('vest')}</div><div class="tile-label">Basic kit complete</div></div><div class="tile-num ${gaps&&gapW.length?'warn':''}">${gaps?`${kitOk}/${gaps.length}`:'—'}</div><div class="tile-sub">${gaps?`${gapW.length} active worker${gapW.length===1?'':'s'} missing an item (or past replacement)`:'tick "Basic kit" items in the approved list'}${gaps&&ppeKitExemptList().length?` · ${activeWorkers().filter(w=>(w.status||'active')==='active' && ppeKitExempt(w)).length} not required (office roles)`:''}</div></div>
       <div class="tile"><div class="tile-head"><div class="tile-icon">${ic('clock')}</div><div class="tile-label">Replacement due</div></div><div class="tile-num ${soon.length?'warn':''}">${soon.length}</div><div class="tile-sub">in the next 30 days</div></div>
       <div class="tile"><div class="tile-head"><div class="tile-icon">${ic('alert')}</div><div class="tile-label">Replacement overdue</div></div><div class="tile-num ${overdue.length?'danger':''}">${overdue.length}</div><div class="tile-sub">past the replacement date</div></div>
     </div>
@@ -7127,8 +7132,9 @@ function renderPpe(live){
     </div>
     <div class="ppe-grid">
       <div class="panel"><div class="subhead" style="margin-top:0;">Replacements overdue / due in 30 days (${overdue.length+soon.length})</div>${overdue.length+soon.length?`<div class="table-wrap"><table><thead><tr><th>Worker</th><th>Item</th><th>Issued</th><th>Replace by</th></tr></thead><tbody>${[...overdue,...soon].slice(0,25).map(dueRow).join('')}</tbody></table></div>`:'<p class="wsub">Nothing due.</p>'}</div>
-      <div class="panel"><div class="subhead" style="margin-top:0;">Missing basic kit items (${gapW.length})</div>${!gaps?'<p class="wsub">No basic kit set — tick <strong>Basic kit</strong> on the items every new worker gets.</p>':gapW.length?`<div class="ppe-gaps">${gapW.slice(0,30).map(g=>`<div><button type="button" class="att-link" data-ppe-worker="${esc(g.w.id)}">${esc(g.w.fullName||'—')}</button> <span class="wsub">${esc(g.miss.join(', '))}</span></div>`).join('')}${gapW.length>30?`<div class="wsub">… and ${gapW.length-30} more</div>`:''}</div>${ed?`<button type="button" class="btn btn-sm" id="ppeKitMissing" style="margin-top:8px;">Issue missing kit…</button>`:''}`:'<p class="wsub">Every active worker has the basic kit on record.</p>'}</div>
+      <div class="panel"><div class="subhead" style="margin-top:0; display:flex; align-items:center; gap:8px;">Missing basic kit items (${gapW.length})${ed&&gaps?`<button type="button" class="btn btn-sm btn-ghost" id="ppeExemptOpen" style="margin-left:auto;">Roles that don't need the kit${ppeKitExemptList().length?' ('+ppeKitExemptList().length+')':''}</button>`:''}</div>${ppeUi.exemptOpen?ppeExemptFormHtml():''}${!gaps?'<p class="wsub">No basic kit set — tick <strong>Basic kit</strong> on the items every new worker gets.</p>':gapW.length?`<div class="ppe-gaps">${gapW.slice(0,30).map(g=>`<div><button type="button" class="att-link" data-ppe-worker="${esc(g.w.id)}">${esc(g.w.fullName||'—')}</button> <span class="wsub">${esc(g.miss.join(', '))}</span></div>`).join('')}${gapW.length>30?`<div class="wsub">… and ${gapW.length-30} more</div>`:''}</div>${ed?`<button type="button" class="btn btn-sm" id="ppeKitMissing" style="margin-top:8px;">Issue missing kit…</button>`:''}`:'<p class="wsub">Every active worker has the basic kit on record.</p>'}</div>
     </div>
+    ${ppeSessionsHtml(from, to, word)}
     <div class="panel">
       <div class="section-head"><h3>Approved PPE list — company standard (${ppeApproved().length} approved)</h3>${ed?`<span style="display:flex; gap:8px; flex-wrap:wrap;"><button type="button" class="btn btn-sm" id="ppeAddItem">+ Add PPE item</button>${PPE_SUGGESTED.some(x=>!ppeStdOf(x.name))?`<button type="button" class="btn btn-sm btn-ghost" id="ppeAddSuggested">+ Add suggested list</button>`:''}</span>`:''}</div>
       <p class="wsub" style="margin:-4px 0 10px;">Only these items should be bought and issued. The purchase team gets the PDF / Excel above. Issue forms list only <strong>Approved</strong> items; <em>Basic kit</em> items are issued to every new worker.</p>
@@ -7199,7 +7205,7 @@ async function ppeSaveIssue(){
   ppeUi.saving=true; renderPpe();
   for(const id of selW){ const w=workers.find(x=>x.id===id); const add=[];
     for(const it of selI){ if(ppeUi.limit && ppeUi.limit[id] && !ppeUi.limit[id].includes(it)) continue; const v=ppeUi.sizes[id+'|'+it]||{size:ppeLastSize(w,it), qty:1}, std=ppeStdOf(it);
-      add.push({id:genId(), item:it, size:String(v.size||'').trim(), quantity:Math.max(1, Number(v.qty)||1), date, expiry:std&&std.life?ppeAddMonths(date, std.life):'', issuedBy:ppeUi.issuedBy.trim(), condition:ppeUi.condition, notes:'Crew issue'+(ppeUi.project!=='all'?' — '+projectName(ppeUi.project):''), projectId:ppeUi.project!=='all'?ppeUi.project:(w.projectId||''), batchId}); }
+      add.push({id:genId(), batchId, item:it, size:String(v.size||'').trim(), quantity:Math.max(1, Number(v.qty)||1), date, expiry:std&&std.life?ppeAddMonths(date, std.life):'', issuedBy:ppeUi.issuedBy.trim(), condition:ppeUi.condition, notes:'Crew issue'+(ppeUi.project!=='all'?' — '+projectName(ppeUi.project):''), projectId:ppeUi.project!=='all'?ppeUi.project:(w.projectId||''), batchId}); }
     if(!add.length) continue;
     try{ const FV=fsFieldValue(); await db.collection('workers').doc(id).update(stamp({ppeIssued: FV ? FV.arrayUnion(...add) : [...(w.ppeIssued||[]), ...add]})); n+=add.length; rows.push({w, add}); }
     catch(e){ console.error(e); toast('Could not save for '+(w.fullName||'a worker')+' — '+(e.code||'error')); }
@@ -7251,8 +7257,29 @@ function ppeListPdf(){
   ppePdfTable(doc, PPE_TABLE_HEAD, ppeTableRows(), [70,160,120,100,120,100,60,48], 54, 32);
   doc.save(`Approved_PPE_list_${localToday()}.pdf`);
 }
-function ppeSheetPdf(){
-  const b=ppeUi.lastBatch; if(!b) return; if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
+function ppeExemptFormHtml(){
+  const sel=new Set(ppeKitExemptList().map(x=>String(x).toLowerCase())), list=ppeDesignations();
+  return `<form id="ppeExemptForm" class="ppe-exempt"><p class="wsub" style="margin:0 0 6px;">Tick the designations that do <strong>not</strong> need the basic kit (helmet, coverall, shoes, glasses). They are left out of "Basic kit complete" and "Issue missing kit".</p>
+    <div class="cause-list">${list.length?list.map(d=>`<label class="chk"><input type="checkbox" data-ppe-exempt value="${esc(d)}" ${sel.has(d.toLowerCase())?'checked':''}>${esc(d)} <span class="wsub">(${activeWorkers().filter(w=>String(w.designation||'').trim().toLowerCase()===d.toLowerCase()).length})</span></label>`).join(''):'<span class="wsub">No designations entered on the workers yet.</span>'}</div>
+    <div class="form-actions" style="margin-top:6px;"><button type="button" class="btn btn-sm" id="ppeExemptCancel">Cancel</button><button type="submit" class="btn btn-primary btn-sm">Save</button></div></form>`;
+}
+// Batch 59: every PPE issue session (same day, issued by, type, project) can print its signature sheet again later
+function ppeIssueSessions(fromD, toD){
+  const g=new Map();
+  for(const w of activeWorkers()) for(const r of (w.ppeIssued||[])){ if(!r.date || r.date<fromD || r.date>toD) continue;
+    const pid=r.projectId||'', key=r.batchId || [r.date, String(r.issuedBy||'').trim().toLowerCase(), r.condition||'', pid].join('|');
+    let s=g.get(key); if(!s){ s={key, date:r.date, issuedBy:r.issuedBy||'', condition:r.condition||'', project:pid||'all', ws:new Map(), n:0}; g.set(key,s); }
+    let x=s.ws.get(w.id); if(!x){ x={name:w.fullName||'—', civilId:w.civilId||'', designation:w.designation||'', items:[]}; s.ws.set(w.id,x); }
+    x.items.push({item:r.item, size:r.size||'', qty:Number(r.quantity)||1}); s.n+=1; }
+  return [...g.values()].map(s=>({...s, workers:[...s.ws.values()].sort((a,b)=>a.name.localeCompare(b.name))})).sort((a,b)=>String(b.date).localeCompare(String(a.date)) || b.n-a.n);
+}
+function ppeSessionsHtml(fromD, toD, word){
+  const ss=ppeIssueSessions(fromD, toD), show=ppeUi.sessAll?ss:ss.slice(0,12);
+  return `<div class="panel"><div class="subhead" style="margin-top:0;">PPE issues — print the signature sheet again (${ss.length} ${esc(word)})</div>
+    ${ss.length?`<div class="table-wrap"><table><thead><tr><th>Date</th><th>Type</th><th>Project</th><th>Issued by</th><th class="num">Workers</th><th class="num">Items</th><th></th></tr></thead><tbody>${show.map(s=>`<tr><td class="mono">${esc(s.date)}</td><td>${esc(s.condition||'—')}</td><td>${esc(s.project!=='all'?projectName(s.project):'—')}</td><td>${esc(s.issuedBy||'—')}</td><td class="num">${s.workers.length}</td><td class="num">${s.n}</td><td><button type="button" class="btn btn-sm" data-ppe-sheet="${esc(s.key)}">${ic('printer')} Signature sheet</button></td></tr>`).join('')}</tbody></table></div>${ss.length>show.length?`<button type="button" class="att-link" id="ppeSessAll">Show all ${ss.length}</button>`:''}`:`<p class="wsub">No PPE issued ${esc(word)}.</p>`}</div>`;
+}
+function ppeSheetPdf(batch){
+  const b=batch||ppeUi.lastBatch; if(!b) return; if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
   const doc=pdfDoc({unit:'pt', format:'a4', orientation:'landscape', docKey:'ppeIssue', docSub:`${isoToDmy(b.date)}${b.project!=='all'?' · '+projectName(b.project):''}`}); doc.setLineWidth(0.5); doc.setDrawColor(150);
   doc.setTextColor(20,20,20); doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
   doc.text(`Date: ${b.date}   ·   Project: ${b.project!=='all'?projectName(b.project):'—'}   ·   Issue type: ${b.condition}   ·   Issued by: ${b.issuedBy||'________________'}`, 32, 58);
@@ -13646,6 +13673,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(b.id==='ppeIssueClose'){ ppeUi.issueOpen=false; renderPpe(); return; }
     if(b.id==='ppeBatchClose'){ ppeUi.lastBatch=null; renderPpe(); return; }
     if(b.id==='ppeSheetPdf'){ ppeSheetPdf(); return; }
+    if(b.dataset.ppeSheet){ const [f,t]=ppePeriodRange(), s=ppeIssueSessions(f,t).find(x=>x.key===b.dataset.ppeSheet); if(s) ppeSheetPdf(s); return; }
+    if(b.id==='ppeSessAll'){ ppeUi.sessAll=true; renderPpe(); return; }
+    if(b.id==='ppeExemptOpen'){ ppeUi.exemptOpen=!ppeUi.exemptOpen; ppeUi.exemptBase=settingsStamp('ppeStandards'); renderPpe(); return; }
+    if(b.id==='ppeExemptCancel'){ ppeUi.exemptOpen=false; renderPpe(); return; }
     if(b.id==='ppeListPdf'){ ppeListPdf(); return; }
     if(b.id==='ppeListXlsx'){ ppeListXlsx(); return; }
     if(b.id==='ppeKitPick'){ ppeReadIssueInputs(); ppeKitItems().forEach(k=>ppeUi.items.add(k.name)); ppeUi.condition='New joiner kit'; renderPpe(); return; }
@@ -13669,6 +13700,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
   document.addEventListener('input', e=>{ if(e.target.matches && e.target.matches('#recordForm [data-field="hours"], #recordForm [data-field="expiry"]')) e.target.dataset.auto=''; });
   document.getElementById('ppePane').addEventListener('input', e=>{ if(e.target.id!=='ppeQ') return; const q=e.target.value.toLowerCase(); ppeUi.q=e.target.value; document.querySelectorAll('.ppe-wlist .pick-row').forEach(r=>{ r.hidden=!!q && !String(r.dataset.text||'').includes(q); }); });
+  document.getElementById('ppePane').addEventListener('submit', async e=>{ if(e.target.id!=='ppeExemptForm') return; e.preventDefault(); if(!canEdit()) return;
+    const list=[...e.target.querySelectorAll('[data-ppe-exempt]:checked')].map(x=>x.value);
+    if(await saveSettings('ppeStandards', {kitExempt:list, kitFix58:true}, ppeUi.exemptBase)){ ppeUi.exemptOpen=false; toast(list.length?`${list.length} role${list.length===1?'':'s'} left out of the basic kit check`:'All roles need the basic kit'); renderPpe(); } });
   document.getElementById('ppePane').addEventListener('submit', e=>{ if(e.target.id!=='ppeItemForm') return; e.preventDefault(); ppeSaveItem(e.target); });
   // worker drawer → PPE issued → "Issue new joiner kit"
   document.addEventListener('click', e=>{ const k=e.target.closest('[data-ppe-kit]'); if(!k) return; if(!ppeKitItems().length){ toast('Set the basic kit first: Workforce → PPE → Approved PPE list (tick "Basic kit")'); closeDrawer(); setWorkforceView('ppe'); return; } const id=k.dataset.ppeKit; closeDrawer(); ppeOpenIssue([id], ppeKitItems().map(x=>x.name), 'New joiner kit'); });
