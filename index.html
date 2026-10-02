@@ -2733,7 +2733,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b57';
+const APP_BUILD='b58';
 let appOutdated=false;
 // Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
 let _verTag=null, _verLast=0;
@@ -7057,8 +7057,8 @@ const PPE_SUGGESTED=[
   {cat:'Foot', name:'Safety shoes / boots', type:'Steel or composite toe cap, anti-slip, oil-resistant sole', std:'EN ISO 20345 S3 · ASTM F2413', life:12, kit:true},
   {cat:'Body / coverall', name:'Coverall', type:'Cotton coverall with reflective tape (flame-resistant where required)', std:'EN ISO 13688 · FR: EN ISO 11612 / NFPA 2112', life:6, kit:true},
   {cat:'Eye & face', name:'Safety glasses', type:'Clear / tinted lens with side shields', std:'EN 166 (tinted: EN 172) · ANSI/ISEA Z87.1', life:6, kit:true},
-  {cat:'Hand', name:'Gloves (general)', type:'Leather or coated mechanical gloves', std:'EN 388', life:1, kit:true},
-  {cat:'Hearing', name:'Ear plugs', type:'Disposable foam ear plugs', std:'EN 352-2', life:'', kit:true},
+  {cat:'Hand', name:'Gloves (general)', type:'Leather or coated mechanical gloves', std:'EN 388', life:1},
+  {cat:'Hearing', name:'Ear plugs', type:'Disposable foam ear plugs', std:'EN 352-2', life:''},
   {cat:'Eye & face', name:'Goggles', type:'Dust / chemical splash goggles', std:'EN 166 (3 = liquid, 4 = dust) · ANSI Z87.1 D3/D4', life:6},
   {cat:'Eye & face', name:'Face shield', type:'Grinding / chemical face shield', std:'EN 166 · ANSI/ISEA Z87.1', life:12},
   {cat:'Eye & face', name:'Welding helmet', type:'Welding helmet / auto-darkening filter', std:'EN 175 · EN 379', life:''},
@@ -7079,8 +7079,21 @@ function ppePeriodRange(){ const t=localToday(); if(ppeUi.period==='year') retur
 // basic kit check: each active worker should have every kit item at least once (and not past its replacement date)
 function ppeKitGaps(){ const kit=ppeKitItems(); if(!kit.length) return null; const t=localToday();
   return activeWorkers().filter(w=>(w.status||'active')==='active').map(w=>{ const cur=currentRecs(w.ppeIssued||[], 'ppeIssued'); const miss=kit.filter(k=>{ const recs=cur.filter(r=>String(r.item||'').toLowerCase()===String(k.name).toLowerCase()); return !recs.some(r=>!r.expiry || r.expiry>=t); }).map(k=>k.name); return {w, miss}; }); }
+/* Batch 58: new joiner kit = helmet, coverall, safety shoes, safety glasses only (user, 2 Oct 2026).
+   Gloves, ear plugs and other PPE are issued by task. One-time fix for lists saved with the old suggestion. */
+const PPE_KIT_REMOVED=['gloves (general)','ear plugs'];
+let ppeKitFixTried=false;
+async function ppeKitFix(){
+  if(ppeKitFixTried || !canEdit()) return; const doc=settingsDocs.ppeStandards; if(!doc) return;
+  ppeKitFixTried=true; if(doc.kitFix58) return;
+  const items=ppeList(), hit=items.some(x=>x.kit && PPE_KIT_REMOVED.includes(String(x.name||'').trim().toLowerCase()));
+  if(!hit) return;
+  const upd={kitFix58:true, items:items.map(x=>PPE_KIT_REMOVED.includes(String(x.name||'').trim().toLowerCase())?{...x, kit:false}:x)};
+  if(await saveSettings('ppeStandards', upd, settingsStamp('ppeStandards'))){ toast('New joiner kit is now helmet, coverall, safety shoes and safety glasses'); renderPpe(); }
+}
 function renderPpe(live){
   const pane=document.getElementById('ppePane'); if(!pane || pane.hidden || !auth.currentUser) return;
+  ppeKitFix();
   if(live && ppeUi.edit) return;   // don't wipe the item form while someone is typing in it
   if(live && ppeUi.issueOpen && document.activeElement && pane.contains(document.activeElement) && /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)) return;
   if(ppeUi.fresh) ppeUi.fresh=false; else ppeReadIssueInputs();
@@ -7207,7 +7220,7 @@ async function ppeSaveItem0(form){
   const item={...old, id, cat:get('cat'), name, type:get('type'), std:get('std'), local:get('local'), colour:get('colour'), brand:get('brand'), sizes:get('sizes'), life:get('life')===''?'':Number(get('life')), status:get('status')||'Approved', kit:!!get('kit'), notes:get('notes')};
   const file=form.querySelector('[data-ppe-sheet]'); if(file && file.files && file.files[0]){ try{ toast('Uploading…'); item.sheet=await uploadToStorage(file.files[0]); }catch(e){ console.error(e); toast(e.userMsg||'Could not upload the file'); return; } }
   const items=ppeList().filter(x=>x.id!==id).concat([item]);
-  if(await saveSettings('ppeStandards', {items}, ppeUi.editBase!==undefined?ppeUi.editBase:settingsStamp('ppeStandards'))){ ppeUi.edit=null; renderPpe(); }
+  if(await saveSettings('ppeStandards', {items, kitFix58:true}, ppeUi.editBase!==undefined?ppeUi.editBase:settingsStamp('ppeStandards'))){ ppeUi.edit=null; renderPpe(); }
 }
 function ppeTableRows(){ return ppeApproved().slice().sort((a,b)=>PPE_CATS.indexOf(a.cat)-PPE_CATS.indexOf(b.cat) || String(a.name).localeCompare(String(b.name))).map(x=>[x.cat||'', x.name+(x.type?' — '+x.type:''), x.std||'', x.local||'', x.colour||'', x.brand||'', x.sizes||'', ppeLifeText(x)]); }
 const PPE_TABLE_HEAD=['Category','Item / type','Standard (international)','Local / client requirement','Colour — who wears it','Approved brand / model','Sizes','Replace every'];
@@ -13643,7 +13656,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(b.id==='ppeAddItem'){ ppeUi.edit='new'; ppeUi.editBase=settingsStamp('ppeStandards'); renderPpe(); const f=document.querySelector('#ppeItemForm [data-ppe-f="name"]'); if(f) f.focus(); return; }
     if(b.id==='ppeItemCancel'){ ppeUi.edit=null; renderPpe(); return; }
     if(b.id==='ppeAddSuggested'){ const add=PPE_SUGGESTED.filter(x=>!ppeStdOf(x.name)).map(x=>({id:genId(), cat:x.cat, name:x.name, type:x.type, std:x.std, local:'', colour:'', brand:'', sizes:'', life:x.life, status:'Approved', kit:!!x.kit, notes:''}));
-      if(await saveSettings('ppeStandards', {items:ppeList().concat(add)}, settingsStamp('ppeStandards'))){ toast(`${add.length} items added — now set colours, brands and local / client requirements`); renderPpe(); } return; }
+      if(await saveSettings('ppeStandards', {items:ppeList().concat(add), kitFix58:true}, settingsStamp('ppeStandards'))){ toast(`${add.length} items added — now set colours, brands and local / client requirements`); renderPpe(); } return; }
     const ed=b.dataset.ppeEdit; if(ed){ ppeUi.edit=ed; ppeUi.editBase=settingsStamp('ppeStandards'); renderPpe(); return; }
     const del=b.dataset.ppeDel; if(del){ if(b.dataset.armed!=='1'){ b.dataset.armed='1'; b.textContent='Click again to remove'; return; } if(await saveSettings('ppeStandards', {items:ppeList().filter(x=>x.id!==del)}, settingsStamp('ppeStandards'))){ ppeUi.edit=null; renderPpe(); } return; }
     const wk=b.dataset.ppeWorker; if(wk){ openDrawer(wk); activeTab='ppeIssued'; renderDrawer(); return; }
