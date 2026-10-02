@@ -923,7 +923,9 @@ th.mx-cat-opal{box-shadow:inset 0 3px 0 var(--cat-1);} th.mx-cat-client{box-shad
 .dv-v{font-family:var(--font-num); font-size:24px; font-weight:700; color:var(--ink); line-height:1.15;}
 .dv-s{font-size:11.5px; color:var(--ink-muted);}
 .dv-grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; padding:10px 14px;}
-.dv-grid2{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); padding-top:0; padding-bottom:14px;}
+.dv-grid2{grid-template-columns:1fr; padding-top:0; padding-bottom:14px;}
+.dv-grid2 .dv-top{grid-template-columns:repeat(auto-fill, minmax(200px,1fr));}
+#ccExtras{padding-bottom:10px;} #ccExtras > :not(.cc-title){margin-left:14px !important; margin-right:14px !important;} #ccExtras > .cc-title + *{margin-top:10px !important;}
 .dv-b{min-width:0;} .dv-bh{font-weight:600; font-size:12.5px; margin-bottom:6px; display:flex; gap:8px; align-items:baseline; color:var(--ink);} .dv-bh > span{margin-left:auto; font-family:var(--font-num); color:var(--ink-muted);}
 .dv-row{display:grid; grid-template-columns:minmax(0,1.9fr) minmax(36px,1fr) 22px; gap:8px; align-items:center; font-size:12px; color:var(--ink); padding:2px 0;}
 .dv-rl{line-height:1.25;} .dv-rn{text-align:right; font-family:var(--font-num);}
@@ -1388,12 +1390,13 @@ th.mx-cat-opal{box-shadow:inset 0 3px 0 var(--cat-1);} th.mx-cat-client{box-shad
             <div id="ccTargets"></div>
           </div>
           <div class="cc-panel" id="ccDriving"></div>
-          <div class="cc-panel" id="ccExtras"></div>
         </div>
         <div class="cc-stack">
           <div class="cc-panel"><div class="cc-title">Safe man-hours <small>last 12 months</small></div><div class="cc-chart" id="ccLine"></div></div>
           <div class="cc-panel"><div class="cc-title">Proactive activities <small>TBTs, training, inductions, visits, audits, inspections</small></div><div class="cc-chart" id="ccBars"></div></div>
           <div class="cc-panel"><div class="cc-title">Compliance now <small id="ccMiniScope">company-wide</small></div><div class="cc-mini" id="ccMini"></div></div>
+          <div class="cc-panel" id="ccDrvTrend"></div>
+          <div class="cc-panel" id="ccExtras"></div>
         </div>
       </section>
 
@@ -2591,7 +2594,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b47';
+const APP_BUILD='b48';
 let appOutdated=false;
 // Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
 let _verTag=null, _verLast=0;
@@ -9058,6 +9061,8 @@ function renderCcDriving(entries, m, key, prev, prevName, months, monthly, scope
   const top=[...pp].sort((a,b)=>b[1].t-a[1].t).slice(0,5);
   const trend=months.map((k,i)=>monthly[i].ivms+monthly[i].dfms+monthly[i].lsr);
   const any = m.vehicleKm || drv.length || trend.some(Boolean);
+  // Batch 48: the 12-month chart sits in the right-hand column (fills the space under "Compliance now")
+  { const tr=document.getElementById('ccDrvTrend'); if(tr) tr.innerHTML=`<div class="cc-title">Driving &amp; LSR violations <small>IVMS + DFMS + LSR · last 12 months</small></div><div class="cc-chart">${ccBarSvg(months, trend, 'IVMS, DFMS and LSR violations per month', 'ccBfDrv')}</div>`; }
   el.innerHTML=`<div class="cc-title">Driving safety &amp; Life-Saving Rules <small>${esc(scope)} · ${esc(periodLabel(key))}</small>${canEdit()?`<span class="dv-add"><button type="button" class="btn btn-sm" data-cc-log="ivms">+ IVMS</button><button type="button" class="btn btn-sm" data-cc-log="dfms">+ DFMS</button><button type="button" class="btn btn-sm" data-cc-log="lsr">+ LSR</button><button type="button" class="btn btn-sm" data-cc-log="vehicleKm">+ Km</button></span>`:''}</div>
     <div class="dv-kpis">${kpi('truck','Km driven (IVMS)', m.vehicleKm.toLocaleString(), kmTrend, '')}${kpi('alert','IVMS violations', m.ivms, rate('ivms'), m.ivms?'warn':'good')}${kpi('clock','DFMS violations', m.dfms, rate('dfms'), m.dfms?'warn':'good')}${kpi('ban','LSR violations', m.lsr, m.lsr?'Life-Saving Rules broken '+periodWord:'none '+periodWord, m.lsr?'bad':'good')}</div>
     ${any?`<div class="dv-grid">
@@ -9066,7 +9071,6 @@ function renderCcDriving(entries, m, key, prev, prevName, months, monthly, scope
       ${bars('LSR by rule', lsrRows, '--danger', 'No Life-Saving Rule violations '+periodWord)}
     </div>
     <div class="dv-grid dv-grid2">
-      <div class="dv-b"><div class="dv-bh">Violations per month <span class="wsub">IVMS + DFMS + LSR · last 12 months</span></div><div class="cc-chart">${ccBarSvg(months, trend, 'IVMS, DFMS and LSR violations per month', 'ccBfDrv')}</div></div>
       <div class="dv-b"><div class="dv-bh">Most violations ${esc(periodWord)}</div>${top.length?`<div class="dv-top">${top.map(([id,o])=>{ const w=workers.find(x=>x.id===id); return `<button type="button" class="dv-p" data-cc-worker="${esc(id)}"><span class="wname">${esc(w?w.fullName:'Removed worker')}</span><span class="wsub">${[o.ivms?'IVMS '+o.ivms:'', o.dfms?'DFMS '+o.dfms:'', o.lsr?'LSR '+o.lsr:''].filter(Boolean).join(' · ')}</span><span class="dv-pn">${o.t}</span></button>`; }).join('')}</div>`:'<p class="wsub" style="margin:4px 0 0;">No violation linked to a driver.</p>'}${unnamed?`<p class="wsub" style="margin:6px 0 0;">${unnamed} not linked to a driver (monthly totals / unknown).</p>`:''}</div>
     </div>`:`<p class="wsub" style="margin:12px 14px;">Nothing logged ${periodWord}. Use <strong>Log an entry</strong> → <em>IVMS violation</em>, <em>DFMS violation</em>, <em>LSR violation</em> or <em>Vehicle KM driven</em> (from the monthly IVMS report)${canEdit()?' — or the buttons above':''}.</p>`}`;
 }
