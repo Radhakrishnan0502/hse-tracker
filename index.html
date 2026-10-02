@@ -1547,11 +1547,13 @@ th.mx-cat-opal{box-shadow:inset 0 3px 0 var(--cat-1);} th.mx-cat-client{box-shad
           <p class="page-tagline"><span class="pt-co">Burhan Oil &amp; Trade Services</span><span class="pt-sep" aria-hidden="true"></span><span class="pt-slogan">Right document, right revision, every time</span></p>
         </div>
         <div class="topbar-actions">
+          <button class="btn btn-sm" id="docCtlBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-filecheck"/></svg> PDF document numbers</button>
           <button class="btn btn-sm" id="libTrashBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg> Deleted documents (0)</button>
           <button class="btn btn-primary" id="addLibBtn" type="button">+ Add document</button>
         </div>
       </div>
 
+      <div class="panel" id="docCtlPanel" hidden></div>
       <div class="tiles tiles-4" id="libTiles"></div>
 
       <div class="report-grid">
@@ -2006,6 +2008,7 @@ function startDmy(){
     .observe(document.body, {childList:true, subtree:true, characterData:true});
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', startDmy); else startDmy();
+window.addEventListener('load', ()=>{ try{ preloadPdfLogo(); }catch(e){} });
 
 
 
@@ -2014,8 +2017,70 @@ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded'
    plain equivalents, and shortens any single line that would run off the right edge of the page (with "…"). */
 const PDF_CHAR_MAP={'≤':'<=','≥':'>=','→':'->','←':'<-','↔':'<->','₂':'2','₃':'3','²':'2','³':'3','−':'-','✓':'v','✔':'v','✗':'x','✘':'x','⚠':'!','≈':'~','≠':'!=','\u00a0':' ','\u2009':' ','\u202f':' '};
 function pdfSafe(t){ if(Array.isArray(t)) return t.map(pdfSafe); if(typeof t!=='string') return t; if(/\d{4}-\d{2}-\d{2}/.test(t)) t=t.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (m,y,mo,d)=>isoDateOk(m)?`${d}-${mo}-${y}`:m); return t.replace(/[≤≥→←↔₂₃²³−✓✔✗✘⚠≈≠\u00a0\u2009\u202f]/g, c=>PDF_CHAR_MAP[c]||c); }
+/* Batch 51: every PDF in one controlled format (ISO 45001 7.5.2 / 7.5.3 — identification, version, control).
+   Each page gets a border, a header (logo top-left · company & document title · Doc No. / Rev. / Issue date / Page x of y)
+   and a footer ("Uncontrolled when printed"). The builders' own drawing is scaled into the space inside the frame,
+   so every existing PDF keeps its layout. Doc No. / Rev. / Issue date come from the Document register (QHSE Library). */
+const PDF_DOCS={
+  monthlyReport:{title:'Monthly HSE Report'}, yearlyReport:{title:'Yearly HSE Report'}, clientPack:{title:'HSE Monthly Report — Client'},
+  incident:{title:'Incident Investigation Report'}, audit:{title:'Audit Report'}, assurance:{title:'HSE Assurance Plan'}, kpi:{title:'HSE KPI Scorecard'},
+  actions:{title:'HSE Action Tracker'}, alert:{title:'Safety Alert'}, star:{title:'Safety Star Certificate'},
+  ppeList:{title:'Approved PPE List'}, ppeIssue:{title:'PPE Issue Record'}, workerProfile:{title:'Employee HSE Record'}, vehicle:{title:'Vehicle HSE Record'}, site:{title:'Project HSE Record'},
+};
+function docControl(key){ return (((settingsDocs||{}).docControl||{}).docs||{})[key]||{}; }
+let pdfLogoData=null;
+function renderDocCtl(){
+  const el=document.getElementById('docCtlPanel'); if(!el || el.hidden) return; const ed=canEdit();
+  el.innerHTML=`<div class="section-head"><h3>PDF document numbers — document register</h3><button type="button" class="btn btn-sm" id="docCtlClose">Close</button></div>
+    <p class="wsub" style="margin:-4px 0 10px;">Every PDF the tracker makes shows these in its header (ISO 45001 7.5.2 / 7.5.3 — identification and version). When you revise a form, change its revision and issue date here.</p>
+    <form id="docCtlForm"><div class="table-wrap"><table><thead><tr><th>Document (PDF)</th><th>Doc. No.</th><th>Revision</th><th>Issue date</th></tr></thead><tbody>${Object.entries(PDF_DOCS).map(([k,v])=>{ const d=docControl(k); return `<tr><td>${esc(v.title)}</td><td><input data-dc="${k}|no" value="${esc(d.no||'')}" placeholder="e.g. BOTS-HSE-F-001" ${ed?'':'disabled'}></td><td><input data-dc="${k}|rev" value="${esc(d.rev||'')}" placeholder="e.g. 00" style="max-width:90px;" ${ed?'':'disabled'}></td><td><input type="date" data-dc="${k}|date" value="${esc(d.date||'')}" ${ed?'':'disabled'}></td></tr>`; }).join('')}</tbody></table></div>
+    ${ed?`<div class="form-actions"><button type="submit" class="btn btn-primary">Save document numbers</button></div>`:''}</form>`;
+}
+function preloadPdfLogo(){ if(pdfLogoData) return; fetchImageDataUrl('logo.png').then(d=>{ if(d) pdfLogoData=d; }).catch(()=>{}); }
+const PDF_FRAME={m:16, head:56, foot:22, gap:6};
+function pdfFrameBox(d){ const W=d.internal.pageSize.getWidth(), H=d.internal.pageSize.getHeight(), F=PDF_FRAME;
+  const top=F.m+F.head+F.gap, bottom=F.m+F.foot+F.gap, s=(H-top-bottom)/H; return {W, H, s, tx:(W-W*s)/2, ty:bottom}; }
+function pdfFrameBegin(d){ if(!d.internal || typeof d.internal.write!=='function') return; d.__frameOn=true; const b=pdfFrameBox(d); d.internal.write(`q ${b.s.toFixed(5)} 0 0 ${b.s.toFixed(5)} ${b.tx.toFixed(2)} ${b.ty.toFixed(2)} cm`); }
+function pdfFrameFinish(d){
+  if(d.__framed || !d.__frameOn) return; d.__framed=true;
+  try{ pdfFrameDraw(d); }catch(e){ console.error('PDF frame', e); }
+}
+function pdfFrameDraw(d){
+  const meta=d.__meta||{}, info=PDF_DOCS[meta.key]||{}, dc=docControl(meta.key), F=PDF_FRAME;
+  const title=meta.title||info.title||'HSE Document', n=d.internal.getNumberOfPages(), cur=d.internal.getCurrentPageInfo ? d.internal.getCurrentPageInfo().pageNumber : n;
+  const issue=dc.date ? (typeof isoToDmy==='function' && isoToDmy(dc.date) ? isoToDmy(dc.date) : dc.date) : '—';
+  for(let i=1;i<=n;i++){
+    d.setPage(i); d.internal.write('Q');
+    const W=d.internal.pageSize.getWidth(), H=d.internal.pageSize.getHeight(), x0=F.m, y0=F.m, x1=W-F.m, hb=y0+F.head, logoW=78, boxW=168;
+    d.setLineWidth(0.9); d.setDrawColor(40,48,60); d.rect(x0, y0, x1-x0, H-2*F.m);
+    d.setLineWidth(0.6); d.line(x0, hb, x1, hb); d.line(x0+logoW, y0, x0+logoW, hb); d.line(x1-boxW, y0, x1-boxW, hb);
+    if(pdfLogoData){ try{ const lh=F.head-12, lw=lh*600/562; d.addImage(pdfLogoData, imgFormat(pdfLogoData), x0+(logoW-lw)/2, y0+6, lw, lh); }catch(e){} }
+    else { d.setFont('helvetica','bold'); d.setFontSize(11); d.setTextColor(200,16,46); d.__rawText('BURHAN', x0+logoW/2, y0+F.head/2+4, {align:'center'}); }
+    const mx=(x0+logoW+x1-boxW)/2;
+    d.setFont('helvetica','bold'); d.setFontSize(8.5); d.setTextColor(200,16,46); d.__rawText('BURHAN OIL & TRADE SERVICES', mx, y0+17, {align:'center'});
+    d.setFontSize(meta.sub?12.5:14); d.setTextColor(20,30,48); d.__rawText(pdfSafe(title).toUpperCase(), mx, y0+(meta.sub?34:38), {align:'center', maxWidth:x1-boxW-x0-logoW-16});
+    if(meta.sub){ d.setFont('helvetica','normal'); d.setFontSize(8.5); d.setTextColor(90,96,106); d.__rawText(pdfSafe(meta.sub), mx, y0+47, {align:'center', maxWidth:x1-boxW-x0-logoW-16}); }
+    const rows=[['Doc. No.', dc.no||'—'],['Revision', dc.rev||'—'],['Issue date', issue],['Page', `${i} of ${n}`]], rh=F.head/rows.length, bx=x1-boxW;
+    rows.forEach(([k,v],r)=>{ const ry=y0+r*rh; if(r) d.line(bx, ry, x1, ry); d.setFont('helvetica','bold'); d.setFontSize(7.5); d.setTextColor(90,96,106); d.__rawText(k, bx+6, ry+rh/2+2.6);
+      d.setFont('helvetica','normal'); d.setFontSize(8); d.setTextColor(20,20,20); d.__rawText(pdfSafe(String(v)), bx+60, ry+rh/2+2.8, {maxWidth:boxW-66}); });
+    d.line(bx+56, y0, bx+56, hb);
+    const fy=H-F.m-F.foot; d.line(x0, fy, x1, fy);
+    d.setFont('helvetica','normal'); d.setFontSize(7.5); d.setTextColor(90,96,106);
+    d.__rawText(`Burhan Oil & Trade Services · HSE Department${meta.ref?'  ·  '+pdfSafe(String(meta.ref)):''}`, x0+8, fy+F.foot/2+2.6);
+    d.setFont('helvetica','bold'); d.__rawText('UNCONTROLLED WHEN PRINTED', x1-8, fy+F.foot/2+2.6, {align:'right'});
+  }
+  d.setTextColor(20,20,20); d.setPage(Math.min(cur, n));
+}
 function pdfDoc(opts){
-  const d=new window.jspdf.jsPDF(opts);
+  const meta={key:(opts||{}).docKey, title:(opts||{}).docTitle, sub:(opts||{}).docSub, ref:(opts||{}).docRef};
+  const o={...(opts||{})}; delete o.docKey; delete o.docTitle; delete o.docSub; delete o.docRef;
+  const d=new window.jspdf.jsPDF(o); d.__meta=meta;
+  // frame: the page content is drawn scaled inside the frame; finished when the PDF is saved / output
+  d.__rawText=d.text.bind(d);
+  pdfFrameBegin(d);
+  { const add=d.addPage.bind(d); d.addPage=(...a)=>{ const r=add(...a); pdfFrameBegin(d); return r; }; }
+  { const save=d.save.bind(d); d.save=(...a)=>{ pdfFrameFinish(d); return save(...a); }; }
+  if(d.output){ const out=d.output.bind(d); d.output=(...a)=>{ pdfFrameFinish(d); return out(...a); }; }
   const text=d.text.bind(d), split=d.splitTextToSize.bind(d);
   d.splitTextToSize=(t,...a)=>split(pdfSafe(t),...a);
   d.text=(t,x,y,o,...rest)=>{
@@ -2620,6 +2685,7 @@ function startSettingsData(){
       renderTiles();   // Batch 40: training bars on the Workforce dashboard depend on the roles / training groups
       renderStarStrip(); renderRecognition(); renderCalendar(); renderCcExtras();   // Batch 42
       renderPpe(true);   // Batch 49
+      preloadPdfLogo();   // Batch 51
     }, err=>{
       console.error(err); if(!auth.currentUser) return;
       settingsLoadError = err && err.code==='permission-denied' ? 'rules' : 'other';
@@ -2630,7 +2696,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b50';
+const APP_BUILD='b51';
 let appOutdated=false;
 // Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
 let _verTag=null, _verLast=0;
@@ -4042,15 +4108,13 @@ function renderIncTrashBody(){
 
 /* ---------- incident report PDF ---------- */
 function buildIncidentPdf(i){
-  const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4'});
+  const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4', docKey:'incident', docSub:[i.incNo, i.type].filter(Boolean).join(' · '), docRef:i.incNo});
   const M=40, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight(); let y=48;
   const ensure=h=>{ if(y+h>H-40){ doc.addPage(); y=48; } };
   const h2=t=>{ ensure(28); y+=6; doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(200,16,46); doc.text(t.toUpperCase(), M, y); y+=5; doc.setDrawColor(215); doc.line(M,y,W-M,y); y+=14; doc.setTextColor(20,20,20); };
   const kv=(k,v)=>{ const lines=doc.splitTextToSize(String(v==null||v===''?'—':v), W-2*M-150); ensure(12*lines.length+4); doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(100,105,110); doc.text(String(k), M, y); doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(20,20,20); lines.forEach((l,n)=>doc.text(l, M+150, y+n*12)); y+=12*lines.length+3; };
   const para=t=>{ const lines=doc.splitTextToSize(String(t||'—'), W-2*M); doc.setFont('helvetica','normal'); doc.setFontSize(9.5); lines.forEach(l=>{ ensure(12); doc.text(l, M, y); y+=12; }); y+=4; };
-  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Burhan Oil & Trade Services', M, 36);
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(120); doc.text('HSE Incident Investigation Report', M, 47); doc.setTextColor(20);
-  y=76; doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.text(`${i.incNo||'Incident'} — ${i.type||''}`, M, y); y+=16;
+  y=40; doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.text(`${i.incNo||'Incident'} — ${i.type||''}`, M, y); y+=16;
   doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(90); doc.text(`${i.date||''}${i.time?' '+i.time:''}  ·  ${i.projectId?projectName(i.projectId):'No project'}  ·  ${i.location||''}  ·  Status: ${i.status||'Reported'}`, M, y); doc.setTextColor(20); y+=10;
   h2('1. Notification'); kv('Reported by', i.reportedBy); kv('Date reported', i.reportedDate); kv('Shift', i.shift); kv('Work activity', i.activity); kv('Permit to work no.', i.permitNo); kv('Weather / lighting', i.conditions);
   h2('2. Classification'); kv('Incident type', i.type); kv('Injury classification', i.injuryClass); kv('Actual severity', i.actualSeverity); kv('Potential severity', i.potentialSeverity); kv('Likelihood', i.likelihood);
@@ -4070,7 +4134,7 @@ function buildIncidentPdf(i){
   h2('7. Close-out'); kv('Closed by', i.closedBy); kv('Closure date', i.closedDate); kv('Actions verified effective', i.effectivenessVerified); kv('Remarks', i.closureNotes);
   ensure(60); y+=24; doc.setDrawColor(150); doc.line(M, y, M+180, y); doc.line(W-M-180, y, W-M, y); doc.setFontSize(8.5); doc.setTextColor(100); doc.text('HSE Manager', M, y+12); doc.text('Project / Operations Manager', W-M-180, y+12);
   const pages=doc.internal.getNumberOfPages ? doc.internal.getNumberOfPages() : 1;
-  for(let n=1;n<=pages;n++){ if(doc.setPage) doc.setPage(n); doc.setFontSize(7.5); doc.setTextColor(140); doc.text(`${i.incNo||''} · page ${n} of ${pages} · printed ${localToday()}`, W-M, H-20, {align:'right'}); }
+  void pages;   // page numbers are in the document header (Batch 51)
   return doc;
 }
 function downloadIncidentPdf(){
@@ -4375,14 +4439,13 @@ function openAudTrash(){ document.getElementById('audTrashOverlay').hidden=false
 function closeAudTrash(){ document.getElementById('audTrashOverlay').hidden=true; document.getElementById('audTrashDrawer').hidden=true; }
 function renderAudTrashBody(){ const list=deletedAudits(); document.getElementById('audTrashBody').innerHTML = list.length?list.map(a=>`<div class="record-card"><div class="record-card-top"><div class="record-card-title">${esc((a.auditNo||'')+' · '+(a.title||''))}</div><div class="record-card-actions"><button type="button" class="btn btn-sm" data-arestore="${a.id}">Restore</button><button type="button" class="btn btn-danger btn-sm" data-apurge="${a.id}" data-armed="0">Delete forever</button></div></div></div>`).join(''):'<p class="wsub">Nothing in the trash.</p>'; }
 function buildAuditPdf(a){
-  const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4'});
+  const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4', docKey:'audit', docSub:[a.auditNo, a.auditType].filter(Boolean).join(' · '), docRef:a.auditNo});
   const M=40, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight(); let y=48;
   const ensure=h=>{ if(y+h>H-40){ doc.addPage(); y=48; } };
   const h2=t=>{ ensure(28); y+=6; doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(200,16,46); doc.text(t.toUpperCase(), M, y); y+=5; doc.setDrawColor(215); doc.line(M,y,W-M,y); y+=14; doc.setTextColor(20,20,20); };
   const kv=(k,v)=>{ const lines=doc.splitTextToSize(String(v==null||v===''?'—':v), W-2*M-150); ensure(12*lines.length+4); doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(100,105,110); doc.text(String(k), M, y); doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(20,20,20); lines.forEach((l,n)=>doc.text(l, M+150, y+n*12)); y+=12*lines.length+3; };
   const para=t=>{ doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.splitTextToSize(String(t||'—'), W-2*M-10).forEach(l=>{ ensure(12); doc.text(l, M+10, y); y+=12; }); y+=3; };
-  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Burhan Oil & Trade Services', M, 36); doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(120); doc.text('Audit Report Summary', M, 47); doc.setTextColor(20);
-  y=76; doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.text(`${a.auditNo||'Audit'} — ${a.auditType||''}`, M, y); y+=16;
+  y=40; doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.text(`${a.auditNo||'Audit'} — ${a.auditType||''}`, M, y); y+=16;
   doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(90); doc.text(`${a.title||''}`, M, y); doc.setTextColor(20); y+=8;
   const r=auditRating(a.score), c=findingCounts(a);
   h2('1. Audit details'); kv('Standards / criteria', (a.standards||[]).join(', ')); kv('Criteria references', a.criteria); kv('Objectives', a.objectives); kv('Areas audited', a.areas); kv('Project / location', [a.projectId?projectName(a.projectId):'', a.location].filter(Boolean).join(' · '));
@@ -4395,7 +4458,7 @@ function buildAuditPdf(a){
   for(const f of (a.findings||[])){ ensure(16); doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.text(`${f.no||''}  ${f.category||''}${f.clause?'  ·  '+f.clause:''}${f.standard?'  ·  '+f.standard:''}  ·  ${f.status||'Open'}`, M, y); y+=12;
     para(f.description); if(f.evidence) para('Evidence: '+f.evidence); if(f.rootCause) para('Root cause: '+f.rootCause); if(f.correctiveAction) para(`Corrective action: ${f.correctiveAction} — owner ${f.owner||'—'}, target ${f.targetDate||'—'}${f.closedDate?', closed '+f.closedDate:''}${f.verifiedBy?', verified by '+f.verifiedBy:''}`); }
   ensure(60); y+=24; doc.setDrawColor(150); doc.line(M, y, M+180, y); doc.line(W-M-180, y, W-M, y); doc.setFontSize(8.5); doc.setTextColor(100); doc.text('Lead auditor', M, y+12); doc.text('Management representative', W-M-180, y+12);
-  const pages=doc.internal.getNumberOfPages?doc.internal.getNumberOfPages():1; for(let n=1;n<=pages;n++){ if(doc.setPage) doc.setPage(n); doc.setFontSize(7.5); doc.setTextColor(140); doc.text(`${a.auditNo||''} · page ${n} of ${pages} · printed ${localToday()}`, W-M, H-20, {align:'right'}); }
+  // page numbers are in the document header (Batch 51)
   return doc;
 }
 function downloadAuditPdf(){ const a=currentAud(); if(!a) return; if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; } try{ buildAuditPdf(a).save(`${(a.auditNo||'audit').replace(/[^a-z0-9-]+/gi,'_')}_report.pdf`); toast('Audit report downloaded'); }catch(e){ console.error(e); toast('Could not generate the PDF'); } }
@@ -4529,10 +4592,10 @@ function downloadAssurancePdf(){
   const items=assurancePlanFor(assuranceYear); if(!items){ toast('No plan for this year yet'); return; }
   if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
   try{
-    const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4', orientation:'landscape'});
+    const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4', orientation:'landscape', docKey:'assurance', docSub:`Year ${assuranceYear}`});
     const M=30, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
     const colA=210, colC=50, colO=80, mw=(W-2*M-colA-colC-colO-40)/12; let y=40;
-    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Burhan Oil & Trade Services', M, y); doc.setFontSize(15); doc.text(`HSE Assurance Plan ${assuranceYear}`, M, y+20);
+    doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.text(`HSE Assurance Plan ${assuranceYear}`, M, y+20);
     const st=assuranceStats(items, assuranceYear); doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(100); doc.text(`Planned ${st.planned} · Completed ${st.done} · Overdue ${st.overdue} · Compliance ${st.pct===null?'—':st.pct+'%'} · printed ${localToday()}   (P = planned, X = done, ! = overdue, + = done not planned)`, M, y+34); doc.setTextColor(20);
     y+=52; const head=()=>{ doc.setFillColor(20,30,48); doc.rect(M,y-11,W-2*M,16,'F'); doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.text('Activity',M+4,y); doc.text('Clause',M+colA+4,y); doc.text('Owner',M+colA+colC+4,y); MONTHS_SHORT.forEach((m,n)=>doc.text(m, M+colA+colC+colO+n*mw+mw/2, y, {align:'center'})); doc.text('Done', W-M-20, y, {align:'center'}); doc.setTextColor(20); y+=16; };
     head();
@@ -5191,9 +5254,9 @@ function downloadKpiPdf(){
   const t=targetsFor(kpiYear); if(!t){ toast('Set KPI targets first'); return; }
   if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
   try{
-    const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4', orientation:'landscape'}); const M=30, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
+    const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4', orientation:'landscape', docKey:'kpi', docSub:`Year ${kpiYear}`}); const M=30, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
     const a=targetActuals(kpiYear), mm=kpiMonthMetrics(kpiYear), now=new Date(), lastM=Number(kpiYear)===now.getFullYear()?now.getMonth()+1:Number(kpiYear)<now.getFullYear()?12:0;
-    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Burhan Oil & Trade Services', M, 36); doc.setFontSize(15); doc.text(`HSE KPI Scorecard ${kpiYear}`, M, 56);
+    doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.text(`HSE KPI Scorecard ${kpiYear}`, M, 56);
     doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(110); doc.text(`Year to date · printed ${localToday()}`, M, 70); doc.setTextColor(20);
     const colK=230, colT=60, mw=(W-2*M-colK-colT-130)/12; let y=92;
     const head=()=>{ doc.setFillColor(20,30,48); doc.rect(M,y-11,W-2*M,16,'F'); doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.text('KPI',M+4,y); doc.text('Target',M+colK+4,y); MONTHS_SHORT.forEach((m,n)=>doc.text(m, M+colK+colT+n*mw+mw/2, y, {align:'center'})); doc.text('YTD', W-M-100, y); doc.text('Status', W-M-60, y); doc.setTextColor(20); y+=16; };
@@ -5292,8 +5355,8 @@ function downloadActionsPdf(){
   if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
   const list=actCache.filter(actMatches).sort((a,b)=>String(a.targetDate||'9999').localeCompare(String(b.targetDate||'9999')));
   try{
-    const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4', orientation:'landscape'}); const M=30, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
-    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Burhan Oil & Trade Services', M, 36); doc.setFontSize(15); doc.text('HSE Action Tracker', M, 56);
+    const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4', orientation:'landscape', docKey:'actions'}); const M=30, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
+    doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.text('HSE Action Tracker', M, 56);
     doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(110); doc.text(`${list.length} actions · filter: ${actFilters.status}${actFilters.src!=='all'?' · '+actFilters.src:''} · printed ${localToday()}`, M, 70); doc.setTextColor(20);
     const cols=[{t:'Source',w:70},{t:'Reference',w:120},{t:'Action',w:300},{t:'Owner',w:100},{t:'Target',w:60},{t:'Status',w:W-2*M-650}]; let y=92;
     const head=()=>{ doc.setFillColor(20,30,48); doc.rect(M,y-11,W-2*M,16,'F'); doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(8); let x=M+4; cols.forEach(c=>{ doc.text(c.t,x,y); x+=c.w; }); doc.setTextColor(20); y+=16; };
@@ -5331,7 +5394,7 @@ async function downloadAlertPdf(r){
   if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
   try{
     toast('Preparing the alert…');
-    const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4'}); const M=34, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
+    const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4', docKey:'alert', docSub:[r.alertNo, r.alertType].filter(Boolean).join(' · '), docRef:r.alertNo}); const M=34, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
     const lines=t=>String(t||'').split(/\n+/).map(x=>x.replace(/^[-•*\s]+/,'').trim()).filter(Boolean);
     const logo=await fetchImageDataUrl('logo.png').catch(()=>null);
     const photos=[]; for(const p of (r.photos||[]).filter(f=>/^image\//.test(f.contentType||'')).slice(0,2)){ const d=await fetchImageDataUrl(p.url).catch(()=>null); if(d) photos.push(d); }
@@ -6079,7 +6142,7 @@ async function saveRecogItems(items){ const ok=await saveSettings('recognition',
 // certificate (A4 landscape)
 async function recogCertificatePdf(it){
   if(!(window.jspdf && window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
-  const doc=pdfDoc({unit:'pt', format:'a4', orientation:'landscape'}); const W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight(), cx=W/2;
+  const doc=pdfDoc({unit:'pt', format:'a4', orientation:'landscape', docKey:'star', docSub:monthLabel(it.month)}); const W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight(), cx=W/2;
   doc.setDrawColor(200,16,46); doc.setLineWidth(3); doc.rect(22,22,W-44,H-44);
   doc.setDrawColor(201,162,39); doc.setLineWidth(1); doc.rect(32,32,W-64,H-64);
   const logo=await fetchImageDataUrl('logo.png').catch(()=>null);
@@ -6386,18 +6449,16 @@ function ppePdfTable(doc, head, rows, widths, y, x0){
 function ppeListPdf(){
   if(!ppeApproved().length){ toast('The approved PPE list is empty'); return; }
   if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
-  const doc=pdfDoc({unit:'pt', format:'a4', orientation:'landscape'}); doc.setLineWidth(0.5); doc.setDrawColor(190);
-  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(216,30,44); doc.text('Approved PPE list — purchase standard', 32, 40); doc.setTextColor(20,20,20);
-  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.text(`Burhan Oil & Trade Services · HSE · issued ${localToday()}`, 32, 56);
-  doc.text('Buy and issue only PPE that meets these standards. Ask HSE before buying anything that is not on this list.', 32, 70);
-  ppePdfTable(doc, PPE_TABLE_HEAD, ppeTableRows(), [70,160,120,100,120,100,60,48], 84, 32);
+  const doc=pdfDoc({unit:'pt', format:'a4', orientation:'landscape', docKey:'ppeList', docSub:'Purchase standard · issued '+isoToDmy(localToday())}); doc.setLineWidth(0.5); doc.setDrawColor(190);
+  doc.setTextColor(20,20,20); doc.setFont('helvetica','bold'); doc.setFontSize(10.5);
+  doc.text('Buy and issue only PPE that meets these standards. Ask HSE before buying anything that is not on this list.', 32, 40);
+  ppePdfTable(doc, PPE_TABLE_HEAD, ppeTableRows(), [70,160,120,100,120,100,60,48], 54, 32);
   doc.save(`Approved_PPE_list_${localToday()}.pdf`);
 }
 function ppeSheetPdf(){
   const b=ppeUi.lastBatch; if(!b) return; if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
-  const doc=pdfDoc({unit:'pt', format:'a4', orientation:'landscape'}); doc.setLineWidth(0.5); doc.setDrawColor(150);
-  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(216,30,44); doc.text('PPE issue record', 32, 40); doc.setTextColor(20,20,20);
-  doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
+  const doc=pdfDoc({unit:'pt', format:'a4', orientation:'landscape', docKey:'ppeIssue', docSub:`${isoToDmy(b.date)}${b.project!=='all'?' · '+projectName(b.project):''}`}); doc.setLineWidth(0.5); doc.setDrawColor(150);
+  doc.setTextColor(20,20,20); doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
   doc.text(`Date: ${b.date}   ·   Project: ${b.project!=='all'?projectName(b.project):'—'}   ·   Issue type: ${b.condition}   ·   Issued by: ${b.issuedBy||'________________'}`, 32, 58);
   doc.text('I have received the PPE listed below in good condition. I will wear it as instructed, look after it and return it for replacement when worn or damaged.', 32, 72);
   const rows=b.workers.map((w,i)=>[String(i+1), w.name, w.civilId, w.designation, w.items.map(x=>`${x.item}${x.size?' ('+x.size+')':''}${x.qty>1?' ×'+x.qty:''}`).join(', '), '']);
@@ -6948,7 +7009,7 @@ function openClientPack(){
 }
 function closeClientPack(){ document.getElementById('cpOverlay').hidden=true; document.getElementById('cpDialog').hidden=true; }
 async function buildClientPack(opts){
-  const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4'}); const M=40, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
+  const {jsPDF}=window.jspdf; const doc=pdfDoc({unit:'pt', format:'a4', docKey:'clientPack', docSub:[new Date(opts.month+'-01T00:00:00').toLocaleDateString('en-GB',{month:'long', year:'numeric'}), opts.client, opts.project&&opts.project!=='all'?projectName(opts.project):''].filter(Boolean).join(' · ')}); const M=40, W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
   const month=opts.month, year=month.slice(0,4), proj=opts.project||'all', projLabel=proj==='all'?'All projects':projectName(proj);
   const monthName=new Date(month+'-01T00:00:00').toLocaleDateString('en-GB',{month:'long', year:'numeric'});
   const inProj=x=>proj==='all' || x.projectId===proj;
@@ -6957,7 +7018,7 @@ async function buildClientPack(opts){
   const rate=(n,h)=>h?(n*1e6/h).toFixed(2):'—';
   const logo=await fetchImageDataUrl('logo.png').catch(()=>null);
   let pg=1; let yy;
-  const footer=()=>{ doc.setDrawColor(200); doc.line(M, H-34, W-M, H-34); doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(120); doc.text(`Burhan Oil & Trade Services · HSE Monthly Report · ${monthName}`, M, H-22); doc.text(`Page ${pg}`, W-M, H-22, {align:'right'}); doc.setTextColor(20); };
+  const footer=()=>{};   // page footer + numbers come from the document frame (Batch 51)
   const newPage=()=>{ footer(); doc.addPage(); pg++; yy=50; };
   const ensure=h=>{ if(yy+h>H-50) newPage(); };
   const h2=t=>{ ensure(34); yy+=8; doc.setFillColor(200,16,46); doc.rect(M, yy-12, 4, 16, 'F'); doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.text(t.toUpperCase(), M+12, yy+1); yy+=18; };
@@ -9753,7 +9814,7 @@ function closeReportEntryForm(){
 /* ---------------- monthly HSE report PDF export ---------------- */
 async function buildReportPdf(division, month, project){
   const {jsPDF} = window.jspdf;
-  const doc = pdfDoc({unit:'pt', format:'a4'});
+  const doc = pdfDoc({unit:'pt', format:'a4', docKey:month.length===4?'yearlyReport':'monthlyReport', docSub:[month.length===4?'Year '+month:new Date(month+'-01T00:00:00').toLocaleDateString('en-GB',{month:'long', year:'numeric'}), division&&division!=='all'?divLabel(division):'All divisions', project&&project!=='all'?(project==='none'?'No specific project':projectName(project)):''].filter(Boolean).join(' · ')});
   const marginX=40, pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
   let y=54;
   function ensure(h){ if(y+h>pageH-36){ doc.addPage(); y=48; } }
@@ -9772,13 +9833,13 @@ async function buildReportPdf(division, month, project){
     y+=14;
   }
 
-  try{ const logoUrl=await fetchImageDataUrl('logo.png'); if(logoUrl){ doc.addImage(logoUrl, 'PNG', marginX, 24, 32, 45); } }catch(e){}
+  // logo is in the document header (Batch 51)
   doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(20,20,20);
-  doc.text('Burhan Oil & Trade Services', marginX+40, 38);
+  /* company name is in the document header (Batch 51) */
   doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(120,120,120);
-  doc.text(month.length===4 ? 'Yearly HSE Report' : 'Monthly HSE Report', marginX+40, 48);
+  /* title is in the document header (Batch 51) */
   doc.setTextColor(20,20,20);
-  y=88;
+  y=44;
 
   doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(20,20,20);
   doc.text(division==='all' ? 'All divisions' : divLabel(division), marginX, y); y+=18;
@@ -10302,7 +10363,7 @@ function imgFormat(dataUrl){
 }
 async function buildProfilePdf(w){
   const {jsPDF} = window.jspdf;
-  const doc = pdfDoc({unit:'pt', format:'a4'});
+  const doc = pdfDoc({unit:'pt', format:'a4', docKey:'workerProfile', docSub:[w.fullName, w.civilId?'Civil ID '+w.civilId:''].filter(Boolean).join(' · '), docRef:w.civilId?'Civil ID '+w.civilId:''});
   const marginX=40, pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
   let y=54;
   function ensure(h){ if(y+h>pageH-36){ doc.addPage(); y=48; } }
@@ -10329,16 +10390,13 @@ async function buildProfilePdf(w){
     y+=2;
   }
 
-  try{
-    const logoUrl=await fetchImageDataUrl('logo.png');
-    if(logoUrl){ doc.addImage(logoUrl, 'PNG', marginX, 24, 32, 45); }
-  }catch(e){}
+  // logo is in the document header (Batch 51)
   doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(20,20,20);
-  doc.text('Burhan Oil & Trade Services', marginX+40, 38);
+  /* company name is in the document header (Batch 51) */
   doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(120,120,120);
-  doc.text('Workforce HSE Register', marginX+40, 48);
+  /* title is in the document header (Batch 51) */
   doc.setTextColor(20,20,20);
-  y = 88;
+  y=44;
 
   if(w.photo && w.photo.url){
     const photoUrl=await fetchImageDataUrl(w.photo.url);
@@ -10425,7 +10483,7 @@ async function downloadProfile(){
 /* ---------------- vehicle PDF export ---------------- */
 async function buildVehiclePdf(v){
   const {jsPDF} = window.jspdf;
-  const doc = pdfDoc({unit:'pt', format:'a4'});
+  const doc = pdfDoc({unit:'pt', format:'a4', docKey:'vehicle', docSub:[v.vehicleNumber, v.model].filter(Boolean).join(' · ')});
   const marginX=40, pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
   let y=54;
   function ensure(h){ if(y+h>pageH-36){ doc.addPage(); y=48; } }
@@ -10448,16 +10506,13 @@ async function buildVehiclePdf(v){
     y+=2;
   }
 
-  try{
-    const logoUrl=await fetchImageDataUrl('logo.png');
-    if(logoUrl){ doc.addImage(logoUrl, 'PNG', marginX, 24, 32, 45); }
-  }catch(e){}
+  // logo is in the document header (Batch 51)
   doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(20,20,20);
-  doc.text('Burhan Oil & Trade Services', marginX+40, 38);
+  /* company name is in the document header (Batch 51) */
   doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(120,120,120);
-  doc.text('Vehicle Register', marginX+40, 48);
+  /* title is in the document header (Batch 51) */
   doc.setTextColor(20,20,20);
-  y=88;
+  y=44;
 
   doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(20,20,20);
   doc.text(v.vehicleNumber||'Vehicle profile', marginX, y); y+=18;
@@ -10504,7 +10559,7 @@ async function downloadVehicleProfile(){
 /* ---------------- site equipment PDF export ---------------- */
 async function buildSitePdf(s){
   const {jsPDF} = window.jspdf;
-  const doc = pdfDoc({unit:'pt', format:'a4'});
+  const doc = pdfDoc({unit:'pt', format:'a4', docKey:'site', docSub:s.siteName||''});
   const marginX=40, pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
   let y=54;
   function ensure(h){ if(y+h>pageH-36){ doc.addPage(); y=48; } }
@@ -10530,16 +10585,13 @@ async function buildSitePdf(s){
     y+=2;
   }
 
-  try{
-    const logoUrl=await fetchImageDataUrl('logo.png');
-    if(logoUrl){ doc.addImage(logoUrl, 'PNG', marginX, 24, 32, 45); }
-  }catch(e){}
+  // logo is in the document header (Batch 51)
   doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(20,20,20);
-  doc.text('Burhan Oil & Trade Services', marginX+40, 38);
+  /* company name is in the document header (Batch 51) */
   doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(120,120,120);
-  doc.text('Project Details', marginX+40, 48);
+  /* title is in the document header (Batch 51) */
   doc.setTextColor(20,20,20);
-  y=88;
+  y=44;
 
   doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(20,20,20);
   doc.text(s.siteName||'Project profile', marginX, y); y+=18;
@@ -12035,6 +12087,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 
   // --- workforce view: register / training matrix ---
+  /* Batch 51: document register */
+  document.getElementById('docCtlBtn').addEventListener('click', ()=>{ const el=document.getElementById('docCtlPanel'); el.hidden=!el.hidden; renderDocCtl(); if(!el.hidden) el.scrollIntoView({block:'start', behavior:'smooth'}); });
+  document.getElementById('docCtlPanel').addEventListener('click', e=>{ if(e.target.closest('#docCtlClose')){ document.getElementById('docCtlPanel').hidden=true; } });
+  document.getElementById('docCtlPanel').addEventListener('submit', async e=>{ if(e.target.id!=='docCtlForm') return; e.preventDefault(); if(!canEdit()) return;
+    const docs={}; e.target.querySelectorAll('[data-dc]').forEach(el=>{ const [k,f]=el.dataset.dc.split('|'); (docs[k]=docs[k]||{})[f]=String(el.value||'').trim(); });
+    if(await saveSettings('docControl', {docs}, settingsStamp('docControl'))) toast('Document numbers saved — every PDF now shows them'); });
   /* Batch 49: PPE pane */
   document.getElementById('ppePane').addEventListener('click', async e=>{
     const b=e.target.closest('button, [data-ppe-period]'); if(!b) return;
