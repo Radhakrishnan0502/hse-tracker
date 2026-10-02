@@ -1563,6 +1563,7 @@ ul.lift-ctl{margin:4px 0 6px 18px; padding:0; font-size:12.5px;} ul.lift-ctl li{
           <p class="page-tagline"><span class="pt-co">Burhan Oil &amp; Trade Services</span><span class="pt-sep" aria-hidden="true"></span><span class="pt-slogan">Right document, right revision, every time</span></p>
         </div>
         <div class="topbar-actions">
+          <button class="btn btn-sm reg-edit-only" id="imsLoadBtn" type="button" title="Add the BHN IMS master document list (ISO 9001 / 14001 / 45001 map from clause 4, plus Burhan's own lifting, scaffolding, PTW … documents) as Draft, and give every PDF its BHN number"><svg class="ic" aria-hidden="true"><use href="#i-books"/></svg> Load BHN master list</button>
           <button class="btn btn-sm" id="docCtlBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-filecheck"/></svg> PDF document numbers</button>
           <button class="btn btn-sm" id="libTrashBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg> Deleted documents (0)</button>
           <button class="btn btn-primary" id="addLibBtn" type="button">+ Add document</button>
@@ -2051,7 +2052,7 @@ function renderDocCtl(){
   const el=document.getElementById('docCtlPanel'); if(!el || el.hidden) return; const ed=canEdit();
   el.innerHTML=`<div class="section-head"><h3>PDF document numbers — document register</h3><button type="button" class="btn btn-sm" id="docCtlClose">Close</button></div>
     <p class="wsub" style="margin:-4px 0 10px;">Every PDF the tracker makes shows these in its header (ISO 45001 7.5.2 / 7.5.3 — identification and version). When you revise a form, change its revision and issue date here.</p>
-    <form id="docCtlForm"><div class="table-wrap"><table><thead><tr><th>Document (PDF)</th><th>Doc. No.</th><th>Revision</th><th>Issue date</th></tr></thead><tbody>${Object.entries(PDF_DOCS).map(([k,v])=>{ const d=docControl(k); return `<tr><td>${esc(v.title)}</td><td><input data-dc="${k}|no" value="${esc(d.no||'')}" placeholder="e.g. BOTS-HSE-F-001" ${ed?'':'disabled'}></td><td><input data-dc="${k}|rev" value="${esc(d.rev||'')}" placeholder="e.g. 00" style="max-width:90px;" ${ed?'':'disabled'}></td><td><input type="date" data-dc="${k}|date" value="${esc(d.date||'')}" ${ed?'':'disabled'}></td></tr>`; }).join('')}</tbody></table></div>
+    <form id="docCtlForm"><div class="table-wrap"><table><thead><tr><th>Document (PDF)</th><th>Doc. No.</th><th>Revision</th><th>Issue date</th></tr></thead><tbody>${Object.entries(PDF_DOCS).map(([k,v])=>{ const d=docControl(k); return `<tr><td>${esc(v.title)}</td><td><input data-dc="${k}|no" value="${esc(d.no||'')}" placeholder="e.g. BHN-F0811-11" ${ed?'':'disabled'}></td><td><input data-dc="${k}|rev" value="${esc(d.rev||'')}" placeholder="e.g. 00" style="max-width:90px;" ${ed?'':'disabled'}></td><td><input type="date" data-dc="${k}|date" value="${esc(d.date||'')}" ${ed?'':'disabled'}></td></tr>`; }).join('')}</tbody></table></div>
     ${ed?`<div class="form-actions"><button type="submit" class="btn btn-primary">Save document numbers</button></div>`:''}</form>`;
 }
 function preloadPdfLogo(){ if(pdfLogoData) return; fetchImageDataUrl('logo.png').then(d=>{ if(d && /^data:image\/(png|jpe?g)/i.test(d)) pdfLogoData=d; }).catch(()=>{}); }
@@ -2714,7 +2715,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b53';
+const APP_BUILD='b54';
 let appOutdated=false;
 // Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
 let _verTag=null, _verLast=0;
@@ -3418,13 +3419,13 @@ function workerRequiredHtml(w){
 /* ---------------- QHSE management library ---------------- */
 // Two groups: the IMS system itself, and the operational HSE documents used on site
 const LIB_GROUPS = [
-  {key:'ims', label:'IMS system documents', types:['Manual','Policy','Procedure','Form','Checklist']},
+  {key:'ims', label:'IMS system documents', types:['Manual','Policy','Procedure','Form','Checklist','Register / log']},
   {key:'ops', label:'Operational HSE documents', types:['Risk assessment','JSA','Method statement','Work instruction','SOP','PTW','HSE checklist']},
 ];
 const LIB_TYPES = LIB_GROUPS.flatMap(g=>g.types);
-const LIB_TYPE_PLURAL = {Manual:'Manuals', Policy:'Policies', Procedure:'Procedures', Form:'Forms', Checklist:'Checklists',
+const LIB_TYPE_PLURAL = {Manual:'Manuals', Policy:'Policies', Procedure:'Procedures', Form:'Forms', Checklist:'Checklists', 'Register / log':'Registers & logs',
   'Risk assessment':'Risk assessments', JSA:'JSAs', 'Method statement':'Method statements', 'Work instruction':'Work instructions', SOP:'SOPs', PTW:'PTW forms', 'HSE checklist':'HSE checklists'};
-const LIB_TYPE_COLORS = {Manual:'--cat-1', Policy:'--cat-3', Procedure:'--cat-5', Form:'--cat-4', Checklist:'--cat-2',
+const LIB_TYPE_COLORS = {Manual:'--cat-1', Policy:'--cat-3', Procedure:'--cat-5', Form:'--cat-4', Checklist:'--cat-2', 'Register / log':'--cat-6',
   'Risk assessment':'--cat-9', JSA:'--cat-7', 'Method statement':'--cat-5', 'Work instruction':'--cat-8', SOP:'--cat-3', PTW:'--cat-2', 'HSE checklist':'--cat-4'};
 function libGroupOf(type){ const g=LIB_GROUPS.find(x=>x.types.includes(type)); return g ? g.key : 'ims'; }
 function libGroupTypes(){ const g=LIB_GROUPS.find(x=>x.key===libFilters.group); return g ? g.types : LIB_TYPES; }
@@ -3434,7 +3435,7 @@ const LIB_REVIEW_LEAD_DAYS = 30;
 const LIB_MAX_FILE_MB = 25;
 const LIB_FIELDS = [
   {key:'docType', label:'Document type', type:'select', options:LIB_TYPES, required:true},
-  {key:'docNo', label:'Document no.', type:'text', required:true, placeholder:'e.g. BOTS-HSE-PR-001', mono:true},
+  {key:'docNo', label:'Document no.', type:'text', required:true, placeholder:'e.g. BHN-P0811-02', mono:true},
   {key:'title', label:'Title', type:'text', required:true, placeholder:'e.g. Working at Height Procedure'},
   {key:'revision', label:'Revision no.', type:'text', placeholder:'e.g. 00, 01, A'},
   {key:'lastRevDate', label:'Last revision date', type:'date', required:true},
@@ -3476,6 +3477,134 @@ function libReview(d){
   return {key:'ok', label:'Up to date', cls:'ok'};
 }
 function libReviewBadge(d){ const r=libReview(d); return `<span class="badge ${r.cls}">${esc(r.label)}</span>`; }
+
+/* ================= Batch 54: BHN IMS master document list (ISO 9001 / 14001 / 45001 document map, from clause 4 onwards)
+   Every number starts with "BHN-". Procedures (P), forms / reports / plans (F, left column) and checklists / trackers / logs (F, right column).
+   Burhan's own operational documents (lifting, scaffolding, PTW …) are numbered in the same style under the clause they belong to
+   (operational HSE control = 8.1 → P0811 / F0811). Loading only adds numbers that are not in the library yet. ================= */
+const IMS_MAP=[
+  ['P0400-01','Context of the Organization Procedure',[['F0400-01','Context & Interested Party Analysis'],['F0400-02','Process Matrix & Application'],['F0400-03','SWOT Analysis Template'],['F0400-04','PESTLE Analysis Template']],[]],
+  ['P0530-01','Roles & Responsibilities Procedure',[['F0530-01','Job Description'],['F0530-02','Authority Matrix']],[]],
+  ['P0540-01','Consultation & Participation Procedure',[['F0540-01','Safety Committee Agenda'],['F0540-02','Safety Committee Minutes']],[]],
+  ['P0611-01','Risk & Opportunity Procedure',[['F0611-02','Opportunity Evaluation']],[['F0611-01','Risk & Opportunity Register']]],
+  ['P0612-01','Environmental Aspects Procedure',[],[['F0612-02','Aspect Identification Register']]],
+  ['P0613-01','Hazard Identification Procedure',[],[['F0613-03','Hazard Identification Register']]],
+  ['P0614-01','Legal & Compliance Obligations Procedure',[],[['F0614-04','Legal & Compliance Register']]],
+  ['P0620-01','Management System Objectives Procedure',[['F0620-02','Objectives Management Programme']],[['F0620-01','Register of Objectives & KPIs']]],
+  ['P0630-01','Change Management Procedure',[['F0630-01','Request for Change']],[['F0630-02','Request for Change Log']]],
+  ['P0713-01','Infrastructure & Natural Resources Procedure',[['F0713-03','First Aid Treatment Form'],['F0713-05','Maintenance & Service Record']],[['F0713-01','Maintenance & Service Log'],['F0713-02','Fire Equipment Checklist'],['F0713-04','List of First Aiders']]],
+  ['P0715-01','Calibrated Test Equipment Procedure',[],[['F0715-01','Controlled Equipment Log'],['F0715-02','Calibration Log'],['F0715-03','Software Validation Log']]],
+  ['P0723-01','Competence & Awareness Procedure',[['F0723-01','Training Needs Analysis'],['F0723-02','Departmental Competency Matrix'],['F0723-03','Competency Assessment'],['F0723-06','Training Evaluation']],[['F0723-04','Employee Induction Checklist'],['F0723-05','Training Attendance List']]],
+  ['P0740-01','Communication Procedure',[['F0740-01','Communication Matrix']],[]],
+  ['P0750-01','Documented Information Procedure',[['F0750-02','Document Issue Sheet'],['F0750-03','Document Review Sheet'],['F0750-04','Document Change Request']],[['F0750-01','Master Document List']]],
+  ['P0811-01','OHS Control Procedure',[['F0811-01','PPE Issue Record'],['F0811-02','Health & Safety Risk Assessment'],['F0811-03','Workplace Inspection Template'],['F0811-04','Job Safety Analysis Template'],['F0811-05','Manual Handling Risk Assessment'],['F0811-06','Safe Work Method Statement'],['F0811-07','Safe Work Instruction'],['F0811-08','COSHH Assessment'],['F0811-09','Work Equipment Risk Assessment'],['F0811-10','Change Management Form']],[]],
+  ['P0812-02','Environmental Control Procedure',[['F0812-01','Life Cycle Analysis'],['F0812-02','Environmental Control Plan']],[]],
+  ['P0813-03','Quality Control Procedure',[['F0813-01','Work Instruction Template'],['F0813-03','Engineering Drawing Sheet'],['F0813-04','Quality Control Plan']],[['F0813-02','Assembly Parts List']]],
+  ['P0820-01','Order & Contract Review Procedure',[['F0820-01','Requirements Review']],[]],
+  ['P0830-01','Design Management Procedure',[['F0830-04','Design Review Meeting Minutes'],['F0830-05','Design Document Review'],['F0830-06','Design FMEA Template'],['F0830-08','Design Change Request']],[['F0830-01','Design Requirement Register'],['F0830-02','Design Assumption Register'],['F0830-03','Design Master Document List'],['F0830-07','Design Issues Log'],['F0830-09','Design Change Request Log']]],
+  ['P0840-01','Suppliers & Purchasing Procedure',[['F0840-03','Initial Supplier Assessment'],['F0840-04','Supplier Evaluation Report'],['F0840-06','Purchase Requisition'],['F0840-07','Purchase Order Form']],[['F0840-01','Supplier Self-Evaluation'],['F0840-02','Supplier Audit Checklist'],['F0840-05','Approved Supplier List'],['F0840-08','Receiving Inspection Log']]],
+  ['P0850-01','Product & Service Provision Procedure',[['F0850-01','Production Control Plan']],[['F0850-02','Traceability Log'],['F0850-03','Customer Property Log']]],
+  ['P0860-01','Testing & Inspection Procedure',[['F0860-01','Inspection & Test Data Sheet'],['F0860-02','Final Inspection & Test Report']],[['F0860-03','Inspection & Test Log']]],
+  ['P0870-01','Nonconforming Product Outputs Procedure',[['F0870-01','Nonconforming Product Report']],[['F0870-04','Concession Request Log']]],
+  ['P0870-02','Nonconforming Service Outputs Procedure',[['F0870-02','Nonconforming Service Report'],['F0870-03','Concession Request']],[['F0870-05','Nonconforming Outputs Log']]],
+  ['P0870-03','Emergency Situations Procedure',[['F0870-06','Emergency Situations Matrix']],[['F0870-07','Emergency Equipment Log']]],
+  ['P0912-01','Customer Satisfaction Procedure',[['F0912-01','Customer Satisfaction Survey'],['F0912-02','Customer Feedback Record'],['F0912-03','Customer Complaint & Concern'],['F0912-05','Return Material Authorization']],[['F0912-04','Customer Feedback Log']]],
+  ['P0913-01','QMS Analysis & Evaluation Procedure',[['F0913-01','Monthly Quality Report']],[]],
+  ['P0913-02','EHS Analysis & Evaluation Procedure',[['F0913-02','Monthly EHS Report'],['F0913-03','Employee Safety Survey']],[]],
+  ['P0920-01','Internal Auditing Procedure',[['F0920-01','Internal Audit Report'],['F0920-02','Internal Audit Programme'],['F0920-04','Process Audit Template']],[['F0920-03','Internal Audit Checklist']]],
+  ['P0930-01','Management Review Procedure',[['F0930-01','Management Review Tool'],['F0930-02','Management Review Minutes'],['F0930-03','Management Review Presentation']],[]],
+  ['P1020-01','Nonconformity & Corrective Action Procedure',[['F1020-01','Corrective Action Report'],['F1020-03','A3 Action Plan'],['F1020-04','5-Whys Worksheet'],['F1020-05','8D Worksheet']],[['F1020-02','Corrective Action Tracker'],['F1020-06','Action Items Log']]],
+  ['P1020-02','Supplier Corrective Action Procedure',[['F1020-07','Supplier Corrective Action']],[['F1020-08','Supplier CA Tracker']]],
+  ['P1020-03','Incident Investigation & Reporting Procedure',[['F1020-09','Incident Report'],['F1020-10','Incident Investigation Report']],[]],
+  ['P1030-01','Improvement Procedure',[['F1030-01','Improvement Activity Form'],['F1030-02','Process Effectiveness Assessment Form']],[]],
+];
+// Burhan's own documents (not in the ISO map): [no, title, type, parent procedure, tracker PDF key, note]
+const IMS_BHN_EXTRA=[
+  ['P0811-02','Lifting Operations Procedure','Procedure','','','Based on PDO SP-2273 (lift planning & execution) and SP-2275 (lifting equipment inspection & testing)'],
+  ['F0811-11','Lift Plan','Form','P0811-02','liftPlan','Made by the tracker — Lift Plans → Lift plan PDF'],
+  ['F0811-12','Lifting Equipment Pre-use Checklist','Checklist','P0811-02','',''],
+  ['P0811-03','Scaffolding Procedure','Procedure','','','Based on PDO SP-1257'],
+  ['F0811-13','Scaffold Inspection & Handover Record','Form','P0811-03','','Inspections are recorded in the tracker — Scaffolding Jobs → Inspections'],
+  ['P0811-04','Working at Height Procedure','Procedure','','','Based on PDO SP-1257'],
+  ['P0811-05','Permit to Work Procedure','Procedure','','',''],
+  ['F0811-14','Permit to Work','PTW','P0811-05','',''],
+  ['P0811-06','Confined Space Entry Procedure','Procedure','','',''],
+  ['F0811-15','Confined Space Entry Permit & Gas Test Record','PTW','P0811-06','',''],
+  ['P0811-07','Hot Work Procedure','Procedure','','',''],
+  ['F0811-16','Hot Work Permit','PTW','P0811-07','',''],
+  ['P0811-08','Excavation Procedure','Procedure','','',''],
+  ['F0811-17','Excavation Checklist','Checklist','P0811-08','',''],
+  ['P0811-09','Energy Isolation (Lock-out / Tag-out) Procedure','Procedure','','',''],
+  ['F0811-18','Isolation Register (LOTO)','Register / log','P0811-09','',''],
+  ['P0811-10','Road Safety & Driving Procedure','Procedure','','','Includes IVMS / DFMS monitoring'],
+  ['F0811-19','Vehicle Inspection Checklist','Checklist','P0811-10','',''],
+  ['P0811-11','Heat Stress Management Procedure','Procedure','','',''],
+  ['F0811-20','Heat Stress Monitoring Log','Register / log','P0811-11','','Recorded in the tracker — Heat Stress'],
+  ['P0811-12','Personal Protective Equipment Procedure','Procedure','','',''],
+  ['F0811-21','Approved PPE List','Register / log','P0811-12','ppeList','Made by the tracker — Workforce → PPE → Approved PPE list PDF'],
+  ['P0811-13','Life-Saving Rules Procedure','Procedure','','','IOGP / PDO Life-Saving Rules and consequence management'],
+  ['F0811-22','Safety Observation Card','Form','P0811-01','','Recorded in the tracker — Observations'],
+  ['F0811-23','Project HSE Record','Form','P0811-01','site','Made by the tracker — Project Details → PDF'],
+  ['P0812-03','Waste Management Procedure','Procedure','','',''],
+  ['F0812-03','Waste Disposal Log','Register / log','P0812-03','',''],
+  ['F0540-03','Safety Star Certificate','Form','P0540-01','star','Made by the tracker — Safety Star of the Month'],
+  ['F0713-06','Vehicle HSE Record','Form','P0713-01','vehicle','Made by the tracker — Plant & Equipment → vehicle PDF'],
+  ['F0723-07','Employee HSE Record','Form','P0723-01','workerProfile','Made by the tracker — Workforce → worker profile PDF'],
+  ['F0740-02','Toolbox Talk Record','Form','P0740-01','',''],
+  ['F0740-03','Safety Alert','Form','P0740-01','alert','Made by the tracker — Safety Alerts → Alert PDF'],
+  ['F0913-04','Yearly HSE Report','Form','P0913-02','yearlyReport','Made by the tracker — Monthly Report → yearly PDF'],
+  ['F0913-05','Client Monthly HSE Report','Form','P0913-02','clientPack','Made by the tracker — Monthly Report → client report'],
+  ['F0920-05','HSE Assurance Plan','Form','P0920-01','assurance','Made by the tracker — Assurance Plan PDF'],
+];
+// PDF made by the tracker → document number (the ISO-map documents first, our own numbers for the rest)
+const IMS_PDF_NUMBERS={monthlyReport:'BHN-F0913-02', yearlyReport:'BHN-F0913-04', clientPack:'BHN-F0913-05', incident:'BHN-F1020-10', audit:'BHN-F0920-01', assurance:'BHN-F0920-05', kpi:'BHN-F0620-01', actions:'BHN-F1020-06', alert:'BHN-F0740-03', star:'BHN-F0540-03', ppeList:'BHN-F0811-21', ppeIssue:'BHN-F0811-01', workerProfile:'BHN-F0723-07', vehicle:'BHN-F0713-06', site:'BHN-F0811-23', liftPlan:'BHN-F0811-11'};
+function imsMasterList(){
+  const pdfOf=no=>{ const k=Object.keys(IMS_PDF_NUMBERS).find(k=>IMS_PDF_NUMBERS[k]==='BHN-'+no); return k||''; };
+  const out=[];
+  for(const [p, title, forms, logs] of IMS_MAP){
+    out.push({docNo:'BHN-'+p, title, docType:'Procedure', parentNo:'', source:'ISO IMS document map', pdfKey:''});
+    for(const [f, t] of forms) out.push({docNo:'BHN-'+f, title:t, docType:'Form', parentNo:'BHN-'+p, source:'ISO IMS document map', pdfKey:pdfOf(f)});
+    for(const [f, t] of logs) out.push({docNo:'BHN-'+f, title:t, docType:/checklist|self-evaluation/i.test(t)?'Checklist':'Register / log', parentNo:'BHN-'+p, source:'ISO IMS document map', pdfKey:pdfOf(f)});
+  }
+  for(const [no, title, type, parent, pdfKey, note] of IMS_BHN_EXTRA) out.push({docNo:'BHN-'+no, title, docType:type, parentNo:parent?'BHN-'+parent:'', source:'Burhan operational document', pdfKey, note});
+  return out;
+}
+// library order: each procedure followed by its forms, in clause order; other documents after
+function libSortKey(d){
+  const no=String(d.docNo||'').trim().toUpperCase(), m=/^BHN-([PF])(\d{4})-(\d+)$/.exec(no), pad=s=>String(s).padStart(3,'0');
+  if(m){ const pm=/^BHN-P(\d{4})-(\d+)$/.exec(String(d.parentNo||'').trim().toUpperCase());
+    if(m[1]==='P') return `0|${m[2]}|${pad(m[3])}|0|000`;
+    return pm?`0|${pm[1]}|${pad(pm[2])}|1|${m[2]}${pad(m[3])}`:`0|${m[2]}|999|1|${pad(m[3])}`; }
+  return `1|${String(LIB_TYPES.indexOf(d.docType)).padStart(2,'0')}|${no}`;
+}
+function libSubParts(d){
+  const pdf=d.pdfKey && PDF_DOCS[d.pdfKey] ? 'PDF made by the tracker' : '';
+  return [d.parentNo?'Part of '+d.parentNo:'', d.projectId?projectName(d.projectId):'', d.appliesTo && d.appliesTo!=='All divisions'?d.appliesTo:'', d.activity||'', pdf].filter(Boolean);
+}
+let imsLoading=false;
+async function imsLoadMasterList(btn){
+  if(!canEdit() || imsLoading) return;
+  const have=new Set(libDocs.map(d=>String(d.docNo||'').trim().toLowerCase()));
+  const todo=imsMasterList().filter(x=>!have.has(x.docNo.toLowerCase()));
+  const cur=((settingsDocs.docControl||{}).docs)||{}, upd={};
+  for(const [k,no] of Object.entries(IMS_PDF_NUMBERS)) if(PDF_DOCS[k] && !String((cur[k]||{}).no||'').trim()) upd[k]={no, rev:(cur[k]||{}).rev||'00', date:(cur[k]||{}).date||''};
+  if(!todo.length && !Object.keys(upd).length){ toast('The BHN master list is already in the library and every PDF has its number'); return; }
+  if(btn && btn.dataset.armed!=='1'){ btn.dataset.armed='1'; const old=btn.innerHTML; btn.textContent=`Click again — add ${todo.length} documents${Object.keys(upd).length?' + '+Object.keys(upd).length+' PDF numbers':''}`; setTimeout(()=>{ btn.dataset.armed='0'; btn.innerHTML=old; }, 4000); return; }
+  if(btn){ btn.dataset.armed='0'; }
+  imsLoading=true; const u=auth.currentUser, now=new Date().toISOString(); let n=0, failed=0;
+  try{
+    if(todo.length) toast(`Adding ${todo.length} documents to the library…`);
+    for(let i=0;i<todo.length;i+=20){
+      await Promise.all(todo.slice(i,i+20).map(x=>db.collection('qhseDocs').add(stamp({docType:x.docType, docNo:x.docNo, title:x.title, revision:'', lastRevDate:'', nextRevDate:'', owner:'', approvedBy:'', appliesTo:'All divisions', projectId:'', activity:'', status:'Draft', notes:x.note||'', parentNo:x.parentNo||'', imsSource:x.source, pdfKey:x.pdfKey||'', file:null, history:[], deleted:false, createdAt:now, createdBy:(u&&u.email)||''}))
+        .then(()=>{ n++; }).catch(e=>{ failed++; console.error(e); if(e && e.code==='permission-denied') throw e; })));
+    }
+    let pdfOk=true; if(Object.keys(upd).length) pdfOk=await saveSettings('docControl', {docs:upd}, settingsStamp('docControl'));
+    toast(`${n} documents added as Draft${failed?` (${failed} could not be saved — click again to retry)`:''}${Object.keys(upd).length&&pdfOk?` · ${Object.keys(upd).length} PDFs now show their BHN number`:''}`);
+  }catch(e){ console.error(e); toast(e&&e.code==='permission-denied'?RULES_UPDATE_MSG:`Stopped after ${n} documents — click again to add the rest`); }
+  finally{ imsLoading=false; }
+}
+document.addEventListener('click', e=>{ const b=e.target.closest && e.target.closest('#imsLoadBtn'); if(b) imsLoadMasterList(b); });
+
 function libTitle(d){ return [d.docNo, d.title].filter(Boolean).join(' — ') || 'Untitled document'; }
 function libFieldsHtml(d, attr){
   return LIB_FIELDS.map(f=>{
@@ -3556,7 +3685,7 @@ function libMatches(d){
   if(libFilters.group!=='all' && libGroupOf(d.docType)!==libFilters.group) return false;
   if(libFilters.type!=='all' && d.docType!==libFilters.type) return false;
   const q=libFilters.q.trim().toLowerCase();
-  if(q && !((d.docNo||'')+' '+(d.title||'')+' '+(d.owner||'')+' '+(d.approvedBy||'')).toLowerCase().includes(q)) return false;
+  if(q && !((d.docNo||'')+' '+(d.title||'')+' '+(d.owner||'')+' '+(d.approvedBy||'')+' '+(d.parentNo||'')).toLowerCase().includes(q)) return false;
   const st=libFilters.status;
   if(st==='nofile') return !(d.file && d.file.url);
   if(st!=='all' && libReview(d).key!==st) return false;
@@ -3573,11 +3702,11 @@ function renderLibTable(){
   if(libLoadError==='rules'){ tbody.innerHTML=`<tr><td colspan="8" class="empty-state">${esc(RULES_UPDATE_MSG)}</td></tr>`; return; }
   if(libLoadError){ tbody.innerHTML='<tr><td colspan="8" class="empty-state">Could not load the library right now — check your connection and refresh.</td></tr>'; return; }
   if(!activeLibDocs().length){ tbody.innerHTML=`<tr><td colspan="8" class="empty-state">${canEdit()?'No documents yet — click “+ Add document” to add your first manual, policy, procedure, form or checklist.':'No documents in the library yet.'}</td></tr>`; return; }
-  const list=libDocs.filter(libMatches).sort((a,b)=> LIB_TYPES.indexOf(a.docType)-LIB_TYPES.indexOf(b.docType) || (a.docNo||'').localeCompare(b.docNo||'', undefined, {numeric:true}));
+  const list=libDocs.filter(libMatches).sort((a,b)=> libSortKey(a).localeCompare(libSortKey(b)) || (a.docNo||'').localeCompare(b.docNo||'', undefined, {numeric:true}));
   if(!list.length){ tbody.innerHTML='<tr><td colspan="8" class="empty-state">No documents match your filters.</td></tr>'; return; }
   tbody.innerHTML=list.map(d=>`<tr data-id="${d.id}">
       <td class="mono" style="white-space:nowrap;">${esc(d.docNo||'—')}</td>
-      <td><div class="wname">${esc(d.title||'—')}</div>${[d.projectId?projectName(d.projectId):'', d.appliesTo && d.appliesTo!=='All divisions'?d.appliesTo:'', d.activity||''].filter(Boolean).length?`<div class="wsub">${esc([d.projectId?projectName(d.projectId):'', d.appliesTo && d.appliesTo!=='All divisions'?d.appliesTo:'', d.activity||''].filter(Boolean).join(' · '))}</div>`:''}</td>
+      <td><div class="wname">${esc(d.title||'—')}</div>${libSubParts(d).length?`<div class="wsub">${esc(libSubParts(d).join(' · '))}</div>`:''}</td>
       <td>${esc(d.docType||'—')}</td>
       <td class="mono">${esc(d.revision||'—')}</td>
       <td class="mono">${esc(d.lastRevDate||'—')}</td>
