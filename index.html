@@ -933,6 +933,27 @@ th.mx-cat-opal{box-shadow:inset 0 3px 0 var(--cat-1);} th.mx-cat-client{box-shad
 .dv-top{display:grid; gap:4px;} .dv-p{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:0 8px; text-align:left; background:none; border:1px solid var(--line); border-radius:6px; padding:5px 8px; cursor:pointer; color:var(--ink);}
 .dv-p .wsub{grid-column:1;} .dv-pn{grid-column:2; grid-row:1 / span 2; align-self:center; font-family:var(--font-num); font-weight:700; color:var(--warn);}
 @media (max-width:900px){ .dv-kpis{grid-template-columns:repeat(2,minmax(0,1fr));} .dv-grid, .dv-grid2{grid-template-columns:1fr;} }
+
+/* ---- Batch 49: PPE pane ---- */
+.ppe-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:14px 0;}
+.ppe-grid .panel{margin:0;}
+.ppe-std td{vertical-align:top; font-size:12.5px;} .ppe-std td:first-child{min-width:230px;} .ppe-std td:last-child{width:1%;} .ppe-std tr.ppe-off{opacity:.55;}
+.ppe-chips{display:flex; flex-wrap:wrap; gap:6px 14px;}
+.ppe-wlist{max-height:260px; overflow:auto; border:1px solid var(--line); border-radius:8px;}
+.ppe-sz td, .ppe-sz th{white-space:nowrap;} .ppe-cell{display:flex; gap:4px;} .ppe-cell input{width:70px;} .ppe-cell input[type=number]{width:52px;}
+.ppe-gaps{display:grid; gap:4px; max-height:260px; overflow:auto;}
+@media (max-width:900px){ .ppe-grid{grid-template-columns:1fr;} }
+
+/* ---- Batch 50: training hours & languages ---- */
+.th-wrap{display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); gap:14px; padding:12px 14px 8px;}
+.th-kpis{padding:0 0 10px; grid-template-columns:repeat(3,minmax(0,1fr));} .th-kpis .dv-v{font-size:20px;} .th-kpis .dv-k{padding:8px;}
+.th-n{min-width:40px;} .th-bars .dv-row{grid-template-columns:minmax(0,1.6fr) minmax(40px,1fr) 46px;}
+.lang-chips{display:flex; flex-wrap:wrap; gap:6px 14px;}
+.lang-strip{display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:8px 0 4px; font-size:12.5px;}
+.lang-l{color:var(--ink-muted); margin-right:4px;}
+.lang-chip{border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:3px 10px; font-size:12px; cursor:pointer;} .lang-chip b{font-family:var(--font-num); margin-left:3px;}
+.lang-chip.active{border-color:var(--accent); background:var(--accent); color:var(--accent-ink);}
+@media (max-width:900px){ .th-wrap{grid-template-columns:1fr;} .th-kpis{grid-template-columns:repeat(2,minmax(0,1fr));} }
 </style>
 </head>
 <body class="auth-open">
@@ -1014,6 +1035,7 @@ th.mx-cat-opal{box-shadow:inset 0 3px 0 var(--cat-1);} th.mx-cat-client{box-shad
         <button type="button" class="division-tab active" data-wview="register">Register</button>
         <button type="button" class="division-tab" data-wview="matrix">Training matrix</button>
         <button type="button" class="division-tab" data-wview="recognition">⭐ Recognition</button>
+        <button type="button" class="division-tab" data-wview="ppe">PPE</button>
       </nav>
 
       <div id="workforceRegisterPane">
@@ -1024,6 +1046,7 @@ th.mx-cat-opal{box-shadow:inset 0 3px 0 var(--cat-1);} th.mx-cat-client{box-shad
       <div class="notice" id="contractNote" hidden></div>
       <div class="notice" id="sigNote" hidden></div>
       <div class="div-strip" id="divStrip" aria-label="Workers by division"></div>
+      <div class="lang-strip" id="langStrip" aria-label="Languages spoken"></div>
 
       <div class="panel" id="addTempPanel" hidden>
         <h3>Add a temporary contract worker</h3>
@@ -1124,6 +1147,7 @@ th.mx-cat-opal{box-shadow:inset 0 3px 0 var(--cat-1);} th.mx-cat-client{box-shad
         <p class="wsub" style="margin-top:8px;">Each worker needs the trainings of their <strong>Designation</strong> plus any <strong>extra roles</strong> (set in their Profile). “—” means not required for that person. A training counts when the course name on the worker's Training record contains the required name — e.g. “Working at Height – Level 2” counts for “Working at Height”. Click a row to open that worker's Training tab.</p>
       </div>
       <div id="recognitionPane" hidden></div>
+      <div id="ppePane" hidden></div>
     </main>
 
     <main class="app-main" id="vehiclesSection" hidden>
@@ -1385,6 +1409,7 @@ th.mx-cat-opal{box-shadow:inset 0 3px 0 var(--cat-1);} th.mx-cat-client{box-shad
             <div class="cc-title">Training compliance — PDO training <small>required trainings in date — Client and Burhan internal shown under each dial</small></div>
             <div class="cc-gauges" id="ccGauges"></div>
           </div>
+          <div class="cc-panel" id="ccTrainHours"></div>
           <div class="cc-panel">
             <div class="cc-title">HSE targets <small id="ccTargetsYear"></small><button type="button" class="btn btn-sm" id="ccTargetsEdit" hidden><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg> Set targets</button></div>
             <div id="ccTargets"></div>
@@ -2197,6 +2222,15 @@ const INDUCTION_TYPES = ['Onboarding induction','Project induction'];
 function inductionTypeOf(r){ if(INDUCTION_TYPES.includes(r.inductionType)) return r.inductionType; return /onboard|company|general/i.test(String(r.site||'')) ? 'Onboarding induction' : (r.site ? 'Project induction' : ''); }
 function inductionTitle(r){ const t=inductionTypeOf(r); return t==='Onboarding induction' ? 'Onboarding induction' : t==='Project induction' ? `Project induction — ${r.site||'project not set'}` : (r.site||'Induction'); }
 const CONTRACT_END_TYPES=['Fixed end date','Until work is completed','Until the project ends'];
+/* Batch 49: PPE standards (approved PPE list) & issuing */
+const PPE_ISSUE_TYPES=['New issue','New joiner kit','Replacement (worn out)','Replacement (damaged)','Replacement (lost)'];
+const PPE_OLD_ITEMS=['Safety helmet','Safety shoes / boots','Coverall','Safety glasses','Goggles','Face shield','Gloves (general)','Gloves (chemical)','Gloves (cut-resistant)','Ear plugs / muffs','Dust mask','Respirator','Hi-vis vest','Full body harness','Welding kit','Rain / winter jacket','Other'];
+const PPE_CATS=['Head','Eye & face','Hearing','Respiratory','Hand','Foot','Body / coverall','High-visibility','Fall protection','Other'];
+function ppeList(){ return ((settingsDocs.ppeStandards||{}).items)||[]; }
+function ppeApproved(){ return ppeList().filter(x=>(x.status||'Approved')==='Approved'); }
+function ppeItemOptions(){ const a=ppeApproved().map(x=>x.name).filter(Boolean); return a.length ? [...a, 'Other'] : PPE_OLD_ITEMS; }
+function ppeStdOf(name){ const k=String(name||'').trim().toLowerCase(); return k ? ppeList().find(x=>String(x.name||'').trim().toLowerCase()===k) : null; }
+function ppeKitItems(){ return ppeApproved().filter(x=>x.kit); }
 const RECORD_TYPES = {
   inductions:{
     title:'Induction records', addLabel:'+ Add induction record', hasExpiry:false, hasAttachment:true, attachLabel:'induction certificate',
@@ -2214,6 +2248,7 @@ const RECORD_TYPES = {
       {key:'provider', label:'Provider', type:'text'},
       {key:'date', label:'Completion date', type:'date', required:true},
       {key:'expiry', label:'Valid until', type:'date'},
+      {key:'hours', label:'Duration (hours)', type:'number', placeholder:'PDO courses fill in automatically'},
       {key:'notes', label:'Notes', type:'textarea'},
     ],
   },
@@ -2266,13 +2301,13 @@ const RECORD_TYPES = {
   ppeIssued:{
     title:'PPE issued', addLabel:'+ Issue PPE', hasExpiry:true, hasAttachment:true, attachLabel:'signed issue form',
     fields:[
-      {key:'item', label:'PPE item', type:'select', required:true, options:['Safety helmet','Safety shoes / boots','Coverall','Safety glasses','Goggles','Face shield','Gloves (general)','Gloves (chemical)','Gloves (cut-resistant)','Ear plugs / muffs','Dust mask','Respirator','Hi-vis vest','Full body harness','Welding kit','Rain / winter jacket','Other']},
+      {key:'item', label:'PPE item', type:'select', required:true, get options(){ return ppeItemOptions(); }},
       {key:'size', label:'Size', type:'text', placeholder:'e.g. L, 42, 10'},
       {key:'quantity', label:'Quantity', type:'number'},
       {key:'date', label:'Issue date', type:'date', required:true},
       {key:'expiry', label:'Replacement due', type:'date'},
       {key:'issuedBy', label:'Issued by', type:'text'},
-      {key:'condition', label:'Issue type', type:'select', options:['New issue','Replacement (worn out)','Replacement (damaged)','Replacement (lost)']},
+      {key:'condition', label:'Issue type', type:'select', options:PPE_ISSUE_TYPES},
       {key:'notes', label:'Notes', type:'textarea'},
     ],
   },
@@ -2301,7 +2336,7 @@ const RECORD_TYPES = {
 
 let workers=[];
 let activeWorkerId=null, activeTab='profile', editingRecordId=null, addFormOpen=false, recordPrefill=null;
-let filters={q:'', trade:'all', status:'all'};
+let filters={q:'', trade:'all', status:'all', lang:''};
 let unsubscribeWorkers=null;
 let pendingWorkerOpen = new URLSearchParams(location.search).get('worker');
 
@@ -2584,6 +2619,7 @@ function startSettingsData(){
       if(regState.scaff && document.getElementById('scaffSection') && !document.getElementById('scaffSection').hidden) renderRegAll('scaff');
       renderTiles();   // Batch 40: training bars on the Workforce dashboard depend on the roles / training groups
       renderStarStrip(); renderRecognition(); renderCalendar(); renderCcExtras();   // Batch 42
+      renderPpe(true);   // Batch 49
     }, err=>{
       console.error(err); if(!auth.currentUser) return;
       settingsLoadError = err && err.code==='permission-denied' ? 'rules' : 'other';
@@ -2594,7 +2630,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b48';
+const APP_BUILD='b50';
 let appOutdated=false;
 // Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
 let _verTag=null, _verLast=0;
@@ -2885,6 +2921,10 @@ const PDO_COURSES=[
   {lvl:'SP-1257 Work at height', code:'IRATA L1', name:'IRATA Rope Access Technician Level 1', years:3, alias:/irata|rope access/},
   {lvl:'SP-1257 Work at height', code:'FASET', name:'FASET Safety Net Rigger', years:null, alias:/faset|safety net/},
 ];
+/* Batch 50: course hours — SP-1157 V4.1 "Max. course duration" per course (NEBOSH IGC = 80 tuition hours, Diploma = 241 taught hours);
+   SP-1257 V7.0: Basic Scaffold Inspection 3 days, Advanced 2 days, Supervisor 5 days, Supervisor refresher 2 days (8 h a day). Blank = type the hours. */
+const PDO_HOURS={'HSEI':8,'H2SI':8,'H2SR':2,'SCBA':8,'SCBA-R':2,'AHA':14,'EA':4,'FW':5,'AGT':8,'AGT-R':2,'HII':16,'PTW-H':16,'PTWH-R':2,'PTW-S':24,'PTWS-R':2,'HSE LFS':16,'HSE LFS-R':8,'CHM':5,'NORMM':5,'NORMM-R':1,'IOSH-MS':32,'NEBOSH IGC':80,'NEBOSH Dip':241,'VMN':16,'TBP':32,'LV':16,'HV':16,'GR':8,'TN':8,'LB/HB':16,'RT':4,'EVA':8,'EVF':8,'SJM':8,'SJMR':1,'CISRS BSI':24,'CISRS ASI':16,'CISRS SUP':40,'CISRS SUP-R':16};
+PDO_COURSES.forEach(c=>{ if(PDO_HOURS[c.code]!=null) c.hrs=PDO_HOURS[c.code]; });
 function pdoCourseLabel(c){ return `(${c.code}) ${c.name}`; }
 function pdoCardText(c){ return c.card ? ` — ${c.card} card` : ''; }
 const SCAFF_CARD_RANK={'CISRS SUP':6,'CISRS SUP-R':6,'CISRS ADV':5,'CISRS ASI':4,'CISRS SCAF':4,'CISRS BSI':3,'CISRS BASE':2,'CISRS TRN':1,'CISRS LAB':0};
@@ -3064,6 +3104,8 @@ function setWorkforceView(v){
   document.getElementById('workforceRegisterPane').hidden = v!=='register';
   document.getElementById('trainingMatrixPane').hidden = v!=='matrix';
   document.getElementById('recognitionPane').hidden = v!=='recognition';
+  document.getElementById('ppePane').hidden = v!=='ppe';
+  if(v==='ppe') renderPpe();
   if(v==='matrix') renderMatrix();
   if(v==='recognition') renderRecognition();
 }
@@ -4054,6 +4096,7 @@ const TARGET_DEFS = [
   {key:'complaints', kind:'lagging', label:'Client HSE complaints', type:'max', def:4},
   // leading — proactive
   {key:'training', kind:'leading', label:'Training compliance (PDO training)', type:'min', unit:'%', def:95, cc:true},
+  {key:'trainingHoursPw', kind:'leading', label:'Training hours per worker (year)', type:'min', annual:true, dec:1, unit:' h', def:24, cc:true},
   {key:'tbtPerMonth', kind:'leading', label:'Toolbox talks per month (average)', type:'min', dec:1, def:8, cc:true},
   {key:'inspPerMonth', kind:'leading', label:'Site visits, audits & inspections per month', type:'min', dec:1, def:6, cc:true},
   {key:'obsPerMonth', kind:'leading', label:'HSE observations per month (average)', type:'min', dec:1, def:20},
@@ -4098,7 +4141,7 @@ function targetActuals(year, upto){
   return {
     lti:m.lti, ltif: m.manHours ? m.lti*1e6/m.manHours : null, trcf: m.manHours ? (m.lti+m.mti)*1e6/m.manHours : null,
     training:trainingCompliancePct(), tbtPerMonth:per(m.tbt), inspPerMonth:per(m.siteVisit+m.internalAudit+m.vehicleInspection),
-    nearMiss:m.nearMiss, drills:m.mockDrill, capaOnTime: judged ? Math.round(closedOnTime*100/judged) : null, _months:months,
+    nearMiss:m.nearMiss, drills:m.mockDrill, trainingHoursPw:(t=>t.perWorker)(trainingHoursFor('all', year, 'all')), capaOnTime: judged ? Math.round(closedOnTime*100/judged) : null, _months:months,
     ...extraKpiActuals(year, m, upto),
   };
 }
@@ -6168,6 +6211,201 @@ function renderCcExtras(){
     ${up.length?up.map(e=>{ const n=daysBetween(localToday(), e.date); return `<div class="cc-upd"><span class="cc-upd-n">${n<=0?'now':'in '+n+'d'}</span><span>${esc(e.title)} <span class="wsub">${esc(e.date)}</span></span></div>`; }).join(''):'<p class="wsub" style="margin:0;">No safety days in the next 30 days.</p>'}`;
 }
 
+
+/* ================= Batch 49: PPE — approved PPE list (standards), issue to crew, PPE dashboard ================= */
+// Suggested starting list — HSE edits it. International standards are the usual EN / ISO / ANSI references; local / client and colours are company choices.
+const PPE_SUGGESTED=[
+  {cat:'Head', name:'Safety helmet', type:'Hard hat with 4- or 6-point suspension and chin strap', std:'EN 397 · ANSI/ISEA Z89.1 Type I Class E', life:36, kit:true},
+  {cat:'Foot', name:'Safety shoes / boots', type:'Steel or composite toe cap, anti-slip, oil-resistant sole', std:'EN ISO 20345 S3 · ASTM F2413', life:12, kit:true},
+  {cat:'Body / coverall', name:'Coverall', type:'Cotton coverall with reflective tape (flame-resistant where required)', std:'EN ISO 13688 · FR: EN ISO 11612 / NFPA 2112', life:6, kit:true},
+  {cat:'Eye & face', name:'Safety glasses', type:'Clear / tinted lens with side shields', std:'EN 166 (tinted: EN 172) · ANSI/ISEA Z87.1', life:6, kit:true},
+  {cat:'Hand', name:'Gloves (general)', type:'Leather or coated mechanical gloves', std:'EN 388', life:1, kit:true},
+  {cat:'Hearing', name:'Ear plugs', type:'Disposable foam ear plugs', std:'EN 352-2', life:'', kit:true},
+  {cat:'Eye & face', name:'Goggles', type:'Dust / chemical splash goggles', std:'EN 166 (3 = liquid, 4 = dust) · ANSI Z87.1 D3/D4', life:6},
+  {cat:'Eye & face', name:'Face shield', type:'Grinding / chemical face shield', std:'EN 166 · ANSI/ISEA Z87.1', life:12},
+  {cat:'Eye & face', name:'Welding helmet', type:'Welding helmet / auto-darkening filter', std:'EN 175 · EN 379', life:''},
+  {cat:'Hand', name:'Gloves (cut-resistant)', type:'Cut-resistant gloves', std:'EN 388 (ISO 13997 cut level C or higher)', life:1},
+  {cat:'Hand', name:'Gloves (chemical)', type:'Nitrile / neoprene chemical gloves', std:'EN ISO 374-1', life:1},
+  {cat:'Hand', name:'Welding gloves', type:'Leather welding gauntlets', std:'EN 12477', life:3},
+  {cat:'Hearing', name:'Ear muffs', type:'Ear defenders', std:'EN 352-1', life:12},
+  {cat:'Respiratory', name:'Dust mask (FFP2 / FFP3)', type:'Disposable filtering half mask', std:'EN 149 FFP2 / FFP3 · NIOSH N95', life:''},
+  {cat:'High-visibility', name:'Hi-vis vest', type:'Reflective vest', std:'EN ISO 20471 Class 2 · ANSI/ISEA 107', life:12},
+  {cat:'Fall protection', name:'Full body harness', type:'Full body harness with double lanyard and shock absorber — inspect before use and every 6 months', std:'EN 361 · EN 355 · EN 362 · ANSI/ASSP Z359.11', life:''},
+];
+let ppeUi={period:'month', issueOpen:false, edit:null, items:new Set(), workers:new Set(), project:'all', q:'', sizes:{}, date:'', issuedBy:'', condition:'New issue', lastBatch:null, saving:false};
+function ppeLifeText(x){ return x.life ? `${x.life} month${Number(x.life)===1?'':'s'}` : 'when worn / per maker'; }
+function ppeAddMonths(d, n){ if(!d || !n) return ''; const [y,m,dd]=d.split('-').map(Number); const t=new Date(y, m-1+Number(n), dd); if(t.getDate()!==dd) t.setDate(0); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; }
+function ppeLastSize(w, item){ const r=(w.ppeIssued||[]).filter(x=>x.item===item && x.size).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0]; return r?r.size:''; }
+function ppeRecordsIn(fromD, toD){ const out=[]; for(const w of activeWorkers()) for(const r of (w.ppeIssued||[])) if(r.date && r.date>=fromD && r.date<=toD) out.push({...r, w}); return out; }
+function ppePeriodRange(){ const t=localToday(); if(ppeUi.period==='year') return [t.slice(0,4)+'-01-01', t, 'this year']; if(ppeUi.period==='12m') return [dateAdd(t,-365), t, 'last 12 months']; return [t.slice(0,7)+'-01', t, 'this month']; }
+// basic kit check: each active worker should have every kit item at least once (and not past its replacement date)
+function ppeKitGaps(){ const kit=ppeKitItems(); if(!kit.length) return null; const t=localToday();
+  return activeWorkers().filter(w=>(w.status||'active')==='active').map(w=>{ const miss=kit.filter(k=>{ const recs=(w.ppeIssued||[]).filter(r=>String(r.item||'').toLowerCase()===String(k.name).toLowerCase()); return !recs.length; }).map(k=>k.name); return {w, miss}; }); }
+function renderPpe(live){
+  const pane=document.getElementById('ppePane'); if(!pane || pane.hidden || !auth.currentUser) return;
+  if(live && ppeUi.edit) return;   // don't wipe the item form while someone is typing in it
+  if(ppeUi.fresh) ppeUi.fresh=false; else ppeReadIssueInputs();
+  const keepScroll=window.scrollY;
+  const [from, to, word]=ppePeriodRange(), recs=ppeRecordsIn(from, to), t=localToday();
+  const qty=r=>Math.max(1, Number(r.quantity)||1), total=recs.reduce((n,r)=>n+qty(r),0), people=new Set(recs.map(r=>r.w.id)).size;
+  const cur=[]; for(const w of activeWorkers()) if((w.status||'active')==='active') for(const r of currentRecs(w.ppeIssued||[], 'ppeIssued')) if(r.expiry) cur.push({...r, w});
+  const overdue=cur.filter(r=>r.expiry<t).sort((a,b)=>a.expiry.localeCompare(b.expiry)), soon=cur.filter(r=>r.expiry>=t && r.expiry<=dateAdd(t,30)).sort((a,b)=>a.expiry.localeCompare(b.expiry));
+  const gaps=ppeKitGaps(), gapW=gaps?gaps.filter(g=>g.miss.length):[], kitOk=gaps?gaps.length-gapW.length:0;
+  const count=(keyFn)=>{ const m=new Map(); for(const r of recs){ const k=keyFn(r); m.set(k,(m.get(k)||0)+qty(r)); } return [...m].sort((a,b)=>b[1]-a[1]); };
+  const bars=(rows, color)=>{ const max=Math.max(1,...rows.map(r=>r[1])); return rows.length?rows.slice(0,10).map(([k,n])=>`<div class="dv-row"><span class="dv-rl">${esc(k)}</span><span class="dv-track"><span class="dv-fill" style="width:${(n/max*100).toFixed(1)}%; background:var(${color})"></span></span><span class="dv-rn">${n}</span></div>`).join(''):`<p class="wsub" style="margin:4px 0 0;">Nothing issued ${word}.</p>`; };
+  const byItem=count(r=>r.item||'—'), byProj=count(r=>{ const pid=r.projectId||r.w.projectId; return pid?projectName(pid):'No project'; });
+  const list=ppeList().slice().sort((a,b)=>PPE_CATS.indexOf(a.cat)-PPE_CATS.indexOf(b.cat) || String(a.name).localeCompare(String(b.name)));
+  const ed=canEdit();
+  const dueRow=r=>`<tr><td><button type="button" class="att-link" data-ppe-worker="${esc(r.w.id)}">${esc(r.w.fullName||'—')}</button></td><td>${esc(r.item||'')}${r.size?' · '+esc(r.size):''}</td><td class="mono">${esc(r.date||'')}</td><td class="mono">${esc(r.expiry)}</td></tr>`;
+  pane.innerHTML=`
+    <div class="pane-head" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px;"><h2 style="margin:0;">PPE</h2>
+      <div class="seg-tabs" style="margin-left:8px;">${[['month','This month'],['year','This year'],['12m','Last 12 months']].map(([k,l])=>`<button type="button" class="seg-btn ${ppeUi.period===k?'active':''}" data-ppe-period="${k}">${l}</button>`).join('')}</div>
+      <span style="margin-left:auto; display:flex; gap:8px; flex-wrap:wrap;">${ed?`<button type="button" class="btn btn-primary btn-sm" id="ppeIssueOpen">Issue PPE to crew</button>`:''}<button type="button" class="btn btn-sm" id="ppeListPdf">${ic('download')} Approved PPE list (PDF)</button><button type="button" class="btn btn-sm" id="ppeListXlsx">${ic('download')} Excel</button></span></div>
+    ${ppeUi.issueOpen?ppeIssueFormHtml():''}
+    ${ppeUi.lastBatch?`<div class="notice">${ic('checkcircle')} <strong>${ppeUi.lastBatch.n} PPE record${ppeUi.lastBatch.n===1?'':'s'} saved</strong> for ${ppeUi.lastBatch.workers.length} worker${ppeUi.lastBatch.workers.length===1?'':'s'} (${esc(ppeUi.lastBatch.date)}). <button type="button" class="btn btn-sm" id="ppeSheetPdf">${ic('printer')} Signature sheet (PDF)</button> <button type="button" class="att-link" id="ppeBatchClose">Close</button></div>`:''}
+    <div class="tiles tiles-4">
+      <div class="tile"><div class="tile-head"><div class="tile-icon">${ic('hardhat')}</div><div class="tile-label">PPE items issued</div></div><div class="tile-num">${total}</div><div class="tile-sub">${word} · ${people} worker${people===1?'':'s'}</div></div>
+      <div class="tile"><div class="tile-head"><div class="tile-icon">${ic('vest')}</div><div class="tile-label">Basic kit complete</div></div><div class="tile-num ${gaps&&gapW.length?'warn':''}">${gaps?`${kitOk}/${gaps.length}`:'—'}</div><div class="tile-sub">${gaps?`${gapW.length} active worker${gapW.length===1?'':'s'} missing an item`:'tick "Basic kit" items in the approved list'}</div></div>
+      <div class="tile"><div class="tile-head"><div class="tile-icon">${ic('clock')}</div><div class="tile-label">Replacement due</div></div><div class="tile-num ${soon.length?'warn':''}">${soon.length}</div><div class="tile-sub">in the next 30 days</div></div>
+      <div class="tile"><div class="tile-head"><div class="tile-icon">${ic('alert')}</div><div class="tile-label">Replacement overdue</div></div><div class="tile-num ${overdue.length?'danger':''}">${overdue.length}</div><div class="tile-sub">past the replacement date</div></div>
+    </div>
+    <div class="ppe-grid">
+      <div class="panel"><div class="subhead" style="margin-top:0;">Issued by item — ${esc(word)}</div>${bars(byItem,'--cat-1')}</div>
+      <div class="panel"><div class="subhead" style="margin-top:0;">Issued by project — ${esc(word)}</div>${bars(byProj,'--cat-4')}</div>
+    </div>
+    <div class="ppe-grid">
+      <div class="panel"><div class="subhead" style="margin-top:0;">Replacements overdue / due in 30 days (${overdue.length+soon.length})</div>${overdue.length+soon.length?`<div class="table-wrap"><table><thead><tr><th>Worker</th><th>Item</th><th>Issued</th><th>Replace by</th></tr></thead><tbody>${[...overdue,...soon].slice(0,25).map(dueRow).join('')}</tbody></table></div>`:'<p class="wsub">Nothing due.</p>'}</div>
+      <div class="panel"><div class="subhead" style="margin-top:0;">Missing basic kit items (${gapW.length})</div>${!gaps?'<p class="wsub">No basic kit set — tick <strong>Basic kit</strong> on the items every new worker gets.</p>':gapW.length?`<div class="ppe-gaps">${gapW.slice(0,30).map(g=>`<div><button type="button" class="att-link" data-ppe-worker="${esc(g.w.id)}">${esc(g.w.fullName||'—')}</button> <span class="wsub">${esc(g.miss.join(', '))}</span></div>`).join('')}${gapW.length>30?`<div class="wsub">… and ${gapW.length-30} more</div>`:''}</div>${ed?`<button type="button" class="btn btn-sm" id="ppeKitMissing" style="margin-top:8px;">Issue missing kit…</button>`:''}`:'<p class="wsub">Every active worker has the basic kit on record.</p>'}</div>
+    </div>
+    <div class="panel">
+      <div class="section-head"><h3>Approved PPE list — company standard (${ppeApproved().length} approved)</h3>${ed?`<span style="display:flex; gap:8px; flex-wrap:wrap;"><button type="button" class="btn btn-sm" id="ppeAddItem">+ Add PPE item</button>${PPE_SUGGESTED.some(x=>!ppeStdOf(x.name))?`<button type="button" class="btn btn-sm btn-ghost" id="ppeAddSuggested">+ Add suggested list</button>`:''}</span>`:''}</div>
+      <p class="wsub" style="margin:-4px 0 10px;">Only these items should be bought and issued. The purchase team gets the PDF / Excel above. Issue forms list only <strong>Approved</strong> items; <em>Basic kit</em> items are issued to every new worker.</p>
+      ${ppeUi.edit==='new'?ppeItemFormHtml(null):''}
+      ${list.length?`<div class="table-wrap"><table class="ppe-std"><thead><tr><th>Item</th><th>Standard (international)</th><th>Local / client requirement</th><th>Colour — who wears it</th><th>Approved brand / model · sizes</th><th>Replace every</th><th></th></tr></thead><tbody>${list.map(x=>ppeUi.edit===x.id?`<tr><td colspan="7">${ppeItemFormHtml(x)}</td></tr>`:`<tr class="${(x.status||'Approved')!=='Approved'?'ppe-off':''}"><td><div class="wname">${esc(x.name)} ${x.kit?'<span class="badge ok">Basic kit</span>':''} ${(x.status||'Approved')!=='Approved'?'<span class="badge muted">Withdrawn</span>':''}</div><div class="wsub">${esc(x.cat||'')}${x.type?' · '+esc(x.type):''}</div></td><td>${esc(x.std||'—')}</td><td>${esc(x.local||'—')}</td><td>${esc(x.colour||'—')}</td><td>${esc(x.brand||'—')}${x.sizes?`<div class="wsub">Sizes: ${esc(x.sizes)}</div>`:''}</td><td>${esc(ppeLifeText(x))}</td><td style="white-space:nowrap;">${x.sheet&&x.sheet.url?`<a class="att-link" href="${esc(x.sheet.url)}" target="_blank" rel="noopener">Datasheet</a> `:''}${ed?`<button type="button" class="icon-btn" data-ppe-edit="${esc(x.id)}" aria-label="Edit">${ic('pencil')}</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:`<p class="wsub">No approved PPE list yet${ed?' — click <strong>+ Add suggested list</strong> to start with the usual items and standards, then edit colours, brands and local requirements':''}.</p>`}
+    </div>`;
+  if(Math.abs(window.scrollY-keepScroll)>2) window.scrollTo(0, keepScroll);
+}
+function ppeItemFormHtml(x){
+  x=x||{cat:'Head', status:'Approved'};
+  const f=(k,l,ph,wide)=>`<label class="${wide?'span-all':''}">${l}<input data-ppe-f="${k}" value="${esc(x[k]==null?'':x[k])}" ${ph?`placeholder="${esc(ph)}"`:''}></label>`;
+  return `<form id="ppeItemForm" data-id="${esc(x.id||'')}" class="panel" style="margin:6px 0 12px;"><div class="form-grid">
+    <label>Category<select data-ppe-f="cat">${PPE_CATS.map(c=>`<option ${c===x.cat?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
+    <label>Item name *<input data-ppe-f="name" required value="${esc(x.name||'')}" placeholder="e.g. Safety helmet"></label>
+    ${f('type','Type / description','e.g. Hard hat with chin strap')}
+    ${f('std','Standard (international)','e.g. EN 397 · ANSI/ISEA Z89.1')}
+    ${f('local','Local / client requirement','e.g. PDO / client specification, Oman requirement')}
+    ${f('colour','Colour — who wears it','e.g. White: engineers & supervisors · Yellow: workers · Green: HSE')}
+    ${f('brand','Approved brand / model','e.g. Brand X model 123 (or "any meeting the standard")')}
+    ${f('sizes','Sizes','e.g. S–XXL / 39–46')}
+    <label>Replace every (months)<input type="number" min="0" step="1" data-ppe-f="life" value="${esc(x.life==null?'':x.life)}" placeholder="blank = when worn / per maker"></label>
+    <label>Status<select data-ppe-f="status">${['Approved','Withdrawn'].map(v=>`<option ${v===(x.status||'Approved')?'selected':''}>${v}</option>`).join('')}</select></label>
+    <label class="chk" style="align-self:end;"><input type="checkbox" data-ppe-f="kit" ${x.kit?'checked':''}> Basic kit — issued to every new worker</label>
+    <label>Datasheet / certificate ${x.sheet&&x.sheet.url?`<a class="att-link" href="${esc(x.sheet.url)}" target="_blank" rel="noopener">(current)</a>`:''}<input type="file" data-ppe-sheet accept=".pdf,image/*"></label>
+    ${f('notes','Notes','',true)}
+  </div><div class="form-actions">${x.id?`<button type="button" class="btn btn-ghost" data-ppe-del="${esc(x.id)}" data-armed="0">Remove</button>`:''}<button type="button" class="btn" id="ppeItemCancel">Cancel</button><button type="submit" class="btn btn-primary">Save</button></div></form>`;
+}
+function ppeIssueFormHtml(){
+  const items=ppeApproved().length?ppeApproved():PPE_OLD_ITEMS.filter(x=>x!=='Other').map(n=>({name:n}));
+  const projs=activeSites().filter(x=>projectStatus(x)!=='Completed').sort((a,b)=>(a.siteName||'').localeCompare(b.siteName||''));
+  const q=ppeUi.q.toLowerCase();
+  const ws=activeWorkers().filter(w=>(w.status||'active')==='active' && (ppeUi.project==='all' || w.projectId===ppeUi.project || ppeUi.workers.has(w.id))).sort((a,b)=>(a.fullName||'').localeCompare(b.fullName||''));
+  const shown=ws.filter(w=>!q || ((w.fullName||'')+' '+(w.civilId||'')+' '+(w.designation||'')).toLowerCase().includes(q));
+  const selW=activeWorkers().filter(w=>ppeUi.workers.has(w.id)).sort((a,b)=>(a.fullName||'').localeCompare(b.fullName||'')), selI=items.filter(i=>ppeUi.items.has(i.name));
+  return `<div class="panel ppe-issue"><div class="section-head"><h3>Issue PPE to crew</h3><button type="button" class="btn btn-sm" id="ppeIssueClose">Close</button></div>
+    <div class="form-grid">
+      <label>Issue date *<input type="date" id="ppeDate" value="${esc(ppeUi.date||localToday())}"></label>
+      <label>Issue type<select id="ppeCond">${PPE_ISSUE_TYPES.map(c=>`<option ${c===ppeUi.condition?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
+      <label>Issued by<input id="ppeBy" value="${esc(ppeUi.issuedBy)}" placeholder="e.g. storekeeper / HSE"></label>
+      <label>Project<select id="ppeProj"><option value="all">All workers</option>${projs.map(x=>`<option value="${esc(x.id)}" ${ppeUi.project===x.id?'selected':''}>${esc(x.siteName||'—')}</option>`).join('')}</select></label>
+    </div>
+    <div class="subhead">1 · Items ${ppeKitItems().length?`<button type="button" class="att-link" id="ppeKitPick">Tick basic kit</button>`:''}</div>
+    <div class="ppe-chips">${items.map(i=>`<label class="chk"><input type="checkbox" data-ppe-item="${esc(i.name)}" ${ppeUi.items.has(i.name)?'checked':''}>${esc(i.name)}${i.kit?' <span class="wsub">(kit)</span>':''}</label>`).join('')}</div>
+    <div class="subhead">2 · Workers (${ppeUi.workers.size} ticked) <button type="button" class="att-link" id="ppeAllW">Tick all shown</button> · <button type="button" class="att-link" id="ppeNoW">Clear</button></div>
+    <input id="ppeQ" placeholder="Search name, civil ID, designation…" value="${esc(ppeUi.q)}" style="margin-bottom:6px;">
+    <div class="ppe-wlist">${shown.map(w=>`<label class="pick-row"><input type="checkbox" data-ppe-w="${esc(w.id)}" ${ppeUi.workers.has(w.id)?'checked':''}><span class="pick-main"><span class="wname">${esc(w.fullName||'—')}</span><span class="wsub">${esc([w.designation, w.projectId?projectName(w.projectId):''].filter(Boolean).join(' · ')||'—')}</span></span></label>`).join('')||'<p class="wsub">No workers.</p>'}</div>
+    ${selW.length&&selI.length?`<div class="subhead">3 · Sizes &amp; quantity <span class="wsub">(last size issued is filled in)</span></div>
+      <div class="table-wrap"><table class="ppe-sz"><thead><tr><th>Worker</th>${selI.map(i=>`<th>${esc(i.name)}</th>`).join('')}</tr></thead><tbody>${selW.map(w=>`<tr><td>${esc(w.fullName||'—')}</td>${selI.map(i=>{ const k=w.id+'|'+i.name, v=ppeUi.sizes[k]||{size:ppeLastSize(w,i.name), qty:1}; return `<td><span class="ppe-cell"><input data-ppe-size="${esc(k)}" value="${esc(v.size||'')}" placeholder="size"><input type="number" min="1" step="1" data-ppe-qty="${esc(k)}" value="${esc(v.qty||1)}" title="Quantity"></span></td>`; }).join('')}</tr>`).join('')}</tbody></table></div>
+      <div class="form-actions"><button type="button" class="btn btn-primary" id="ppeIssueSave" ${ppeUi.saving?'disabled':''}>Save — ${selW.length*selI.length} record${selW.length*selI.length===1?'':'s'}</button></div>`:`<p class="wsub">Tick at least one item and one worker.</p>`}
+  </div>`;
+}
+function ppeReadIssueInputs(){
+  const g=id=>document.getElementById(id); if(!g('ppeDate')) return;
+  ppeUi.date=g('ppeDate').value||localToday(); ppeUi.condition=g('ppeCond').value; ppeUi.issuedBy=g('ppeBy').value; ppeUi.q=g('ppeQ').value;
+  document.querySelectorAll('[data-ppe-size]').forEach(el=>{ const k=el.dataset.ppeSize; ppeUi.sizes[k]={...(ppeUi.sizes[k]||{}), size:el.value}; });
+  document.querySelectorAll('[data-ppe-qty]').forEach(el=>{ const k=el.dataset.ppeQty; ppeUi.sizes[k]={...(ppeUi.sizes[k]||{}), qty:Number(el.value)||1}; });
+}
+function ppeOpenIssue(workerIds, items, condition){
+  ppeUi={...ppeUi, issueOpen:true, items:new Set(items||[]), workers:new Set(workerIds||[]), project:'all', q:'', sizes:{}, date:localToday(), condition:condition||'New issue', lastBatch:null, fresh:true};
+  setWorkforceView('ppe'); if(ppeUi.fresh){ ppeUi.fresh=false; renderPpe(); } const p=document.querySelector('.ppe-issue'); if(p) p.scrollIntoView({block:'start', behavior:'smooth'});
+}
+async function ppeSaveIssue(){
+  ppeReadIssueInputs();
+  const selI=[...ppeUi.items], selW=[...ppeUi.workers].filter(id=>workers.some(w=>w.id===id));
+  if(!selI.length || !selW.length){ toast('Tick at least one item and one worker'); return; }
+  const batchId='ppe_'+Date.now().toString(36), date=ppeUi.date||localToday(); let n=0; const rows=[];
+  ppeUi.saving=true; renderPpe();
+  for(const id of selW){ const w=workers.find(x=>x.id===id); const add=[];
+    for(const it of selI){ const v=ppeUi.sizes[id+'|'+it]||{size:ppeLastSize(w,it), qty:1}, std=ppeStdOf(it);
+      add.push({id:genId(), item:it, size:String(v.size||'').trim(), quantity:Math.max(1, Number(v.qty)||1), date, expiry:std&&std.life?ppeAddMonths(date, std.life):'', issuedBy:ppeUi.issuedBy.trim(), condition:ppeUi.condition, notes:'Crew issue'+(ppeUi.project!=='all'?' — '+projectName(ppeUi.project):''), projectId:ppeUi.project!=='all'?ppeUi.project:(w.projectId||''), batchId}); }
+    try{ await db.collection('workers').doc(id).update(stamp({ppeIssued:[...(w.ppeIssued||[]), ...add]})); n+=add.length; rows.push({w, add}); }
+    catch(e){ console.error(e); toast('Could not save for '+(w.fullName||'a worker')+' — '+(e.code||'error')); }
+  }
+  ppeUi.saving=false; ppeUi.issueOpen=false; ppeUi.lastBatch={n, date, project:ppeUi.project, issuedBy:ppeUi.issuedBy, condition:ppeUi.condition, workers:rows.map(r=>({name:r.w.fullName||'—', civilId:r.w.civilId||'', designation:r.w.designation||'', items:r.add.map(a=>({item:a.item, size:a.size, qty:a.quantity}))}))};
+  toast(`${n} PPE record${n===1?'':'s'} saved`); renderPpe();
+}
+async function ppeSaveItem(form){
+  const id=form.dataset.id||genId(), get=k=>{ const el=form.querySelector(`[data-ppe-f="${k}"]`); return el?(el.type==='checkbox'?el.checked:el.value.trim()):''; };
+  const name=get('name'); if(!name){ toast('Give the item a name'); return; }
+  if(ppeList().some(x=>x.id!==id && String(x.name).trim().toLowerCase()===name.toLowerCase())){ toast('An item with that name is already in the list'); return; }
+  const old=ppeList().find(x=>x.id===id)||{};
+  const item={...old, id, cat:get('cat'), name, type:get('type'), std:get('std'), local:get('local'), colour:get('colour'), brand:get('brand'), sizes:get('sizes'), life:get('life')===''?'':Number(get('life')), status:get('status')||'Approved', kit:!!get('kit'), notes:get('notes')};
+  const file=form.querySelector('[data-ppe-sheet]'); if(file && file.files && file.files[0]){ try{ toast('Uploading…'); item.sheet=await uploadToStorage(file.files[0]); }catch(e){ console.error(e); toast(e.userMsg||'Could not upload the file'); return; } }
+  const items=ppeList().filter(x=>x.id!==id).concat([item]);
+  if(await saveSettings('ppeStandards', {items}, settingsStamp('ppeStandards'))){ ppeUi.edit=null; renderPpe(); }
+}
+function ppeTableRows(){ return ppeApproved().slice().sort((a,b)=>PPE_CATS.indexOf(a.cat)-PPE_CATS.indexOf(b.cat) || String(a.name).localeCompare(String(b.name))).map(x=>[x.cat||'', x.name+(x.type?' — '+x.type:''), x.std||'', x.local||'', x.colour||'', x.brand||'', x.sizes||'', ppeLifeText(x)]); }
+const PPE_TABLE_HEAD=['Category','Item / type','Standard (international)','Local / client requirement','Colour — who wears it','Approved brand / model','Sizes','Replace every'];
+async function ppeListXlsx(){
+  if(!ppeApproved().length){ toast('The approved PPE list is empty'); return; }
+  try{ await loadScriptOnce(XLSX_URL); }catch(e){ toast('Could not load the Excel tools — check your internet connection'); return; }
+  const wb=XLSX.utils.book_new(), sh=XLSX.utils.aoa_to_sheet([['Burhan Oil & Trade Services — Approved PPE list (purchase standard)'],['Issued '+localToday()+' — buy only items that meet these standards; ask HSE before buying anything not on this list.'],[],PPE_TABLE_HEAD,...ppeTableRows()]);
+  sh['!cols']=[{wch:16},{wch:44},{wch:34},{wch:28},{wch:34},{wch:28},{wch:14},{wch:16}];
+  XLSX.utils.book_append_sheet(wb, sh, 'Approved PPE'); XLSX.writeFile(wb, `Approved_PPE_list_${localToday()}.xlsx`);
+}
+// simple wrapped table for the two PPE PDFs
+function ppePdfTable(doc, head, rows, widths, y, x0){
+  const pageH=doc.internal.pageSize.getHeight(), pad=4, lh=10.5;
+  const drawHead=()=>{ doc.setFont('helvetica','bold'); doc.setFontSize(8.5); let x=x0; const hs=head.map((h,i)=>doc.splitTextToSize(h, widths[i]-pad*2)); const hh=Math.max(...hs.map(l=>l.length))*lh+pad*2;
+    doc.setFillColor(235,238,242); doc.rect(x0, y, widths.reduce((a,b)=>a+b,0), hh, 'F'); hs.forEach((l,i)=>{ doc.text(l, x+pad, y+pad+8); x+=widths[i]; }); y+=hh; };
+  drawHead(); doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+  for(const r of rows){ const cells=r.map((c,i)=>doc.splitTextToSize(String(c==null?'':c), widths[i]-pad*2)); const h=Math.max(...cells.map(l=>l.length))*lh+pad*2;
+    if(y+h>pageH-36){ doc.addPage(); y=40; drawHead(); doc.setFont('helvetica','normal'); doc.setFontSize(8.5); }
+    let x=x0; cells.forEach((l,i)=>{ doc.rect(x, y, widths[i], h); doc.text(l, x+pad, y+pad+8); x+=widths[i]; }); y+=h; }
+  return y;
+}
+function ppeListPdf(){
+  if(!ppeApproved().length){ toast('The approved PPE list is empty'); return; }
+  if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
+  const doc=pdfDoc({unit:'pt', format:'a4', orientation:'landscape'}); doc.setLineWidth(0.5); doc.setDrawColor(190);
+  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(216,30,44); doc.text('Approved PPE list — purchase standard', 32, 40); doc.setTextColor(20,20,20);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.text(`Burhan Oil & Trade Services · HSE · issued ${localToday()}`, 32, 56);
+  doc.text('Buy and issue only PPE that meets these standards. Ask HSE before buying anything that is not on this list.', 32, 70);
+  ppePdfTable(doc, PPE_TABLE_HEAD, ppeTableRows(), [70,160,120,100,120,100,60,48], 84, 32);
+  doc.save(`Approved_PPE_list_${localToday()}.pdf`);
+}
+function ppeSheetPdf(){
+  const b=ppeUi.lastBatch; if(!b) return; if(!(window.jspdf&&window.jspdf.jsPDF)){ toast('PDF tools are still loading — try again in a moment'); return; }
+  const doc=pdfDoc({unit:'pt', format:'a4', orientation:'landscape'}); doc.setLineWidth(0.5); doc.setDrawColor(150);
+  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(216,30,44); doc.text('PPE issue record', 32, 40); doc.setTextColor(20,20,20);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
+  doc.text(`Date: ${b.date}   ·   Project: ${b.project!=='all'?projectName(b.project):'—'}   ·   Issue type: ${b.condition}   ·   Issued by: ${b.issuedBy||'________________'}`, 32, 58);
+  doc.text('I have received the PPE listed below in good condition. I will wear it as instructed, look after it and return it for replacement when worn or damaged.', 32, 72);
+  const rows=b.workers.map((w,i)=>[String(i+1), w.name, w.civilId, w.designation, w.items.map(x=>`${x.item}${x.size?' ('+x.size+')':''}${x.qty>1?' ×'+x.qty:''}`).join(', '), '']);
+  const y=ppePdfTable(doc, ['#','Name','Civil ID','Designation','PPE issued (size)','Signature'], rows, [24,140,70,100,300,140], 86, 32);
+  doc.setFontSize(9.5); const yy=Math.min(y+30, doc.internal.pageSize.getHeight()-30); doc.text('Issued by (name & signature): ______________________________          HSE: ______________________________', 32, yy);
+  doc.save(`PPE_issue_${b.date}.pdf`);
+}
+
 /* ---- action tracker: extra sources ---- */
 const B12_ACT_SOURCES=[{key:'obs',label:'Observations'},{key:'insp',label:'Inspections'},{key:'hira',label:'Risk register'},{key:'moc',label:'Change (MOC)'},{key:'heat',label:'Heat stress'}];
 
@@ -6996,7 +7234,7 @@ const REPORT_CATEGORIES = {
   incident:{ label:'Incident', unit:'date', cat:'--cat-9',
     fields:[{key:'severity', label:'Severity', type:'select', options:['Minor','Major','Critical'], required:true},{key:'description', label:'Description', type:'textarea', required:true},{key:'actionTaken', label:'Action taken', type:'textarea'}] },
   training:{ label:'Internal training', unit:'date', cat:'--cat-1',
-    fields:[{key:'topic', label:'Topic', type:'text', required:true},{key:'attendees', label:'Attendees', type:'number'},{key:'conductedBy', label:'Conducted by', type:'text'}] },
+    fields:[{key:'topic', label:'Topic', type:'text', required:true},{key:'attendees', label:'Attendees', type:'number'},{key:'hours', label:'Duration (hours)', type:'number'},{key:'conductedBy', label:'Conducted by', type:'text'}] },
   vehicleInspection:{ label:'Vehicle inspection', unit:'date', cat:'--cat-6',
     fields:[{key:'vehicleNumber', label:'Vehicle number', type:'text', required:true},{key:'result', label:'Result', type:'select', options:['Pass','Fail','Needs attention']}] },
   hseObservation:{ label:'HSE observation', unit:'date', cat:'--cat-7',
@@ -7006,9 +7244,9 @@ const REPORT_CATEGORIES = {
   siteVisit:{ label:'Site visit', unit:'date', cat:'--cat-4',
     fields:[{key:'visitedBy', label:'Visited by', type:'text', required:true},{key:'purpose', label:'Purpose', type:'text'}] },
   induction:{ label:'Induction', unit:'date', cat:'--cat-3',
-    fields:[{key:'count', label:'Workers inducted', type:'number', required:true},{key:'conductedBy', label:'Conducted by', type:'text'}] },
+    fields:[{key:'count', label:'Workers inducted', type:'number', required:true},{key:'hours', label:'Duration (hours)', type:'number'},{key:'conductedBy', label:'Conducted by', type:'text'}] },
   tbt:{ label:'Toolbox talk (TBT)', unit:'date', cat:'--cat-2',
-    fields:[{key:'topic', label:'Topic', type:'text', required:true},{key:'attendees', label:'Attendees', type:'number'},{key:'conductedBy', label:'Conducted by', type:'text'}] },
+    fields:[{key:'topic', label:'Topic', type:'text', required:true},{key:'attendees', label:'Attendees', type:'number'},{key:'minutes', label:'Duration (minutes)', type:'number', default:15},{key:'conductedBy', label:'Conducted by', type:'text'}] },
   vehicleKm:{ label:'Vehicle KM driven (monthly)', unit:'month', cat:'--cat-8',
     fields:[{key:'km', label:'KM driven (from the IVMS report)', type:'number', required:true},{key:'vehicleNumber', label:'Vehicle — optional (blank = total for the month)', type:'text'}] },
   ivms:{ label:'IVMS violation', unit:'date', cat:'--cat-8', drive:true,
@@ -7023,9 +7261,9 @@ const REPORT_CATEGORIES = {
   vehicleIncident:{ label:'Vehicle incident', unit:'date', cat:'--cat-9',
     fields:[{key:'vehicleNumber', label:'Vehicle number', type:'text', required:true},{key:'severity', label:'Severity', type:'select', options:['Minor','Major','Critical']},{key:'description', label:'Description', type:'textarea'}] },
   campaign:{ label:'HSE campaign / safety day', unit:'date', cat:'--cat-5',
-    fields:[{key:'topic', label:'Campaign / safety day', type:'text', required:true},{key:'attendees', label:'People reached', type:'number'},{key:'conductedBy', label:'Conducted by', type:'text'}] },
+    fields:[{key:'topic', label:'Campaign / safety day', type:'text', required:true},{key:'attendees', label:'People reached', type:'number'},{key:'hours', label:'Duration (hours)', type:'number'},{key:'conductedBy', label:'Conducted by', type:'text'}] },
   mockDrill:{ label:'Mock drill', unit:'date', cat:'--cat-3',
-    fields:[{key:'type', label:'Drill type', type:'select', options:['Fire evacuation','Emergency response','Muster point drill','Spill response','Other'], required:true},{key:'participants', label:'Participants', type:'number'},{key:'conductedBy', label:'Conducted by', type:'text'},{key:'notes', label:'Notes', type:'textarea'}] },
+    fields:[{key:'type', label:'Drill type', type:'select', options:['Fire evacuation','Emergency response','Muster point drill','Spill response','Other'], required:true},{key:'participants', label:'Participants', type:'number'},{key:'hours', label:'Duration (hours)', type:'number'},{key:'conductedBy', label:'Conducted by', type:'text'},{key:'notes', label:'Notes', type:'textarea'}] },
   ppeIssuance:{ label:'PPE issuance', unit:'date', cat:'--cat-7',
     fields:[{key:'item', label:'PPE item', type:'text', required:true, placeholder:'e.g. Safety gloves, goggles, ear plugs'},{key:'quantity', label:'Quantity issued', type:'number'},{key:'issuedTo', label:'Issued to', type:'text', placeholder:'e.g. worker name or division'},{key:'notes', label:'Notes', type:'textarea'}] },
   fac:{ label:'First Aid Case (FAC)', unit:'date', cat:'--cat-9',
@@ -7128,6 +7366,31 @@ function projectName(id){
   const s=siteEquipmentList.find(x=>x.id===id);
   return s ? (s.siteName||'Unnamed project') : 'Removed project';
 }
+/* Batch 50: training hours. Training man-hours = duration × people trained (the usual HSE KPI); per worker = total ÷ active headcount.
+   Counted: course records on each worker (hours typed, or the PDO / SP-1257 course duration), internal training sessions (hours × attendees),
+   inductions (hours × people inducted) and toolbox talks (minutes × attendees; blank = 15 min). Mock drills and campaigns are shown separately. */
+const TBT_DEFAULT_MIN=15;
+function courseHours(r){ const h=Number(r.hours); if(h>0) return h; const c=pdoCourseOf(r.name); return c && c.hrs ? c.hrs : 0; }
+function trainingHoursFor(division, periodKey, project){
+  const o={course:0, internal:0, induction:0, tbt:0, drills:0, missing:0, sessionsMissing:0};
+  for(const w of workers){ if(w.deleted || !workerInScope(w, division, project)) continue;
+    for(const r of (w.trainings||[])) if(String(r.date||'').startsWith(periodKey)){ const h=courseHours(r); if(h) o.course+=h; else o.missing++; } }
+  for(const e of reportEntriesFor(division, periodKey, project)){
+    const n=k=>Math.max(0, Number(e[k])||0);
+    if(e.category==='training'){ if(n('hours')) o.internal+=n('hours')*Math.max(1,n('attendees')); else o.sessionsMissing++; }
+    else if(e.category==='induction'){ if(n('hours')) o.induction+=n('hours')*Math.max(1,n('count')); else o.sessionsMissing++; }
+    else if(e.category==='tbt') o.tbt+=(n('minutes')||TBT_DEFAULT_MIN)/60*n('attendees');
+    else if(e.category==='mockDrill') o.drills+=n('hours')*n('participants');
+    else if(e.category==='campaign') o.drills+=n('hours')*n('attendees');
+  }
+  const r1=x=>Math.round(x*10)/10;
+  for(const k of ['course','internal','induction','tbt','drills']) o[k]=r1(o[k]);
+  o.total=r1(o.course+o.internal+o.induction+o.tbt);
+  o.headcount=activeWorkers().filter(w=>(w.status||'active')==='active' && workerInScope(w, division, project)).length;
+  o.perWorker=o.headcount ? r1(o.total/o.headcount) : null;
+  return o;
+}
+function workerCourseHours(w, prefix){ return Math.round((w.trainings||[]).filter(r=>String(r.date||'').startsWith(prefix||'')).reduce((n,r)=>n+courseHours(r),0)*10)/10; }
 function driveEvents(e){ return Math.max(1, Math.round(Number(e.events)||1)); }
 function per100k(n, km){ return km ? Math.round(n*100000/km*10)/10 : null; }
 function computeReportMetrics(entries){
@@ -7516,6 +7779,7 @@ function renderTiles(){
   const tot=segs.reduce((n,s)=>n+s.value,0), R0=52, C=2*Math.PI*R0, gap=segs.filter(s=>s.value).length>1 ? 2 : 0;
   let off=0; const arcs=tot ? segs.filter(s=>s.value).map(s=>{ const len=C*s.value/tot, a=`<circle r="${R0}" cx="66" cy="66" fill="none" stroke="${s.color}" stroke-width="14" stroke-dasharray="${Math.max(0,len-gap)} ${C-Math.max(0,len-gap)}" stroke-dashoffset="${-off}"><title>${esc(s.label)}: ${s.value}</title></circle>`; off+=len; return a; }).join('') : '';
   const legend=segs.map(s=>`<button type="button" class="wf-leg" ${s.trade!==undefined?`data-wf-div="${esc(s.trade)}"`:'disabled'}><span class="wf-dot" style="background:${s.color}"></span><span class="wf-leg-l">${esc(s.label)}</span><span class="wf-leg-v">${s.value}</span></button>`).join('');
+  if(typeof renderPpe==='function') renderPpe(true);   // Batch 49
   const el=document.getElementById('tiles'); el.className='wf-dash';
   renderDivisionStrip(all);
   el.innerHTML = `<div class="wf-hero">
@@ -7561,14 +7825,23 @@ function matches(w){
   const q=filters.q.trim().toLowerCase();
   if(q && !((w.fullName||'')+' '+(w.civilId||'')).toLowerCase().includes(q)) return false;
   if(filters.trade!=='all' && w.trade!==filters.trade) return false;
+  if(filters.lang && !(w.languages||[]).includes(filters.lang)) return false;
   if(filters.status==='temporary'){ if(!isTemp(w)) return false; }
   else if(filters.status!=='all' && (w.status||'active')!==filters.status) return false;
   return true;
 }
 
+function renderLangStrip(){
+  const el=document.getElementById('langStrip'); if(!el) return;
+  const save=filters.lang; filters.lang=''; const ws=workers.filter(matches).filter(w=>(w.status||'active')==='active'); filters.lang=save;
+  const m=new Map(); let none=0; for(const w of ws){ const l=w.languages||[]; if(!l.length) none++; for(const x of l) m.set(x,(m.get(x)||0)+1); }
+  if(!m.size){ el.innerHTML=''; el.hidden=true; return; } el.hidden=false;
+  el.innerHTML=`<span class="lang-l">Languages (active workers in view):</span>${[...m].sort((a,b)=>b[1]-a[1]).map(([l,n])=>`<button type="button" class="lang-chip ${filters.lang===l?'active':''}" data-langchip="${esc(l)}">${esc(l)} <b>${n}</b></button>`).join('')}${none?`<span class="wsub">${none} not recorded</span>`:''}${filters.lang?`<button type="button" class="att-link" data-langchip="">Clear</button>`:''}`;
+}
 function renderTable(){
   const tbody=document.getElementById('workerRows');
   if(!auth.currentUser) return;
+  renderLangStrip();
   if(activeWorkers().length===0){ tbody.innerHTML='<tr><td colspan="11" class="empty-state">No workers yet — click “Add worker” to get started.</td></tr>'; return; }
   const list=workers.filter(matches);
   if(list.length===0){ tbody.innerHTML='<tr><td colspan="11" class="empty-state">No workers match your filters.</td></tr>'; return; }
@@ -9074,6 +9347,29 @@ function renderCcDriving(entries, m, key, prev, prevName, months, monthly, scope
       <div class="dv-b"><div class="dv-bh">Most violations ${esc(periodWord)}</div>${top.length?`<div class="dv-top">${top.map(([id,o])=>{ const w=workers.find(x=>x.id===id); return `<button type="button" class="dv-p" data-cc-worker="${esc(id)}"><span class="wname">${esc(w?w.fullName:'Removed worker')}</span><span class="wsub">${[o.ivms?'IVMS '+o.ivms:'', o.dfms?'DFMS '+o.dfms:'', o.lsr?'LSR '+o.lsr:''].filter(Boolean).join(' · ')}</span><span class="dv-pn">${o.t}</span></button>`; }).join('')}</div>`:'<p class="wsub" style="margin:4px 0 0;">No violation linked to a driver.</p>'}${unnamed?`<p class="wsub" style="margin:6px 0 0;">${unnamed} not linked to a driver (monthly totals / unknown).</p>`:''}</div>
     </div>`:`<p class="wsub" style="margin:12px 14px;">Nothing logged ${periodWord}. Use <strong>Log an entry</strong> → <em>IVMS violation</em>, <em>DFMS violation</em>, <em>LSR violation</em> or <em>Vehicle KM driven</em> (from the monthly IVMS report)${canEdit()?' — or the buttons above':''}.</p>`}`;
 }
+function renderCcTrainHours(key, division, project, months, scope){
+  const el=document.getElementById('ccTrainHours'); if(!el) return;
+  const h=trainingHoursFor(division, key, project), word=key.length===4?'this year':'this month';
+  const yr=key.slice(0,4), y=key.length===4?h:trainingHoursFor(division, yr, project);
+  const rows=[['Courses (PDO & other certificates)',h.course,'--cat-1'],['Internal training',h.internal,'--cat-3'],['Inductions',h.induction,'--cat-4'],['Toolbox talks',h.tbt,'--cat-2']];
+  const max=Math.max(1,...rows.map(r=>r[1])), fmt=n=>Number(n).toLocaleString(undefined,{maximumFractionDigits:1});
+  const trend=months.map(k=>trainingHoursFor(division, k, project).total);
+  const miss=h.missing+h.sessionsMissing;
+  el.innerHTML=`<div class="cc-title">Training hours <small>${esc(scope)} · ${esc(periodLabel(key))}</small></div>
+    <div class="th-wrap"><div class="th-left">
+      <div class="dv-kpis th-kpis">
+        <div class="dv-k"><div class="dv-ic">${ic('cap')}</div><div><div class="dv-l">Training man-hours</div><div class="dv-v">${fmt(h.total)}</div><div class="dv-s">${word}</div></div></div>
+        <div class="dv-k"><div class="dv-ic">${ic('users')}</div><div><div class="dv-l">Per worker</div><div class="dv-v">${h.perWorker===null?'—':fmt(h.perWorker)+' h'}</div><div class="dv-s">${h.headcount} active worker${h.headcount===1?'':'s'}</div></div></div>
+        ${key.length===4?'':`<div class="dv-k"><div class="dv-ic">${ic('trend')}</div><div><div class="dv-l">Year to date</div><div class="dv-v">${fmt(y.total)}</div><div class="dv-s">${y.perWorker===null?'':fmt(y.perWorker)+' h per worker'}</div></div></div>`}
+      </div>
+      <div class="th-bars">${rows.map(([l,n,c])=>`<div class="dv-row"><span class="dv-rl">${esc(l)}</span><span class="dv-track"><span class="dv-fill" style="width:${(n/max*100).toFixed(1)}%; background:var(${c})"></span></span><span class="dv-rn th-n">${fmt(n)}</span></div>`).join('')}
+        ${h.drills?`<p class="wsub" style="margin:6px 0 0;">+ ${fmt(h.drills)} h of mock drills &amp; campaigns (shown separately, not in the total)</p>`:''}
+        ${miss?`<p class="wsub" style="margin:6px 0 0;">${ic('alert')} ${h.missing?`${h.missing} course record${h.missing===1?'':'s'}`:''}${h.missing&&h.sessionsMissing?' and ':''}${h.sessionsMissing?`${h.sessionsMissing} training / induction session${h.sessionsMissing===1?'':'s'}`:''} ${miss===1?'has':'have'} no duration — add the hours to count ${miss===1?'it':'them'}.</p>`:''}
+      </div></div>
+      <div class="th-right"><div class="dv-bh">Last 12 months</div><div class="cc-chart">${ccBarSvg(months, trend.map(Math.round), 'Training man-hours per month', 'ccBfTh')}</div></div>
+    </div>
+    <p class="wsub" style="margin:0 14px 12px;">Training man-hours = duration × people trained. PDO and SP-1257 course hours fill in from the specification; toolbox talks count ${TBT_DEFAULT_MIN} minutes when no duration is given.</p>`;
+}
 function ccTile(t){
   return `<div class="cc-tile ${t.st}">
     <div class="cc-ico" aria-hidden="true">${t.ico}</div>
@@ -9163,6 +9459,7 @@ function renderCommandCentre(entries, m, key){
   { const ms=document.getElementById('ccMiniScope'); if(ms) ms.textContent = (division==='all' && project==='all') ? 'company-wide' : scope; }
   document.getElementById('ccMini').innerHTML = minis.map(([n,v,s])=>`<div class="cc-m">${ccDial(v,58,6,n)}<div><div class="cc-mv" style="color:${ccStatusColor(v)}">${v===null?'—':v+'%'}</div><div class="cc-ml">${esc(n)}</div><div class="cc-ms">${esc(v===null && /^\d/.test(s)?'nothing recorded yet':s)}</div></div></div>`).join('');
   renderCcDriving(entries, m, key, prev, prevName, months, monthly, scope);
+  renderCcTrainHours(key, division, project, months, scope);
   renderTargetsPanel();
   // animate only when the view changes (not on every live update)
   const sig=[key,division,project].join('|');
@@ -9312,6 +9609,7 @@ function reportEntrySummary(e){
   if(e.result) parts.push(e.result);
   if(e.count) parts.push(e.count+' workers'+((e.attendeeIds||[]).length?` (${e.attendeeIds.length} named)`:''));
   if(e.attendees) parts.push(e.attendees+' attendees');
+  if(e.hours) parts.push(e.hours+' h'); if(e.minutes) parts.push(e.minutes+' min');
   if(e.participants) parts.push(e.participants+' participants');
   if(e.item) parts.push(e.item);
   if(e.quantity) parts.push(e.quantity+' issued');
@@ -9807,6 +10105,13 @@ function wireSignaturePad(){
 }
 
 const BLOOD_GROUPS=['A+','A-','B+','B-','AB+','AB-','O+','O-','Unknown'];
+/* Batch 50: languages known */
+const LANGUAGES=['Arabic','English','Hindi','Urdu','Malayalam','Tamil','Telugu','Kannada','Bengali','Nepali','Punjabi','Sinhala','Pashto','Balochi','Tagalog'];
+function languagesFieldHtml(w){
+  const have=w.languages||[], other=have.filter(l=>!LANGUAGES.includes(l));
+  return `<div class="lang-field"><div class="subhead" style="margin-top:12px;">Languages known</div><div class="lang-chips">${LANGUAGES.map(l=>`<label class="chk"><input type="checkbox" data-lang value="${esc(l)}" ${have.includes(l)?'checked':''}>${esc(l)}</label>`).join('')}</div>
+    <label style="margin-top:6px;">Other languages<input data-lang-other value="${esc(other.join(', '))}" placeholder="comma separated, e.g. Swahili, Odia"></label></div>`;
+}
 function profileTabHtml(w){
   const updatedNote = updatedNoteHtml(w);
   const photo = attachmentBlock(w,null,null,'photo','photo');
@@ -9827,6 +10132,7 @@ function profileTabHtml(w){
       <label>Blood group<select data-field="bloodGroup"><option value="">Select…</option>${BLOOD_GROUPS.map(b=>`<option value="${b}" ${w.bloodGroup===b?'selected':''}>${b}</option>`).join('')}</select></label>
       <label>Mobile number<input type="tel" data-field="mobileNumber" value="${esc(w.mobileNumber||'')}" placeholder="e.g. +971 50 123 4567"></label>
     </div>
+    ${languagesFieldHtml(w)}
 
     <div class="subhead">Employment</div>
     <div class="form-grid">
@@ -9942,7 +10248,8 @@ function recordTabHtml(w,key,cfg){
   }).join('');
 
   return `
-  <div class="section-head"><h3>${esc(cfg.title)}</h3><button type="button" class="btn btn-sm" id="toggleRecordForm">${addFormOpen? 'Cancel' : esc(cfg.addLabel)}</button></div>
+  ${key==='trainings'&&recs.length?`<div class="notice" style="margin:0 0 10px;">${ic('cap')} Training hours: <strong>${workerCourseHours(w, localToday().slice(0,4))} h</strong> this year · ${workerCourseHours(w,'')} h on record</div>`:''}
+  <div class="section-head"><h3>${esc(cfg.title)}</h3>${key==='ppeIssued'&&canEdit()?`<button type="button" class="btn btn-sm" data-ppe-kit="${esc(w.id)}" title="Issue the basic PPE kit from the approved PPE list">Issue new joiner kit</button>`:''}<button type="button" class="btn btn-sm" id="toggleRecordForm">${addFormOpen? 'Cancel' : esc(cfg.addLabel)}</button></div>
   <form id="recordForm" data-editing="${editingRecordId||''}" ${addFormOpen ? '' : 'hidden'} style="margin-bottom:16px;">
     <div class="form-grid">${formFields}</div>
     <div class="form-actions"><button type="submit" class="btn btn-primary btn-sm">${editingRecordId? 'Save changes':'Save record'}</button></div>
@@ -10721,6 +11028,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 
   document.getElementById('searchInput').addEventListener('input', e=>{ filters.q=e.target.value; renderTable(); });
+  document.getElementById('langStrip').addEventListener('click', e=>{ const b=e.target.closest('[data-langchip]'); if(!b) return; filters.lang = filters.lang===b.dataset.langchip ? '' : b.dataset.langchip; renderTable(); });
   document.getElementById('tradeFilter').addEventListener('change', e=>{ filters.trade=e.target.value; renderTable(); renderTiles(); });
   document.getElementById('tiles').addEventListener('click', e=>{ const b=e.target.closest('[data-wf-div]'); if(!b) return; const v=b.dataset.wfDiv; if(!v) return; filters.trade=v; const sel=document.getElementById('tradeFilter'); if(sel) sel.value=v; renderTable(); renderTiles(); });
   document.getElementById('divStrip').addEventListener('click', e=>{ const b=e.target.closest('[data-divchip]'); if(!b) return; const v=b.dataset.divchip; filters.trade = (filters.trade===v && v!=='all') ? 'all' : v; const sel=document.getElementById('tradeFilter'); if(sel) sel.value=filters.trade; renderTable(); renderTiles(); });
@@ -10790,6 +11098,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       e.preventDefault();
       const w=currentWorker(); if(!w) return;
       const data={}; e.target.querySelectorAll('[data-field]').forEach(el=>{ data[el.dataset.field]=el.value; });
+      if(e.target.querySelector('[data-lang]')){ const seen=new Set(); data.languages=[...e.target.querySelectorAll('[data-lang]:checked')].map(x=>x.value).concat(String((e.target.querySelector('[data-lang-other]')||{}).value||'').split(',').map(x=>x.trim()).filter(Boolean).map(x=>x.charAt(0).toUpperCase()+x.slice(1))).filter(x=>{ const k=x.toLowerCase(); if(seen.has(k)) return false; seen.add(k); return true; }); }
       if(e.target.querySelector('[data-extra-role]')){
         data.extraRoles=[...e.target.querySelectorAll('[data-extra-role]:checked')].map(x=>x.value).filter(x=>roleKey(x)!==roleKey(data.designation));
         if(w.mainRole) data.mainRole='';   // the Designation is the main role now
@@ -10837,7 +11146,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     hint.textContent = c.years ? `Valid until set automatically: ${c.code}${c.card?' ('+c.card+' card)':''} is valid ${c.years} year${c.years>1?'s':''} — change it if the certificate / card says otherwise.` : `${c.code} has no re-certification — no expiry.`;
   }
   document.getElementById('drawerBody').addEventListener('change', e=>{
-    const pk=e.target.closest('[data-pdo-pick]'); if(pk){ const form=pk.closest('form'), c=PDO_COURSES.find(x=>x.code===pk.value), nm=form && form.querySelector('[data-field="name"]'); if(c && nm){ nm.value=pdoCourseLabel(c); const ex=form.querySelector('[data-field="expiry"]'); if(ex && !ex.value) ex.dataset.auto='1'; pdoAutoExpiry(form); } return; }
+    const pk=e.target.closest('[data-pdo-pick]'); if(pk){ const form=pk.closest('form'), c=PDO_COURSES.find(x=>x.code===pk.value), nm=form && form.querySelector('[data-field="name"]'); if(c && nm){ nm.value=pdoCourseLabel(c); { const hf=form.querySelector('[data-field="hours"]'); if(hf && c.hrs && (!hf.value || hf.dataset.auto)){ hf.value=c.hrs; hf.dataset.auto='1'; } } const ex=form.querySelector('[data-field="expiry"]'); if(ex && !ex.value) ex.dataset.auto='1'; pdoAutoExpiry(form); } return; }
     if(e.target.matches && e.target.matches('#recordForm [data-field="date"], #recordForm [data-field="name"]') && activeTab==='trainings'){ const form=e.target.closest('form'); const ex=form.querySelector('[data-field="expiry"]'); if(ex && !ex.value) ex.dataset.auto='1'; pdoAutoExpiry(form); }
     if(e.target.matches && e.target.matches('#recordForm [data-field="expiry"]')) e.target.dataset.auto='0';
   });
@@ -11726,6 +12035,46 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 
   // --- workforce view: register / training matrix ---
+  /* Batch 49: PPE pane */
+  document.getElementById('ppePane').addEventListener('click', async e=>{
+    const b=e.target.closest('button, [data-ppe-period]'); if(!b) return;
+    if(b.dataset.ppePeriod){ ppeReadIssueInputs(); ppeUi.period=b.dataset.ppePeriod; renderPpe(); return; }
+    if(b.id==='ppeIssueOpen'){ ppeOpenIssue([], [], 'New issue'); return; }
+    if(b.id==='ppeIssueClose'){ ppeUi.issueOpen=false; renderPpe(); return; }
+    if(b.id==='ppeBatchClose'){ ppeUi.lastBatch=null; renderPpe(); return; }
+    if(b.id==='ppeSheetPdf'){ ppeSheetPdf(); return; }
+    if(b.id==='ppeListPdf'){ ppeListPdf(); return; }
+    if(b.id==='ppeListXlsx'){ ppeListXlsx(); return; }
+    if(b.id==='ppeKitPick'){ ppeReadIssueInputs(); ppeKitItems().forEach(k=>ppeUi.items.add(k.name)); ppeUi.condition='New joiner kit'; renderPpe(); return; }
+    if(b.id==='ppeAllW'){ ppeReadIssueInputs(); document.querySelectorAll('[data-ppe-w]').forEach(x=>ppeUi.workers.add(x.dataset.ppeW)); renderPpe(); return; }
+    if(b.id==='ppeNoW'){ ppeReadIssueInputs(); ppeUi.workers.clear(); renderPpe(); return; }
+    if(b.id==='ppeIssueSave'){ await ppeSaveIssue(); return; }
+    if(b.id==='ppeKitMissing'){ const g=(ppeKitGaps()||[]).filter(x=>x.miss.length); ppeOpenIssue(g.map(x=>x.w.id), [...new Set(g.flatMap(x=>x.miss))], 'New joiner kit'); return; }
+    if(b.id==='ppeAddItem'){ ppeUi.edit='new'; renderPpe(); const f=document.querySelector('#ppeItemForm [data-ppe-f="name"]'); if(f) f.focus(); return; }
+    if(b.id==='ppeItemCancel'){ ppeUi.edit=null; renderPpe(); return; }
+    if(b.id==='ppeAddSuggested'){ const add=PPE_SUGGESTED.filter(x=>!ppeStdOf(x.name)).map(x=>({id:genId(), cat:x.cat, name:x.name, type:x.type, std:x.std, local:'', colour:'', brand:'', sizes:'', life:x.life, status:'Approved', kit:!!x.kit, notes:''}));
+      if(await saveSettings('ppeStandards', {items:ppeList().concat(add)}, settingsStamp('ppeStandards'))){ toast(`${add.length} items added — now set colours, brands and local / client requirements`); renderPpe(); } return; }
+    const ed=b.dataset.ppeEdit; if(ed){ ppeUi.edit=ed; renderPpe(); return; }
+    const del=b.dataset.ppeDel; if(del){ if(b.dataset.armed!=='1'){ b.dataset.armed='1'; b.textContent='Click again to remove'; return; } if(await saveSettings('ppeStandards', {items:ppeList().filter(x=>x.id!==del)}, settingsStamp('ppeStandards'))){ ppeUi.edit=null; renderPpe(); } return; }
+    const wk=b.dataset.ppeWorker; if(wk){ openDrawer(wk); activeTab='ppeIssued'; renderDrawer(); return; }
+  });
+  document.getElementById('ppePane').addEventListener('change', e=>{
+    const t=e.target;
+    if(t.dataset.ppeItem!==undefined){ ppeReadIssueInputs(); t.checked?ppeUi.items.add(t.dataset.ppeItem):ppeUi.items.delete(t.dataset.ppeItem); renderPpe(); return; }
+    if(t.dataset.ppeW!==undefined){ ppeReadIssueInputs(); t.checked?ppeUi.workers.add(t.dataset.ppeW):ppeUi.workers.delete(t.dataset.ppeW); renderPpe(); return; }
+    if(t.id==='ppeProj'){ ppeReadIssueInputs(); ppeUi.project=t.value; renderPpe(); return; }
+  });
+  document.getElementById('ppePane').addEventListener('input', e=>{ if(e.target.id!=='ppeQ') return; const q=e.target.value.toLowerCase(); ppeUi.q=e.target.value; document.querySelectorAll('.ppe-wlist .pick-row').forEach(r=>{ r.hidden=!!q && !r.textContent.toLowerCase().includes(q); }); });
+  document.getElementById('ppePane').addEventListener('submit', e=>{ if(e.target.id!=='ppeItemForm') return; e.preventDefault(); ppeSaveItem(e.target); });
+  // worker drawer → PPE issued → "Issue new joiner kit"
+  document.addEventListener('click', e=>{ const k=e.target.closest('[data-ppe-kit]'); if(!k) return; if(!ppeKitItems().length){ toast('Set the basic kit first: Workforce → PPE → Approved PPE list (tick "Basic kit")'); closeDrawer(); setWorkforceView('ppe'); return; } const id=k.dataset.ppeKit; closeDrawer(); ppeOpenIssue([id], ppeKitItems().map(x=>x.name), 'New joiner kit'); });
+  // worker PPE form: replacement date from the approved list ("Replace every")
+  document.addEventListener('change', e=>{
+    if(!(e.target.matches && e.target.matches('#recordForm [data-field="item"], #recordForm [data-field="date"]')) || activeTab!=='ppeIssued') return;
+    const f=e.target.closest('form'), it=f.querySelector('[data-field="item"]'), d=f.querySelector('[data-field="date"]'), ex=f.querySelector('[data-field="expiry"]'); if(!it||!d||!ex) return;
+    const std=ppeStdOf(it.value); if(!std || !std.life || !d.value) return; if(ex.value && !ex.dataset.auto) return;
+    ex.value=ppeAddMonths(d.value, std.life); ex.dataset.auto='1';
+  });
   document.getElementById('workforceViewTabs').addEventListener('click', e=>{
     const b=e.target.closest('[data-wview]'); if(b) setWorkforceView(b.dataset.wview);
   });
