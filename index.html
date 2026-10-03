@@ -1429,11 +1429,12 @@ details.icam-grp .cause-list{margin:6px 0;}
             <form class="lti-base" id="ltiBaseForm" hidden>
               <div class="subhead" style="margin-top:0;">Company LTI record before the tracker</div>
               <div class="form-grid">
-                <label>Company last LTI date<input type="date" data-ltib="ltiBaseDate"></label>
+                <label>This date is<select data-ltib="ltiBaseKind"><option value="start">LTI-free start (no LTI ever)</option><option value="lti">Our last LTI date</option></select></label>
+                <label>Date<input type="date" data-ltib="ltiBaseDate"></label>
                 <label>LTI-free man-hours brought forward<input type="number" min="0" step="1" data-ltib="ltiBaseHours" placeholder="optional, e.g. 1250000"></label>
                 <label>…up to the end of (month)<input type="month" data-ltib="ltiBaseHoursAsOf"></label>
               </div>
-              <p class="wsub" style="margin:6px 0 0;">Enter the date of Burhan's last lost-time injury (or the date your LTI-free record starts). The counter uses it until a newer LTI is recorded in the tracker, then restarts from that LTI automatically. If you know the LTI-free man-hours up to a month end, enter them — man-hours logged in the tracker after that month are added on top.</p>
+              <p class="wsub" style="margin:6px 0 0;">If Burhan has never had a lost-time injury, choose <b>LTI-free start</b> and enter the company start date — the dashboard then shows "no LTI since" that date. If there was an LTI, choose <b>Our last LTI date</b>. The counter uses it until a newer LTI is recorded in the tracker, then restarts from that LTI automatically. It applies to the company and division views; a single project counts from its own first entry. If you know the LTI-free man-hours up to a month end, enter them — man-hours logged in the tracker after that month are added on top.</p>
               <div class="form-actions" style="margin-top:10px;"><button type="button" class="btn btn-sm" id="ltiBaseCancel">Cancel</button><button type="submit" class="btn btn-primary btn-sm">Save LTI record</button></div>
             </form>
             <div class="cc-cluster" id="ccCluster"></div>
@@ -2734,7 +2735,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b59';
+const APP_BUILD='b60';
 let appOutdated=false;
 // Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
 let _verTag=null, _verLast=0;
@@ -8593,7 +8594,7 @@ async function buildClientPack(opts){
     ['Near misses reported', m.nearMiss, y.nearMiss], ['Property damage / other incidents', m.incident, y.incident], ['Vehicle incidents', m.vehicleIncident, y.vehicleIncident],
     ['LTIF (per 1,000,000 man-hours)', rate(m.lti, m.manHours), rate(y.lti, y.manHours)],
     ['TRCF (per 1,000,000 man-hours)', rate(m.lti+m.mti, m.manHours), rate(y.lti+y.mti, y.manHours)],
-    ['Days since last LTI (at month end)', '', daysSince===null?'No LTI recorded':daysSince],
+    ['Days since last LTI (at month end)', '', daysSince!==null ? daysSince : (ltiRec && ltiRec.since ? `${ltiRec.days} (no LTI since ${ltiRec.since.split('-').reverse().join('-')})` : 'No LTI recorded')],
     ['LTI-free man-hours (at month end)', '', ltiRec ? ltiRec.hours.toLocaleString() : '—'],
   ], [270, 110, 135], {right:true});
   // ---- 2 proactive ----
@@ -10836,23 +10837,27 @@ function ccLtiStreak(division, project, refDay){
   const firstDay=e=>{ const d=String(e.date||''); return d.length===7 ? d+'-01' : d.slice(0,10); };
   const valid=d=>/^\d{4}-\d{2}-\d{2}$/.test(d) && d<=today;
   const dates=list.map(firstDay).filter(valid).sort();
-  const base=/^\d{4}-\d{2}-\d{2}$/.test(appSettings.ltiBaseDate||'') && appSettings.ltiBaseDate<=today ? appSettings.ltiBaseDate : null;
+  // Batch 60: the company record is not tied to one project — a single-project view counts from that project's own entries.
+  const oneProject = !!project && project!=='all';
+  const base=!oneProject && /^\d{4}-\d{2}-\d{2}$/.test(appSettings.ltiBaseDate||'') && appSettings.ltiBaseDate<=today ? appSettings.ltiBaseDate : null;
+  const baseIsStart = !!base && appSettings.ltiBaseKind==='start';   // "LTI-free since" (no LTI ever), not an LTI date
   const trackerLtis=list.filter(e=>e.category==='lti').map(firstDay).filter(valid).sort();
-  const ltis=[...new Set([...(base?[base]:[]), ...trackerLtis])].sort();
-  if(!dates.length && !ltis.length) return null;
+  const ltis=[...new Set([...(base && !baseIsStart?[base]:[]), ...trackerLtis])].sort();
+  if(!dates.length && !ltis.length && !base) return null;
   const dayDiff=(a,b)=>Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/86400000);
-  const since = ltis.length ? null : dates[0];
-  const start = ltis.length ? ltis[ltis.length-1] : dates[0];
+  const recStart = baseIsStart ? (dates[0] && dates[0]<base ? dates[0] : base) : dates[0];
+  const since = ltis.length ? null : recStart;
+  const start = ltis.length ? ltis[ltis.length-1] : recStart;
   const current = Math.max(0, dayDiff(start, today));
-  let best=current, prev=ltis.length ? ltis[0] : dates[0];
-  for(const d of ltis.slice(1)){ best=Math.max(best, dayDiff(prev, d)); prev=d; }
+  let best=current, prev=baseIsStart ? recStart : (ltis.length ? ltis[0] : dates[0]);
+  for(const d of (baseIsStart ? ltis : ltis.slice(1))){ best=Math.max(best, dayDiff(prev, d)); prev=d; }
   // LTI-free man-hours: monthly man-hours after the start (the LTI month is pro-rated by the days left after the LTI)
   const upto=today.slice(0,7), sMonth=start.slice(0,7);
   const mhBy={}; for(const e of list) if(e.category==='manHours'){ const k=entryMonth(e); if(k && k<=upto) mhBy[k]=(mhBy[k]||0)+(Number(e.hours)||0); }
   const company = division==='all' && (!project || project==='all');
   const carry = Number(appSettings.ltiBaseHours)||0, asOf=String(appSettings.ltiBaseHoursAsOf||'');
   let hours=0, carried=false;
-  if(company && base && start===base && carry>0 && /^\d{4}-\d{2}$/.test(asOf) && asOf>=sMonth){
+  if(company && base && (start===base || (baseIsStart && !ltis.length)) && carry>0 && /^\d{4}-\d{2}$/.test(asOf) && asOf>=sMonth){
     carried=true;
     if(upto>=asOf){ hours=carry; for(const [k,h] of Object.entries(mhBy)) if(k>asOf) hours+=h; }
     else { // looking back to a month before the brought-forward figure: take off the hours logged after that month
@@ -10865,7 +10870,7 @@ function ccLtiStreak(division, project, refDay){
       else if(k===sMonth){ if(!ltis.length) hours+=h; else { const [y,m,d]=start.split('-').map(Number), dim=new Date(y, m, 0).getDate(); hours+=h*Math.max(0, dim-d)/dim; } }
     }
   }
-  return {days:current, best, lastLti: ltis.length ? ltis[ltis.length-1] : null, lastFromBase: !!(base && start===base && ltis.length), since, hours:Math.round(hours), carried, company};
+  return {days:current, best, lastLti: ltis.length ? ltis[ltis.length-1] : null, lastFromBase: !!(base && !baseIsStart && start===base && ltis.length), since, fromStart: baseIsStart && !ltis.length, hours:Math.round(hours), carried, company};
 }
 /* Batch 41: training dials — 4 bands (below 50 red · 50–79 orange · 80–89 yellow · 90+ green) and a speedometer-style
    ring that blends from red at the start to the band colour at the tip */
@@ -11023,7 +11028,7 @@ function renderCommandCentre(entries, m, key){
   const ca={ico:ic('clipcheck'), label:'Open<br>actions', count:openActs.length, text:openActs.length, sub:overdueActs.length?`${overdueActs.length} overdue`:(openActs.length?'all on track':'nothing open'), st:overdueActs.length?'bad':(openActs.length?'watch':'good')};
   const streak=ccLtiStreak(division, project);
   const orbNum = streak ? streak.days : null;
-  const orbSub = !streak ? 'no entries yet' : streak.lastLti ? `last LTI ${streak.lastLti}${streak.best>streak.days?` · best ${streak.best} days`:''}` : `no LTI since ${streak.since}`;
+  const orbSub = !streak ? 'no entries yet' : streak.lastLti ? `last LTI ${streak.lastLti}${streak.best>streak.days?` · best ${streak.best} days`:''}` : streak.fromStart ? `LTI-free since ${streak.since}` : `no LTI since ${streak.since}`;
   const orbMh = streak ? `<div class="cc-orb-mh" title="${streak.carried?'Includes the LTI-free man-hours brought forward in the LTI record':'Man-hours logged in the tracker since the last LTI'}">${streak.hours.toLocaleString()}<span>LTI-free man-hours</span></div>` : '';
   const scope = [division==='all'?'All divisions':divLabel(division), project==='all'?'':(project==='none'?'no project':projectName(project))].filter(Boolean).join(' · ');
   document.getElementById('ccScope').textContent = `${scope} · ${periodLabel(key)}`;
@@ -14112,17 +14117,18 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('ltiBaseEdit').addEventListener('click', ()=>{
     const f=document.getElementById('ltiBaseForm');
     f.querySelectorAll('[data-ltib]').forEach(el=>{ el.value=appSettings[el.dataset.ltib]||''; });
+    f.querySelector('[data-ltib="ltiBaseKind"]').value = appSettings.ltiBaseKind || (appSettings.ltiBaseDate ? 'lti' : 'start');
     f.hidden=false; document.getElementById('ltiBaseEdit').hidden=true; f.querySelector('input').focus();
   });
   document.getElementById('ltiBaseCancel').addEventListener('click', ()=>{ document.getElementById('ltiBaseForm').hidden=true; document.getElementById('ltiBaseEdit').hidden=!canEdit(); });
   document.getElementById('ltiBaseForm').addEventListener('submit', async e=>{
     e.preventDefault();
     const d={}; e.target.querySelectorAll('[data-ltib]').forEach(el=>{ d[el.dataset.ltib]=el.value.trim(); });
-    if(d.ltiBaseDate && d.ltiBaseDate>localToday()){ toast('The last LTI date cannot be in the future'); return; }
+    if(d.ltiBaseDate && d.ltiBaseDate>localToday()){ toast('The date cannot be in the future'); return; }
     if(d.ltiBaseHours && !(Number(d.ltiBaseHours)>=0)){ toast('Enter the man-hours as a number'); return; }
     if(d.ltiBaseHours && !d.ltiBaseHoursAsOf){ toast('Choose the month the brought-forward man-hours run up to'); return; }
-    if(d.ltiBaseHours && d.ltiBaseDate && d.ltiBaseHoursAsOf<d.ltiBaseDate.slice(0,7)){ toast('The man-hours month must be on or after the last LTI date'); return; }
-    if(d.ltiBaseHours && !d.ltiBaseDate){ toast('Enter the company last LTI date too'); return; }
+    if(d.ltiBaseHours && d.ltiBaseDate && d.ltiBaseHoursAsOf<d.ltiBaseDate.slice(0,7)){ toast('The man-hours month must be on or after the date'); return; }
+    if(d.ltiBaseHours && !d.ltiBaseDate){ toast('Enter the date too'); return; }
     d.ltiBaseHours = d.ltiBaseHours ? String(Math.round(Number(d.ltiBaseHours))) : '';
     if(await saveSettings('app', d)){ e.target.hidden=true; document.getElementById('ltiBaseEdit').hidden=!canEdit(); }
   });
