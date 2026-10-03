@@ -513,6 +513,13 @@ table.req-grid td.mx-cell input{width:18px; height:18px; cursor:pointer;}
 .cc-lbl{font-family:var(--font-display); font-weight:600; font-size:13px; line-height:1.15;}
 .cc-val{margin-left:auto; text-align:right; min-width:0;}
 .cc-v{font-family:var(--font-num); font-weight:700; font-size:29px; line-height:1; font-variant-numeric:tabular-nums;}
+.cc-tile-2{flex-wrap:wrap; row-gap:8px;}
+.cc-vals{display:flex; margin-left:auto;}
+.cc-tile-2 .cc-val{margin-left:0;}
+.cc-tile-2 .cc-val + .cc-val{margin-left:14px; padding-left:14px; border-left:1px solid var(--line);}
+.cc-tile-2 .cc-v{font-size:24px;}
+.cc-tile-2 .cc-p{white-space:nowrap;}
+@media (max-width:560px){ .cc-tile-2{gap:8px;} .cc-tile-2 .cc-v{font-size:19px;} .cc-tile-2 .cc-val + .cc-val{margin-left:8px; padding-left:8px;} .cc-tile-2 .cc-p{font-size:10.5px;} .cc-tile-2 .cc-lbl{font-size:12px;} }
 :root:not([data-theme="light"]) .cc-v{text-shadow:0 0 14px var(--glow);}
 .cc-p{font-size:11.5px; font-weight:600; color:var(--st); margin-top:3px; line-height:1.25;}
 .cc-orb{position:relative; width:min(230px,100%); aspect-ratio:1; display:grid; place-items:center;}
@@ -2735,7 +2742,7 @@ function startSettingsData(){
 /* Batch 31: an old copy of the tracker left open (another tab / phone) must not overwrite newer settings.
    1) Every few minutes the page checks whether a newer version is on GitHub → banner "Refresh".
    2) Settings forms remember the version they were opened on; if someone saved in between, the save is refused. */
-const APP_BUILD='b60';
+const APP_BUILD='b61';
 let appOutdated=false;
 // Batch 36: light version check — a tiny HEAD request (file fingerprint); the full page is downloaded only when it changed
 let _verTag=null, _verLast=0;
@@ -10993,10 +11000,10 @@ function renderCcTrainHours(key, division, project, months, scope){
     <p class="wsub" style="margin:0 14px 12px;">Training man-hours = duration × people trained. PDO and SP-1257 course hours fill in from the specification; toolbox talks count ${TBT_DEFAULT_MIN} minutes when no duration is given.</p>`;
 }
 function ccTile(t){
-  return `<div class="cc-tile ${t.st}">
+  return `<div class="cc-tile ${t.st}${t.cls?' '+t.cls:''}"${t.title?` title="${esc(t.title)}"`:''}>
     <div class="cc-ico" aria-hidden="true">${t.ico}</div>
     <div class="cc-lbl">${t.label}</div>
-    <div class="cc-val"><div class="cc-v" ${t.count!==undefined?`data-cc-count="${t.count}"`:''}>${t.text}</div><div class="cc-p">${esc(t.sub)}</div></div>
+    ${t.vals?'<div class="cc-vals">':''}${(t.vals||[t]).map(v=>`<div class="cc-val"><div class="cc-v" ${v.count!==undefined?`data-cc-count="${v.count}"`:''}>${v.text}</div><div class="cc-p">${esc(v.sub)}</div></div>`).join('')}${t.vals?'</div>':''}
   </div>`;
 }
 function renderCommandCentre(entries, m, key){
@@ -11024,7 +11031,13 @@ function renderCommandCentre(entries, m, key){
     {ico:ic('filecheck'), label:'Permits<br>to work', count:ptwPeriod.length, text:ptwPeriod.length, sub:`${ptwOpen.length} open · ${ptwStale.length} past validity`, st:ptwStale.length?'bad':'good'},
     {ico:ic('trend'), label:'LTIF', text:fmtRate(ltif), sub:m.lti?`${m.lti} LTI · ${m.ltiDaysLost} days lost`:'per million hrs', st:m.lti?'bad':'good'},
   ];
-  const mh={ico:ic('clock'), label:'Man-<br>hours', count:m.manHours, text:m.manHours.toLocaleString(), sub:mhSub, st:'good'};
+  // Batch 61: the top tile shows the period's man-hours and, beside it at the same size, cumulative safe (LTI-free) man-hours up to the end of the period in view
+  const cumRef = (()=>{ const t=localToday(); let e; if(key.length===4) e=key+'-12-31'; else { const [yy,mm]=key.split('-').map(Number); e=`${key}-${String(new Date(yy, mm, 0).getDate()).padStart(2,'0')}`; } return e<t ? e : t; })();
+  const cum=ccLtiStreak(division, project, cumRef);
+  const cumHrs = cum ? cum.hours : 0;
+  const mh={ico:ic('clock'), label:'Man-<br>hours', st:'good', cls:'cc-tile-2',
+    vals:[{count:m.manHours, text:m.manHours.toLocaleString(), sub:`${periodWord}${prev.manHours?` ${m.manHours>=prev.manHours?'▲':'▼'} ${Math.abs((m.manHours-prev.manHours)/prev.manHours*100).toFixed(1)}%`:''}`}, {count:cumHrs, text:cumHrs.toLocaleString(), sub:'cumulative safe'}],
+    title:`Left: man-hours ${periodWord}. Right: cumulative safe (LTI-free) man-hours up to ${cumRef.split('-').reverse().join('-')}${cum && cum.lastLti ? ' — counted from the last LTI' : cum && cum.since ? ' — counted from '+cum.since.split('-').reverse().join('-') : ''}${cum && cum.carried ? ', including the hours brought forward in the LTI record' : ''}`};
   const ca={ico:ic('clipcheck'), label:'Open<br>actions', count:openActs.length, text:openActs.length, sub:overdueActs.length?`${overdueActs.length} overdue`:(openActs.length?'all on track':'nothing open'), st:overdueActs.length?'bad':(openActs.length?'watch':'good')};
   const streak=ccLtiStreak(division, project);
   const orbNum = streak ? streak.days : null;
